@@ -14,7 +14,8 @@ El dominio de dattasoft ya se corrigió. La integración de correo quedó lista:
   `https://<dominio>/webhooks/brevo?key=<JOBS_SECRET>`.
 
 **Único paso manual restante:** poner la `BREVO_API_KEY` real en producción y dar de alta
-el webhook en Brevo.
+el webhook en Brevo. Brevo YA lo usa el CRM actual, así que se reutiliza la cuenta (solo
+generar una API key nueva para ds-hd). **Guía paso a paso: `docs/deploy/CORREO-BREVO.md`.**
 
 ## Otros pendientes menores
 
