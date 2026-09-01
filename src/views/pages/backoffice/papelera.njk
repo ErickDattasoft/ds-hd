@@ -1,0 +1,44 @@
+{% extends "layouts/backoffice.njk" %}
+{% block title %}Papelera{% endblock %}
+{% block content %}
+  <h1>Papelera de reciclaje</h1>
+  <p class="muted">Elementos archivados. Restáuralos si los necesitas de vuelta.</p>
+
+  <h2>Empresas archivadas ({{ empresas | length }})</h2>
+  <table class="data-table">
+    <thead><tr><th>Nombre</th><th></th></tr></thead>
+    <tbody>
+      {% for e in empresas %}
+        <tr>
+          <td>{{ e.nombre }}</td>
+          <td>
+            <form method="post" action="/app/empresas/{{ e.id }}/archivar" class="inline">
+              <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+              <input type="hidden" name="archivar" value="false" />
+              <button class="btn btn--sm btn--ghost" type="submit">Restaurar</button>
+            </form>
+          </td>
+        </tr>
+      {% else %}<tr><td colspan="2" class="muted">Nada archivado.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+
+  <h2>Contactos archivados ({{ contactos | length }})</h2>
+  <table class="data-table">
+    <thead><tr><th>Nombre</th><th></th></tr></thead>
+    <tbody>
+      {% for c in contactos %}
+        <tr>
+          <td>{{ c.nombre }}</td>
+          <td>
+            <form method="post" action="/app/contactos/{{ c.id }}/archivar" class="inline">
+              <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+              <input type="hidden" name="archivar" value="false" />
+              <button class="btn btn--sm btn--ghost" type="submit">Restaurar</button>
+            </form>
+          </td>
+        </tr>
+      {% else %}<tr><td colspan="2" class="muted">Nada archivado.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+{% endblock %}

@@ -48,4 +48,27 @@
       {% else %}<tr><td colspan="3" class="muted">Sin tickets.</td></tr>{% endfor %}
     </tbody>
   </table>
+
+  {% if can('seguimiento:leer') %}
+    <h2>Seguimiento comercial</h2>
+    {% if can('seguimiento:gestionar') %}
+      <form method="post" action="/app/interacciones" class="form">
+        <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+        <input type="hidden" name="empresaId" value="{{ empresa.id }}" />
+        <div class="filterbar">
+          <select name="tipo">
+            {% for tp in ['llamada','correo','reunion','whatsapp','nota'] %}<option>{{ tp }}</option>{% endfor %}
+          </select>
+          <input type="date" name="fecha" />
+          <input name="resumen" placeholder="Resumen de la interacción" required style="flex:1" />
+          <button class="btn btn--sm" type="submit">Registrar</button>
+        </div>
+      </form>
+    {% endif %}
+    <ul class="timeline">
+      {% for i in interacciones %}
+        <li><span class="muted">{{ i.fecha }}</span> · <strong>{{ i.tipo }}</strong> — {{ i.resumen }} <span class="muted">({{ i.creadoPorNombre }})</span></li>
+      {% else %}<li class="muted">Sin interacciones registradas.</li>{% endfor %}
+    </ul>
+  {% endif %}
 {% endblock %}

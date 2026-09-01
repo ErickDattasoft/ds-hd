@@ -27,6 +27,7 @@ import {
 } from '../fakes/crm.js';
 import { InMemoryVersionRepository, InMemoryKnowledgeRepository } from '../fakes/kb.js';
 import { InMemoryCotizacionRepository } from '../fakes/cotizaciones.js';
+import { InMemoryInteraccionRepository, InMemoryTareaRepository } from '../fakes/seguimiento.js';
 
 export interface TestApp {
   app: ReturnType<typeof createApp>;
@@ -44,6 +45,8 @@ export interface TestApp {
   versionRepo: InMemoryVersionRepository;
   knowledgeRepo: InMemoryKnowledgeRepository;
   cotizacionRepo: InMemoryCotizacionRepository;
+  interaccionRepo: InMemoryInteraccionRepository;
+  tareaRepo: InMemoryTareaRepository;
 }
 
 /**
@@ -78,6 +81,8 @@ export function makeTestApp(opts: { usuarios?: { uid: string; email: string; pas
   const versionRepo = new InMemoryVersionRepository();
   const knowledgeRepo = new InMemoryKnowledgeRepository();
   const cotizacionRepo = new InMemoryCotizacionRepository();
+  const interaccionRepo = new InMemoryInteraccionRepository();
+  const tareaRepo = new InMemoryTareaRepository();
 
   const overrides: ContainerOverrides = {
     usuarioRepo,
@@ -99,6 +104,8 @@ export function makeTestApp(opts: { usuarios?: { uid: string; email: string; pas
     versionRepo,
     knowledgeRepo,
     cotizacionRepo,
+    interaccionRepo,
+    tareaRepo,
   };
 
   const container = buildContainer(loadConfig(), overrides);
@@ -118,6 +125,8 @@ export function makeTestApp(opts: { usuarios?: { uid: string; email: string; pas
     versionRepo,
     knowledgeRepo,
     cotizacionRepo,
+    interaccionRepo,
+    tareaRepo,
   };
 }
 

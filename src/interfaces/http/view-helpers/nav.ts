@@ -19,6 +19,8 @@ export const NAV_BACKOFFICE: readonly NavItem[] = [
   { etiqueta: 'Versiones', href: '/app/versiones', icono: '🧩', permiso: 'versiones:leer' },
   { etiqueta: 'Eventos', href: '/app/eventos', icono: '📅', permiso: 'eventos:leer' },
   { etiqueta: 'Base de conocimiento', href: '/app/kb', icono: '📚', permiso: 'kb:leer' },
+  { etiqueta: 'Tareas', href: '/app/tareas', icono: '✅', permiso: 'seguimiento:leer' },
+  { etiqueta: 'Papelera', href: '/app/papelera', icono: '🗑️', permiso: 'papelera:gestionar' },
   { etiqueta: 'Bitácora', href: '/app/bitacora', icono: '📓', permiso: 'bitacora:leer' },
   { etiqueta: 'Usuarios', href: '/app/usuarios', icono: '🔑', permiso: 'usuarios:gestionar' },
   { etiqueta: 'Configuración', href: '/app/configuracion', icono: '⚙️', permiso: 'configuracion:catalogos' },

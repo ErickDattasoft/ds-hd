@@ -15,6 +15,7 @@ const SOLO_LECTURA: readonly Permiso[] = [
   'versiones:leer',
   'eventos:leer',
   'kb:leer',
+  'seguimiento:leer',
   'bitacora:leer',
 ];
 
@@ -45,6 +46,8 @@ export const ROLE_PERMISSIONS: Record<Rol, readonly Permiso[]> = {
     'versiones:leer',
     'kb:leer',
     'kb:escribir',
+    'seguimiento:leer',
+    'seguimiento:gestionar',
   ],
 
   lectura: SOLO_LECTURA,

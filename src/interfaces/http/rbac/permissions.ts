@@ -50,6 +50,13 @@ export const PERMISOS = [
   'kb:escribir',
   'kb:publicar',
 
+  // Seguimiento comercial (interacciones + tareas)
+  'seguimiento:leer',
+  'seguimiento:gestionar',
+
+  // Papelera de reciclaje
+  'papelera:gestionar',
+
   // Bitácora
   'bitacora:leer',
 

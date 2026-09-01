@@ -1,0 +1,53 @@
+{% extends "layouts/backoffice.njk" %}
+{% block title %}Tareas{% endblock %}
+{% block content %}
+  <div class="page-head">
+    <h1>Tareas</h1>
+    <p class="muted">
+      {% if soloMias %}<a href="/app/tareas?todas=1">Ver todas</a>{% else %}<a href="/app/tareas">Solo las mías</a>{% endif %}
+    </p>
+  </div>
+  {% if errores.general %}<p class="alert alert--error">{{ errores.general }}</p>{% endif %}
+
+  {% if can('seguimiento:gestionar') %}
+    <form method="post" action="/app/tareas" class="form form--wide card">
+      <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+      <label class="field"><span>Título</span><input name="titulo" required />
+        {% if errores.titulo %}<em class="field__error">{{ errores.titulo }}</em>{% endif %}</label>
+      <label class="field"><span>Descripción</span><textarea name="descripcion" rows="2"></textarea></label>
+      <div class="filterbar">
+        <select name="asignadoAUid">
+          {% for u in staff %}<option value="{{ u.uid }}" {{ 'selected' if u.uid == user.uid }}>{{ u.nombre }}</option>{% endfor %}
+        </select>
+        <input type="date" name="vence" />
+        <button class="btn btn--sm" type="submit">Crear tarea</button>
+      </div>
+    </form>
+  {% endif %}
+
+  <table class="data-table">
+    <thead><tr><th></th><th>Tarea</th><th>Asignada a</th><th>Vence</th><th></th></tr></thead>
+    <tbody>
+      {% for t in tareas %}
+        <tr>
+          <td>
+            {% if can('seguimiento:gestionar') %}
+            <form method="post" action="/app/tareas/{{ t.id }}/marcar" class="inline">
+              <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+              <input type="hidden" name="completada" value="{{ 'false' if t.completada else 'true' }}" />
+              <button class="btn btn--sm btn--ghost" type="submit">{{ '↺' if t.completada else '✓' }}</button>
+            </form>
+            {% endif %}
+          </td>
+          <td>
+            <strong{% if t.completada %} style="text-decoration:line-through"{% endif %}>{{ t.titulo }}</strong>
+            {% if t.descripcion %}<div class="muted">{{ t.descripcion }}</div>{% endif %}
+          </td>
+          <td>{{ t.asignadoANombre or t.asignadoAUid }}</td>
+          <td>{% if t.vencida %}<span class="badge badge--danger">{{ t.vence }}</span>{% else %}{{ t.vence or '—' }}{% endif %}</td>
+          <td>{{ 'Hecha' if t.completada else '' }}</td>
+        </tr>
+      {% else %}<tr><td colspan="5" class="muted">Sin tareas.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+{% endblock %}

@@ -1,6 +1,7 @@
 import type { Request, Response } from 'express';
 import type { EmpresaService } from '../../../../application/empresas/EmpresaService.js';
 import type { ContactoService } from '../../../../application/contactos/ContactoService.js';
+import type { SeguimientoService } from '../../../../application/seguimiento/SeguimientoService.js';
 import type { ITicketQueries } from '../../../../core/ports/repositories/ITicketQueries.js';
 import { camposDeError } from '../../support/errores.js';
 
@@ -17,6 +18,7 @@ export class EmpresaController {
     private readonly empresas: EmpresaService,
     private readonly contactos: ContactoService,
     private readonly ticketQueries: ITicketQueries,
+    private readonly seguimiento: SeguimientoService,
   ) {}
 
   listar = async (req: Request, res: Response): Promise<void> => {
@@ -51,11 +53,18 @@ export class EmpresaController {
   ver = async (req: Request, res: Response): Promise<void> => {
     const id = str(req.params.id);
     const empresa = await this.empresas.obtener(id);
-    const [contactos, tickets] = await Promise.all([
+    const [contactos, tickets, interacciones] = await Promise.all([
       this.contactos.listar({ empresaId: id }),
       this.ticketQueries.listar({ empresaId: id, limite: 20 }),
+      this.seguimiento.interaccionesDe(id),
     ]);
-    res.render('pages/backoffice/empresas/detail', { titulo: empresa.nombre, empresa, contactos, tickets });
+    res.render('pages/backoffice/empresas/detail', {
+      titulo: empresa.nombre,
+      empresa,
+      contactos,
+      tickets,
+      interacciones,
+    });
   };
 
   editar = async (req: Request, res: Response): Promise<void> => {

@@ -22,6 +22,10 @@ import { FirestoreBitacoraRepository } from '../infrastructure/firestore/Firesto
 import { FirestoreVersionRepository } from '../infrastructure/firestore/FirestoreVersionRepository.js';
 import { FirestoreKnowledgeRepository } from '../infrastructure/firestore/FirestoreKnowledgeRepository.js';
 import { FirestoreCotizacionRepository } from '../infrastructure/firestore/FirestoreCotizacionRepository.js';
+import {
+  FirestoreInteraccionRepository,
+  FirestoreTareaRepository,
+} from '../infrastructure/firestore/FirestoreSeguimientoRepository.js';
 import { N8nWebhookPublisher, NullWebhookPublisher } from '../infrastructure/webhooks/N8nWebhookPublisher.js';
 import { TurnstileVerifier, NullCaptchaVerifier } from '../infrastructure/captcha/TurnstileVerifier.js';
 import { LoginService } from '../application/auth/LoginService.js';
@@ -52,6 +56,7 @@ import { VersionService } from '../application/versiones/VersionService.js';
 import { KnowledgeService } from '../application/knowledge/KnowledgeService.js';
 import { CotizacionService } from '../application/cotizaciones/CotizacionService.js';
 import { CalculadoraCompacService } from '../application/cotizaciones/CalculadoraCompacService.js';
+import { SeguimientoService } from '../application/seguimiento/SeguimientoService.js';
 import { AuthController } from '../interfaces/http/controllers/public/AuthController.js';
 import { UsuarioController } from '../interfaces/http/controllers/backoffice/UsuarioController.js';
 import { PortalPerfilController } from '../interfaces/http/controllers/portal/PortalPerfilController.js';
@@ -66,6 +71,8 @@ import { BitacoraController } from '../interfaces/http/controllers/backoffice/Bi
 import { VersionController } from '../interfaces/http/controllers/backoffice/VersionController.js';
 import { KnowledgeController } from '../interfaces/http/controllers/KnowledgeController.js';
 import { CotizacionController } from '../interfaces/http/controllers/backoffice/CotizacionController.js';
+import { SeguimientoController } from '../interfaces/http/controllers/backoffice/SeguimientoController.js';
+import { PapeleraController } from '../interfaces/http/controllers/backoffice/PapeleraController.js';
 import { SESSION_COOKIE_MAX_AGE_MS } from './constants.js';
 import type { ILogger } from '../core/ports/services/ILogger.js';
 import type { IClock } from '../core/ports/services/IClock.js';
@@ -89,6 +96,10 @@ import type { IBitacoraRepository } from '../core/ports/repositories/IBitacoraRe
 import type { IVersionRepository } from '../core/ports/repositories/IVersionRepository.js';
 import type { IKnowledgeRepository } from '../core/ports/repositories/IKnowledgeRepository.js';
 import type { ICotizacionRepository } from '../core/ports/repositories/ICotizacionRepository.js';
+import type {
+  IInteraccionRepository,
+  ITareaRepository,
+} from '../core/ports/repositories/ISeguimientoRepository.js';
 
 /**
  * Todo lo resoluble del contenedor. Las capas internas reciben estas dependencias por
@@ -121,6 +132,8 @@ export interface Cradle {
   versionRepo: IVersionRepository;
   knowledgeRepo: IKnowledgeRepository;
   cotizacionRepo: ICotizacionRepository;
+  interaccionRepo: IInteraccionRepository;
+  tareaRepo: ITareaRepository;
 
   // Casos de uso
   loginService: LoginService;
@@ -151,6 +164,7 @@ export interface Cradle {
   knowledgeService: KnowledgeService;
   cotizacionService: CotizacionService;
   calculadoraCompacService: CalculadoraCompacService;
+  seguimientoService: SeguimientoService;
 
   // Controllers
   authController: AuthController;
@@ -167,6 +181,8 @@ export interface Cradle {
   versionController: VersionController;
   knowledgeController: KnowledgeController;
   cotizacionController: CotizacionController;
+  seguimientoController: SeguimientoController;
+  papeleraController: PapeleraController;
 }
 
 export type Container = AwilixContainer<Cradle>;
@@ -289,6 +305,14 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
     cotizacionRepo: asFunction(
       ({ firebase }: Cradle): ICotizacionRepository =>
         new FirestoreCotizacionRepository(requireFirebase(firebase).firestore),
+    ).singleton(),
+    interaccionRepo: asFunction(
+      ({ firebase }: Cradle): IInteraccionRepository =>
+        new FirestoreInteraccionRepository(requireFirebase(firebase).firestore),
+    ).singleton(),
+    tareaRepo: asFunction(
+      ({ firebase }: Cradle): ITareaRepository =>
+        new FirestoreTareaRepository(requireFirebase(firebase).firestore),
     ).singleton(),
 
     loginService: asFunction(
@@ -458,6 +482,10 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
     calculadoraCompacService: asFunction(
       (c: Cradle) => new CalculadoraCompacService(c.configuracionRepo),
     ).singleton(),
+    seguimientoService: asFunction(
+      (c: Cradle) =>
+        new SeguimientoService(c.interaccionRepo, c.tareaRepo, c.idGenerator, c.clock, c.bitacoraService),
+    ).singleton(),
 
     authController: asFunction(
       (c: Cradle) =>
@@ -522,7 +550,8 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
       (c: Cradle) => new BrevoWebhookController(c.config.jobs.secret, c.logger),
     ).singleton(),
     empresaController: asFunction(
-      (c: Cradle) => new EmpresaController(c.empresaService, c.contactoService, c.ticketQueries),
+      (c: Cradle) =>
+        new EmpresaController(c.empresaService, c.contactoService, c.ticketQueries, c.seguimientoService),
     ).singleton(),
     contactoController: asFunction(
       (c: Cradle) => new ContactoController(c.contactoService, c.empresaService),
@@ -539,6 +568,12 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
     cotizacionController: asFunction(
       (c: Cradle) =>
         new CotizacionController(c.cotizacionService, c.calculadoraCompacService, c.empresaService),
+    ).singleton(),
+    seguimientoController: asFunction(
+      (c: Cradle) => new SeguimientoController(c.seguimientoService, c.usuarioRepo),
+    ).singleton(),
+    papeleraController: asFunction(
+      (c: Cradle) => new PapeleraController(c.empresaService, c.contactoService),
     ).singleton(),
   });
 

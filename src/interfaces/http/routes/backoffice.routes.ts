@@ -15,6 +15,8 @@ export function backofficeRoutes(container: Container): Router {
   const versiones = () => container.resolve('versionController');
   const kb = () => container.resolve('knowledgeController');
   const cotizaciones = () => container.resolve('cotizacionController');
+  const seguimiento = () => container.resolve('seguimientoController');
+  const papelera = () => container.resolve('papeleraController');
   const gestUsuarios = requirePermission('usuarios:gestionar');
   const leerTickets = requirePermission('tickets:leer');
 
@@ -109,6 +111,15 @@ export function backofficeRoutes(container: Container): Router {
   r.post('/kb/:id/eliminar', requirePermission('kb:publicar'), (req, res) => kb().eliminarPost(req, res));
   r.post('/kb/:id', requirePermission('kb:escribir'), (req, res) => kb().guardarPost(req, res));
   r.get('/kb/:idOrSlug', requirePermission('kb:leer'), (req, res) => kb().ver(req, res));
+
+  // ── Seguimiento comercial ──────────────────────────────────────────────────
+  r.get('/tareas', requirePermission('seguimiento:leer'), (req, res) => seguimiento().tareas(req, res));
+  r.post('/tareas', requirePermission('seguimiento:gestionar'), (req, res) => seguimiento().crearTareaPost(req, res));
+  r.post('/tareas/:id/marcar', requirePermission('seguimiento:gestionar'), (req, res) => seguimiento().marcarTareaPost(req, res));
+  r.post('/interacciones', requirePermission('seguimiento:gestionar'), (req, res) => seguimiento().crearInteraccionPost(req, res));
+
+  // ── Papelera ───────────────────────────────────────────────────────────────
+  r.get('/papelera', requirePermission('papelera:gestionar'), (req, res) => papelera().ver(req, res));
 
   // ── Bitácora ───────────────────────────────────────────────────────────────
   r.get('/bitacora', requirePermission('bitacora:leer'), (req, res) => bitacora().listar(req, res));
