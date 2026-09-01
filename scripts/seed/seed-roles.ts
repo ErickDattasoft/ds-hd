@@ -1,3 +1,4 @@
+import 'dotenv/config';
 /**
  * Siembra la cuenta de administrador inicial (identidad + documento `usuarios/{uid}`).
  * Los roles en sí viven en el código (`interfaces/http/rbac/roles.ts`); esto solo crea

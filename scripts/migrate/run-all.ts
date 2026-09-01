@@ -1,3 +1,4 @@
+import 'dotenv/config';
 /**
  * Orquestador de la migración. Lee el export (`00-export-agenda-datos.ts`) y corre todos los
  * importadores contra el proyecto Firebase NUEVO.

@@ -1,3 +1,4 @@
+import 'dotenv/config';
 /**
  * Verifica la migración en el proyecto NUEVO: conteos e integridad referencial básica
  * (todo ticket con empresaId apunta a una empresa que existe, etc.).

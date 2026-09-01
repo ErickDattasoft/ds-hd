@@ -1,3 +1,4 @@
+import 'dotenv/config';
 /**
  * Datos de demostración para el emulador: 2 agentes, configuración de tickets con correo
  * de notificación, y unos tickets de ejemplo en distintos estados.

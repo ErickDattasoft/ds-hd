@@ -1,3 +1,6 @@
+// Carga variables de un archivo .env si existe (dev/local). En Docker/producción las
+// variables vienen del entorno y dotenv no las sobrescribe: es un no-op inofensivo.
+import 'dotenv/config';
 import { createApp } from './app.js';
 import { buildContainer } from './config/container.js';
 import { loadConfig } from './config/env.js';

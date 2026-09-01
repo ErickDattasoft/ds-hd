@@ -42,5 +42,11 @@ export class BrevoEmailSender implements IEmailSender {
       this.logger.error('Brevo rechazó el correo', { status: res.status, detalle, asunto: correo.asunto });
       throw new Error(`Brevo respondió ${res.status}`);
     }
+    const data = (await res.json().catch(() => ({}))) as { messageId?: string };
+    this.logger.info('Correo enviado por Brevo', {
+      asunto: correo.asunto,
+      para: correo.para.map((p) => p.email),
+      messageId: data.messageId,
+    });
   }
 }

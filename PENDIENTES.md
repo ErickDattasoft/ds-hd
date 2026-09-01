@@ -1,11 +1,19 @@
 # Pendientes
 
-## Envío de correos — RESUELTO
+## Envío de correos — PROBADO Y FUNCIONANDO ✅
 
-Dominio `dattasoft.mx` verificado en Brevo y **API key `ds-hd-produccion` generada**
-(2026-09-01). Falta únicamente **pegar la key en el `.env` del servidor cuando se
-despliegue** (`BREVO_API_KEY=xkeysib-...`, con `SMTP_HOST` vacío) y, opcionalmente, dar de
-alta el webhook `/webhooks/brevo?key=<JOBS_SECRET>` en el panel de Brevo.
+2026-09-01: dominio `dattasoft.mx` verificado en Brevo (DKIM en verde), API key
+`ds-hd-produccion` generada, y **probado de punta a punta**: se creó un usuario y llegó el
+correo real "Tu acceso a ds-hd" desde `DATTASOFT Soporte <erick.casas@dattasoft.mx>`.
+
+Config usada (remitente verificado real): `BREVO_SENDER_EMAIL=erick.casas@dattasoft.mx`,
+`BREVO_SENDER_NAME=DATTASOFT Soporte`.
+
+**Para producción:** copiar la key a `BREVO_API_KEY` en el `.env` del servidor (con
+`SMTP_HOST` vacío) y dar de alta el webhook `/webhooks/brevo?key=<JOBS_SECRET>` en Brevo.
+
+**Limpieza pendiente en el DNS de dattasoft.mx (no bloquea):** el registro DMARC tiene una
+etiqueta `rua=` duplicada — conviene corregirlo para máxima entregabilidad con Gmail/Yahoo.
 
 La integración de correo en código está lista:
 
