@@ -1,0 +1,57 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  background: var(--color-bg);
+  color: var(--color-text);
+  line-height: 1.5;
+}
+
+a {
+  color: var(--color-primary);
+}
+
+.container {
+  max-width: 960px;
+  margin-inline: auto;
+  padding: var(--space-8) var(--space-4);
+}
+
+.hero h1 {
+  margin-bottom: var(--space-2);
+}
+
+.muted {
+  color: var(--color-text-muted);
+}
+
+.btn {
+  display: inline-block;
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius);
+  background: var(--color-primary);
+  color: var(--color-primary-contrast);
+  text-decoration: none;
+  border: 1px solid transparent;
+}
+
+.btn--ghost {
+  background: transparent;
+  color: var(--color-primary);
+  border-color: var(--color-border);
+}
+
+.error-page {
+  text-align: center;
+  padding-block: var(--space-8);
+}
+
+.error-page h1 {
+  font-size: 3rem;
+  margin-bottom: var(--space-2);
+}

@@ -1,0 +1,9 @@
+{% extends "layouts/base.njk" %}
+{% block title %}Error{% endblock %}
+{% block content %}
+  <section class="error-page">
+    <h1>500</h1>
+    <p>{{ mensaje | default('Ocurrió un error inesperado. Intenta de nuevo.') }}</p>
+    <p><a class="btn" href="/">Volver al inicio</a></p>
+  </section>
+{% endblock %}

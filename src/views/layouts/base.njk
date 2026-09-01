@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="es" data-theme="{{ theme | default('light') }}"{% if user %} data-role="{{ user.rol }}"{% endif %}>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{% block title %}{{ titulo | default('ds-hd') }}{% endblock %} · ds-hd</title>
+  <link rel="stylesheet" href="/static/build/tokens.css" />
+  <link rel="stylesheet" href="/static/build/base.css" />
+  {% block head %}{% endblock %}
+</head>
+<body>
+  {% block body %}
+  <main class="container">
+    {% block content %}{% endblock %}
+  </main>
+  {% endblock %}
+
+  <script src="/static/vendor/htmx.min.js" defer></script>
+  <script src="/static/vendor/alpine.min.js" defer></script>
+  <script src="/static/build/app.js" defer></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,45 @@
+# Producción en un droplet de DigitalOcean: imagen del registry + Caddy (HTTPS automático).
+name: ds-hd
+
+services:
+  app:
+    image: ${IMAGE:-ghcr.io/OWNER/ds-hd:latest}
+    restart: unless-stopped
+    env_file:
+      - ../.env
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+    secrets:
+      - firebase-sa
+    # El código lee FIREBASE_SERVICE_ACCOUNT_B64; como alternativa, este secret expone el
+    # JSON en /run/secrets/firebase-sa y se apunta con GOOGLE_APPLICATION_CREDENTIALS.
+    expose:
+      - "3000"
+    healthcheck:
+      test: ["CMD", "node", "dist/scripts/healthcheck.js"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - app
+
+secrets:
+  firebase-sa:
+    file: ../secrets/firebase-sa.json
+
+volumes:
+  caddy_data:
+  caddy_config:

@@ -1,0 +1,9 @@
+{% extends "layouts/base.njk" %}
+{% block title %}No encontrado{% endblock %}
+{% block content %}
+  <section class="error-page">
+    <h1>404</h1>
+    <p>No encontramos <code>{{ path }}</code>.</p>
+    <p><a class="btn" href="/">Volver al inicio</a></p>
+  </section>
+{% endblock %}

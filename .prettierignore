@@ -1,0 +1,7 @@
+dist/
+node_modules/
+public/build/
+public/vendor/
+coverage/
+README.md
+docs/manual/dist/

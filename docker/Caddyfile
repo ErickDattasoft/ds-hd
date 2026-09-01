@@ -1,0 +1,9 @@
+# Reemplaza el nombre de dominio y el correo por los reales antes de desplegar.
+{
+	email admin@dattasoft.mx
+}
+
+ds-hd.dattasoft.mx {
+	encode zstd gzip
+	reverse_proxy app:3000
+}

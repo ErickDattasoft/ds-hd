@@ -1,0 +1,12 @@
+rules_version = '2';
+
+// ds-hd accede a Firestore EXCLUSIVAMENTE desde el servidor con firebase-admin (Admin SDK),
+// que ignora estas reglas. Ningún cliente (navegador) habla con Firestore directo: las
+// páginas públicas envían formularios a Express. Por eso la postura es deny-all.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

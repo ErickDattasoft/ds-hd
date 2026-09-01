@@ -1,0 +1,16 @@
+.git
+node_modules
+dist
+coverage
+scratchpad
+*.log
+.env
+.env.*
+!.env.example
+*firebase-adminsdk*.json
+serviceAccount*.json
+docs/manual/dist
+.github
+test
+**/*.test.ts
+**/*.spec.ts
