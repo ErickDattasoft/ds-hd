@@ -20,6 +20,11 @@ import {
   FakeWebhookPublisher,
   FakeCaptchaVerifier,
 } from '../fakes/tickets.js';
+import {
+  InMemoryEmpresaRepository,
+  InMemoryContactoRepository,
+  InMemoryBitacoraRepository,
+} from '../fakes/crm.js';
 
 export interface TestApp {
   app: ReturnType<typeof createApp>;
@@ -31,6 +36,9 @@ export interface TestApp {
   ticketPublicoRepo: InMemoryTicketPublicoRepository;
   webhookPublisher: FakeWebhookPublisher;
   configuracionRepo: InMemoryConfiguracionRepository;
+  empresaRepo: InMemoryEmpresaRepository;
+  contactoRepo: InMemoryContactoRepository;
+  bitacoraRepo: InMemoryBitacoraRepository;
 }
 
 /**
@@ -59,6 +67,9 @@ export function makeTestApp(opts: { usuarios?: { uid: string; email: string; pas
   const ticketPublicoRepo = new InMemoryTicketPublicoRepository();
   const webhookPublisher = new FakeWebhookPublisher();
   const configuracionRepo = new InMemoryConfiguracionRepository();
+  const empresaRepo = new InMemoryEmpresaRepository();
+  const contactoRepo = new InMemoryContactoRepository();
+  const bitacoraRepo = new InMemoryBitacoraRepository();
 
   const overrides: ContainerOverrides = {
     usuarioRepo,
@@ -74,6 +85,9 @@ export function makeTestApp(opts: { usuarios?: { uid: string; email: string; pas
     ticketPublicoRepo,
     webhookPublisher,
     captchaVerifier: new FakeCaptchaVerifier(),
+    empresaRepo,
+    contactoRepo,
+    bitacoraRepo,
   };
 
   const container = buildContainer(loadConfig(), overrides);
@@ -87,6 +101,9 @@ export function makeTestApp(opts: { usuarios?: { uid: string; email: string; pas
     ticketPublicoRepo,
     webhookPublisher,
     configuracionRepo,
+    empresaRepo,
+    contactoRepo,
+    bitacoraRepo,
   };
 }
 

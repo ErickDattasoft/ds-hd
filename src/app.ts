@@ -59,6 +59,7 @@ export function createApp(container: Container): Express {
   app.use((req, res, next) => {
     res.locals.config = { baseUrl: config.baseUrl, env: config.env };
     res.locals.currentPath = req.path;
+    res.locals.can = (permiso: string): boolean => req.user?.permisos.includes(permiso) ?? false;
     next();
   });
 

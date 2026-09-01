@@ -1,0 +1,30 @@
+{% extends "layouts/backoffice.njk" %}
+{% block title %}Contactos{% endblock %}
+{% block content %}
+  <div class="page-head">
+    <h1>Contactos</h1>
+    {% if can('contactos:crear') %}<a class="btn btn--sm" href="/app/contactos/nuevo">Nuevo contacto</a>{% endif %}
+  </div>
+  <form method="get" class="filterbar">
+    <input type="search" name="q" value="{{ q }}" placeholder="Buscar por nombre o correo" />
+    <select name="empresa">
+      <option value="">Todas las empresas</option>
+      {% for e in empresas %}<option value="{{ e.id }}" {{ 'selected' if empresaId == e.id }}>{{ e.nombre }}</option>{% endfor %}
+    </select>
+    <button class="btn btn--sm" type="submit">Filtrar</button>
+  </form>
+  <table class="data-table">
+    <thead><tr><th>Nombre</th><th>Empresa</th><th>Puesto</th><th>Correo</th><th>Teléfono</th></tr></thead>
+    <tbody>
+      {% for c in contactos %}
+        <tr>
+          <td><a href="/app/contactos/{{ c.id }}/editar">{{ c.nombre }}</a></td>
+          <td>{{ nombreEmpresa[c.empresaId] or c.empresaId }}</td>
+          <td>{{ c.puesto or '—' }}</td>
+          <td>{{ c.email or '—' }}</td>
+          <td>{{ c.telefono or '—' }}</td>
+        </tr>
+      {% else %}<tr><td colspan="5" class="muted">Sin contactos.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+{% endblock %}

@@ -16,6 +16,9 @@ import { FirestoreTicketQueries } from '../infrastructure/firestore/FirestoreTic
 import { FirestoreContadorRepository } from '../infrastructure/firestore/FirestoreContadorRepository.js';
 import { FirestoreConfiguracionRepository } from '../infrastructure/firestore/FirestoreConfiguracionRepository.js';
 import { FirestoreTicketPublicoRepository } from '../infrastructure/firestore/FirestoreTicketPublicoRepository.js';
+import { FirestoreEmpresaRepository } from '../infrastructure/firestore/FirestoreEmpresaRepository.js';
+import { FirestoreContactoRepository } from '../infrastructure/firestore/FirestoreContactoRepository.js';
+import { FirestoreBitacoraRepository } from '../infrastructure/firestore/FirestoreBitacoraRepository.js';
 import { N8nWebhookPublisher, NullWebhookPublisher } from '../infrastructure/webhooks/N8nWebhookPublisher.js';
 import { TurnstileVerifier, NullCaptchaVerifier } from '../infrastructure/captcha/TurnstileVerifier.js';
 import { LoginService } from '../application/auth/LoginService.js';
@@ -39,6 +42,9 @@ import { PanelCargaAgentesService } from '../application/tickets/PanelCargaAgent
 import { CrearTicketPublicoService } from '../application/tickets/CrearTicketPublicoService.js';
 import { GestionTicketPublicoService } from '../application/tickets/GestionTicketPublicoService.js';
 import { ConfiguracionTicketsService } from '../application/configuracion/ConfiguracionTicketsService.js';
+import { BitacoraService } from '../application/shared/BitacoraService.js';
+import { EmpresaService } from '../application/empresas/EmpresaService.js';
+import { ContactoService } from '../application/contactos/ContactoService.js';
 import { AuthController } from '../interfaces/http/controllers/public/AuthController.js';
 import { UsuarioController } from '../interfaces/http/controllers/backoffice/UsuarioController.js';
 import { PortalPerfilController } from '../interfaces/http/controllers/portal/PortalPerfilController.js';
@@ -47,6 +53,9 @@ import { TicketController } from '../interfaces/http/controllers/backoffice/Tick
 import { ConfiguracionController } from '../interfaces/http/controllers/backoffice/ConfiguracionController.js';
 import { TicketPublicoController } from '../interfaces/http/controllers/public/TicketPublicoController.js';
 import { BrevoWebhookController } from '../interfaces/http/controllers/webhooks/BrevoWebhookController.js';
+import { EmpresaController } from '../interfaces/http/controllers/backoffice/EmpresaController.js';
+import { ContactoController } from '../interfaces/http/controllers/backoffice/ContactoController.js';
+import { BitacoraController } from '../interfaces/http/controllers/backoffice/BitacoraController.js';
 import { SESSION_COOKIE_MAX_AGE_MS } from './constants.js';
 import type { ILogger } from '../core/ports/services/ILogger.js';
 import type { IClock } from '../core/ports/services/IClock.js';
@@ -64,6 +73,9 @@ import type { IConfiguracionRepository } from '../core/ports/repositories/IConfi
 import type { ITicketPublicoRepository } from '../core/ports/repositories/ITicketPublicoRepository.js';
 import type { IWebhookPublisher } from '../core/ports/services/IWebhookPublisher.js';
 import type { ICaptchaVerifier } from '../core/ports/services/ICaptchaVerifier.js';
+import type { IEmpresaRepository } from '../core/ports/repositories/IEmpresaRepository.js';
+import type { IContactoRepository } from '../core/ports/repositories/IContactoRepository.js';
+import type { IBitacoraRepository } from '../core/ports/repositories/IBitacoraRepository.js';
 
 /**
  * Todo lo resoluble del contenedor. Las capas internas reciben estas dependencias por
@@ -90,6 +102,9 @@ export interface Cradle {
   ticketPublicoRepo: ITicketPublicoRepository;
   webhookPublisher: IWebhookPublisher;
   captchaVerifier: ICaptchaVerifier;
+  empresaRepo: IEmpresaRepository;
+  contactoRepo: IContactoRepository;
+  bitacoraRepo: IBitacoraRepository;
 
   // Casos de uso
   loginService: LoginService;
@@ -113,6 +128,9 @@ export interface Cradle {
   crearTicketPublicoService: CrearTicketPublicoService;
   gestionTicketPublicoService: GestionTicketPublicoService;
   configuracionTicketsService: ConfiguracionTicketsService;
+  bitacoraService: BitacoraService;
+  empresaService: EmpresaService;
+  contactoService: ContactoService;
 
   // Controllers
   authController: AuthController;
@@ -123,6 +141,9 @@ export interface Cradle {
   configuracionController: ConfiguracionController;
   ticketPublicoController: TicketPublicoController;
   brevoWebhookController: BrevoWebhookController;
+  empresaController: EmpresaController;
+  contactoController: ContactoController;
+  bitacoraController: BitacoraController;
 }
 
 export type Container = AwilixContainer<Cradle>;
@@ -221,6 +242,18 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
     ).singleton(),
     captchaVerifier: asFunction(({ config: c, logger: l }: Cradle): ICaptchaVerifier =>
       c.turnstile.secret ? new TurnstileVerifier(c.turnstile.secret, l) : new NullCaptchaVerifier(),
+    ).singleton(),
+    empresaRepo: asFunction(
+      ({ firebase }: Cradle): IEmpresaRepository =>
+        new FirestoreEmpresaRepository(requireFirebase(firebase).firestore),
+    ).singleton(),
+    contactoRepo: asFunction(
+      ({ firebase }: Cradle): IContactoRepository =>
+        new FirestoreContactoRepository(requireFirebase(firebase).firestore),
+    ).singleton(),
+    bitacoraRepo: asFunction(
+      ({ firebase }: Cradle): IBitacoraRepository =>
+        new FirestoreBitacoraRepository(requireFirebase(firebase).firestore),
     ).singleton(),
 
     loginService: asFunction(
@@ -360,6 +393,16 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
     configuracionTicketsService: asFunction(
       (c: Cradle) => new ConfiguracionTicketsService(c.configuracionRepo, c.logger),
     ).singleton(),
+    bitacoraService: asFunction(
+      (c: Cradle) => new BitacoraService(c.bitacoraRepo, c.idGenerator, c.clock, c.logger),
+    ).singleton(),
+    empresaService: asFunction(
+      (c: Cradle) => new EmpresaService(c.empresaRepo, c.idGenerator, c.clock, c.bitacoraService),
+    ).singleton(),
+    contactoService: asFunction(
+      (c: Cradle) =>
+        new ContactoService(c.contactoRepo, c.empresaRepo, c.idGenerator, c.clock, c.bitacoraService),
+    ).singleton(),
 
     authController: asFunction(
       (c: Cradle) =>
@@ -422,6 +465,15 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
     ).singleton(),
     brevoWebhookController: asFunction(
       (c: Cradle) => new BrevoWebhookController(c.config.jobs.secret, c.logger),
+    ).singleton(),
+    empresaController: asFunction(
+      (c: Cradle) => new EmpresaController(c.empresaService, c.contactoService, c.ticketQueries),
+    ).singleton(),
+    contactoController: asFunction(
+      (c: Cradle) => new ContactoController(c.contactoService, c.empresaService),
+    ).singleton(),
+    bitacoraController: asFunction(
+      (c: Cradle) => new BitacoraController(c.bitacoraService),
     ).singleton(),
   });
 

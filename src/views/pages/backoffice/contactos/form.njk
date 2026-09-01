@@ -1,0 +1,25 @@
+{% extends "layouts/backoffice.njk" %}
+{% block title %}{{ titulo }}{% endblock %}
+{% block content %}
+  <h1>{{ titulo }}</h1>
+  {% if errores.general %}<p class="alert alert--error">{{ errores.general }}</p>{% endif %}
+  <form method="post" action="{{ '/app/contactos' if modo == 'crear' else '/app/contactos/' + valores.id }}" class="form form--wide">
+    <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+    <label class="field"><span>Nombre</span><input name="nombre" value="{{ valores.nombre }}" required />
+      {% if errores.nombre %}<em class="field__error">{{ errores.nombre }}</em>{% endif %}</label>
+    <label class="field"><span>Empresa</span>
+      <select name="empresaId" required>
+        <option value="">— selecciona —</option>
+        {% for e in empresas %}<option value="{{ e.id }}" {{ 'selected' if valores.empresaId == e.id }}>{{ e.nombre }}</option>{% endfor %}
+      </select>
+      {% if errores.empresaId %}<em class="field__error">{{ errores.empresaId }}</em>{% endif %}
+    </label>
+    <label class="field"><span>Puesto</span><input name="puesto" value="{{ valores.puesto }}" /></label>
+    <label class="field"><span>Correo</span><input type="email" name="email" value="{{ valores.email }}" /></label>
+    <label class="field"><span>Teléfono</span><input name="telefono" value="{{ valores.telefono }}" /></label>
+    <label class="field"><span>Celular</span><input name="celular" value="{{ valores.celular }}" /></label>
+    <label class="field"><span>Notas</span><textarea name="notas" rows="3">{{ valores.notas }}</textarea></label>
+    <button class="btn" type="submit">Guardar</button>
+    <a class="btn btn--ghost" href="/app/contactos">Cancelar</a>
+  </form>
+{% endblock %}

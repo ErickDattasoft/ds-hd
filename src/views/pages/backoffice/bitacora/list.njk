@@ -1,0 +1,28 @@
+{% extends "layouts/backoffice.njk" %}
+{% block title %}Bitácora{% endblock %}
+{% block content %}
+  <h1>Bitácora</h1>
+  <form method="get" class="filterbar">
+    <select name="modulo">
+      <option value="">Todos los módulos</option>
+      {% for m in ['empresas','contactos','tickets','cotizaciones','versiones','kb','eventos','usuarios'] %}
+        <option value="{{ m }}" {{ 'selected' if modulo == m }}>{{ m }}</option>
+      {% endfor %}
+    </select>
+    <button class="btn btn--sm" type="submit">Filtrar</button>
+  </form>
+  <table class="data-table">
+    <thead><tr><th>Fecha</th><th>Módulo</th><th>Acción</th><th>Resumen</th><th>Usuario</th></tr></thead>
+    <tbody>
+      {% for e in entradas %}
+        <tr>
+          <td class="muted">{{ e.at }}</td>
+          <td>{{ e.modulo }}</td>
+          <td>{{ e.accion }}</td>
+          <td>{{ e.resumen }}</td>
+          <td>{{ e.actorNombre or '—' }}</td>
+        </tr>
+      {% else %}<tr><td colspan="5" class="muted">Sin registros.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+{% endblock %}

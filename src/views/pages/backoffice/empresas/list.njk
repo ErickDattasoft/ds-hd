@@ -1,0 +1,27 @@
+{% extends "layouts/backoffice.njk" %}
+{% block title %}Empresas{% endblock %}
+{% block content %}
+  <div class="page-head">
+    <h1>Empresas</h1>
+    {% if can('empresas:crear') %}<a class="btn btn--sm" href="/app/empresas/nueva">Nueva empresa</a>{% endif %}
+  </div>
+  <form method="get" class="filterbar">
+    <input type="search" name="q" value="{{ q }}" placeholder="Buscar por nombre o RFC" />
+    <label class="field--check"><input type="checkbox" name="archivadas" value="1" {{ 'checked' if incluirArchivadas }} /> incluir archivadas</label>
+    <button class="btn btn--sm" type="submit">Buscar</button>
+  </form>
+  <table class="data-table">
+    <thead><tr><th>Nombre</th><th>RFC</th><th>Teléfono</th><th>Sistemas</th><th>Estado</th></tr></thead>
+    <tbody>
+      {% for e in empresas %}
+        <tr>
+          <td><a href="/app/empresas/{{ e.id }}">{{ e.nombre }}</a></td>
+          <td>{{ e.rfc or '—' }}</td>
+          <td>{{ e.telefono or '—' }}</td>
+          <td>{{ e.sistemasContratados | length }}</td>
+          <td>{{ 'Activa' if e.activa else 'Archivada' }}</td>
+        </tr>
+      {% else %}<tr><td colspan="5" class="muted">Sin empresas.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+{% endblock %}

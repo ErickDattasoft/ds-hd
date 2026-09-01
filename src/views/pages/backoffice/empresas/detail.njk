@@ -1,0 +1,51 @@
+{% extends "layouts/backoffice.njk" %}
+{% block title %}{{ empresa.nombre }}{% endblock %}
+{% block content %}
+  <div class="page-head">
+    <h1>{{ empresa.nombre }} {% if not empresa.activa %}<span class="badge">archivada</span>{% endif %}</h1>
+    <div class="page-head__actions">
+      {% if can('empresas:editar') %}<a class="btn btn--sm" href="/app/empresas/{{ empresa.id }}/editar">Editar</a>{% endif %}
+      {% if can('contactos:crear') %}<a class="btn btn--sm btn--ghost" href="/app/contactos/nuevo?empresa={{ empresa.id }}">Agregar contacto</a>{% endif %}
+    </div>
+  </div>
+
+  <div class="card">
+    <p><strong>RFC:</strong> {{ empresa.rfc or '—' }} · <strong>Tel:</strong> {{ empresa.telefono or '—' }} · <strong>Correo:</strong> {{ empresa.email or '—' }}</p>
+    {% if empresa.direccion %}<p>{{ empresa.direccion }}</p>{% endif %}
+    {% if empresa.sistemasContratados | length %}<p><strong>Sistemas:</strong> {{ empresa.sistemasContratados | join(', ') }}</p>{% endif %}
+    {% if empresa.notas %}<p class="muted">{{ empresa.notas }}</p>{% endif %}
+    {% if can('empresas:eliminar') %}
+      <form method="post" action="/app/empresas/{{ empresa.id }}/archivar" class="inline">
+        <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+        <input type="hidden" name="archivar" value="{{ 'false' if not empresa.activa else 'true' }}" />
+        <button class="btn btn--sm btn--ghost" type="submit">{{ 'Restaurar' if not empresa.activa else 'Archivar' }}</button>
+      </form>
+    {% endif %}
+  </div>
+
+  <h2>Contactos ({{ contactos | length }})</h2>
+  <table class="data-table">
+    <thead><tr><th>Nombre</th><th>Puesto</th><th>Correo</th><th>Teléfono</th><th>Portal</th></tr></thead>
+    <tbody>
+      {% for c in contactos %}
+        <tr>
+          <td><a href="/app/contactos/{{ c.id }}/editar">{{ c.nombre }}</a></td>
+          <td>{{ c.puesto or '—' }}</td>
+          <td>{{ c.email or '—' }}</td>
+          <td>{{ c.telefono or '—' }}</td>
+          <td>{{ 'Sí' if c.esPortal else 'No' }}</td>
+        </tr>
+      {% else %}<tr><td colspan="5" class="muted">Sin contactos.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+
+  <h2>Tickets recientes</h2>
+  <table class="data-table">
+    <thead><tr><th>#</th><th>Asunto</th><th>Estado</th></tr></thead>
+    <tbody>
+      {% for t in tickets %}
+        <tr><td><a href="/app/tickets/{{ t.id }}">#{{ t.numero }}</a></td><td>{{ t.asunto }}</td><td>{{ t.estado }}</td></tr>
+      {% else %}<tr><td colspan="3" class="muted">Sin tickets.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+{% endblock %}
