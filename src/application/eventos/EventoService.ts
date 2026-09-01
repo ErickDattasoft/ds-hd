@@ -191,6 +191,34 @@ export class EventoService {
     return inscripcion;
   }
 
+  // ── Webhook de Brevo (entregado / rebotado) ────────────────────────────
+  async procesarWebhookBrevo(payload: {
+    event?: string;
+    email?: string;
+    tag?: string;
+    tags?: string[];
+  }): Promise<{ actualizada: boolean }> {
+    const tags = [payload.tag, ...(payload.tags ?? [])].filter((t): t is string => Boolean(t));
+    const tagInsc = tags.find((t) => t.startsWith('insc_'));
+    if (!tagInsc) return { actualizada: false };
+
+    const inscripcion = await this.inscripciones.findGlobal(tagInsc.slice('insc_'.length));
+    if (!inscripcion) return { actualizada: false };
+
+    const estado =
+      payload.event === 'delivered'
+        ? 'entregado'
+        : payload.event === 'hard_bounce' || payload.event === 'soft_bounce' || payload.event === 'blocked'
+          ? 'rebotado'
+          : null;
+    if (!estado) return { actualizada: false };
+
+    inscripcion.correoEstado = estado;
+    await this.inscripciones.save(inscripcion);
+    this.logger.info('Webhook Brevo aplicado a inscripción', { id: inscripcion.id, estado });
+    return { actualizada: true };
+  }
+
   // ── Recordatorios (cron) ───────────────────────────────────────────────
   async enviarRecordatorios(): Promise<{ eventos: number; correos: number }> {
     const ahora = this.clock.now();

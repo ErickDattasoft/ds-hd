@@ -1,23 +1,24 @@
 # Pendientes
 
-## Envío de correos — EN PAUSA
+## Envío de correos — RESUELTO en código, falta la API key de producción
 
-El envío real de correo (Brevo) está **sin conectar a propósito**. El CRM DATTASOFT en uso
-está fallando en el envío; hay cambios en el dominio de dattasoft y van a hacer correcciones.
+El dominio de dattasoft ya se corrigió. La integración de correo quedó lista:
 
-**Se retoma cuando avisen que el dominio de dattasoft quedó arreglado.** Entonces:
+- **Dev**: `SmtpEmailSender` (nodemailer) → MailHog (`SMTP_HOST=mailhog` en docker-compose).
+  Los correos se ven en http://localhost:8025.
+- **Producción**: define **`BREVO_API_KEY`** en el `.env` (y verifica el remitente
+  `BREVO_SENDER_EMAIL` en Brevo). Alternativa: `SMTP_HOST` propio.
+- Prioridad de selección: `SMTP_HOST` > `BREVO_API_KEY` > log (no envía).
+- Webhook `/webhooks/brevo?key=<JOBS_SECRET>` ya actualiza `correoEstado` de las
+  inscripciones a eventos (tag `insc_<id>`). Configúralo en el panel de Brevo apuntando a
+  `https://<dominio>/webhooks/brevo?key=<JOBS_SECRET>`.
 
-1. Verificar remitente/dominio en Brevo y poner `BREVO_API_KEY` real en el `.env` de producción.
-2. (Dev) opcionalmente añadir un `MailhogEmailSender` SMTP para ver los correos en MailHog.
-3. Probar de punta a punta: invitaciones (staff y cliente), ticket resuelto/cerrado, nota
-   pública, ticket público (confirmación + aviso staff), solicitud de acceso, y confirmación
-   + recordatorio de eventos.
-4. Conectar el webhook `/webhooks/brevo` para actualizar `correoEstado` de las inscripciones.
-
-Hoy en dev/tests se usa `LoggingEmailSender` (registra el correo en el log) — nada se envía.
+**Único paso manual restante:** poner la `BREVO_API_KEY` real en producción y dar de alta
+el webhook en Brevo.
 
 ## Otros pendientes menores
 
 - Retrofit de `BitacoraService` a los casos de uso de tickets (hoy usan su subcolección `eventos`).
-- Migración: reasignar `usuarios/{uid}` al uid real de Firebase Auth tras `auth:import` (hoy usa el correo como placeholder).
-- Kanban con arrastrar-y-soltar (htmx) — llega en la fase de rediseño visual.
+- Migración: reasignar `usuarios/{uid}` al uid real de Firebase Auth tras `auth:import`.
+- `IInscripcionRepository.findGlobal` hace un scan de collection-group; si el volumen de
+  inscripciones crece mucho, indexar por un campo `inscripcionId` plano.

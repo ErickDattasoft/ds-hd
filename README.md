@@ -68,6 +68,11 @@ Detalle en [`docs/architecture/`](./docs/architecture/): `overview.md`, `layerin
 | `FIREBASE_STORAGE_BUCKET` | sí | Bucket de Firebase Storage para adjuntos. |
 | `FIRESTORE_EMULATOR_HOST` | sí | Host:puerto del emulador de Firestore (solo dev/test). |
 | `FIREBASE_AUTH_EMULATOR_HOST` | sí | Host:puerto del emulador de Auth de Firebase (solo dev/test). |
+| `SMTP_HOST` | sí | Host SMTP para correo (dev: MailHog). Si se define, tiene prioridad sobre Brevo. |
+| `SMTP_PORT` | sí | Puerto SMTP. |
+| `SMTP_SECURE` | sí | TLS implícito en SMTP (puerto 465). |
+| `SMTP_USER` | sí | Usuario SMTP (vacío = sin auth, p. ej. MailHog). |
+| `SMTP_PASS` | sí | Contraseña SMTP. |
 | `BREVO_API_KEY` | sí | API key de Brevo para correo transaccional. |
 | `BREVO_SENDER_NAME` | sí | Nombre del remitente de correo. |
 | `BREVO_SENDER_EMAIL` | sí | Correo del remitente (verificado en Brevo). |

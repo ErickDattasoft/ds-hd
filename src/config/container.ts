@@ -11,6 +11,7 @@ import { FirestoreSolicitudAccesoRepository } from '../infrastructure/firestore/
 import { FirestoreInvitacionRepository } from '../infrastructure/firestore/FirestoreInvitacionRepository.js';
 import { BrevoEmailSender } from '../infrastructure/email/BrevoEmailSender.js';
 import { LoggingEmailSender } from '../infrastructure/email/LoggingEmailSender.js';
+import { SmtpEmailSender } from '../infrastructure/email/SmtpEmailSender.js';
 import { FirestoreTicketRepository } from '../infrastructure/firestore/FirestoreTicketRepository.js';
 import { FirestoreTicketQueries } from '../infrastructure/firestore/FirestoreTicketQueries.js';
 import { FirestoreContadorRepository } from '../infrastructure/firestore/FirestoreContadorRepository.js';
@@ -255,14 +256,29 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
         new SignedCookieSessionManager(c.session.secret, SESSION_COOKIE_MAX_AGE_MS),
     ).singleton(),
 
-    emailSender: asFunction(({ config: c, logger: l }: Cradle): IEmailSender =>
-      c.brevo.apiKey
-        ? new BrevoEmailSender(
-            { apiKey: c.brevo.apiKey, senderName: c.brevo.senderName, senderEmail: c.brevo.senderEmail },
-            l,
-          )
-        : new LoggingEmailSender(l),
-    ).singleton(),
+    emailSender: asFunction(({ config: c, logger: l }: Cradle): IEmailSender => {
+      if (c.smtp.host) {
+        return new SmtpEmailSender(
+          {
+            host: c.smtp.host,
+            port: c.smtp.port,
+            secure: c.smtp.secure,
+            user: c.smtp.user,
+            pass: c.smtp.pass,
+            senderName: c.brevo.senderName,
+            senderEmail: c.brevo.senderEmail,
+          },
+          l,
+        );
+      }
+      if (c.brevo.apiKey) {
+        return new BrevoEmailSender(
+          { apiKey: c.brevo.apiKey, senderName: c.brevo.senderName, senderEmail: c.brevo.senderEmail },
+          l,
+        );
+      }
+      return new LoggingEmailSender(l);
+    }).singleton(),
 
     usuarioRepo: asFunction(
       ({ firebase }: Cradle): IUsuarioRepository =>
@@ -611,7 +627,7 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
         ),
     ).singleton(),
     brevoWebhookController: asFunction(
-      (c: Cradle) => new BrevoWebhookController(c.config.jobs.secret, c.logger),
+      (c: Cradle) => new BrevoWebhookController(c.eventoService, c.config.jobs.secret, c.logger),
     ).singleton(),
     empresaController: asFunction(
       (c: Cradle) =>

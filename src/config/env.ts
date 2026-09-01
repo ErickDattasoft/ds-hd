@@ -55,6 +55,11 @@ export const envSchema = z.object({
     .default('')
     .describe('Host:puerto del emulador de Auth de Firebase (solo dev/test).'),
 
+  SMTP_HOST: z.string().default('').describe('Host SMTP para correo (dev: MailHog). Si se define, tiene prioridad sobre Brevo.'),
+  SMTP_PORT: z.coerce.number().int().positive().default(1025).describe('Puerto SMTP.'),
+  SMTP_SECURE: booleanish.default(false).describe('TLS implícito en SMTP (puerto 465).'),
+  SMTP_USER: z.string().default('').describe('Usuario SMTP (vacío = sin auth, p. ej. MailHog).'),
+  SMTP_PASS: z.string().default('').describe('Contraseña SMTP.'),
   BREVO_API_KEY: z.string().default('').describe('API key de Brevo para correo transaccional.'),
   BREVO_SENDER_NAME: z.string().default('Soporte DATTASOFT').describe('Nombre del remitente de correo.'),
   BREVO_SENDER_EMAIL: z
@@ -100,6 +105,13 @@ export type AppConfig = {
     readonly authEmulatorHost: string;
     readonly disabled: boolean;
   };
+  readonly smtp: {
+    readonly host: string;
+    readonly port: number;
+    readonly secure: boolean;
+    readonly user: string;
+    readonly pass: string;
+  };
   readonly brevo: { readonly apiKey: string; readonly senderName: string; readonly senderEmail: string };
   readonly n8n: { readonly ticketsWebhook: string; readonly cotizacionesWebhook: string };
   readonly turnstile: { readonly siteKey: string; readonly secret: string };
@@ -132,6 +144,13 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): AppConfig {
       emulatorHost: e.FIRESTORE_EMULATOR_HOST,
       authEmulatorHost: e.FIREBASE_AUTH_EMULATOR_HOST,
       disabled: e.DISABLE_FIREBASE,
+    },
+    smtp: {
+      host: e.SMTP_HOST,
+      port: e.SMTP_PORT,
+      secure: e.SMTP_SECURE,
+      user: e.SMTP_USER,
+      pass: e.SMTP_PASS,
     },
     brevo: { apiKey: e.BREVO_API_KEY, senderName: e.BREVO_SENDER_NAME, senderEmail: e.BREVO_SENDER_EMAIL },
     n8n: { ticketsWebhook: e.N8N_WEBHOOK_TICKETS, cotizacionesWebhook: e.N8N_WEBHOOK_COTIZACIONES },

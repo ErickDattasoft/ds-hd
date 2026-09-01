@@ -81,6 +81,25 @@ describe('eventos / webinars', () => {
     expect(t.emailSender.enviados.some((c) => c.asunto.startsWith('Recordatorio'))).toBe(true);
   });
 
+  it('el webhook de Brevo actualiza el correoEstado de la inscripción', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    t.eventoRepo.items.set('ev1', new Evento({ id: 'ev1', titulo: 'Evento webhook', fechaHora: enUnaSemana(), estado: 'publicado' }));
+    await t.inscripcionRepo.create({
+      id: 'i1', eventoId: 'ev1', nombre: 'A', email: 'a@a.com', telefono: null, empresa: null,
+      estado: 'registrado', origen: 'publico', correoEstado: 'pendiente', recordatoriosEnviados: [], createdAt: new Date(),
+    });
+
+    const noAuth = await request(t.app).post('/webhooks/brevo').send({ event: 'delivered', tag: 'insc_i1' });
+    expect(noAuth.status).toBe(401);
+
+    const ok = await request(t.app)
+      .post('/webhooks/brevo?key=dev-jobs-secret')
+      .send({ event: 'hard_bounce', email: 'a@a.com', tag: 'insc_i1' });
+    expect(ok.status).toBe(200);
+    expect(ok.body.actualizada).toBe(true);
+    expect(t.inscripcionRepo.items[0]?.correoEstado).toBe('rebotado');
+  });
+
   it('admin crea un evento desde el back-office', async () => {
     const t = makeTestApp({ usuarios: [ADMIN] });
     const { agent, csrf } = await login(t.app, ADMIN.email, ADMIN.password);

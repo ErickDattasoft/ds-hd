@@ -12,6 +12,8 @@ export interface IEventoRepository {
 export interface IInscripcionRepository {
   create(inscripcion: Inscripcion): Promise<void>;
   findByEmail(eventoId: string, email: string): Promise<Inscripcion | null>;
+  /** Busca una inscripción por id en cualquier evento (collection-group). Para el webhook de Brevo. */
+  findGlobal(inscripcionId: string): Promise<Inscripcion | null>;
   listPorEvento(eventoId: string): Promise<Inscripcion[]>;
   contar(eventoId: string): Promise<number>;
   save(inscripcion: Inscripcion): Promise<void>;

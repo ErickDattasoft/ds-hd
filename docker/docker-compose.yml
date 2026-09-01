@@ -17,6 +17,8 @@ services:
       FIREBASE_AUTH_EMULATOR_HOST: firebase:9099
       SESSION_COOKIE_SECRET: dev-insecure-secret-change-me-please
       BREVO_API_KEY: ""
+      SMTP_HOST: mailhog
+      SMTP_PORT: "1025"
     volumes:
       - ..:/app
       - ds-hd-node-modules:/app/node_modules

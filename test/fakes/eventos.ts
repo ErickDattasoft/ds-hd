@@ -44,6 +44,9 @@ export class InMemoryInscripcionRepository implements IInscripcionRepository {
       this.items.find((i) => i.eventoId === eventoId && i.email === email.trim().toLowerCase()) ?? null
     );
   }
+  async findGlobal(inscripcionId: string): Promise<Inscripcion | null> {
+    return this.items.find((i) => i.id === inscripcionId) ?? null;
+  }
   async listPorEvento(eventoId: string): Promise<Inscripcion[]> {
     return this.items.filter((i) => i.eventoId === eventoId);
   }

@@ -1,26 +1,31 @@
 import type { Request, Response } from 'express';
+import type { EventoService } from '../../../../application/eventos/EventoService.js';
 import type { ILogger } from '../../../../core/ports/services/ILogger.js';
 
 /**
- * Recibe webhooks de Brevo (entregado / rebotado / abierto). Protegido por `?key=`.
- * Fase 2: solo registra el evento; la actualización de `correoEstado` por entidad llega
- * con el módulo de Eventos (Fase 4).
+ * Recibe webhooks de Brevo (entregado / rebotado). Protegido por `?key=`.
+ * Actualiza `correoEstado` de la inscripción indicada por el tag `insc_<id>`.
  */
 export class BrevoWebhookController {
   constructor(
+    private readonly eventos: EventoService,
     private readonly secret: string,
     private readonly logger: ILogger,
   ) {}
 
-  handle = (req: Request, res: Response): void => {
+  handle = async (req: Request, res: Response): Promise<void> => {
     if (!this.secret || req.query.key !== this.secret) {
       res.status(401).json({ error: 'no autorizado' });
       return;
     }
-    this.logger.info('Webhook Brevo recibido', {
-      event: (req.body as { event?: string })?.event,
-      email: (req.body as { email?: string })?.email,
-    });
-    res.status(200).json({ ok: true });
+    const body = (req.body ?? {}) as { event?: string; email?: string; tag?: string; tags?: string[] };
+    this.logger.info('Webhook Brevo recibido', { event: body.event, email: body.email });
+    try {
+      const r = await this.eventos.procesarWebhookBrevo(body);
+      res.status(200).json({ ok: true, ...r });
+    } catch (err) {
+      this.logger.warn('Error procesando webhook Brevo', { err: err instanceof Error ? err.message : err });
+      res.status(200).json({ ok: false });
+    }
   };
 }
