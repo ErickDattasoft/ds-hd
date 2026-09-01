@@ -17,6 +17,10 @@ import {
   CONFIG_TICKETS_POR_DEFECTO,
   type ConfiguracionTickets,
 } from '../../src/core/entities/ConfiguracionTickets.js';
+import {
+  CONFIG_CALCULADORA_POR_DEFECTO,
+  type ConfiguracionCalculadora,
+} from '../../src/core/entities/CalculadoraCompac.js';
 import { esEstadoFinal, slugEstado } from '../../src/core/entities/value-objects/EstadoTicket.js';
 
 /** Almacén compartido por el repo y las queries en memoria. */
@@ -137,11 +141,18 @@ export class InMemoryContadorRepository implements IContadorRepository {
 
 export class InMemoryConfiguracionRepository implements IConfiguracionRepository {
   config: ConfiguracionTickets = { ...CONFIG_TICKETS_POR_DEFECTO };
+  calculadora: ConfiguracionCalculadora = { ...CONFIG_CALCULADORA_POR_DEFECTO };
   async obtenerTickets(): Promise<ConfiguracionTickets> {
     return this.config;
   }
   async guardarTickets(config: ConfiguracionTickets): Promise<void> {
     this.config = config;
+  }
+  async obtenerCalculadora(): Promise<ConfiguracionCalculadora> {
+    return this.calculadora;
+  }
+  async guardarCalculadora(config: ConfiguracionCalculadora): Promise<void> {
+    this.calculadora = config;
   }
 }
 

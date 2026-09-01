@@ -1,0 +1,35 @@
+{% extends "layouts/backoffice.njk" %}
+{% block title %}Cotizaciones{% endblock %}
+{% block content %}
+  <div class="page-head">
+    <h1>Cotizaciones</h1>
+    <div class="page-head__actions">
+      {% if can('cotizaciones:crear') %}<a class="btn btn--sm" href="/app/cotizaciones/nueva">Nueva</a>{% endif %}
+      {% if can('cotizaciones:crear') %}<a class="btn btn--sm btn--ghost" href="/app/cotizaciones/calculadora">Calculadora Compac</a>{% endif %}
+    </div>
+  </div>
+  <form method="get" class="filterbar">
+    <input type="search" name="q" value="{{ q }}" placeholder="Folio o empresa" />
+    <select name="estado">
+      <option value="">Todos</option>
+      {% for e in ['borrador','enviada','aceptada','rechazada','vencida'] %}
+        <option value="{{ e }}" {{ 'selected' if estado == e }}>{{ e }}</option>
+      {% endfor %}
+    </select>
+    <button class="btn btn--sm" type="submit">Filtrar</button>
+  </form>
+  <table class="data-table">
+    <thead><tr><th>Folio</th><th>Empresa</th><th>Fecha</th><th>Total</th><th>Estado</th></tr></thead>
+    <tbody>
+      {% for c in cotizaciones %}
+        <tr>
+          <td><a href="/app/cotizaciones/{{ c.id }}">{{ c.folio }}</a></td>
+          <td>{{ c.empresaNombre or '—' }}</td>
+          <td>{{ c.fecha }}</td>
+          <td>{{ c.total }} {{ c.moneda }}</td>
+          <td><span class="badge badge--estado">{{ c.estado }}</span></td>
+        </tr>
+      {% else %}<tr><td colspan="5" class="muted">Sin cotizaciones.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+{% endblock %}

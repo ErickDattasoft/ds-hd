@@ -21,6 +21,7 @@ import { FirestoreContactoRepository } from '../infrastructure/firestore/Firesto
 import { FirestoreBitacoraRepository } from '../infrastructure/firestore/FirestoreBitacoraRepository.js';
 import { FirestoreVersionRepository } from '../infrastructure/firestore/FirestoreVersionRepository.js';
 import { FirestoreKnowledgeRepository } from '../infrastructure/firestore/FirestoreKnowledgeRepository.js';
+import { FirestoreCotizacionRepository } from '../infrastructure/firestore/FirestoreCotizacionRepository.js';
 import { N8nWebhookPublisher, NullWebhookPublisher } from '../infrastructure/webhooks/N8nWebhookPublisher.js';
 import { TurnstileVerifier, NullCaptchaVerifier } from '../infrastructure/captcha/TurnstileVerifier.js';
 import { LoginService } from '../application/auth/LoginService.js';
@@ -49,6 +50,8 @@ import { EmpresaService } from '../application/empresas/EmpresaService.js';
 import { ContactoService } from '../application/contactos/ContactoService.js';
 import { VersionService } from '../application/versiones/VersionService.js';
 import { KnowledgeService } from '../application/knowledge/KnowledgeService.js';
+import { CotizacionService } from '../application/cotizaciones/CotizacionService.js';
+import { CalculadoraCompacService } from '../application/cotizaciones/CalculadoraCompacService.js';
 import { AuthController } from '../interfaces/http/controllers/public/AuthController.js';
 import { UsuarioController } from '../interfaces/http/controllers/backoffice/UsuarioController.js';
 import { PortalPerfilController } from '../interfaces/http/controllers/portal/PortalPerfilController.js';
@@ -62,6 +65,7 @@ import { ContactoController } from '../interfaces/http/controllers/backoffice/Co
 import { BitacoraController } from '../interfaces/http/controllers/backoffice/BitacoraController.js';
 import { VersionController } from '../interfaces/http/controllers/backoffice/VersionController.js';
 import { KnowledgeController } from '../interfaces/http/controllers/KnowledgeController.js';
+import { CotizacionController } from '../interfaces/http/controllers/backoffice/CotizacionController.js';
 import { SESSION_COOKIE_MAX_AGE_MS } from './constants.js';
 import type { ILogger } from '../core/ports/services/ILogger.js';
 import type { IClock } from '../core/ports/services/IClock.js';
@@ -84,6 +88,7 @@ import type { IContactoRepository } from '../core/ports/repositories/IContactoRe
 import type { IBitacoraRepository } from '../core/ports/repositories/IBitacoraRepository.js';
 import type { IVersionRepository } from '../core/ports/repositories/IVersionRepository.js';
 import type { IKnowledgeRepository } from '../core/ports/repositories/IKnowledgeRepository.js';
+import type { ICotizacionRepository } from '../core/ports/repositories/ICotizacionRepository.js';
 
 /**
  * Todo lo resoluble del contenedor. Las capas internas reciben estas dependencias por
@@ -115,6 +120,7 @@ export interface Cradle {
   bitacoraRepo: IBitacoraRepository;
   versionRepo: IVersionRepository;
   knowledgeRepo: IKnowledgeRepository;
+  cotizacionRepo: ICotizacionRepository;
 
   // Casos de uso
   loginService: LoginService;
@@ -143,6 +149,8 @@ export interface Cradle {
   contactoService: ContactoService;
   versionService: VersionService;
   knowledgeService: KnowledgeService;
+  cotizacionService: CotizacionService;
+  calculadoraCompacService: CalculadoraCompacService;
 
   // Controllers
   authController: AuthController;
@@ -158,6 +166,7 @@ export interface Cradle {
   bitacoraController: BitacoraController;
   versionController: VersionController;
   knowledgeController: KnowledgeController;
+  cotizacionController: CotizacionController;
 }
 
 export type Container = AwilixContainer<Cradle>;
@@ -276,6 +285,10 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
     knowledgeRepo: asFunction(
       ({ firebase }: Cradle): IKnowledgeRepository =>
         new FirestoreKnowledgeRepository(requireFirebase(firebase).firestore),
+    ).singleton(),
+    cotizacionRepo: asFunction(
+      ({ firebase }: Cradle): ICotizacionRepository =>
+        new FirestoreCotizacionRepository(requireFirebase(firebase).firestore),
     ).singleton(),
 
     loginService: asFunction(
@@ -431,6 +444,20 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
     knowledgeService: asFunction(
       (c: Cradle) => new KnowledgeService(c.knowledgeRepo, c.idGenerator, c.clock, c.bitacoraService),
     ).singleton(),
+    cotizacionService: asFunction(
+      (c: Cradle) =>
+        new CotizacionService(
+          c.cotizacionRepo,
+          c.contadorRepo,
+          c.empresaRepo,
+          c.idGenerator,
+          c.clock,
+          c.bitacoraService,
+        ),
+    ).singleton(),
+    calculadoraCompacService: asFunction(
+      (c: Cradle) => new CalculadoraCompacService(c.configuracionRepo),
+    ).singleton(),
 
     authController: asFunction(
       (c: Cradle) =>
@@ -508,6 +535,10 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
     ).singleton(),
     knowledgeController: asFunction(
       (c: Cradle) => new KnowledgeController(c.knowledgeService),
+    ).singleton(),
+    cotizacionController: asFunction(
+      (c: Cradle) =>
+        new CotizacionController(c.cotizacionService, c.calculadoraCompacService, c.empresaService),
     ).singleton(),
   });
 

@@ -1,0 +1,50 @@
+{% extends "layouts/backoffice.njk" %}
+{% block title %}{{ titulo }}{% endblock %}
+{% block content %}
+  <h1>{{ titulo }}</h1>
+  {% if errores.general %}<p class="alert alert--error">{{ errores.general }}</p>{% endif %}
+  {% if errores.conceptos %}<p class="alert alert--error">{{ errores.conceptos }}</p>{% endif %}
+
+  <form method="post" action="{{ '/app/cotizaciones/' + cotizacion.id if modo == 'editar' else '/app/cotizaciones' }}" class="form form--wide">
+    <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+    {% if valores.origenCalculadora %}<input type="hidden" name="origenCalculadora" value="true" />{% endif %}
+
+    {% if modo != 'editar' %}
+      <label class="field"><span>Empresa</span>
+        <select name="empresaId" required>
+          <option value="">— selecciona —</option>
+          {% for e in empresas %}<option value="{{ e.id }}" {{ 'selected' if valores.empresaId == e.id }}>{{ e.nombre }}</option>{% endfor %}
+        </select>
+        {% if errores.empresaId %}<em class="field__error">{{ errores.empresaId }}</em>{% endif %}
+      </label>
+      <label class="field"><span>Vigencia (días)</span><input type="number" name="vigenciaDias" value="{{ valores.vigenciaDias or 15 }}" min="1" /></label>
+    {% else %}
+      <p class="muted">{{ cotizacion.folio }} · {{ cotizacion.empresaNombre }}</p>
+    {% endif %}
+
+    <h2>Conceptos</h2>
+    <table class="data-table">
+      <thead><tr><th>Descripción</th><th>Cantidad</th><th>Precio unitario</th></tr></thead>
+      <tbody>
+        {% for c in valores.conceptos %}
+          <tr>
+            <td><input name="concepto_descripcion" value="{{ c.descripcion }}" style="width:100%" /></td>
+            <td><input name="concepto_cantidad" type="number" step="1" value="{{ c.cantidad }}" /></td>
+            <td><input name="concepto_precio" type="number" step="0.01" value="{{ c.precioUnitario }}" /></td>
+          </tr>
+        {% endfor %}
+        {% for _ in [1,2,3,4,5] %}
+          <tr>
+            <td><input name="concepto_descripcion" placeholder="Nuevo concepto" style="width:100%" /></td>
+            <td><input name="concepto_cantidad" type="number" step="1" value="1" /></td>
+            <td><input name="concepto_precio" type="number" step="0.01" /></td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <label class="field"><span>Notas</span><textarea name="notas" rows="3">{{ valores.notas }}</textarea></label>
+    <button class="btn" type="submit">Guardar</button>
+    <a class="btn btn--ghost" href="/app/cotizaciones">Cancelar</a>
+  </form>
+{% endblock %}

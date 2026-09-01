@@ -1,0 +1,31 @@
+{% extends "layouts/backoffice.njk" %}
+{% block title %}Calculadora Compac{% endblock %}
+{% block content %}
+  <h1>Calculadora Compac</h1>
+  <p class="muted">Marca los equipos a licenciar y los sistemas de cada uno. En cada equipo, el sistema más caro se cobra completo y los demás como adicional.</p>
+  {% if errores.general %}<p class="alert alert--error">{{ errores.general }}</p>{% endif %}
+
+  <form method="post" action="/app/cotizaciones/calcular" class="form form--wide">
+    <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+    {% for i in [0,1,2,3] %}
+      <fieldset class="field">
+        <legend>
+          <label class="field--check"><input type="checkbox" name="equipo_{{ i }}_usar" {{ 'checked' if i == 0 }} /> <span>Equipo {{ i + 1 }}</span></label>
+        </legend>
+        <label class="field"><span>Tipo</span>
+          <select name="equipo_{{ i }}_tipo">
+            <option {{ 'selected' if i == 0 }}>Servidor</option>
+            <option {{ 'selected' if i != 0 }}>Terminal</option>
+          </select>
+        </label>
+        <div class="perm-group">
+          {% for s in config.sistemas %}
+            <label class="field--check"><input type="checkbox" name="equipo_{{ i }}_sistemas" value="{{ s.clave }}" /> <span>{{ s.nombre }}</span></label>
+          {% endfor %}
+          <label class="field--check"><input type="checkbox" name="equipo_{{ i }}_sistemas" value="{{ config.sql.clave }}" /> <span>{{ config.sql.nombre }}</span></label>
+        </div>
+      </fieldset>
+    {% endfor %}
+    <button class="btn" type="submit">Calcular</button>
+  </form>
+{% endblock %}

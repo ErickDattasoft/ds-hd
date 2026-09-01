@@ -14,6 +14,7 @@ export function backofficeRoutes(container: Container): Router {
   const bitacora = () => container.resolve('bitacoraController');
   const versiones = () => container.resolve('versionController');
   const kb = () => container.resolve('knowledgeController');
+  const cotizaciones = () => container.resolve('cotizacionController');
   const gestUsuarios = requirePermission('usuarios:gestionar');
   const leerTickets = requirePermission('tickets:leer');
 
@@ -79,6 +80,18 @@ export function backofficeRoutes(container: Container): Router {
   r.get('/contactos/:id/editar', requirePermission('contactos:editar'), (req, res) => contactos().editar(req, res));
   r.post('/contactos/:id', requirePermission('contactos:editar'), (req, res) => contactos().actualizarPost(req, res));
   r.post('/contactos/:id/archivar', requirePermission('contactos:eliminar'), (req, res) => contactos().archivarPost(req, res));
+
+  // ── Cotizaciones ───────────────────────────────────────────────────────────
+  const leerCot = requirePermission('cotizaciones:leer');
+  r.get('/cotizaciones', leerCot, (req, res) => cotizaciones().listar(req, res));
+  r.get('/cotizaciones/calculadora', requirePermission('cotizaciones:crear'), (req, res) => cotizaciones().calculadoraForm(req, res));
+  r.post('/cotizaciones/calcular', requirePermission('cotizaciones:crear'), (req, res) => cotizaciones().calcularPost(req, res));
+  r.get('/cotizaciones/nueva', requirePermission('cotizaciones:crear'), (req, res) => cotizaciones().nuevo(req, res));
+  r.post('/cotizaciones', requirePermission('cotizaciones:crear'), (req, res) => cotizaciones().crearPost(req, res));
+  r.get('/cotizaciones/:id', leerCot, (req, res) => cotizaciones().ver(req, res));
+  r.get('/cotizaciones/:id/editar', requirePermission('cotizaciones:editar'), (req, res) => cotizaciones().editar(req, res));
+  r.post('/cotizaciones/:id/estado', requirePermission('cotizaciones:editar'), (req, res) => cotizaciones().cambiarEstadoPost(req, res));
+  r.post('/cotizaciones/:id', requirePermission('cotizaciones:editar'), (req, res) => cotizaciones().actualizarPost(req, res));
 
   // ── Versiones de sistemas ──────────────────────────────────────────────────
   r.get('/versiones', requirePermission('versiones:leer'), (req, res) => versiones().listar(req, res));

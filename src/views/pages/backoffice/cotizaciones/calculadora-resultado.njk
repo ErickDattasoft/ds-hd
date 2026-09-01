@@ -1,0 +1,37 @@
+{% extends "layouts/backoffice.njk" %}
+{% block title %}Resultado{% endblock %}
+{% block content %}
+  <h1>Resultado de la calculadora</h1>
+  <table class="data-table">
+    <thead><tr><th>Concepto</th><th>Precio</th></tr></thead>
+    <tbody>
+      {% for c in resultado.conceptos %}<tr><td>{{ c.descripcion }}</td><td>{{ c.importe }}</td></tr>{% endfor %}
+    </tbody>
+    <tfoot>
+      <tr><td style="text-align:right"><strong>Subtotal</strong></td><td>{{ resultado.subtotal }}</td></tr>
+      <tr><td style="text-align:right">IVA</td><td>{{ resultado.iva }}</td></tr>
+      <tr><td style="text-align:right"><strong>Total</strong></td><td><strong>{{ resultado.total }} {{ resultado.config.moneda }}</strong></td></tr>
+    </tfoot>
+  </table>
+
+  <div class="card">
+    <p><strong>Crear cotización con estos conceptos</strong></p>
+    <form method="post" action="/app/cotizaciones" class="form">
+      <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+      <input type="hidden" name="origenCalculadora" value="true" />
+      {% for c in resultado.conceptos %}
+        <input type="hidden" name="concepto_descripcion" value="{{ c.descripcion }}" />
+        <input type="hidden" name="concepto_cantidad" value="{{ c.cantidad }}" />
+        <input type="hidden" name="concepto_precio" value="{{ c.precioUnitario }}" />
+      {% endfor %}
+      <label class="field"><span>Empresa</span>
+        <select name="empresaId" required>
+          <option value="">— selecciona —</option>
+          {% for e in empresas %}<option value="{{ e.id }}">{{ e.nombre }}</option>{% endfor %}
+        </select>
+      </label>
+      <button class="btn" type="submit">Crear cotización</button>
+    </form>
+  </div>
+  <p><a href="/app/cotizaciones/calculadora">← Volver a la calculadora</a></p>
+{% endblock %}

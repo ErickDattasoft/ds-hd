@@ -4,6 +4,10 @@ import {
   CONFIG_TICKETS_POR_DEFECTO,
   type ConfiguracionTickets,
 } from '../../core/entities/ConfiguracionTickets.js';
+import {
+  CONFIG_CALCULADORA_POR_DEFECTO,
+  type ConfiguracionCalculadora,
+} from '../../core/entities/CalculadoraCompac.js';
 
 const COL = 'configuracion';
 
@@ -30,6 +34,22 @@ export class FirestoreConfiguracionRepository implements IConfiguracionRepositor
 
   async guardarTickets(config: ConfiguracionTickets): Promise<void> {
     await this.db.collection(COL).doc('tickets').set(config, { merge: true });
+  }
+
+  async obtenerCalculadora(): Promise<ConfiguracionCalculadora> {
+    const snap = await this.db.collection(COL).doc('calculadora').get();
+    if (!snap.exists) return { ...CONFIG_CALCULADORA_POR_DEFECTO };
+    const d = snap.data()!;
+    return {
+      sistemas: Array.isArray(d.sistemas) && d.sistemas.length ? d.sistemas : CONFIG_CALCULADORA_POR_DEFECTO.sistemas,
+      sql: d.sql ?? CONFIG_CALCULADORA_POR_DEFECTO.sql,
+      ivaTasa: typeof d.ivaTasa === 'number' ? d.ivaTasa : CONFIG_CALCULADORA_POR_DEFECTO.ivaTasa,
+      moneda: String(d.moneda ?? CONFIG_CALCULADORA_POR_DEFECTO.moneda),
+    };
+  }
+
+  async guardarCalculadora(config: ConfiguracionCalculadora): Promise<void> {
+    await this.db.collection(COL).doc('calculadora').set(config, { merge: true });
   }
 }
 

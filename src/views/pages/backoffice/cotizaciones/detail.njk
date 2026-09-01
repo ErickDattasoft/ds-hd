@@ -1,0 +1,41 @@
+{% extends "layouts/backoffice.njk" %}
+{% block title %}{{ cotizacion.folio }}{% endblock %}
+{% block content %}
+  <div class="page-head">
+    <h1>{{ cotizacion.folio }} <span class="badge badge--estado">{{ cotizacion.estado }}</span></h1>
+    {% if can('cotizaciones:editar') and cotizacion.estado != 'aceptada' %}
+      <a class="btn btn--sm" href="/app/cotizaciones/{{ cotizacion.id }}/editar">Editar</a>
+    {% endif %}
+  </div>
+  <p class="muted">{{ cotizacion.empresaNombre }} · Fecha {{ cotizacion.fecha }} · Vence {{ cotizacion.venceEl }}</p>
+
+  <table class="data-table">
+    <thead><tr><th>Descripción</th><th>Cant.</th><th>P. Unit.</th><th>Importe</th></tr></thead>
+    <tbody>
+      {% for c in cotizacion.conceptos %}
+        <tr><td>{{ c.descripcion }}</td><td>{{ c.cantidad }}</td><td>{{ c.precioUnitario }}</td><td>{{ c.importe }}</td></tr>
+      {% endfor %}
+    </tbody>
+    <tfoot>
+      <tr><td colspan="3" style="text-align:right"><strong>Subtotal</strong></td><td>{{ cotizacion.subtotal }}</td></tr>
+      <tr><td colspan="3" style="text-align:right">IVA</td><td>{{ cotizacion.iva }}</td></tr>
+      <tr><td colspan="3" style="text-align:right"><strong>Total</strong></td><td><strong>{{ cotizacion.total }} {{ cotizacion.moneda }}</strong></td></tr>
+    </tfoot>
+  </table>
+
+  {% if cotizacion.notas %}<div class="card"><p class="muted">{{ cotizacion.notas }}</p></div>{% endif %}
+
+  {% if can('cotizaciones:editar') %}
+    <form method="post" action="/app/cotizaciones/{{ cotizacion.id }}/estado" class="form">
+      <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+      <label class="field"><span>Cambiar estado</span>
+        <select name="estado">
+          {% for e in ['borrador','enviada','aceptada','rechazada','vencida'] %}
+            {% if e != cotizacion.estado %}<option>{{ e }}</option>{% endif %}
+          {% endfor %}
+        </select>
+      </label>
+      <button class="btn btn--sm" type="submit">Actualizar</button>
+    </form>
+  {% endif %}
+{% endblock %}

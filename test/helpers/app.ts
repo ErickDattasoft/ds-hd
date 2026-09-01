@@ -26,6 +26,7 @@ import {
   InMemoryBitacoraRepository,
 } from '../fakes/crm.js';
 import { InMemoryVersionRepository, InMemoryKnowledgeRepository } from '../fakes/kb.js';
+import { InMemoryCotizacionRepository } from '../fakes/cotizaciones.js';
 
 export interface TestApp {
   app: ReturnType<typeof createApp>;
@@ -42,6 +43,7 @@ export interface TestApp {
   bitacoraRepo: InMemoryBitacoraRepository;
   versionRepo: InMemoryVersionRepository;
   knowledgeRepo: InMemoryKnowledgeRepository;
+  cotizacionRepo: InMemoryCotizacionRepository;
 }
 
 /**
@@ -75,6 +77,7 @@ export function makeTestApp(opts: { usuarios?: { uid: string; email: string; pas
   const bitacoraRepo = new InMemoryBitacoraRepository();
   const versionRepo = new InMemoryVersionRepository();
   const knowledgeRepo = new InMemoryKnowledgeRepository();
+  const cotizacionRepo = new InMemoryCotizacionRepository();
 
   const overrides: ContainerOverrides = {
     usuarioRepo,
@@ -95,6 +98,7 @@ export function makeTestApp(opts: { usuarios?: { uid: string; email: string; pas
     bitacoraRepo,
     versionRepo,
     knowledgeRepo,
+    cotizacionRepo,
   };
 
   const container = buildContainer(loadConfig(), overrides);
@@ -113,6 +117,7 @@ export function makeTestApp(opts: { usuarios?: { uid: string; email: string; pas
     bitacoraRepo,
     versionRepo,
     knowledgeRepo,
+    cotizacionRepo,
   };
 }
 
