@@ -1,0 +1,30 @@
+{% extends "layouts/portal.njk" %}
+{% block title %}Mis tickets{% endblock %}
+{% block content %}
+  <div class="page-head">
+    <h1>Mis tickets</h1>
+    <a class="btn btn--sm" href="/portal/tickets/nuevo">Nuevo ticket</a>
+  </div>
+
+  <p class="muted">
+    {% if incluirCerrados %}<a href="/portal/tickets">Ver solo abiertos</a>
+    {% else %}<a href="/portal/tickets?cerrados=1">Incluir cerrados</a>{% endif %}
+  </p>
+
+  <table class="data-table">
+    <thead><tr><th>#</th><th>Asunto</th><th>Estado</th><th>Prioridad</th><th>SLA</th></tr></thead>
+    <tbody>
+      {% for vm in tickets %}
+        <tr>
+          <td><a href="/portal/tickets/{{ vm.id }}">#{{ vm.numero }}</a></td>
+          <td>{{ vm.asunto }}</td>
+          <td><span class="badge badge--estado">{{ vm.estado }}</span></td>
+          <td>{{ vm.prioridad }}</td>
+          <td class="muted">{{ vm.slaTexto }}</td>
+        </tr>
+      {% else %}
+        <tr><td colspan="5" class="muted">Sin tickets.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endblock %}

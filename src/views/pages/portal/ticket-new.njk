@@ -1,0 +1,28 @@
+{% extends "layouts/portal.njk" %}
+{% block title %}Nuevo ticket{% endblock %}
+{% block content %}
+  <h1>Nuevo ticket</h1>
+  {% if errores.general %}<p class="alert alert--error">{{ errores.general }}</p>{% endif %}
+  <form method="post" action="/portal/tickets" class="form">
+    <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+    <label class="field"><span>Asunto</span>
+      <input name="asunto" value="{{ valores.asunto }}" required />
+      {% if errores.asunto %}<em class="field__error">{{ errores.asunto }}</em>{% endif %}
+    </label>
+    <label class="field"><span>¿Qué está pasando?</span>
+      <textarea name="descripcion" rows="6" required>{{ valores.descripcion }}</textarea>
+      {% if errores.descripcion %}<em class="field__error">{{ errores.descripcion }}</em>{% endif %}
+    </label>
+    <label class="field"><span>Tipo</span>
+      <select name="tipo">{% for t in tipos %}<option {{ 'selected' if valores.tipo == t }}>{{ t }}</option>{% endfor %}</select>
+    </label>
+    <label class="field"><span>Sistema</span>
+      <select name="sistema"><option value="">—</option>{% for s in sistemas %}<option {{ 'selected' if valores.sistema == s }}>{{ s }}</option>{% endfor %}</select>
+    </label>
+    <label class="field"><span>Prioridad</span>
+      <select name="prioridad">{% for p in prioridades %}<option {{ 'selected' if valores.prioridad == p }}>{{ p }}</option>{% endfor %}</select>
+    </label>
+    <button class="btn" type="submit">Enviar ticket</button>
+    <a class="btn btn--ghost" href="/portal/tickets">Cancelar</a>
+  </form>
+{% endblock %}

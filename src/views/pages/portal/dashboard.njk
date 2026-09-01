@@ -1,13 +1,29 @@
 {% extends "layouts/portal.njk" %}
+{% import "components/tickets.njk" as tk %}
 {% block title %}Portal{% endblock %}
 {% block content %}
-  <h1>Bienvenido, {{ user.nombre }}</h1>
-  <p class="muted">Desde aquí podrás crear y dar seguimiento a tus tickets de soporte (Fase 3).</p>
-  <div class="card">
-    <ul>
-      {% for item in nav %}
-        <li><a href="{{ item.href }}">{{ item.icono }} {{ item.etiqueta }}</a></li>
-      {% endfor %}
-    </ul>
+  <div class="page-head">
+    <h1>Hola, {{ user.nombre }}</h1>
+    <a class="btn btn--sm" href="/portal/tickets/nuevo">Nuevo ticket</a>
   </div>
+
+  <h2>Tus tickets abiertos ({{ abiertos | length }})</h2>
+  {% if abiertos | length %}
+    <table class="data-table">
+      <thead><tr><th>#</th><th>Asunto</th><th>Estado</th><th>Actualizado</th></tr></thead>
+      <tbody>
+        {% for vm in abiertos %}
+          <tr>
+            <td><a href="/portal/tickets/{{ vm.id }}">#{{ vm.numero }}</a></td>
+            <td>{{ vm.asunto }}</td>
+            <td><span class="badge badge--estado">{{ vm.estado }}</span></td>
+            <td class="muted">{{ vm.slaTexto }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p class="muted">No tienes tickets abiertos. <a href="/portal/tickets/nuevo">Crea uno</a> si necesitas ayuda.</p>
+  {% endif %}
+  <p><a href="/portal/tickets">Ver todos mis tickets</a></p>
 {% endblock %}

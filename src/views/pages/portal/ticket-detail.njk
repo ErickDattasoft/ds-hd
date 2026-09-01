@@ -1,0 +1,50 @@
+{% extends "layouts/portal.njk" %}
+{% block title %}Ticket #{{ ticket.numero }}{% endblock %}
+{% block content %}
+  <div class="page-head">
+    <h1>#{{ ticket.numero }} — {{ ticket.asunto }}</h1>
+    <a class="btn btn--sm btn--ghost" href="/portal/tickets">← Mis tickets</a>
+  </div>
+
+  <p>
+    <span class="badge badge--estado">{{ ticket.estado }}</span>
+    <span class="muted">Prioridad {{ ticket.prioridad }}</span>
+  </p>
+
+  <div class="card">
+    <p><strong>Tu solicitud</strong></p>
+    <p>{{ ticket.descripcion }}</p>
+  </div>
+
+  <div class="card">
+    <p><strong>Conversación</strong></p>
+    {% for n in notas %}
+      <div class="nota">
+        <div class="nota__head"><span>{{ n.autorNombre }}</span></div>
+        <p>{{ n.cuerpo }}</p>
+      </div>
+    {% else %}
+      <p class="muted">Aún no hay respuestas. El equipo de soporte te contactará pronto.</p>
+    {% endfor %}
+
+    {% if not ticket.esCerrado %}
+      {% if errores.cuerpo %}<p class="alert alert--error">{{ errores.cuerpo }}</p>{% endif %}
+      <form method="post" action="/portal/tickets/{{ ticket.id }}/responder" class="form">
+        <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+        <textarea name="cuerpo" rows="3" required placeholder="Escribe una respuesta…"></textarea>
+        <button class="btn btn--sm" type="submit">Responder</button>
+      </form>
+    {% else %}
+      <p class="muted">Este ticket está cerrado. Si necesitas más ayuda, crea uno nuevo.</p>
+    {% endif %}
+  </div>
+
+  {% if eventos | length %}
+    <div class="card">
+      <p><strong>Seguimiento</strong></p>
+      <ul class="timeline">
+        {% for e in eventos %}<li><span class="muted">{{ e.at }}</span> — {{ e.resumen }}</li>{% endfor %}
+      </ul>
+    </div>
+  {% endif %}
+{% endblock %}

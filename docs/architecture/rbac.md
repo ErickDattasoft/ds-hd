@@ -11,8 +11,10 @@ Overrides por usuario: `permisosExtra[]` / `permisosRevocados[]`.
 `roles.ts` mapea rol → permisos; `policy.ts` expone `can(user, permiso, recurso?)`.
 
 **Áreas**: `/` público · `/app/*` staff (`requireStaff`) · `/portal/*` clientes
-(`requireCliente`). El aislamiento por `solicitanteUid` / `empresaId` en las consultas llega
-con el módulo de tickets (Fase 3).
+(`requireCliente`). El portal (Fase 3) acota TODA consulta a `solicitanteUid === actor.uid`
+en `application/portal/*` (no solo en la UI): un cliente nunca ve tickets de otro, ni de otro
+contacto de su empresa; el detalle filtra a notas públicas y a eventos de `cambio_estado`
+(no revela que existan notas internas); intentar ver un ticket ajeno da 404 (no 403).
 
 **Sesión (Fase 1)**: token propio firmado con `SESSION_COOKIE_SECRET`
 (`SignedCookieSessionManager`), cookie `__session` httpOnly. El puerto `ISessionManager`

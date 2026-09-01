@@ -25,6 +25,9 @@ import { ActualizarUsuarioService } from '../application/usuarios/ActualizarUsua
 import { InvitarClienteService } from '../application/usuarios/InvitarClienteService.js';
 import { AceptarInvitacionService } from '../application/usuarios/AceptarInvitacionService.js';
 import { ActualizarMiPerfilService } from '../application/portal/ActualizarMiPerfilService.js';
+import { CrearTicketPortalService } from '../application/portal/CrearTicketPortalService.js';
+import { MisTicketsService } from '../application/portal/MisTicketsService.js';
+import { ResponderMiTicketService } from '../application/portal/ResponderMiTicketService.js';
 import { CrearTicketService } from '../application/tickets/CrearTicketService.js';
 import { ActualizarEstadoTicketService } from '../application/tickets/ActualizarEstadoTicketService.js';
 import { AsignarAgenteService } from '../application/tickets/AsignarAgenteService.js';
@@ -39,6 +42,7 @@ import { ConfiguracionTicketsService } from '../application/configuracion/Config
 import { AuthController } from '../interfaces/http/controllers/public/AuthController.js';
 import { UsuarioController } from '../interfaces/http/controllers/backoffice/UsuarioController.js';
 import { PortalPerfilController } from '../interfaces/http/controllers/portal/PortalPerfilController.js';
+import { PortalTicketController } from '../interfaces/http/controllers/portal/PortalTicketController.js';
 import { TicketController } from '../interfaces/http/controllers/backoffice/TicketController.js';
 import { ConfiguracionController } from '../interfaces/http/controllers/backoffice/ConfiguracionController.js';
 import { TicketPublicoController } from '../interfaces/http/controllers/public/TicketPublicoController.js';
@@ -95,6 +99,9 @@ export interface Cradle {
   invitarClienteService: InvitarClienteService;
   aceptarInvitacionService: AceptarInvitacionService;
   actualizarMiPerfilService: ActualizarMiPerfilService;
+  crearTicketPortalService: CrearTicketPortalService;
+  misTicketsService: MisTicketsService;
+  responderMiTicketService: ResponderMiTicketService;
   crearTicketService: CrearTicketService;
   actualizarEstadoTicketService: ActualizarEstadoTicketService;
   asignarAgenteService: AsignarAgenteService;
@@ -111,6 +118,7 @@ export interface Cradle {
   authController: AuthController;
   usuarioController: UsuarioController;
   portalPerfilController: PortalPerfilController;
+  portalTicketController: PortalTicketController;
   ticketController: TicketController;
   configuracionController: ConfiguracionController;
   ticketPublicoController: TicketPublicoController;
@@ -262,6 +270,23 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
     actualizarMiPerfilService: asFunction(
       (c: Cradle) => new ActualizarMiPerfilService(c.usuarioRepo, c.clock),
     ).singleton(),
+    crearTicketPortalService: asFunction(
+      (c: Cradle) => new CrearTicketPortalService(c.crearTicketService),
+    ).singleton(),
+    misTicketsService: asFunction(
+      (c: Cradle) => new MisTicketsService(c.ticketQueries, c.ticketRepo, c.configuracionRepo),
+    ).singleton(),
+    responderMiTicketService: asFunction(
+      (c: Cradle) =>
+        new ResponderMiTicketService(
+          c.ticketRepo,
+          c.usuarioRepo,
+          c.idGenerator,
+          c.clock,
+          c.emailSender,
+          c.logger,
+        ),
+    ).singleton(),
 
     crearTicketService: asFunction(
       (c: Cradle) =>
@@ -357,6 +382,15 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
     ).singleton(),
     portalPerfilController: asFunction(
       (c: Cradle) => new PortalPerfilController(c.usuarioRepo, c.actualizarMiPerfilService),
+    ).singleton(),
+    portalTicketController: asFunction(
+      (c: Cradle) =>
+        new PortalTicketController(
+          c.crearTicketPortalService,
+          c.misTicketsService,
+          c.responderMiTicketService,
+          c.clock,
+        ),
     ).singleton(),
     ticketController: asFunction(
       (c: Cradle) =>
