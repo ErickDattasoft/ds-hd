@@ -27,6 +27,7 @@ export const NAV_BACKOFFICE: readonly NavItem[] = [
 /** Navegación del portal de clientes (`/portal`). */
 export const NAV_PORTAL: readonly NavItem[] = [
   { etiqueta: 'Mis tickets', href: '/portal/tickets', icono: '🎫', permiso: 'portal:tickets' },
+  { etiqueta: 'Base de conocimiento', href: '/portal/kb', icono: '📚', permiso: 'portal:tickets' },
   { etiqueta: 'Mi perfil', href: '/portal/perfil', icono: '👤', permiso: 'portal:perfil' },
 ];
 

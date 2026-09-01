@@ -1,0 +1,14 @@
+{% extends kbLayout %}
+{% block title %}{{ articulo.titulo }}{% endblock %}
+{% block content %}
+  <p><a href="{{ kbBase }}">← Base de conocimiento</a></p>
+  <article class="kb-article">
+    <h1>{{ articulo.titulo }}</h1>
+    <p class="muted">
+      {% if articulo.categoria %}{{ articulo.categoria }} · {% endif %}
+      Actualizado {{ articulo.updatedAt }}
+      {% if puedeEditar %} · <a href="/app/kb/{{ articulo.id }}/editar">editar</a>{% endif %}
+    </p>
+    <div class="prose">{{ cuerpoHtml | safe }}</div>
+  </article>
+{% endblock %}

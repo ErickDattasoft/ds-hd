@@ -12,6 +12,8 @@ export function backofficeRoutes(container: Container): Router {
   const empresas = () => container.resolve('empresaController');
   const contactos = () => container.resolve('contactoController');
   const bitacora = () => container.resolve('bitacoraController');
+  const versiones = () => container.resolve('versionController');
+  const kb = () => container.resolve('knowledgeController');
   const gestUsuarios = requirePermission('usuarios:gestionar');
   const leerTickets = requirePermission('tickets:leer');
 
@@ -77,6 +79,23 @@ export function backofficeRoutes(container: Container): Router {
   r.get('/contactos/:id/editar', requirePermission('contactos:editar'), (req, res) => contactos().editar(req, res));
   r.post('/contactos/:id', requirePermission('contactos:editar'), (req, res) => contactos().actualizarPost(req, res));
   r.post('/contactos/:id/archivar', requirePermission('contactos:eliminar'), (req, res) => contactos().archivarPost(req, res));
+
+  // ── Versiones de sistemas ──────────────────────────────────────────────────
+  r.get('/versiones', requirePermission('versiones:leer'), (req, res) => versiones().listar(req, res));
+  r.get('/versiones/nueva', requirePermission('versiones:editar'), (req, res) => versiones().nuevo(req, res));
+  r.post('/versiones', requirePermission('versiones:editar'), (req, res) => versiones().guardarPost(req, res));
+  r.get('/versiones/:id/editar', requirePermission('versiones:editar'), (req, res) => versiones().editar(req, res));
+  r.post('/versiones/:id', requirePermission('versiones:editar'), (req, res) => versiones().guardarPost(req, res));
+  r.post('/versiones/:id/eliminar', requirePermission('versiones:editar'), (req, res) => versiones().eliminarPost(req, res));
+
+  // ── Base de conocimiento ───────────────────────────────────────────────────
+  r.get('/kb', requirePermission('kb:leer'), (req, res) => kb().gestionar(req, res));
+  r.get('/kb/nuevo', requirePermission('kb:escribir'), (req, res) => kb().nuevo(req, res));
+  r.post('/kb', requirePermission('kb:escribir'), (req, res) => kb().guardarPost(req, res));
+  r.get('/kb/:id/editar', requirePermission('kb:escribir'), (req, res) => kb().editar(req, res));
+  r.post('/kb/:id/eliminar', requirePermission('kb:publicar'), (req, res) => kb().eliminarPost(req, res));
+  r.post('/kb/:id', requirePermission('kb:escribir'), (req, res) => kb().guardarPost(req, res));
+  r.get('/kb/:idOrSlug', requirePermission('kb:leer'), (req, res) => kb().ver(req, res));
 
   // ── Bitácora ───────────────────────────────────────────────────────────────
   r.get('/bitacora', requirePermission('bitacora:leer'), (req, res) => bitacora().listar(req, res));

@@ -1,0 +1,24 @@
+{% extends "layouts/backoffice.njk" %}
+{% block title %}{{ titulo }}{% endblock %}
+{% block content %}
+  <h1>{{ titulo }}</h1>
+  {% if errores.general %}<p class="alert alert--error">{{ errores.general }}</p>{% endif %}
+  <form method="post" action="{{ '/app/versiones' if modo == 'crear' else '/app/versiones/' + version.id }}" class="form form--wide">
+    <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+    <label class="field"><span>Sistema</span><input name="sistema" value="{{ valores.sistema }}" required />
+      {% if errores.sistema %}<em class="field__error">{{ errores.sistema }}</em>{% endif %}</label>
+    <label class="field"><span>Versión actual</span><input name="versionActual" value="{{ valores.versionActual }}" required />
+      {% if errores.versionActual %}<em class="field__error">{{ errores.versionActual }}</em>{% endif %}</label>
+    <label class="field"><span>Fecha de liberación</span><input type="date" name="fechaLiberacion" value="{{ valores.fechaLiberacion }}" /></label>
+    <label class="field"><span>Link de descarga</span><input name="linkDescarga" value="{{ valores.linkDescarga }}" /></label>
+    <label class="field"><span>Notas de versión</span><textarea name="notasVersion" rows="4">{{ valores.notasVersion }}</textarea></label>
+    <button class="btn" type="submit">Guardar</button>
+    <a class="btn btn--ghost" href="/app/versiones">Cancelar</a>
+  </form>
+  {% if modo == 'editar' %}
+    <form method="post" action="/app/versiones/{{ version.id }}/eliminar" class="form">
+      <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+      <button class="btn btn--sm btn--ghost" type="submit">Eliminar versión</button>
+    </form>
+  {% endif %}
+{% endblock %}

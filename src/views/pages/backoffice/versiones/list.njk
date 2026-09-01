@@ -1,0 +1,22 @@
+{% extends "layouts/backoffice.njk" %}
+{% block title %}Versiones de sistemas{% endblock %}
+{% block content %}
+  <div class="page-head">
+    <h1>Versiones de sistemas</h1>
+    {% if can('versiones:editar') %}<a class="btn btn--sm" href="/app/versiones/nueva">Nueva versión</a>{% endif %}
+  </div>
+  <table class="data-table">
+    <thead><tr><th>Sistema</th><th>Versión actual</th><th>Liberación</th><th>Descarga</th><th></th></tr></thead>
+    <tbody>
+      {% for v in versiones %}
+        <tr>
+          <td>{{ v.sistema }}</td>
+          <td><strong>{{ v.versionActual }}</strong></td>
+          <td>{{ v.fechaLiberacion or '—' }}</td>
+          <td>{% if v.linkDescarga %}<a href="{{ v.linkDescarga }}" rel="noopener">enlace</a>{% else %}—{% endif %}</td>
+          <td>{% if can('versiones:editar') %}<a href="/app/versiones/{{ v.id }}/editar">Editar</a>{% endif %}</td>
+        </tr>
+      {% else %}<tr><td colspan="5" class="muted">Sin versiones registradas.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+{% endblock %}

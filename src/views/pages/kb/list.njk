@@ -1,0 +1,23 @@
+{% extends kbLayout %}
+{% block title %}Base de conocimiento{% endblock %}
+{% block content %}
+  <div class="page-head">
+    <h1>Base de conocimiento</h1>
+    {% if can('kb:escribir') %}<a class="btn btn--sm" href="/app/kb">Gestionar</a>{% endif %}
+  </div>
+  <form method="get" class="filterbar">
+    <input type="search" name="q" value="{{ q }}" placeholder="Buscar artículos" />
+    <button class="btn btn--sm" type="submit">Buscar</button>
+  </form>
+  <ul class="kb-list">
+    {% for a in articulos %}
+      <li>
+        <a href="{{ kbBase }}/{{ a.slug or a.id }}"><strong>{{ a.titulo }}</strong></a>
+        {% if a.categoria %}<span class="badge">{{ a.categoria }}</span>{% endif %}
+        {% if not a.publicado %}<span class="badge badge--warning">borrador</span>{% endif %}
+      </li>
+    {% else %}
+      <li class="muted">No hay artículos disponibles.</li>
+    {% endfor %}
+  </ul>
+{% endblock %}

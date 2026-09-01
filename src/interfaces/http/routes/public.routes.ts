@@ -21,5 +21,9 @@ export function publicRoutes(container: Container): Router {
   r.get('/ticket-publico', (req, res) => ticketPublico().form(req, res));
   r.post('/ticket-publico', (req, res) => ticketPublico().crearPost(req, res));
 
+  const kb = () => container.resolve('knowledgeController');
+  r.get('/kb', (req, res) => kb().listar(req, res));
+  r.get('/kb/:idOrSlug', (req, res) => kb().ver(req, res));
+
   return r;
 }

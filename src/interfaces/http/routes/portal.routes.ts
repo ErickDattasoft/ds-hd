@@ -28,5 +28,9 @@ export function portalRoutes(container: Container): Router {
   r.get('/perfil', requirePermission('portal:perfil'), (req, res) => perfil().ver(req, res));
   r.post('/perfil', requirePermission('portal:perfil'), (req, res) => perfil().actualizar_(req, res));
 
+  const kb = () => container.resolve('knowledgeController');
+  r.get('/kb', (req, res) => kb().listar(req, res));
+  r.get('/kb/:idOrSlug', (req, res) => kb().ver(req, res));
+
   return r;
 }
