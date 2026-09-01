@@ -295,3 +295,96 @@ fieldset.field {
 .error-page h1 {
   font-size: 3rem;
 }
+
+/* ── Tickets ────────────────────────────────────────────────────────────────── */
+.badge--danger {
+  background: color-mix(in srgb, var(--color-danger) 18%, transparent);
+  color: var(--color-danger);
+}
+.badge--warning {
+  background: color-mix(in srgb, var(--color-warning) 20%, transparent);
+  color: var(--color-warning);
+}
+.badge--ok {
+  background: color-mix(in srgb, var(--color-success) 18%, transparent);
+  color: var(--color-success);
+}
+.badge--estado,
+.badge--rol {
+  background: color-mix(in srgb, var(--color-primary) 15%, transparent);
+  color: var(--color-primary);
+}
+
+.kanban {
+  display: flex;
+  gap: var(--space-4);
+  overflow-x: auto;
+  padding-bottom: var(--space-4);
+}
+.kanban__col {
+  min-width: 260px;
+  flex: 1;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: var(--space-3);
+}
+.kanban__title {
+  font-size: 0.95rem;
+  margin: 0 0 var(--space-2);
+}
+.kanban__card {
+  display: block;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: var(--space-2) var(--space-3);
+  margin-bottom: var(--space-2);
+  text-decoration: none;
+  color: var(--color-text);
+  font-size: 0.9rem;
+}
+.kanban__meta {
+  display: flex;
+  justify-content: space-between;
+  color: var(--color-text-muted);
+  font-size: 0.8rem;
+  margin: var(--space-1) 0;
+}
+
+.ticket-grid {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: var(--space-4);
+  align-items: start;
+}
+@media (max-width: 860px) {
+  .ticket-grid {
+    grid-template-columns: 1fr;
+  }
+}
+.nota {
+  border-left: 3px solid var(--color-border);
+  padding: var(--space-1) var(--space-3);
+  margin-block: var(--space-2);
+}
+.nota--interna {
+  border-left-color: var(--color-warning);
+  background: color-mix(in srgb, var(--color-warning) 8%, transparent);
+}
+.nota__head {
+  display: flex;
+  gap: var(--space-2);
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+}
+.timeline {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  font-size: 0.85rem;
+}
+.timeline li {
+  padding: var(--space-1) 0;
+  border-bottom: 1px solid var(--color-border);
+}

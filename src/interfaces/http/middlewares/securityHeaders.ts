@@ -11,7 +11,7 @@ export function securityHeaders(config: AppConfig): RequestHandler {
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'"],
-        scriptSrc: ["'self'"],
+        scriptSrc: ["'self'", 'https://challenges.cloudflare.com'],
         styleSrc: ["'self'", "'unsafe-inline'"],
         imgSrc: ["'self'", 'data:', 'https:'],
         connectSrc: ["'self'", 'https://challenges.cloudflare.com'],

@@ -1,0 +1,34 @@
+{% extends "layouts/public.njk" %}
+{% block title %}Levantar un ticket{% endblock %}
+{% block head %}
+  {% if turnstileSiteKey %}<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>{% endif %}
+{% endblock %}
+{% block content %}
+  <h1>Levantar un ticket de soporte</h1>
+  {% if errores.general %}<p class="alert alert--error">{{ errores.general }}</p>{% endif %}
+  <form method="post" action="/ticket-publico" class="form">
+    <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+    <label class="field"><span>Nombre</span><input name="nombre" value="{{ valores.nombre }}" required />
+      {% if errores.nombre %}<em class="field__error">{{ errores.nombre }}</em>{% endif %}</label>
+    <label class="field"><span>Empresa</span><input name="empresa" value="{{ valores.empresa }}" /></label>
+    <label class="field"><span>Correo</span><input type="email" name="correo" value="{{ valores.correo }}" required />
+      {% if errores.correo %}<em class="field__error">{{ errores.correo }}</em>{% endif %}</label>
+    <label class="field"><span>Teléfono</span><input name="telefono" value="{{ valores.telefono }}" /></label>
+    <label class="field"><span>Asunto</span><input name="asunto" value="{{ valores.asunto }}" required />
+      {% if errores.asunto %}<em class="field__error">{{ errores.asunto }}</em>{% endif %}</label>
+    <label class="field"><span>Sistema</span>
+      <select name="sistema"><option value="">—</option>{% for s in sistemas %}<option {{ 'selected' if valores.sistema == s }}>{{ s }}</option>{% endfor %}</select>
+    </label>
+    <label class="field"><span>Tipo</span>
+      <select name="tipo"><option value="">—</option>{% for t in tipos %}<option {{ 'selected' if valores.tipo == t }}>{{ t }}</option>{% endfor %}</select>
+    </label>
+    <label class="field"><span>Prioridad</span>
+      <select name="prioridad">{% for p in prioridades %}<option {{ 'selected' if valores.prioridad == p }}>{{ p }}</option>{% endfor %}</select>
+    </label>
+    <label class="field"><span>Descripción</span><textarea name="descripcion" rows="5" required>{{ valores.descripcion }}</textarea>
+      {% if errores.descripcion %}<em class="field__error">{{ errores.descripcion }}</em>{% endif %}</label>
+
+    {% if turnstileSiteKey %}<div class="cf-turnstile" data-sitekey="{{ turnstileSiteKey }}"></div>{% endif %}
+    <button class="btn" type="submit">Enviar</button>
+  </form>
+{% endblock %}

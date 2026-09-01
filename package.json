@@ -20,6 +20,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "seed:roles": "tsx scripts/seed/seed-roles.ts",
+    "seed:demo": "tsx scripts/seed/seed-demo.ts",
     "docs": "tsx scripts/docs/generate-readme.ts",
     "docs:check": "tsx scripts/docs/generate-readme.ts --check",
     "healthcheck": "node dist/scripts/healthcheck.js"

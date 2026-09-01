@@ -1,0 +1,7 @@
+{% extends "layouts/backoffice.njk" %}
+{% import "components/tickets.njk" as tk %}
+{% block title %}Mis tickets asignados{% endblock %}
+{% block content %}
+  <h1>Mis tickets asignados</h1>
+  {{ tk.tablaTickets(tickets) }}
+{% endblock %}

@@ -1,4 +1,56 @@
 {
-  "indexes": [],
+  "indexes": [
+    {
+      "collectionGroup": "tickets",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "abierto", "order": "ASCENDING" },
+        { "fieldPath": "prioridad", "order": "ASCENDING" },
+        { "fieldPath": "abiertoEn", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "tickets",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "agenteAsignadoUid", "order": "ASCENDING" },
+        { "fieldPath": "abierto", "order": "ASCENDING" },
+        { "fieldPath": "abiertoEn", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "tickets",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "estado", "order": "ASCENDING" },
+        { "fieldPath": "prioridad", "order": "ASCENDING" },
+        { "fieldPath": "abiertoEn", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "tickets",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "empresaId", "order": "ASCENDING" },
+        { "fieldPath": "abiertoEn", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "tickets",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "solicitanteUid", "order": "ASCENDING" },
+        { "fieldPath": "abiertoEn", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "tickets",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "grupo", "order": "ASCENDING" },
+        { "fieldPath": "estado", "order": "ASCENDING" }
+      ]
+    }
+  ],
   "fieldOverrides": []
 }

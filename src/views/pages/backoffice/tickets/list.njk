@@ -1,0 +1,29 @@
+{% extends "layouts/backoffice.njk" %}
+{% import "components/tickets.njk" as tk %}
+{% block title %}Tickets{% endblock %}
+{% block content %}
+  <div class="page-head">
+    <h1>Tickets <span class="muted">({{ total }})</span></h1>
+    <div class="page-head__actions">
+      <a class="btn btn--sm" href="/app/tickets/nuevo">Nuevo ticket</a>
+      <a class="btn btn--sm btn--ghost" href="/app/tickets/tablero">Tablero</a>
+      <a class="btn btn--sm btn--ghost" href="/app/tickets/mis-asignados">Mis asignados</a>
+    </div>
+  </div>
+
+  <form method="get" class="filterbar">
+    <input type="search" name="texto" value="{{ filtro.texto }}" placeholder="Buscar por asunto, # o empresa" />
+    <select name="estado">
+      <option value="">Todos los estados</option>
+      {% for e in config.estados %}<option value="{{ e }}" {{ 'selected' if filtro.estado == e }}>{{ e }}</option>{% endfor %}
+    </select>
+    <select name="prioridad">
+      <option value="">Cualquier prioridad</option>
+      {% for p in config.prioridades %}<option value="{{ p }}" {{ 'selected' if filtro.prioridad == p }}>{{ p }}</option>{% endfor %}
+    </select>
+    <label class="field--check"><input type="checkbox" name="abiertos" value="0" {{ 'checked' if filtro.abiertos == '0' }} /> incluir cerrados</label>
+    <button class="btn btn--sm" type="submit">Filtrar</button>
+  </form>
+
+  {{ tk.tablaTickets(tickets) }}
+{% endblock %}

@@ -1,0 +1,24 @@
+{% extends "layouts/backoffice.njk" %}
+{% block title %}Carga de agentes{% endblock %}
+{% block content %}
+  <h1>Carga de agentes</h1>
+  <table class="data-table">
+    <thead>
+      <tr><th>Agente</th><th>Grupo</th><th>Abiertos</th><th>Vencidos</th><th>Capacidad</th><th>Disponible</th></tr>
+    </thead>
+    <tbody>
+      {% for a in carga %}
+        <tr>
+          <td>{{ a.agenteNombre }}</td>
+          <td>{{ a.grupo or '—' }}</td>
+          <td>{{ a.abiertos }}</td>
+          <td>{% if a.vencidos %}<span class="badge badge--danger">{{ a.vencidos }}</span>{% else %}0{% endif %}</td>
+          <td>{{ a.capacidadMax if a.capacidadMax else 'sin límite' }}</td>
+          <td>{{ 'Sí' if a.disponibleAsignacion else 'No' }}</td>
+        </tr>
+      {% else %}
+        <tr><td colspan="6" class="muted">No hay agentes registrados.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endblock %}

@@ -1,0 +1,31 @@
+{% macro slaBadge(vm) %}
+  {% if vm.slaEstado == 'vencido' %}<span class="badge badge--danger">{{ vm.slaTexto }}</span>
+  {% elif vm.slaEstado == 'por-vencer' %}<span class="badge badge--warning">{{ vm.slaTexto }}</span>
+  {% elif vm.slaEstado == 'na' %}<span class="badge">{{ vm.slaTexto }}</span>
+  {% else %}<span class="badge badge--ok">{{ vm.slaTexto }}</span>{% endif %}
+{% endmacro %}
+
+{% macro filaTicket(vm) %}
+  <tr>
+    <td><a href="/app/tickets/{{ vm.id }}">#{{ vm.numero }}</a></td>
+    <td>{{ vm.asunto }}</td>
+    <td><span class="badge badge--estado">{{ vm.estado }}</span></td>
+    <td>{{ vm.prioridad }}</td>
+    <td>{{ vm.empresaNombre or '—' }}</td>
+    <td>{{ vm.agenteAsignadoNombre or 'Sin asignar' }}</td>
+    <td>{{ slaBadge(vm) }}</td>
+  </tr>
+{% endmacro %}
+
+{% macro tablaTickets(tickets) %}
+  <table class="data-table">
+    <thead>
+      <tr><th>#</th><th>Asunto</th><th>Estado</th><th>Prioridad</th><th>Empresa</th><th>Agente</th><th>SLA</th></tr>
+    </thead>
+    <tbody>
+      {% for vm in tickets %}{{ filaTicket(vm) }}{% else %}
+        <tr><td colspan="7" class="muted">Sin tickets.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endmacro %}

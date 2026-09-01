@@ -7,6 +7,7 @@ import { csrf } from '../middlewares/csrf.js';
 import { publicRoutes } from './public.routes.js';
 import { backofficeRoutes } from './backoffice.routes.js';
 import { portalRoutes } from './portal.routes.js';
+import { webhookRoutes } from './webhooks.routes.js';
 
 /** Monta todos los routers de la app. */
 export function buildRouter(container: Container): Router {
@@ -27,6 +28,7 @@ export function buildRouter(container: Container): Router {
     res.render('pages/public/home', { titulo: 'ds-hd', version: APP_VERSION });
   });
 
+  router.use('/webhooks', webhookRoutes(container));
   router.use('/', publicRoutes(container));
   router.use('/app', backofficeRoutes(container));
   router.use('/portal', portalRoutes(container));

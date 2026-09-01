@@ -1,0 +1,99 @@
+{% extends "layouts/backoffice.njk" %}
+{% import "components/tickets.njk" as tk %}
+{% block title %}Ticket #{{ ticket.numero }}{% endblock %}
+{% block content %}
+  <div class="page-head">
+    <h1>#{{ ticket.numero }} — {{ ticket.asunto }}</h1>
+    <a class="btn btn--sm btn--ghost" href="/app/tickets">← Tickets</a>
+  </div>
+
+  <div class="ticket-grid">
+    <section>
+      <div class="card">
+        <p><strong>Descripción</strong></p>
+        <p>{{ ticket.descripcion }}</p>
+      </div>
+
+      <div class="card">
+        <p><strong>Conversación</strong></p>
+        {% for n in notas %}
+          <div class="nota nota--{{ n.tipo }}">
+            <div class="nota__head">
+              <span>{{ n.autorNombre }}</span>
+              {% if n.tipo == 'interna' %}<span class="badge badge--warning">interna</span>{% endif %}
+            </div>
+            <p>{{ n.cuerpo }}</p>
+          </div>
+        {% else %}<p class="muted">Sin notas todavía.</p>{% endfor %}
+
+        {% if permisos.editar %}
+          <form method="post" action="/app/tickets/{{ ticket.id }}/nota" class="form">
+            <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+            <textarea name="cuerpo" rows="3" required placeholder="Escribe una respuesta…"></textarea>
+            <label class="field--check">
+              <input type="checkbox" name="tipo" value="interna" {{ 'disabled' if not permisos.notasInternas }} />
+              <span>Nota interna (no visible para el cliente)</span>
+            </label>
+            <button class="btn btn--sm" type="submit">Agregar nota</button>
+          </form>
+        {% endif %}
+      </div>
+
+      <div class="card">
+        <p><strong>Actividad</strong></p>
+        <ul class="timeline">
+          {% for e in eventos %}<li><span class="muted">{{ e.at }}</span> — {{ e.resumen }}{% if e.actorNombre %} ({{ e.actorNombre }}){% endif %}</li>{% endfor %}
+        </ul>
+      </div>
+    </section>
+
+    <aside class="ticket-side">
+      <div class="card">
+        <p><strong>Estado:</strong> <span class="badge badge--estado">{{ ticket.estado }}</span></p>
+        <p><strong>Prioridad:</strong> {{ ticket.prioridad }}</p>
+        <p><strong>SLA:</strong> {{ tk.slaBadge(vm) }}</p>
+        <p><strong>Tiempo trabajado:</strong> {{ vm.tiempoTrabajado }}</p>
+        <p><strong>Agente:</strong> {{ ticket.agenteAsignadoNombre or 'Sin asignar' }}</p>
+        <p><strong>Empresa:</strong> {{ ticket.empresaNombre or '—' }}</p>
+        <p><strong>Canal:</strong> {{ ticket.canal }}</p>
+      </div>
+
+      {% if permisos.cambiarEstado %}
+        <form method="post" action="/app/tickets/{{ ticket.id }}/estado" class="card form">
+          <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+          <label class="field"><span>Cambiar estado</span>
+            <select name="estado">
+              {% for e in config.estados %}{% if e != ticket.estado %}<option>{{ e }}</option>{% endif %}{% endfor %}
+            </select>
+          </label>
+          <textarea name="nota" rows="2" placeholder="Nota interna opcional"></textarea>
+          <button class="btn btn--sm" type="submit">Actualizar estado</button>
+        </form>
+      {% endif %}
+
+      {% if permisos.asignar %}
+        <form method="post" action="/app/tickets/{{ ticket.id }}/asignar" class="card form">
+          <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+          <label class="field"><span>Asignar a</span>
+            <select name="agenteUid">
+              {% for a in agentes %}<option value="{{ a.uid }}" {{ 'selected' if a.uid == ticket.agenteAsignadoUid }}>{{ a.nombre }}</option>{% endfor %}
+            </select>
+          </label>
+          <label class="field--check"><input type="checkbox" name="forzar" /> <span>Ignorar límite de capacidad</span></label>
+          <button class="btn btn--sm" type="submit">Asignar</button>
+        </form>
+      {% endif %}
+
+      {% if permisos.editar %}
+        <form method="post" action="/app/tickets/{{ ticket.id }}/facturar" class="card form">
+          <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+          <label class="field--check">
+            <input type="checkbox" name="facturado" {{ 'checked' if ticket.facturacion.facturado }} />
+            <span>Facturado</span>
+          </label>
+          <button class="btn btn--sm" type="submit">Guardar</button>
+        </form>
+      {% endif %}
+    </aside>
+  </div>
+{% endblock %}

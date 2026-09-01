@@ -17,5 +17,9 @@ export function publicRoutes(container: Container): Router {
   r.get('/invitacion/:token', (req, res) => ctrl().mostrarInvitacion(req, res));
   r.post('/invitacion/:token', (req, res) => ctrl().procesarInvitacion(req, res));
 
+  const ticketPublico = () => container.resolve('ticketPublicoController');
+  r.get('/ticket-publico', (req, res) => ticketPublico().form(req, res));
+  r.post('/ticket-publico', (req, res) => ticketPublico().crearPost(req, res));
+
   return r;
 }

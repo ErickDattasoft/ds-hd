@@ -1,0 +1,24 @@
+{% extends "layouts/backoffice.njk" %}
+{% block title %}Tickets del portal{% endblock %}
+{% block content %}
+  <h1>Tickets del portal <span class="muted">({{ pendientes | length }} pendientes)</span></h1>
+  {% for t in pendientes %}
+    <div class="card">
+      <p><strong>{{ t.asunto }}</strong> — {{ t.prioridad }}</p>
+      <p class="muted">{{ t.nombre }} ({{ t.correo }}){% if t.empresa %} · {{ t.empresa }}{% endif %} · folio {{ t.folio }}</p>
+      <p>{{ t.descripcion }}</p>
+      <div class="page-head__actions">
+        <form method="post" action="/app/tickets/buzon/{{ t.id }}/aceptar" class="inline">
+          <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+          <button class="btn btn--sm" type="submit">Aceptar</button>
+        </form>
+        <form method="post" action="/app/tickets/buzon/{{ t.id }}/rechazar" class="inline">
+          <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+          <button class="btn btn--sm btn--ghost" type="submit">Rechazar</button>
+        </form>
+      </div>
+    </div>
+  {% else %}
+    <p class="muted">No hay tickets del portal pendientes de revisión.</p>
+  {% endfor %}
+{% endblock %}

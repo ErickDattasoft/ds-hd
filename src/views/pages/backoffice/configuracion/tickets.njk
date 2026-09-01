@@ -1,0 +1,37 @@
+{% extends "layouts/backoffice.njk" %}
+{% block title %}Configuración de tickets{% endblock %}
+{% block content %}
+  <h1>Configuración de tickets</h1>
+  {% if guardado %}<p class="alert alert--ok">Configuración guardada.</p>{% endif %}
+  {% if errores.general %}<p class="alert alert--error">{{ errores.general }}</p>{% endif %}
+
+  <form method="post" action="/app/configuracion/tickets" class="form form--wide">
+    <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+    <p class="muted">Un valor por línea.</p>
+
+    <label class="field"><span>Tipos</span><textarea name="tipos" rows="6">{{ config.tipos | join('\n') }}</textarea></label>
+    <label class="field"><span>Sistemas</span><textarea name="sistemas" rows="6">{{ config.sistemas | join('\n') }}</textarea></label>
+    <label class="field"><span>Grupos</span><textarea name="grupos" rows="4">{{ config.grupos | join('\n') }}</textarea></label>
+    <label class="field"><span>Estados (en orden del flujo)</span><textarea name="estados" rows="5">{{ config.estados | join('\n') }}</textarea>
+      {% if errores.estados %}<em class="field__error">{{ errores.estados }}</em>{% endif %}
+    </label>
+    <label class="field"><span>Estado inicial</span><input name="estadoInicial" value="{{ config.estadoInicial }}" />
+      {% if errores.estadoInicial %}<em class="field__error">{{ errores.estadoInicial }}</em>{% endif %}
+    </label>
+    <label class="field"><span>Prioridades</span><textarea name="prioridades" rows="4">{{ config.prioridades | join('\n') }}</textarea></label>
+
+    <fieldset class="field">
+      <legend>Horas de SLA por prioridad</legend>
+      {% for p in config.prioridades %}
+        <label class="field">{{ p }}
+          <input type="number" name="sla_{{ p }}" min="1" value="{{ config.slaHoras[p] or 24 }}" />
+        </label>
+      {% endfor %}
+    </fieldset>
+
+    <label class="field"><span>Tipos facturables</span><textarea name="tiposFacturables" rows="3">{{ config.tiposFacturables | join('\n') }}</textarea></label>
+    <label class="field"><span>Correos a notificar cuando llega un ticket del portal</span><textarea name="correosNotificacion" rows="3">{{ config.correosNotificacion | join('\n') }}</textarea></label>
+
+    <button class="btn" type="submit">Guardar</button>
+  </form>
+{% endblock %}

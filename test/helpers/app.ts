@@ -10,6 +10,16 @@ import {
   InMemoryInvitacionRepository,
   InMemorySolicitudAccesoRepository,
 } from '../fakes/InMemoryRepos.js';
+import {
+  InMemoryTicketStore,
+  InMemoryTicketRepository,
+  InMemoryTicketQueries,
+  InMemoryContadorRepository,
+  InMemoryConfiguracionRepository,
+  InMemoryTicketPublicoRepository,
+  FakeWebhookPublisher,
+  FakeCaptchaVerifier,
+} from '../fakes/tickets.js';
 
 export interface TestApp {
   app: ReturnType<typeof createApp>;
@@ -17,6 +27,10 @@ export interface TestApp {
   authProvider: FakeAuthProvider;
   emailSender: FakeEmailSender;
   invitacionRepo: InMemoryInvitacionRepository;
+  ticketStore: InMemoryTicketStore;
+  ticketPublicoRepo: InMemoryTicketPublicoRepository;
+  webhookPublisher: FakeWebhookPublisher;
+  configuracionRepo: InMemoryConfiguracionRepository;
 }
 
 /**
@@ -41,6 +55,10 @@ export function makeTestApp(opts: { usuarios?: { uid: string; email: string; pas
   const usuarioRepo = new InMemoryUsuarioRepository(usuarios);
   const emailSender = new FakeEmailSender();
   const invitacionRepo = new InMemoryInvitacionRepository();
+  const ticketStore = new InMemoryTicketStore();
+  const ticketPublicoRepo = new InMemoryTicketPublicoRepository();
+  const webhookPublisher = new FakeWebhookPublisher();
+  const configuracionRepo = new InMemoryConfiguracionRepository();
 
   const overrides: ContainerOverrides = {
     usuarioRepo,
@@ -49,10 +67,27 @@ export function makeTestApp(opts: { usuarios?: { uid: string; email: string; pas
     invitacionRepo,
     solicitudAccesoRepo: new InMemorySolicitudAccesoRepository(),
     sessionManager: new SignedCookieSessionManager('test-secret-1234567890', 1000 * 60 * 60),
+    ticketRepo: new InMemoryTicketRepository(ticketStore),
+    ticketQueries: new InMemoryTicketQueries(ticketStore),
+    contadorRepo: new InMemoryContadorRepository(),
+    configuracionRepo,
+    ticketPublicoRepo,
+    webhookPublisher,
+    captchaVerifier: new FakeCaptchaVerifier(),
   };
 
   const container = buildContainer(loadConfig(), overrides);
-  return { app: createApp(container), usuarioRepo, authProvider, emailSender, invitacionRepo };
+  return {
+    app: createApp(container),
+    usuarioRepo,
+    authProvider,
+    emailSender,
+    invitacionRepo,
+    ticketStore,
+    ticketPublicoRepo,
+    webhookPublisher,
+    configuracionRepo,
+  };
 }
 
 /** Extrae el valor de una cookie de la cabecera Set-Cookie. */
