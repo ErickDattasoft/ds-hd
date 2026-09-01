@@ -16,20 +16,25 @@ a {
   color: var(--color-primary);
 }
 
+h1 {
+  font-size: 1.5rem;
+  margin: 0 0 var(--space-4);
+}
+
 .container {
   max-width: 960px;
   margin-inline: auto;
   padding: var(--space-8) var(--space-4);
 }
 
-.hero h1 {
-  margin-bottom: var(--space-2);
-}
-
 .muted {
   color: var(--color-text-muted);
 }
+.inline {
+  display: inline;
+}
 
+/* ── Botones ────────────────────────────────────────────────────────────────── */
 .btn {
   display: inline-block;
   padding: var(--space-2) var(--space-4);
@@ -38,20 +43,255 @@ a {
   color: var(--color-primary-contrast);
   text-decoration: none;
   border: 1px solid transparent;
+  cursor: pointer;
+  font: inherit;
 }
-
 .btn--ghost {
   background: transparent;
   color: var(--color-primary);
   border-color: var(--color-border);
 }
+.btn--sm {
+  padding: var(--space-1) var(--space-3);
+  font-size: 0.875rem;
+}
 
+/* ── Layout con barra lateral ───────────────────────────────────────────────── */
+.app-shell {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  min-height: 100vh;
+}
+.app-main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.app-content {
+  padding: var(--space-6);
+}
+.sidebar {
+  background: var(--color-surface);
+  border-right: 1px solid var(--color-border);
+  padding: var(--space-4);
+}
+.sidebar__brand {
+  font-weight: 700;
+  font-size: 1.1rem;
+  text-decoration: none;
+  color: var(--color-primary);
+  display: block;
+  margin-bottom: var(--space-4);
+}
+.sidebar__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+.sidebar__link {
+  display: block;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius);
+  text-decoration: none;
+  color: var(--color-text);
+}
+.sidebar__link.is-active,
+.sidebar__link:hover {
+  background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+  color: var(--color-primary);
+}
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) var(--space-6);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+.topbar__user {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+@media (max-width: 720px) {
+  .app-shell {
+    grid-template-columns: 1fr;
+  }
+  .sidebar {
+    border-right: none;
+    border-bottom: 1px solid var(--color-border);
+  }
+}
+
+/* ── Login / páginas públicas ───────────────────────────────────────────────── */
+.auth-shell {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: var(--space-4);
+}
+.auth-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: var(--space-8);
+  width: 100%;
+  max-width: 380px;
+  box-shadow: var(--shadow-1);
+}
+.auth-brand {
+  font-weight: 700;
+  color: var(--color-primary);
+  text-decoration: none;
+  display: block;
+  margin-bottom: var(--space-4);
+}
+
+/* ── Formularios ────────────────────────────────────────────────────────────── */
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+.form--wide {
+  max-width: 640px;
+}
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+.field > span,
+.field > legend {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+.field--check {
+  flex-direction: row;
+  align-items: center;
+  gap: var(--space-2);
+}
+.field input[type='text'],
+.field input[type='email'],
+.field input[type='password'],
+.field input[type='search'],
+.field input[type='number'],
+.field select,
+.field textarea,
+input[type='email'],
+input[type='password'],
+input[type='text'],
+input[type='search'] {
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  font: inherit;
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+.field__error {
+  color: var(--color-danger);
+  font-size: 0.85rem;
+}
+fieldset.field {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: var(--space-4);
+}
+.perm-group {
+  margin-block: var(--space-2);
+}
+.perm-row {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+  font-size: 0.85rem;
+  padding: 2px 0;
+}
+
+/* ── Tablas ─────────────────────────────────────────────────────────────────── */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.data-table th,
+.data-table td {
+  text-align: left;
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--color-border);
+}
+.data-table thead th {
+  background: color-mix(in srgb, var(--color-primary) 8%, transparent);
+  font-size: 0.85rem;
+}
+
+/* ── Piezas varias ─────────────────────────────────────────────────────────── */
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  background: color-mix(in srgb, var(--color-accent) 18%, transparent);
+  color: var(--color-accent);
+  text-transform: capitalize;
+}
+.alert {
+  padding: var(--space-3);
+  border-radius: var(--radius);
+  border: 1px solid var(--color-border);
+}
+.alert--ok {
+  background: color-mix(in srgb, var(--color-success) 14%, transparent);
+  border-color: var(--color-success);
+}
+.alert--error {
+  background: color-mix(in srgb, var(--color-danger) 12%, transparent);
+  border-color: var(--color-danger);
+}
+.card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: var(--space-4);
+  margin-block: var(--space-4);
+}
+.code-block {
+  display: block;
+  padding: var(--space-2);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  word-break: break-all;
+  font-size: 0.85rem;
+}
+.page-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+.page-head__actions {
+  display: flex;
+  gap: var(--space-2);
+}
+.filterbar {
+  display: flex;
+  gap: var(--space-2);
+  margin-block: var(--space-4);
+}
 .error-page {
   text-align: center;
   padding-block: var(--space-8);
 }
-
 .error-page h1 {
   font-size: 3rem;
-  margin-bottom: var(--space-2);
 }

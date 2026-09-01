@@ -1,0 +1,17 @@
+{% extends "layouts/portal.njk" %}
+{% block title %}Mi perfil{% endblock %}
+{% block content %}
+  <h1>Mi perfil</h1>
+  {% if guardado %}<p class="alert alert--ok">Datos actualizados.</p>{% endif %}
+  {% if errores.general %}<p class="alert alert--error">{{ errores.general }}</p>{% endif %}
+  <form method="post" action="/portal/perfil" class="form">
+    <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+    <label class="field">
+      <span>Nombre</span>
+      <input name="nombre" value="{{ valores.nombre }}" required />
+      {% if errores.nombre %}<em class="field__error">{{ errores.nombre }}</em>{% endif %}
+    </label>
+    <p class="muted">Correo: {{ user.email }}</p>
+    <button type="submit" class="btn">Guardar</button>
+  </form>
+{% endblock %}

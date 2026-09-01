@@ -1,0 +1,26 @@
+{% extends "layouts/backoffice.njk" %}
+{% block title %}Invitar cliente{% endblock %}
+{% block content %}
+  <h1>Invitar cliente al portal</h1>
+  {% if errores.general %}<p class="alert alert--error">{{ errores.general }}</p>{% endif %}
+  <form method="post" action="/app/usuarios/invitar-cliente" class="form">
+    <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+    <label class="field">
+      <span>Nombre del contacto</span>
+      <input name="nombre" value="{{ valores.nombre }}" required />
+      {% if errores.nombre %}<em class="field__error">{{ errores.nombre }}</em>{% endif %}
+    </label>
+    <label class="field">
+      <span>Correo</span>
+      <input type="email" name="email" value="{{ valores.email }}" required />
+      {% if errores.email %}<em class="field__error">{{ errores.email }}</em>{% endif %}
+    </label>
+    <label class="field">
+      <span>Empresa (ID)</span>
+      <input name="empresaId" value="{{ valores.empresaId }}" required placeholder="El módulo de empresas llega en Fase 4" />
+      {% if errores.empresaId %}<em class="field__error">{{ errores.empresaId }}</em>{% endif %}
+    </label>
+    <button type="submit" class="btn">Enviar invitación</button>
+    <a class="btn btn--ghost" href="/app/usuarios">Cancelar</a>
+  </form>
+{% endblock %}

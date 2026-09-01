@@ -1,0 +1,14 @@
+{% extends "layouts/backoffice.njk" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+  <h1>Hola, {{ user.nombre }}</h1>
+  <p class="muted">Rol: {{ user.rol }}. Este panel se completa en fases siguientes.</p>
+  <div class="card">
+    <h2>Accesos rápidos</h2>
+    <ul>
+      {% for item in nav %}
+        <li><a href="{{ item.href }}">{{ item.icono }} {{ item.etiqueta }}</a></li>
+      {% endfor %}
+    </ul>
+  </div>
+{% endblock %}

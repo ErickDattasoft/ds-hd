@@ -1,0 +1,30 @@
+{% extends "layouts/public.njk" %}
+{% block title %}Solicitar acceso{% endblock %}
+{% block content %}
+  <h1>Solicitar acceso</h1>
+  {% if enviado %}
+    <p class="alert alert--ok">Recibimos tu solicitud. Un administrador la revisará.</p>
+    <p><a href="/login">Volver al inicio de sesión</a></p>
+  {% else %}
+    {% if errores.general %}<p class="alert alert--error">{{ errores.general }}</p>{% endif %}
+    <form method="post" action="/solicitar-acceso" class="form">
+      <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+      <label class="field">
+        <span>Nombre</span>
+        <input name="nombre" value="{{ valores.nombre }}" required />
+        {% if errores.nombre %}<em class="field__error">{{ errores.nombre }}</em>{% endif %}
+      </label>
+      <label class="field">
+        <span>Correo</span>
+        <input type="email" name="email" value="{{ valores.email }}" required />
+        {% if errores.email %}<em class="field__error">{{ errores.email }}</em>{% endif %}
+      </label>
+      <label class="field">
+        <span>Mensaje (opcional)</span>
+        <textarea name="mensaje" rows="3">{{ valores.mensaje }}</textarea>
+      </label>
+      <button type="submit" class="btn">Enviar solicitud</button>
+    </form>
+    <p class="muted"><a href="/login">Volver</a></p>
+  {% endif %}
+{% endblock %}

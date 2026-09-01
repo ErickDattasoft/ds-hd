@@ -1,0 +1,13 @@
+<header class="topbar">
+  <span class="topbar__title">{{ titulo }}</span>
+  <div class="topbar__user">
+    {% if user %}
+      <span class="topbar__name">{{ user.nombre }}</span>
+      <span class="badge badge--rol">{{ user.rol }}</span>
+      <form method="post" action="/logout" class="inline">
+        <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+        <button type="submit" class="btn btn--ghost btn--sm">Salir</button>
+      </form>
+    {% endif %}
+  </div>
+</header>

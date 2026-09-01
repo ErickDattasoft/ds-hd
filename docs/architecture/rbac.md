@@ -10,7 +10,23 @@ Overrides por usuario: `permisosExtra[]` / `permisosRevocados[]`.
 **Permisos**: formato `modulo:accion` en `interfaces/http/rbac/permissions.ts`.
 `roles.ts` mapea rol → permisos; `policy.ts` expone `can(user, permiso, recurso?)`.
 
-**Áreas**: `/` público · `/app/*` staff · `/portal/*` clientes (aislados: cada consulta se
-fuerza a `solicitanteUid` / `empresaId` del cliente en la capa de aplicación).
+**Áreas**: `/` público · `/app/*` staff (`requireStaff`) · `/portal/*` clientes
+(`requireCliente`). El aislamiento por `solicitanteUid` / `empresaId` en las consultas llega
+con el módulo de tickets (Fase 3).
 
-Implementación en Fase 1. Esta página se completará con la matriz generada desde `roles.ts`.
+**Sesión (Fase 1)**: token propio firmado con `SESSION_COOKIE_SECRET`
+(`SignedCookieSessionManager`), cookie `__session` httpOnly. El puerto `ISessionManager`
+permite cambiar a las *session cookies* de Firebase Admin sin tocar el resto.
+`IAuthProvider` (Firebase Auth: REST `signInWithPassword` + Admin SDK) cubre identidad,
+alta, cambio de contraseña, inhabilitar y custom claims.
+
+**Alta de cuentas**: el staff crea usuarios/invita clientes → se crea la identidad con
+contraseña aleatoria + una invitación de un solo uso (`invitaciones/{token}`, TTL 72 h) →
+el usuario fija su contraseña en `/invitacion/:token`.
+
+Middlewares: `sessionAuth` (resuelve `req.user` con caché de 60 s), `requireAuth`,
+`requireRole`, `requirePermission`, `requireStaff`, `requireCliente`, `csrf` (double-submit).
+La navegación (`view-helpers/nav.ts`) y el `can()` de las vistas se derivan de los permisos
+efectivos; el controller revalida siempre.
+
+Esta página se completará con la matriz generada desde `roles.ts` (Fase 6).

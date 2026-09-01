@@ -1,0 +1,11 @@
+{% extends "layouts/backoffice.njk" %}
+{% block title %}{{ titulo }}{% endblock %}
+{% block content %}
+  <h1>{{ titulo }}</h1>
+  <p>Se creó la cuenta de <strong>{{ nombre }}</strong> ({{ email }}) y se envió el correo de invitación.</p>
+  <div class="card">
+    <p class="muted">Enlace de invitación (por si necesitas compartirlo manualmente):</p>
+    <code class="code-block">{{ urlInvitacion }}</code>
+  </div>
+  <p><a class="btn" href="/app/usuarios">Volver a usuarios</a></p>
+{% endblock %}

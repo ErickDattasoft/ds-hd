@@ -67,6 +67,7 @@ Detalle en [`docs/architecture/`](./docs/architecture/): `overview.md`, `layerin
 | `FIREBASE_SERVICE_ACCOUNT_B64` | sí | Service account JSON del proyecto, codificado en base64 (o usar GOOGLE_APPLICATION_CREDENTIALS). |
 | `FIREBASE_STORAGE_BUCKET` | sí | Bucket de Firebase Storage para adjuntos. |
 | `FIRESTORE_EMULATOR_HOST` | sí | Host:puerto del emulador de Firestore (solo dev/test). |
+| `FIREBASE_AUTH_EMULATOR_HOST` | sí | Host:puerto del emulador de Auth de Firebase (solo dev/test). |
 | `BREVO_API_KEY` | sí | API key de Brevo para correo transaccional. |
 | `BREVO_SENDER_NAME` | sí | Nombre del remitente de correo. |
 | `BREVO_SENDER_EMAIL` | sí | Correo del remitente (verificado en Brevo). |

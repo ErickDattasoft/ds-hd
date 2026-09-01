@@ -1,0 +1,13 @@
+<nav class="sidebar" aria-label="Navegación principal">
+  <a class="sidebar__brand" href="{{ '/portal' if area == 'portal' else '/app' }}">ds-hd</a>
+  <ul class="sidebar__list">
+    {% for item in nav %}
+      <li>
+        <a class="sidebar__link{{ ' is-active' if (currentPath and currentPath.startsWith(item.href) and (item.href != '/app' and item.href != '/portal')) or currentPath == item.href }}"
+           href="{{ item.href }}">
+          <span aria-hidden="true">{{ item.icono }}</span> {{ item.etiqueta }}
+        </a>
+      </li>
+    {% endfor %}
+  </ul>
+</nav>

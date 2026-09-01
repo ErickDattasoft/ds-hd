@@ -1,0 +1,35 @@
+{% extends "layouts/backoffice.njk" %}
+{% block title %}Usuarios{% endblock %}
+{% block content %}
+  <div class="page-head">
+    <h1>Usuarios</h1>
+    <div class="page-head__actions">
+      <a class="btn btn--sm" href="/app/usuarios/nuevo">Nuevo usuario</a>
+      <a class="btn btn--sm btn--ghost" href="/app/usuarios/invitar-cliente">Invitar cliente</a>
+    </div>
+  </div>
+
+  <form method="get" class="filterbar">
+    <input type="search" name="q" value="{{ q }}" placeholder="Buscar por nombre o correo" />
+    <button class="btn btn--sm" type="submit">Buscar</button>
+  </form>
+
+  <table class="data-table">
+    <thead>
+      <tr><th>Nombre</th><th>Correo</th><th>Rol</th><th>Estado</th><th></th></tr>
+    </thead>
+    <tbody>
+      {% for u in usuarios %}
+        <tr>
+          <td>{{ u.nombre }}</td>
+          <td>{{ u.email.value }}</td>
+          <td><span class="badge badge--rol">{{ ROL_ETIQUETA[u.rol] }}</span></td>
+          <td>{{ 'Activo' if u.activo else 'Inactivo' }}</td>
+          <td><a href="/app/usuarios/{{ u.uid }}">Editar</a></td>
+        </tr>
+      {% else %}
+        <tr><td colspan="5" class="muted">Sin usuarios.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endblock %}

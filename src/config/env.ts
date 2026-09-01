@@ -50,6 +50,10 @@ export const envSchema = z.object({
     .string()
     .default('')
     .describe('Host:puerto del emulador de Firestore (solo dev/test).'),
+  FIREBASE_AUTH_EMULATOR_HOST: z
+    .string()
+    .default('')
+    .describe('Host:puerto del emulador de Auth de Firebase (solo dev/test).'),
 
   BREVO_API_KEY: z.string().default('').describe('API key de Brevo para correo transaccional.'),
   BREVO_SENDER_NAME: z.string().default('Soporte DATTASOFT').describe('Nombre del remitente de correo.'),
@@ -93,6 +97,7 @@ export type AppConfig = {
     readonly serviceAccountB64: string;
     readonly storageBucket: string;
     readonly emulatorHost: string;
+    readonly authEmulatorHost: string;
     readonly disabled: boolean;
   };
   readonly brevo: { readonly apiKey: string; readonly senderName: string; readonly senderEmail: string };
@@ -125,6 +130,7 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): AppConfig {
       serviceAccountB64: e.FIREBASE_SERVICE_ACCOUNT_B64,
       storageBucket: e.FIREBASE_STORAGE_BUCKET,
       emulatorHost: e.FIRESTORE_EMULATOR_HOST,
+      authEmulatorHost: e.FIREBASE_AUTH_EMULATOR_HOST,
       disabled: e.DISABLE_FIREBASE,
     },
     brevo: { apiKey: e.BREVO_API_KEY, senderName: e.BREVO_SENDER_NAME, senderEmail: e.BREVO_SENDER_EMAIL },

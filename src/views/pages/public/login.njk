@@ -1,0 +1,25 @@
+{% extends "layouts/public.njk" %}
+{% block title %}Iniciar sesión{% endblock %}
+{% block content %}
+  <h1>Iniciar sesión</h1>
+  {% if aviso %}<p class="alert alert--ok">{{ aviso }}</p>{% endif %}
+  {% if errores.general %}<p class="alert alert--error">{{ errores.general }}</p>{% endif %}
+
+  <form method="post" action="/login" class="form">
+    <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+    <input type="hidden" name="next" value="{{ next }}" />
+
+    <label class="field">
+      <span>Correo</span>
+      <input type="email" name="email" value="{{ valores.email }}" required autofocus autocomplete="username" />
+    </label>
+    <label class="field">
+      <span>Contraseña</span>
+      <input type="password" name="password" required autocomplete="current-password" />
+    </label>
+
+    <button type="submit" class="btn">Entrar</button>
+  </form>
+
+  <p class="muted"><a href="/solicitar-acceso">Solicitar acceso al equipo</a></p>
+{% endblock %}

@@ -1,0 +1,24 @@
+/*
+ * Acento de color por rol. La UI base es la misma; cada perfil recibe un color primario
+ * y de acento distinto para que sea reconocible de un vistazo. Fase 5 amplía el theming.
+ */
+:root[data-role='admin'] {
+  --color-primary: #4338ca;
+  --color-accent: #7c3aed;
+}
+:root[data-role='supervisor'] {
+  --color-primary: #0f766e;
+  --color-accent: #0891b2;
+}
+:root[data-role='agente'] {
+  --color-primary: #1d4ed8;
+  --color-accent: #2563eb;
+}
+:root[data-role='lectura'] {
+  --color-primary: #52525b;
+  --color-accent: #71717a;
+}
+:root[data-role='cliente'] {
+  --color-primary: #b45309;
+  --color-accent: #ea580c;
+}

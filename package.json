@@ -19,6 +19,7 @@
     "format": "prettier --write .",
     "test": "vitest run",
     "test:watch": "vitest",
+    "seed:roles": "tsx scripts/seed/seed-roles.ts",
     "docs": "tsx scripts/docs/generate-readme.ts",
     "docs:check": "tsx scripts/docs/generate-readme.ts --check",
     "healthcheck": "node dist/scripts/healthcheck.js"
@@ -28,7 +29,6 @@
     "awilix": "^12.0.5",
     "compression": "^1.8.0",
     "cookie-parser": "^1.4.7",
-    "csrf-csrf": "^4.0.3",
     "express": "^5.1.0",
     "firebase-admin": "^13.4.0",
     "helmet": "^8.1.0",

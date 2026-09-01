@@ -38,6 +38,9 @@ export function initFirebase(config: AppConfig, logger: ILogger): FirebaseServic
   if (config.firebase.emulatorHost && !process.env.FIRESTORE_EMULATOR_HOST) {
     process.env.FIRESTORE_EMULATOR_HOST = config.firebase.emulatorHost;
   }
+  if (config.firebase.authEmulatorHost && !process.env.FIREBASE_AUTH_EMULATOR_HOST) {
+    process.env.FIREBASE_AUTH_EMULATOR_HOST = config.firebase.authEmulatorHost;
+  }
   const usingEmulator = Boolean(process.env.FIRESTORE_EMULATOR_HOST);
 
   const app =

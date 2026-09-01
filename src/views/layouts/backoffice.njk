@@ -1,0 +1,12 @@
+{% extends "layouts/base.njk" %}
+{% block body %}
+<div class="app-shell">
+  {% include "partials/nav.njk" %}
+  <div class="app-main">
+    {% include "partials/topbar.njk" %}
+    <main class="app-content">
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+</div>
+{% endblock %}

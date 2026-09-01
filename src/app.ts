@@ -56,8 +56,9 @@ export function createApp(container: Container): Express {
   );
 
   // Locals disponibles en todas las vistas.
-  app.use((_req, res, next) => {
+  app.use((req, res, next) => {
     res.locals.config = { baseUrl: config.baseUrl, env: config.env };
+    res.locals.currentPath = req.path;
     next();
   });
 

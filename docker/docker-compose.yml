@@ -13,24 +13,32 @@ services:
       PORT: "3000"
       APP_BASE_URL: http://localhost:3000
       FIREBASE_PROJECT_ID: ds-hd-local
-      FIRESTORE_EMULATOR_HOST: firestore:8080
+      FIRESTORE_EMULATOR_HOST: firebase:8080
+      FIREBASE_AUTH_EMULATOR_HOST: firebase:9099
       SESSION_COOKIE_SECRET: dev-insecure-secret-change-me-please
       BREVO_API_KEY: ""
     volumes:
       - ..:/app
       - ds-hd-node-modules:/app/node_modules
     depends_on:
-      - firestore
+      - firebase
       - mailhog
 
-  firestore:
-    image: google/cloud-sdk:emulators
+  # Emuladores de Firestore + Auth (imagen oficial con Java + firebase-tools).
+  firebase:
+    image: andreysenov/firebase-tools:latest
     command: >
-      gcloud emulators firestore start
-      --host-port=0.0.0.0:8080
-      --project=ds-hd-local
+      firebase emulators:start
+      --project ds-hd-local
+      --only firestore,auth
     ports:
       - "8080:8080"
+      - "9099:9099"
+      - "4000:4000"
+    working_dir: /home/node
+    volumes:
+      - ../firebase.json:/home/node/firebase.json:ro
+      - ../firestore.rules:/home/node/firestore.rules:ro
 
   mailhog:
     image: mailhog/mailhog:latest
