@@ -1,0 +1,231 @@
+import type {
+  IEventoRepository,
+  IInscripcionRepository,
+  IListaNegraRepository,
+} from '../../core/ports/repositories/IEventoRepository.js';
+import type { IClock } from '../../core/ports/services/IClock.js';
+import type { IIdGenerator } from '../../core/ports/services/IIdGenerator.js';
+import type { ILogger } from '../../core/ports/services/ILogger.js';
+import type { IEmailSender } from '../../core/ports/services/IEmailSender.js';
+import type { ICaptchaVerifier } from '../../core/ports/services/ICaptchaVerifier.js';
+import { Evento, type EstadoEvento } from '../../core/entities/Evento.js';
+import type { EntradaListaNegra, EstadoInscripcion, Inscripcion } from '../../core/entities/Inscripcion.js';
+import { Email } from '../../core/entities/value-objects/Email.js';
+import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '../../core/errors/DomainError.js';
+import type { BitacoraService } from '../shared/BitacoraService.js';
+import type { SessionUser } from '../shared/SessionUser.js';
+
+export interface DatosEvento {
+  titulo: string;
+  descripcion?: string;
+  fechaHora: string;
+  cupo?: number;
+  urlWebinar?: string;
+  horasRecordatorio?: number;
+  estado?: EstadoEvento;
+}
+
+export interface RegistroPublicoInput {
+  eventoId: string;
+  nombre: string;
+  email: string;
+  telefono?: string;
+  empresa?: string;
+  captchaToken?: string;
+  ip?: string;
+}
+
+/** Eventos/webinars: gestión (staff), registro público, lista negra. */
+export class EventoService {
+  constructor(
+    private readonly eventos: IEventoRepository,
+    private readonly inscripciones: IInscripcionRepository,
+    private readonly listaNegra: IListaNegraRepository,
+    private readonly captcha: ICaptchaVerifier,
+    private readonly email: IEmailSender,
+    private readonly ids: IIdGenerator,
+    private readonly clock: IClock,
+    private readonly logger: ILogger,
+    private readonly bitacora: BitacoraService,
+    private readonly baseUrl: string,
+  ) {}
+
+  // ── Consulta ─────────────────────────────────────────────────────────────
+  listar(soloPublicados = false): Promise<Evento[]> {
+    return this.eventos.list(soloPublicados);
+  }
+
+  async obtener(id: string): Promise<Evento> {
+    const e = await this.eventos.findById(id);
+    if (!e) throw new NotFoundError('Evento', id);
+    return e;
+  }
+
+  async detalleConInscritos(id: string): Promise<{ evento: Evento; inscritos: Inscripcion[] }> {
+    const [evento, inscritos] = await Promise.all([this.obtener(id), this.inscripciones.listPorEvento(id)]);
+    return { evento, inscritos };
+  }
+
+  // ── Gestión (staff) ─────────────────────────────────────────────────────
+  async guardar(actor: SessionUser, datos: DatosEvento, id?: string): Promise<Evento> {
+    if (!actor.permisos.includes('eventos:gestionar')) throw new ForbiddenError('No puedes gestionar eventos');
+    const previo = id ? await this.eventos.findById(id) : null;
+    if (id && !previo) throw new NotFoundError('Evento', id);
+    if (!datos.fechaHora) throw new ValidationError('Indica la fecha y hora', { fechaHora: 'Requerida' });
+
+    const evento = new Evento({
+      id: id ?? this.ids.newId(),
+      titulo: datos.titulo,
+      descripcion: datos.descripcion ?? null,
+      fechaHora: new Date(datos.fechaHora),
+      cupo: datos.cupo ?? previo?.cupo ?? 0,
+      estado: datos.estado ?? previo?.estado ?? 'borrador',
+      urlWebinar: datos.urlWebinar ?? previo?.urlWebinar ?? null,
+      horasRecordatorio: datos.horasRecordatorio ?? previo?.horasRecordatorio ?? 24,
+      creadoPorUid: previo?.creadoPorUid ?? actor.uid,
+      createdAt: previo?.createdAt ?? this.clock.now(),
+      updatedAt: this.clock.now(),
+    });
+    await this.eventos.save(evento);
+    await this.bitacora.registrar({
+      actor,
+      accion: id ? 'editar' : 'crear',
+      modulo: 'eventos',
+      entidadTipo: 'Evento',
+      entidadId: evento.id,
+      resumen: `${evento.estado}: ${evento.titulo}`,
+    });
+    return evento;
+  }
+
+  async marcarInscripcion(
+    actor: SessionUser,
+    eventoId: string,
+    inscripcionId: string,
+    estado: EstadoInscripcion,
+  ): Promise<void> {
+    if (!actor.permisos.includes('eventos:gestionar')) throw new ForbiddenError('No puedes gestionar eventos');
+    const inscritos = await this.inscripciones.listPorEvento(eventoId);
+    const inscripcion = inscritos.find((i) => i.id === inscripcionId);
+    if (!inscripcion) throw new NotFoundError('Inscripción', inscripcionId);
+    inscripcion.estado = estado;
+    await this.inscripciones.save(inscripcion);
+  }
+
+  async reenviarConfirmacion(actor: SessionUser, eventoId: string, inscripcionId: string): Promise<void> {
+    if (!actor.permisos.includes('eventos:gestionar')) throw new ForbiddenError('No puedes gestionar eventos');
+    const [evento, inscritos] = await Promise.all([
+      this.obtener(eventoId),
+      this.inscripciones.listPorEvento(eventoId),
+    ]);
+    const inscripcion = inscritos.find((i) => i.id === inscripcionId);
+    if (!inscripcion) throw new NotFoundError('Inscripción', inscripcionId);
+    await this.enviarConfirmacion(evento, inscripcion);
+  }
+
+  // ── Lista negra ─────────────────────────────────────────────────────────
+  listaNegraTodos(): Promise<EntradaListaNegra[]> {
+    return this.listaNegra.list();
+  }
+
+  async agregarListaNegra(actor: SessionUser, email: string, motivo?: string): Promise<void> {
+    if (!actor.permisos.includes('eventos:gestionar')) throw new ForbiddenError('No puedes gestionar eventos');
+    const e = Email.create(email);
+    await this.listaNegra.agregar({ email: e.value, motivo: motivo?.trim() || null, createdAt: this.clock.now() });
+    await this.bitacora.registrar({
+      actor,
+      accion: 'agregar',
+      modulo: 'eventos',
+      entidadTipo: 'ListaNegra',
+      entidadId: e.value,
+      resumen: `Lista negra: ${e.value}`,
+    });
+  }
+
+  async quitarListaNegra(actor: SessionUser, email: string): Promise<void> {
+    if (!actor.permisos.includes('eventos:gestionar')) throw new ForbiddenError('No puedes gestionar eventos');
+    await this.listaNegra.quitar(email.trim().toLowerCase());
+  }
+
+  // ── Registro público ───────────────────────────────────────────────────
+  async registrarPublico(input: RegistroPublicoInput): Promise<Inscripcion> {
+    const evento = await this.obtener(input.eventoId);
+    if (!evento.abiertoARegistro) {
+      throw new ValidationError('El registro para este evento no está disponible');
+    }
+    if (!(await this.captcha.verificar(input.captchaToken, input.ip))) {
+      throw new ValidationError('No pudimos verificar que no eres un robot. Recarga e inténtalo de nuevo.');
+    }
+
+    const correo = Email.create(input.email);
+    const nombre = input.nombre.trim();
+    if (nombre.length < 2) throw new ValidationError('Escribe tu nombre', { nombre: 'Requerido' });
+
+    if (await this.listaNegra.contiene(correo.value)) {
+      this.logger.info('Registro bloqueado por lista negra', { email: correo.value });
+      throw new ValidationError('No fue posible completar tu registro. Contacta a soporte.');
+    }
+    if (await this.inscripciones.findByEmail(evento.id, correo.value)) {
+      throw new ConflictError('Ya estás registrado en este evento con ese correo');
+    }
+    if (evento.cupo > 0 && (await this.inscripciones.contar(evento.id)) >= evento.cupo) {
+      throw new ValidationError('El evento ya alcanzó su cupo máximo');
+    }
+
+    const inscripcion: Inscripcion = {
+      id: this.ids.newId(),
+      eventoId: evento.id,
+      nombre,
+      email: correo.value,
+      telefono: input.telefono?.trim() || null,
+      empresa: input.empresa?.trim() || null,
+      estado: 'registrado',
+      origen: 'publico',
+      correoEstado: 'pendiente',
+      recordatoriosEnviados: [],
+      createdAt: this.clock.now(),
+    };
+    await this.inscripciones.create(inscripcion);
+    await this.enviarConfirmacion(evento, inscripcion);
+    this.logger.info('Inscripción a evento', { evento: evento.id, email: correo.value });
+    return inscripcion;
+  }
+
+  // ── Recordatorios (cron) ───────────────────────────────────────────────
+  async enviarRecordatorios(): Promise<{ eventos: number; correos: number }> {
+    const ahora = this.clock.now();
+    const eventos = await this.eventos.proximos(ahora, new Date(ahora.getTime() + 48 * 3_600_000));
+    let correos = 0;
+    for (const evento of eventos) {
+      const disparo = new Date(evento.fechaHora.getTime() - evento.horasRecordatorio * 3_600_000);
+      if (disparo.getTime() > ahora.getTime()) continue; // aún no toca
+      const inscritos = await this.inscripciones.listPorEvento(evento.id);
+      for (const ins of inscritos) {
+        if (ins.recordatoriosEnviados.includes('previo') || ins.estado === 'no_asistio') continue;
+        await this.email.enviar({
+          para: [{ email: ins.email, nombre: ins.nombre }],
+          asunto: `Recordatorio: ${evento.titulo}`,
+          html: `<p>Hola ${ins.nombre}, te recordamos el evento <strong>${evento.titulo}</strong> el ${evento.fechaHora.toLocaleString('es-MX')}.</p>${
+            evento.urlWebinar ? `<p><a href="${evento.urlWebinar}">Enlace para conectarte</a></p>` : ''
+          }`,
+          tags: ['evento-recordatorio', `evento-${evento.id}`, `insc_${ins.id}`],
+        });
+        ins.recordatoriosEnviados.push('previo');
+        await this.inscripciones.save(ins);
+        correos++;
+      }
+    }
+    this.logger.info('Recordatorios de eventos enviados', { eventos: eventos.length, correos });
+    return { eventos: eventos.length, correos };
+  }
+
+  private async enviarConfirmacion(evento: Evento, ins: Inscripcion): Promise<void> {
+    await this.email.enviar({
+      para: [{ email: ins.email, nombre: ins.nombre }],
+      asunto: `Registro confirmado: ${evento.titulo}`,
+      html: `<p>Hola ${ins.nombre}, tu registro para <strong>${evento.titulo}</strong> (${evento.fechaHora.toLocaleString('es-MX')}) quedó confirmado.</p>
+             <p>Detalles: ${this.baseUrl}/eventos/${evento.id}</p>`,
+      tags: ['evento-confirmacion', `evento-${evento.id}`, `insc_${ins.id}`],
+    });
+  }
+}

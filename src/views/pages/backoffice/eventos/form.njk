@@ -1,0 +1,24 @@
+{% extends "layouts/backoffice.njk" %}
+{% block title %}{{ titulo }}{% endblock %}
+{% block content %}
+  <h1>{{ titulo }}</h1>
+  {% if errores.general %}<p class="alert alert--error">{{ errores.general }}</p>{% endif %}
+  <form method="post" action="{{ '/app/eventos' if modo == 'crear' else '/app/eventos/' + evento.id }}" class="form form--wide">
+    <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+    <label class="field"><span>Título</span><input name="titulo" value="{{ valores.titulo }}" required />
+      {% if errores.titulo %}<em class="field__error">{{ errores.titulo }}</em>{% endif %}</label>
+    <label class="field"><span>Descripción</span><textarea name="descripcion" rows="4">{{ valores.descripcion }}</textarea></label>
+    <label class="field"><span>Fecha y hora</span><input type="datetime-local" name="fechaHora" value="{{ valores.fechaHora }}" required />
+      {% if errores.fechaHora %}<em class="field__error">{{ errores.fechaHora }}</em>{% endif %}</label>
+    <label class="field"><span>Cupo (0 = sin límite)</span><input type="number" name="cupo" value="{{ valores.cupo or 0 }}" min="0" /></label>
+    <label class="field"><span>URL del webinar</span><input name="urlWebinar" value="{{ valores.urlWebinar }}" /></label>
+    <label class="field"><span>Horas antes para recordatorio</span><input type="number" name="horasRecordatorio" value="{{ valores.horasRecordatorio or 24 }}" min="1" /></label>
+    <label class="field"><span>Estado</span>
+      <select name="estado">
+        {% for s in ['borrador','publicado','finalizado','cancelado'] %}<option {{ 'selected' if valores.estado == s }}>{{ s }}</option>{% endfor %}
+      </select>
+    </label>
+    <button class="btn" type="submit">Guardar</button>
+    <a class="btn btn--ghost" href="/app/eventos">Cancelar</a>
+  </form>
+{% endblock %}

@@ -1,0 +1,15 @@
+{% extends "layouts/public-page.njk" %}
+{% block title %}Próximos eventos{% endblock %}
+{% block content %}
+  <h1>Próximos eventos</h1>
+  <ul class="kb-list">
+    {% for e in eventos %}
+      <li>
+        <a href="/eventos/{{ e.id }}"><strong>{{ e.titulo }}</strong></a>
+        <span class="muted">{{ e.fechaHora }}</span>
+      </li>
+    {% else %}
+      <li class="muted">No hay eventos programados por ahora.</li>
+    {% endfor %}
+  </ul>
+{% endblock %}

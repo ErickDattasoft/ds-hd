@@ -26,6 +26,11 @@ import {
   FirestoreInteraccionRepository,
   FirestoreTareaRepository,
 } from '../infrastructure/firestore/FirestoreSeguimientoRepository.js';
+import {
+  FirestoreEventoRepository,
+  FirestoreInscripcionRepository,
+  FirestoreListaNegraRepository,
+} from '../infrastructure/firestore/FirestoreEventoRepository.js';
 import { N8nWebhookPublisher, NullWebhookPublisher } from '../infrastructure/webhooks/N8nWebhookPublisher.js';
 import { TurnstileVerifier, NullCaptchaVerifier } from '../infrastructure/captcha/TurnstileVerifier.js';
 import { LoginService } from '../application/auth/LoginService.js';
@@ -57,6 +62,7 @@ import { KnowledgeService } from '../application/knowledge/KnowledgeService.js';
 import { CotizacionService } from '../application/cotizaciones/CotizacionService.js';
 import { CalculadoraCompacService } from '../application/cotizaciones/CalculadoraCompacService.js';
 import { SeguimientoService } from '../application/seguimiento/SeguimientoService.js';
+import { EventoService } from '../application/eventos/EventoService.js';
 import { AuthController } from '../interfaces/http/controllers/public/AuthController.js';
 import { UsuarioController } from '../interfaces/http/controllers/backoffice/UsuarioController.js';
 import { PortalPerfilController } from '../interfaces/http/controllers/portal/PortalPerfilController.js';
@@ -73,6 +79,9 @@ import { KnowledgeController } from '../interfaces/http/controllers/KnowledgeCon
 import { CotizacionController } from '../interfaces/http/controllers/backoffice/CotizacionController.js';
 import { SeguimientoController } from '../interfaces/http/controllers/backoffice/SeguimientoController.js';
 import { PapeleraController } from '../interfaces/http/controllers/backoffice/PapeleraController.js';
+import { EventoController } from '../interfaces/http/controllers/backoffice/EventoController.js';
+import { EventoPublicoController } from '../interfaces/http/controllers/public/EventoPublicoController.js';
+import { JobsController } from '../interfaces/http/controllers/webhooks/JobsController.js';
 import { SESSION_COOKIE_MAX_AGE_MS } from './constants.js';
 import type { ILogger } from '../core/ports/services/ILogger.js';
 import type { IClock } from '../core/ports/services/IClock.js';
@@ -100,6 +109,11 @@ import type {
   IInteraccionRepository,
   ITareaRepository,
 } from '../core/ports/repositories/ISeguimientoRepository.js';
+import type {
+  IEventoRepository,
+  IInscripcionRepository,
+  IListaNegraRepository,
+} from '../core/ports/repositories/IEventoRepository.js';
 
 /**
  * Todo lo resoluble del contenedor. Las capas internas reciben estas dependencias por
@@ -134,6 +148,9 @@ export interface Cradle {
   cotizacionRepo: ICotizacionRepository;
   interaccionRepo: IInteraccionRepository;
   tareaRepo: ITareaRepository;
+  eventoRepo: IEventoRepository;
+  inscripcionRepo: IInscripcionRepository;
+  listaNegraRepo: IListaNegraRepository;
 
   // Casos de uso
   loginService: LoginService;
@@ -165,6 +182,7 @@ export interface Cradle {
   cotizacionService: CotizacionService;
   calculadoraCompacService: CalculadoraCompacService;
   seguimientoService: SeguimientoService;
+  eventoService: EventoService;
 
   // Controllers
   authController: AuthController;
@@ -183,6 +201,9 @@ export interface Cradle {
   cotizacionController: CotizacionController;
   seguimientoController: SeguimientoController;
   papeleraController: PapeleraController;
+  eventoController: EventoController;
+  eventoPublicoController: EventoPublicoController;
+  jobsController: JobsController;
 }
 
 export type Container = AwilixContainer<Cradle>;
@@ -313,6 +334,18 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
     tareaRepo: asFunction(
       ({ firebase }: Cradle): ITareaRepository =>
         new FirestoreTareaRepository(requireFirebase(firebase).firestore),
+    ).singleton(),
+    eventoRepo: asFunction(
+      ({ firebase }: Cradle): IEventoRepository =>
+        new FirestoreEventoRepository(requireFirebase(firebase).firestore),
+    ).singleton(),
+    inscripcionRepo: asFunction(
+      ({ firebase }: Cradle): IInscripcionRepository =>
+        new FirestoreInscripcionRepository(requireFirebase(firebase).firestore),
+    ).singleton(),
+    listaNegraRepo: asFunction(
+      ({ firebase }: Cradle): IListaNegraRepository =>
+        new FirestoreListaNegraRepository(requireFirebase(firebase).firestore),
     ).singleton(),
 
     loginService: asFunction(
@@ -486,6 +519,21 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
       (c: Cradle) =>
         new SeguimientoService(c.interaccionRepo, c.tareaRepo, c.idGenerator, c.clock, c.bitacoraService),
     ).singleton(),
+    eventoService: asFunction(
+      (c: Cradle) =>
+        new EventoService(
+          c.eventoRepo,
+          c.inscripcionRepo,
+          c.listaNegraRepo,
+          c.captchaVerifier,
+          c.emailSender,
+          c.idGenerator,
+          c.clock,
+          c.logger,
+          c.bitacoraService,
+          c.config.baseUrl,
+        ),
+    ).singleton(),
 
     authController: asFunction(
       (c: Cradle) =>
@@ -574,6 +622,22 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
     ).singleton(),
     papeleraController: asFunction(
       (c: Cradle) => new PapeleraController(c.empresaService, c.contactoService),
+    ).singleton(),
+    eventoController: asFunction((c: Cradle) => new EventoController(c.eventoService)).singleton(),
+    eventoPublicoController: asFunction(
+      (c: Cradle) => new EventoPublicoController(c.eventoService, c.config.turnstile.siteKey),
+    ).singleton(),
+    jobsController: asFunction(
+      (c: Cradle) =>
+        new JobsController(
+          c.eventoService,
+          c.ticketRepo,
+          c.ticketQueries,
+          c.idGenerator,
+          c.clock,
+          c.logger,
+          c.config.jobs.secret,
+        ),
     ).singleton(),
   });
 

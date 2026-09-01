@@ -1,0 +1,33 @@
+{% extends "layouts/public-page.njk" %}
+{% block title %}{{ evento.titulo if evento else 'Evento' }}{% endblock %}
+{% block head %}
+  {% if turnstileSiteKey %}<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>{% endif %}
+{% endblock %}
+{% block content %}
+  {% if not evento %}
+    <h1>Evento no encontrado</h1>
+  {% elif registrado %}
+    <h1>¡Registro confirmado!</h1>
+    <p>Te enviamos un correo con los detalles de <strong>{{ evento.titulo }}</strong>.</p>
+  {% else %}
+    <h1>{{ evento.titulo }}</h1>
+    <p class="muted">{{ evento.fechaHora }}</p>
+    {% if evento.descripcion %}<p>{{ evento.descripcion }}</p>{% endif %}
+
+    {% if evento.abiertoARegistro %}
+      {% if errores.general %}<p class="alert alert--error">{{ errores.general }}</p>{% endif %}
+      <form method="post" action="/eventos/{{ evento.id }}" class="form">
+        <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+        <label class="field"><span>Nombre</span><input name="nombre" value="{{ valores.nombre }}" required />
+          {% if errores.nombre %}<em class="field__error">{{ errores.nombre }}</em>{% endif %}</label>
+        <label class="field"><span>Correo</span><input type="email" name="email" value="{{ valores.email }}" required /></label>
+        <label class="field"><span>Teléfono</span><input name="telefono" value="{{ valores.telefono }}" /></label>
+        <label class="field"><span>Empresa</span><input name="empresa" value="{{ valores.empresa }}" /></label>
+        {% if turnstileSiteKey %}<div class="cf-turnstile" data-sitekey="{{ turnstileSiteKey }}"></div>{% endif %}
+        <button class="btn" type="submit">Registrarme</button>
+      </form>
+    {% else %}
+      <p class="muted">El registro para este evento no está disponible.</p>
+    {% endif %}
+  {% endif %}
+{% endblock %}

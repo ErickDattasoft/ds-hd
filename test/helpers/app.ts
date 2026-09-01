@@ -28,6 +28,11 @@ import {
 import { InMemoryVersionRepository, InMemoryKnowledgeRepository } from '../fakes/kb.js';
 import { InMemoryCotizacionRepository } from '../fakes/cotizaciones.js';
 import { InMemoryInteraccionRepository, InMemoryTareaRepository } from '../fakes/seguimiento.js';
+import {
+  InMemoryEventoRepository,
+  InMemoryInscripcionRepository,
+  InMemoryListaNegraRepository,
+} from '../fakes/eventos.js';
 
 export interface TestApp {
   app: ReturnType<typeof createApp>;
@@ -47,6 +52,9 @@ export interface TestApp {
   cotizacionRepo: InMemoryCotizacionRepository;
   interaccionRepo: InMemoryInteraccionRepository;
   tareaRepo: InMemoryTareaRepository;
+  eventoRepo: InMemoryEventoRepository;
+  inscripcionRepo: InMemoryInscripcionRepository;
+  listaNegraRepo: InMemoryListaNegraRepository;
 }
 
 /**
@@ -83,6 +91,9 @@ export function makeTestApp(opts: { usuarios?: { uid: string; email: string; pas
   const cotizacionRepo = new InMemoryCotizacionRepository();
   const interaccionRepo = new InMemoryInteraccionRepository();
   const tareaRepo = new InMemoryTareaRepository();
+  const eventoRepo = new InMemoryEventoRepository();
+  const inscripcionRepo = new InMemoryInscripcionRepository();
+  const listaNegraRepo = new InMemoryListaNegraRepository();
 
   const overrides: ContainerOverrides = {
     usuarioRepo,
@@ -106,6 +117,9 @@ export function makeTestApp(opts: { usuarios?: { uid: string; email: string; pas
     cotizacionRepo,
     interaccionRepo,
     tareaRepo,
+    eventoRepo,
+    inscripcionRepo,
+    listaNegraRepo,
   };
 
   const container = buildContainer(loadConfig(), overrides);
@@ -127,6 +141,9 @@ export function makeTestApp(opts: { usuarios?: { uid: string; email: string; pas
     cotizacionRepo,
     interaccionRepo,
     tareaRepo,
+    eventoRepo,
+    inscripcionRepo,
+    listaNegraRepo,
   };
 }
 

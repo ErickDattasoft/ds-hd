@@ -8,6 +8,7 @@ import { publicRoutes } from './public.routes.js';
 import { backofficeRoutes } from './backoffice.routes.js';
 import { portalRoutes } from './portal.routes.js';
 import { webhookRoutes } from './webhooks.routes.js';
+import { jobsRoutes } from './jobs.routes.js';
 
 /** Monta todos los routers de la app. */
 export function buildRouter(container: Container): Router {
@@ -29,6 +30,7 @@ export function buildRouter(container: Container): Router {
   });
 
   router.use('/webhooks', webhookRoutes(container));
+  router.use('/jobs', jobsRoutes(container));
   router.use('/', publicRoutes(container));
   router.use('/app', backofficeRoutes(container));
   router.use('/portal', portalRoutes(container));

@@ -25,5 +25,10 @@ export function publicRoutes(container: Container): Router {
   r.get('/kb', (req, res) => kb().listar(req, res));
   r.get('/kb/:idOrSlug', (req, res) => kb().ver(req, res));
 
+  const eventos = () => container.resolve('eventoPublicoController');
+  r.get('/eventos', (req, res) => eventos().listar(req, res));
+  r.get('/eventos/:id', (req, res) => eventos().detalle(req, res));
+  r.post('/eventos/:id', (req, res) => eventos().registrarPost(req, res));
+
   return r;
 }

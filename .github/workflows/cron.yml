@@ -1,0 +1,19 @@
+name: Cron
+
+on:
+  schedule:
+    - cron: '17 * * * *' # cada hora, minuto 17
+  workflow_dispatch:
+
+jobs:
+  jobs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Recordatorios de eventos
+        run: |
+          curl -fsS -X POST "${{ secrets.APP_BASE_URL }}/jobs/recordatorios-eventos" \
+            -H "Authorization: Bearer ${{ secrets.JOBS_SECRET }}"
+      - name: Recalcular SLA de tickets
+        run: |
+          curl -fsS -X POST "${{ secrets.APP_BASE_URL }}/jobs/recalcular-sla" \
+            -H "Authorization: Bearer ${{ secrets.JOBS_SECRET }}"

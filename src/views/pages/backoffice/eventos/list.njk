@@ -1,0 +1,21 @@
+{% extends "layouts/backoffice.njk" %}
+{% block title %}Eventos{% endblock %}
+{% block content %}
+  <div class="page-head">
+    <h1>Eventos</h1>
+    {% if can('eventos:gestionar') %}<a class="btn btn--sm" href="/app/eventos/nuevo">Nuevo evento</a>{% endif %}
+  </div>
+  <table class="data-table">
+    <thead><tr><th>Título</th><th>Fecha</th><th>Estado</th><th>Cupo</th></tr></thead>
+    <tbody>
+      {% for e in eventos %}
+        <tr>
+          <td><a href="/app/eventos/{{ e.id }}">{{ e.titulo }}</a></td>
+          <td>{{ e.fechaHora }}</td>
+          <td><span class="badge badge--estado">{{ e.estado }}</span></td>
+          <td>{{ e.cupo if e.cupo else 'sin límite' }}</td>
+        </tr>
+      {% else %}<tr><td colspan="4" class="muted">Sin eventos.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+{% endblock %}

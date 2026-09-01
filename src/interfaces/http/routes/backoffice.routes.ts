@@ -17,6 +17,7 @@ export function backofficeRoutes(container: Container): Router {
   const cotizaciones = () => container.resolve('cotizacionController');
   const seguimiento = () => container.resolve('seguimientoController');
   const papelera = () => container.resolve('papeleraController');
+  const eventos = () => container.resolve('eventoController');
   const gestUsuarios = requirePermission('usuarios:gestionar');
   const leerTickets = requirePermission('tickets:leer');
 
@@ -117,6 +118,18 @@ export function backofficeRoutes(container: Container): Router {
   r.post('/tareas', requirePermission('seguimiento:gestionar'), (req, res) => seguimiento().crearTareaPost(req, res));
   r.post('/tareas/:id/marcar', requirePermission('seguimiento:gestionar'), (req, res) => seguimiento().marcarTareaPost(req, res));
   r.post('/interacciones', requirePermission('seguimiento:gestionar'), (req, res) => seguimiento().crearInteraccionPost(req, res));
+
+  // ── Eventos ────────────────────────────────────────────────────────────────
+  r.get('/eventos', requirePermission('eventos:leer'), (req, res) => eventos().listar(req, res));
+  r.get('/eventos/nuevo', requirePermission('eventos:gestionar'), (req, res) => eventos().nuevo(req, res));
+  r.post('/eventos', requirePermission('eventos:gestionar'), (req, res) => eventos().guardarPost(req, res));
+  r.get('/eventos/:id', requirePermission('eventos:leer'), (req, res) => eventos().ver(req, res));
+  r.get('/eventos/:id/editar', requirePermission('eventos:gestionar'), (req, res) => eventos().editar(req, res));
+  r.post('/eventos/:id', requirePermission('eventos:gestionar'), (req, res) => eventos().guardarPost(req, res));
+  r.post('/eventos/:id/inscritos/:insId/marcar', requirePermission('eventos:gestionar'), (req, res) => eventos().marcarInscripcionPost(req, res));
+  r.post('/eventos/:id/inscritos/:insId/reenviar', requirePermission('eventos:gestionar'), (req, res) => eventos().reenviarPost(req, res));
+  r.post('/eventos/:id/lista-negra', requirePermission('eventos:gestionar'), (req, res) => eventos().listaNegraAgregarPost(req, res));
+  r.post('/eventos/:id/lista-negra/quitar', requirePermission('eventos:gestionar'), (req, res) => eventos().listaNegraQuitarPost(req, res));
 
   // ── Papelera ───────────────────────────────────────────────────────────────
   r.get('/papelera', requirePermission('papelera:gestionar'), (req, res) => papelera().ver(req, res));
