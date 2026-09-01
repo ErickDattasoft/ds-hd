@@ -45,7 +45,7 @@
     <h2>Lista negra</h2>
     <form method="post" action="/app/eventos/{{ evento.id }}/lista-negra" class="filterbar">
       <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
-      <input type="email" name="email" placeholder="correo@ejemplo.com" required />
+      <input type="email" name="email" autocomplete="email" placeholder="correo@ejemplo.com" required />
       <input name="motivo" placeholder="Motivo (opcional)" />
       <button class="btn btn--sm" type="submit">Bloquear</button>
     </form>

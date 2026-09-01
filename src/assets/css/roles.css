@@ -1,24 +1,30 @@
 /*
- * Acento de color por rol. La UI base es la misma; cada perfil recibe un color primario
- * y de acento distinto para que sea reconocible de un vistazo. Fase 5 amplía el theming.
+ * Color de marca por rol. Cada perfil recibe un tono reconocible; todos elegidos con
+ * contraste >= 4.5:1 para texto blanco sobre el botón (AA). Se usan los mismos tonos en
+ * claro y oscuro para no comprometer el contraste del texto del botón.
  */
-:root[data-role='admin'] {
-  --color-primary: #4338ca;
-  --color-accent: #7c3aed;
+:root[data-role="admin"] {
+  --brand: #4338ca;
+  --brand-hover: #3730a3;
+  --accent: #6d28d9;
 }
-:root[data-role='supervisor'] {
-  --color-primary: #0f766e;
-  --color-accent: #0891b2;
+:root[data-role="supervisor"] {
+  --brand: #0f766e;
+  --brand-hover: #115e59;
+  --accent: #0e7490;
 }
-:root[data-role='agente'] {
-  --color-primary: #1d4ed8;
-  --color-accent: #2563eb;
+:root[data-role="agente"] {
+  --brand: #1d4ed8;
+  --brand-hover: #1e40af;
+  --accent: #2563eb;
 }
-:root[data-role='lectura'] {
-  --color-primary: #52525b;
-  --color-accent: #71717a;
+:root[data-role="lectura"] {
+  --brand: #475569;
+  --brand-hover: #334155;
+  --accent: #64748b;
 }
-:root[data-role='cliente'] {
-  --color-primary: #b45309;
-  --color-accent: #ea580c;
+:root[data-role="cliente"] {
+  --brand: #b45309;
+  --brand-hover: #92400e;
+  --accent: #c2410c;
 }

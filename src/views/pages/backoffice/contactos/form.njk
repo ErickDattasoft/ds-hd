@@ -15,9 +15,9 @@
       {% if errores.empresaId %}<em class="field__error">{{ errores.empresaId }}</em>{% endif %}
     </label>
     <label class="field"><span>Puesto</span><input name="puesto" value="{{ valores.puesto }}" /></label>
-    <label class="field"><span>Correo</span><input type="email" name="email" value="{{ valores.email }}" /></label>
-    <label class="field"><span>Teléfono</span><input name="telefono" value="{{ valores.telefono }}" /></label>
-    <label class="field"><span>Celular</span><input name="celular" value="{{ valores.celular }}" /></label>
+    <label class="field"><span>Correo</span><input type="email" name="email" autocomplete="email" value="{{ valores.email }}" /></label>
+    <label class="field"><span>Teléfono</span><input type="tel" inputmode="tel" name="telefono" value="{{ valores.telefono }}" /></label>
+    <label class="field"><span>Celular</span><input type="tel" inputmode="tel" name="celular" value="{{ valores.celular }}" /></label>
     <label class="field"><span>Notas</span><textarea name="notas" rows="3">{{ valores.notas }}</textarea></label>
     <button class="btn" type="submit">Guardar</button>
     <a class="btn btn--ghost" href="/app/contactos">Cancelar</a>

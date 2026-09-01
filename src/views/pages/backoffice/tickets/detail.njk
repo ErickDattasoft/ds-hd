@@ -42,7 +42,7 @@
       <div class="card">
         <p><strong>Actividad</strong></p>
         <ul class="timeline">
-          {% for e in eventos %}<li><span class="muted">{{ e.at }}</span> — {{ e.resumen }}{% if e.actorNombre %} ({{ e.actorNombre }}){% endif %}</li>{% endfor %}
+          {% for e in eventos %}<li><span class="muted">{{ e.at | fechahora }}</span> — {{ e.resumen }}{% if e.actorNombre %} ({{ e.actorNombre }}){% endif %}</li>{% endfor %}
         </ul>
       </div>
     </section>

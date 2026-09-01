@@ -1,6 +1,10 @@
 <header class="topbar">
-  <span class="topbar__title">{{ titulo }}</span>
+  <div class="topbar__user" style="gap: var(--space-2)">
+    <button type="button" class="btn btn--ghost btn--sm nav-toggle" data-nav-toggle aria-label="Abrir menú" aria-controls="menu-lateral">☰</button>
+    <span class="topbar__title">{{ titulo }}</span>
+  </div>
   <div class="topbar__user">
+    <button type="button" class="theme-toggle" data-theme-toggle aria-label="Cambiar tema">◐</button>
     {% if user %}
       <span class="topbar__name">{{ user.nombre }}</span>
       <span class="badge badge--rol">{{ user.rol }}</span>

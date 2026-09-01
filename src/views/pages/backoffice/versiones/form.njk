@@ -16,7 +16,7 @@
     <a class="btn btn--ghost" href="/app/versiones">Cancelar</a>
   </form>
   {% if modo == 'editar' %}
-    <form method="post" action="/app/versiones/{{ version.id }}/eliminar" class="form">
+    <form method="post" action="/app/versiones/{{ version.id }}/eliminar" class="form" data-confirm="¿Eliminar esta versión?">
       <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
       <button class="btn btn--sm btn--ghost" type="submit">Eliminar versión</button>
     </form>

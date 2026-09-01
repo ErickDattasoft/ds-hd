@@ -2,9 +2,14 @@
 {% block body %}
 <header class="pubbar">
   <a class="pubbar__brand" href="/">ds-hd</a>
-  <nav><a href="/kb">Base de conocimiento</a> <a href="/eventos">Eventos</a> <a href="/ticket-publico">Levantar ticket</a></nav>
+  <nav aria-label="Secciones públicas">
+    <a href="/kb">Base de conocimiento</a>
+    <a href="/eventos">Eventos</a>
+    <a href="/ticket-publico">Levantar ticket</a>
+    <button type="button" class="theme-toggle" data-theme-toggle aria-label="Cambiar tema">◐</button>
+  </nav>
 </header>
-<main class="container">
+<main id="contenido" class="container">
   {% block content %}{% endblock %}
 </main>
 {% endblock %}

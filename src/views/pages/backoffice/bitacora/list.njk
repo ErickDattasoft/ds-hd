@@ -16,7 +16,7 @@
     <tbody>
       {% for e in entradas %}
         <tr>
-          <td class="muted">{{ e.at }}</td>
+          <td class="muted">{{ e.at | fechahora }}</td>
           <td>{{ e.modulo }}</td>
           <td>{{ e.accion }}</td>
           <td>{{ e.resumen }}</td>

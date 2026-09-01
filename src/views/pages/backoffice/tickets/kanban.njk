@@ -2,15 +2,19 @@
 {% import "components/tickets.njk" as tk %}
 {% block title %}Tablero{% endblock %}
 {% block content %}
-  <div class="page-head"><h1>Tablero de tickets</h1>
+  <div class="page-head">
+    <h1>Tablero de tickets</h1>
     <a class="btn btn--sm btn--ghost" href="/app/tickets">Ver lista</a>
   </div>
-  <div class="kanban">
+  {% if can('tickets:cambiar_estado') %}
+    <p class="muted">Arrastra una tarjeta a otra columna para cambiar su estado.</p>
+  {% endif %}
+  <div class="kanban" data-kanban>
     {% for col in columnas %}
-      <section class="kanban__col">
+      <section class="kanban__col" data-col-estado="{{ col.estado }}" aria-label="Columna {{ col.estado }}">
         <h2 class="kanban__title">{{ col.estado }} <span class="muted">({{ col.tickets | length }})</span></h2>
         {% for vm in col.tickets %}
-          <a class="kanban__card" href="/app/tickets/{{ vm.id }}">
+          <a class="kanban__card" href="/app/tickets/{{ vm.id }}" data-ticket-id="{{ vm.id }}">
             <strong>#{{ vm.numero }}</strong> {{ vm.asunto }}
             <div class="kanban__meta">
               <span>{{ vm.prioridad }}</span>

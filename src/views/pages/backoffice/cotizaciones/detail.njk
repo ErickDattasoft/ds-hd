@@ -7,19 +7,19 @@
       <a class="btn btn--sm" href="/app/cotizaciones/{{ cotizacion.id }}/editar">Editar</a>
     {% endif %}
   </div>
-  <p class="muted">{{ cotizacion.empresaNombre }} · Fecha {{ cotizacion.fecha }} · Vence {{ cotizacion.venceEl }}</p>
+  <p class="muted">{{ cotizacion.empresaNombre }} · Fecha {{ cotizacion.fecha | fecha }} · Vence {{ cotizacion.venceEl | fecha }}</p>
 
   <table class="data-table">
     <thead><tr><th>Descripción</th><th>Cant.</th><th>P. Unit.</th><th>Importe</th></tr></thead>
     <tbody>
       {% for c in cotizacion.conceptos %}
-        <tr><td>{{ c.descripcion }}</td><td>{{ c.cantidad }}</td><td>{{ c.precioUnitario }}</td><td>{{ c.importe }}</td></tr>
+        <tr><td>{{ c.descripcion }}</td><td>{{ c.cantidad }}</td><td>{{ c.precioUnitario | moneda(cotizacion.moneda) }}</td><td>{{ c.importe | moneda(cotizacion.moneda) }}</td></tr>
       {% endfor %}
     </tbody>
     <tfoot>
-      <tr><td colspan="3" style="text-align:right"><strong>Subtotal</strong></td><td>{{ cotizacion.subtotal }}</td></tr>
-      <tr><td colspan="3" style="text-align:right">IVA</td><td>{{ cotizacion.iva }}</td></tr>
-      <tr><td colspan="3" style="text-align:right"><strong>Total</strong></td><td><strong>{{ cotizacion.total }} {{ cotizacion.moneda }}</strong></td></tr>
+      <tr><td colspan="3" style="text-align:right"><strong>Subtotal</strong></td><td>{{ cotizacion.subtotal | moneda(cotizacion.moneda) }}</td></tr>
+      <tr><td colspan="3" style="text-align:right">IVA</td><td>{{ cotizacion.iva | moneda(cotizacion.moneda) }}</td></tr>
+      <tr><td colspan="3" style="text-align:right"><strong>Total</strong></td><td><strong>{{ cotizacion.total | moneda(cotizacion.moneda) }}</strong></td></tr>
     </tfoot>
   </table>
 

@@ -3,6 +3,7 @@ import type { IUsuarioRepository } from '../../../../core/ports/repositories/IUs
 import type { CrearUsuarioService } from '../../../../application/usuarios/CrearUsuarioService.js';
 import type { ActualizarUsuarioService } from '../../../../application/usuarios/ActualizarUsuarioService.js';
 import type { InvitarClienteService } from '../../../../application/usuarios/InvitarClienteService.js';
+import type { IEmpresaRepository } from '../../../../core/ports/repositories/IEmpresaRepository.js';
 import { DomainError, NotFoundError } from '../../../../core/errors/DomainError.js';
 import { ROLES, ROLES_STAFF, ROL_ETIQUETA, parseRol } from '../../../../core/entities/value-objects/Rol.js';
 import { permisosPorModulo } from '../../rbac/permissions.js';
@@ -15,6 +16,7 @@ export class UsuarioController {
     private readonly crear: CrearUsuarioService,
     private readonly actualizar: ActualizarUsuarioService,
     private readonly invitarCliente: InvitarClienteService,
+    private readonly empresas: IEmpresaRepository,
   ) {}
 
   listar = async (req: Request, res: Response): Promise<void> => {
@@ -115,9 +117,10 @@ export class UsuarioController {
     }
   };
 
-  invitarClienteGet = (_req: Request, res: Response): void => {
+  invitarClienteGet = async (_req: Request, res: Response): Promise<void> => {
     res.render('pages/backoffice/usuarios/invitar-cliente', {
       titulo: 'Invitar cliente al portal',
+      empresas: await this.empresas.list({ activa: true }),
       valores: {},
       errores: {},
     });
@@ -145,6 +148,7 @@ export class UsuarioController {
           : { general: err instanceof DomainError ? err.message : 'No se pudo invitar' };
       res.status(422).render('pages/backoffice/usuarios/invitar-cliente', {
         titulo: 'Invitar cliente al portal',
+        empresas: await this.empresas.list({ activa: true }),
         valores: { email, nombre, empresaId },
         errores,
       });

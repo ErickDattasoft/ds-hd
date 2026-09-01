@@ -1,22 +1,33 @@
 <!doctype html>
-<html lang="es" data-theme="{{ theme | default('light') }}"{% if user %} data-role="{{ user.rol }}"{% endif %}>
+<html lang="es"{% if theme %} data-theme="{{ theme }}"{% endif %}{% if user %} data-role="{{ user.rol }}"{% endif %}>
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="light dark" />
+  <meta name="theme-color" content="#f6f7f9" media="(prefers-color-scheme: light)" />
+  <meta name="theme-color" content="#0e1116" media="(prefers-color-scheme: dark)" />
   <title>{% block title %}{{ titulo | default('ds-hd') }}{% endblock %} · ds-hd</title>
   <link rel="stylesheet" href="/static/build/tokens.css" />
-  <link rel="stylesheet" href="/static/build/base.css" />
   <link rel="stylesheet" href="/static/build/roles.css" />
+  <link rel="stylesheet" href="/static/build/base.css" />
+  <link rel="stylesheet" href="/static/build/components.css" />
   {% block head %}{% endblock %}
 </head>
 <body>
+  <a class="skip-link" href="#contenido">Saltar al contenido</a>
   {% block body %}
-  <main class="container">
+  <main id="contenido" class="container">
     {% block content %}{% endblock %}
   </main>
   {% endblock %}
 
-  {# htmx/Alpine se cargan por página cuando se necesitan (Fase 5 unifica con build CSP). #}
+  {% if flash %}
+  <div class="toasts" aria-live="polite">
+    {% for f in flash %}<div class="toast toast--{{ f.tipo }}">{{ f.mensaje }}</div>{% endfor %}
+  </div>
+  {% endif %}
+
+  <script src="/static/vendor/htmx.min.js" defer></script>
   <script src="/static/build/app.js" defer></script>
   {% block scripts %}{% endblock %}
 </body>

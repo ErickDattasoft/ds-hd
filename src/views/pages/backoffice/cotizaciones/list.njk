@@ -25,8 +25,8 @@
         <tr>
           <td><a href="/app/cotizaciones/{{ c.id }}">{{ c.folio }}</a></td>
           <td>{{ c.empresaNombre or '—' }}</td>
-          <td>{{ c.fecha }}</td>
-          <td>{{ c.total }} {{ c.moneda }}</td>
+          <td>{{ c.fecha | fecha }}</td>
+          <td>{{ c.total | moneda(c.moneda) }}</td>
           <td><span class="badge badge--estado">{{ c.estado }}</span></td>
         </tr>
       {% else %}<tr><td colspan="5" class="muted">Sin cotizaciones.</td></tr>{% endfor %}

@@ -20,8 +20,8 @@
         <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
         <label class="field"><span>Nombre</span><input name="nombre" value="{{ valores.nombre }}" required />
           {% if errores.nombre %}<em class="field__error">{{ errores.nombre }}</em>{% endif %}</label>
-        <label class="field"><span>Correo</span><input type="email" name="email" value="{{ valores.email }}" required /></label>
-        <label class="field"><span>Teléfono</span><input name="telefono" value="{{ valores.telefono }}" /></label>
+        <label class="field"><span>Correo</span><input type="email" name="email" autocomplete="email" value="{{ valores.email }}" required /></label>
+        <label class="field"><span>Teléfono</span><input type="tel" inputmode="tel" name="telefono" value="{{ valores.telefono }}" /></label>
         <label class="field"><span>Empresa</span><input name="empresa" value="{{ valores.empresa }}" /></label>
         {% if turnstileSiteKey %}<div class="cf-turnstile" data-sitekey="{{ turnstileSiteKey }}"></div>{% endif %}
         <button class="btn" type="submit">Registrarme</button>

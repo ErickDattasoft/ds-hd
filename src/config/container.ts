@@ -567,6 +567,7 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
           c.crearUsuarioService,
           c.actualizarUsuarioService,
           c.invitarClienteService,
+          c.empresaRepo,
         ),
     ).singleton(),
     portalPerfilController: asFunction(

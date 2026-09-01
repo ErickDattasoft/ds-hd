@@ -6,7 +6,7 @@
     {% for e in eventos %}
       <li>
         <a href="/eventos/{{ e.id }}"><strong>{{ e.titulo }}</strong></a>
-        <span class="muted">{{ e.fechaHora }}</span>
+        <span class="muted">{{ e.fechaHora | fechahora }}</span>
       </li>
     {% else %}
       <li class="muted">No hay eventos programados por ahora.</li>

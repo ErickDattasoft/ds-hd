@@ -16,7 +16,7 @@
       </label>
       <label class="field">
         <span>Correo</span>
-        <input type="email" name="email" value="{{ valores.email }}" required />
+        <input type="email" name="email" autocomplete="email" value="{{ valores.email }}" required />
         {% if errores.email %}<em class="field__error">{{ errores.email }}</em>{% endif %}
       </label>
       <label class="field">

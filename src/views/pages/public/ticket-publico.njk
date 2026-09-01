@@ -11,9 +11,9 @@
     <label class="field"><span>Nombre</span><input name="nombre" value="{{ valores.nombre }}" required />
       {% if errores.nombre %}<em class="field__error">{{ errores.nombre }}</em>{% endif %}</label>
     <label class="field"><span>Empresa</span><input name="empresa" value="{{ valores.empresa }}" /></label>
-    <label class="field"><span>Correo</span><input type="email" name="correo" value="{{ valores.correo }}" required />
+    <label class="field"><span>Correo</span><input type="email" name="correo" autocomplete="email" value="{{ valores.correo }}" required />
       {% if errores.correo %}<em class="field__error">{{ errores.correo }}</em>{% endif %}</label>
-    <label class="field"><span>Teléfono</span><input name="telefono" value="{{ valores.telefono }}" /></label>
+    <label class="field"><span>Teléfono</span><input type="tel" inputmode="tel" name="telefono" value="{{ valores.telefono }}" /></label>
     <label class="field"><span>Asunto</span><input name="asunto" value="{{ valores.asunto }}" required />
       {% if errores.asunto %}<em class="field__error">{{ errores.asunto }}</em>{% endif %}</label>
     <label class="field"><span>Sistema</span>

@@ -6,7 +6,7 @@
     {% if can('empresas:crear') %}<a class="btn btn--sm" href="/app/empresas/nueva">Nueva empresa</a>{% endif %}
   </div>
   <form method="get" class="filterbar">
-    <input type="search" name="q" value="{{ q }}" placeholder="Buscar por nombre o RFC" />
+    <input type="search" name="q" value="{{ q }}" placeholder="Buscar por nombre o RFC…" autocomplete="off" spellcheck="false" />
     <label class="field--check"><input type="checkbox" name="archivadas" value="1" {{ 'checked' if incluirArchivadas }} /> incluir archivadas</label>
     <button class="btn btn--sm" type="submit">Buscar</button>
   </form>

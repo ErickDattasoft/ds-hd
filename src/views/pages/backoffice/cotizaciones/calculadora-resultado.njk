@@ -5,12 +5,12 @@
   <table class="data-table">
     <thead><tr><th>Concepto</th><th>Precio</th></tr></thead>
     <tbody>
-      {% for c in resultado.conceptos %}<tr><td>{{ c.descripcion }}</td><td>{{ c.importe }}</td></tr>{% endfor %}
+      {% for c in resultado.conceptos %}<tr><td>{{ c.descripcion }}</td><td>{{ c.importe | moneda(resultado.config.moneda) }}</td></tr>{% endfor %}
     </tbody>
     <tfoot>
-      <tr><td style="text-align:right"><strong>Subtotal</strong></td><td>{{ resultado.subtotal }}</td></tr>
-      <tr><td style="text-align:right">IVA</td><td>{{ resultado.iva }}</td></tr>
-      <tr><td style="text-align:right"><strong>Total</strong></td><td><strong>{{ resultado.total }} {{ resultado.config.moneda }}</strong></td></tr>
+      <tr><td style="text-align:right"><strong>Subtotal</strong></td><td>{{ resultado.subtotal | moneda(resultado.config.moneda) }}</td></tr>
+      <tr><td style="text-align:right">IVA</td><td>{{ resultado.iva | moneda(resultado.config.moneda) }}</td></tr>
+      <tr><td style="text-align:right"><strong>Total</strong></td><td><strong>{{ resultado.total | moneda(resultado.config.moneda) }}</strong></td></tr>
     </tfoot>
   </table>
 

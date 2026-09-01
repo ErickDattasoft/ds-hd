@@ -33,6 +33,25 @@ export function createApp(container: Container): Express {
   });
   njk.addGlobal('APP_VERSION', APP_VERSION);
   njk.addFilter('json', (value: unknown) => JSON.stringify(value, null, 2));
+
+  const fmtFecha = new Intl.DateTimeFormat('es-MX', { dateStyle: 'medium' });
+  const fmtFechaHora = new Intl.DateTimeFormat('es-MX', { dateStyle: 'medium', timeStyle: 'short' });
+  const asDate = (v: unknown): Date | null => {
+    const d = v instanceof Date ? v : typeof v === 'string' || typeof v === 'number' ? new Date(v) : null;
+    return d && !Number.isNaN(d.getTime()) ? d : null;
+  };
+  njk.addFilter('fecha', (v: unknown) => {
+    const d = asDate(v);
+    return d ? fmtFecha.format(d) : '—';
+  });
+  njk.addFilter('fechahora', (v: unknown) => {
+    const d = asDate(v);
+    return d ? fmtFechaHora.format(d) : '—';
+  });
+  njk.addFilter('moneda', (v: unknown, moneda = 'MXN') =>
+    new Intl.NumberFormat('es-MX', { style: 'currency', currency: String(moneda) }).format(Number(v) || 0),
+  );
+
   app.set('view engine', 'njk');
 
   // ── Middlewares base ────────────────────────────────────────────────────────
@@ -60,6 +79,8 @@ export function createApp(container: Container): Express {
     res.locals.config = { baseUrl: config.baseUrl, env: config.env };
     res.locals.currentPath = req.path;
     res.locals.can = (permiso: string): boolean => req.user?.permisos.includes(permiso) ?? false;
+    const tema = req.cookies?.theme;
+    if (tema === 'light' || tema === 'dark') res.locals.theme = tema;
     next();
   });
 

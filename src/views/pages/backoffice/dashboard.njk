@@ -39,7 +39,7 @@
     <div class="card">
       <h2>Próximos eventos</h2>
       <ul>
-        {% for e in m.proximosEventos %}<li><a href="/app/eventos/{{ e.id }}">{{ e.titulo }}</a> <span class="muted">{{ e.fechaHora }}</span></li>
+        {% for e in m.proximosEventos %}<li><a href="/app/eventos/{{ e.id }}">{{ e.titulo }}</a> <span class="muted">{{ e.fechaHora | fechahora }}</span></li>
         {% else %}<li class="muted">Ninguno programado.</li>{% endfor %}
       </ul>
     </div>
@@ -47,7 +47,7 @@
     <div class="card" style="grid-column:1/-1">
       <h2>Actividad reciente</h2>
       <ul class="timeline">
-        {% for a in m.actividadReciente %}<li><span class="muted">{{ a.at }}</span> · <strong>{{ a.modulo }}</strong> — {{ a.resumen }} <span class="muted">{{ a.actorNombre }}</span></li>{% endfor %}
+        {% for a in m.actividadReciente %}<li><span class="muted">{{ a.at | fechahora }}</span> · <strong>{{ a.modulo }}</strong> — {{ a.resumen }} <span class="muted">{{ a.actorNombre }}</span></li>{% endfor %}
       </ul>
     </div>
     {% endif %}

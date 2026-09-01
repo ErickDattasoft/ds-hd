@@ -6,7 +6,7 @@
     {% if can('kb:escribir') %}<a class="btn btn--sm" href="/app/kb">Gestionar</a>{% endif %}
   </div>
   <form method="get" class="filterbar">
-    <input type="search" name="q" value="{{ q }}" placeholder="Buscar artículos" />
+    <input type="search" name="q" value="{{ q }}" placeholder="Buscar artículos…" autocomplete="off" spellcheck="false" />
     <button class="btn btn--sm" type="submit">Buscar</button>
   </form>
   <ul class="kb-list">

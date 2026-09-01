@@ -15,7 +15,7 @@
     {% if empresa.sistemasContratados | length %}<p><strong>Sistemas:</strong> {{ empresa.sistemasContratados | join(', ') }}</p>{% endif %}
     {% if empresa.notas %}<p class="muted">{{ empresa.notas }}</p>{% endif %}
     {% if can('empresas:eliminar') %}
-      <form method="post" action="/app/empresas/{{ empresa.id }}/archivar" class="inline">
+      <form method="post" action="/app/empresas/{{ empresa.id }}/archivar" class="inline" data-confirm="¿Archivar esta empresa?">
         <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
         <input type="hidden" name="archivar" value="{{ 'false' if not empresa.activa else 'true' }}" />
         <button class="btn btn--sm btn--ghost" type="submit">{{ 'Restaurar' if not empresa.activa else 'Archivar' }}</button>
@@ -67,7 +67,7 @@
     {% endif %}
     <ul class="timeline">
       {% for i in interacciones %}
-        <li><span class="muted">{{ i.fecha }}</span> · <strong>{{ i.tipo }}</strong> — {{ i.resumen }} <span class="muted">({{ i.creadoPorNombre }})</span></li>
+        <li><span class="muted">{{ i.fecha | fecha }}</span> · <strong>{{ i.tipo }}</strong> — {{ i.resumen }} <span class="muted">({{ i.creadoPorNombre }})</span></li>
       {% else %}<li class="muted">Sin interacciones registradas.</li>{% endfor %}
     </ul>
   {% endif %}

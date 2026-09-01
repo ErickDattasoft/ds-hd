@@ -11,7 +11,7 @@
       {% for e in eventos %}
         <tr>
           <td><a href="/app/eventos/{{ e.id }}">{{ e.titulo }}</a></td>
-          <td>{{ e.fechaHora }}</td>
+          <td>{{ e.fechaHora | fechahora }}</td>
           <td><span class="badge badge--estado">{{ e.estado }}</span></td>
           <td>{{ e.cupo if e.cupo else 'sin límite' }}</td>
         </tr>

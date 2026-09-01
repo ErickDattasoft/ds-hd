@@ -43,7 +43,7 @@
     <div class="card">
       <p><strong>Seguimiento</strong></p>
       <ul class="timeline">
-        {% for e in eventos %}<li><span class="muted">{{ e.at }}</span> — {{ e.resumen }}</li>{% endfor %}
+        {% for e in eventos %}<li><span class="muted">{{ e.at | fechahora }}</span> — {{ e.resumen }}</li>{% endfor %}
       </ul>
     </div>
   {% endif %}

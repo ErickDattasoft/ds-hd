@@ -12,7 +12,7 @@
           <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
           <button class="btn btn--sm" type="submit">Aceptar</button>
         </form>
-        <form method="post" action="/app/tickets/buzon/{{ t.id }}/rechazar" class="inline">
+        <form method="post" action="/app/tickets/buzon/{{ t.id }}/rechazar" class="inline" data-confirm="¿Rechazar este ticket del portal?">
           <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
           <button class="btn btn--sm btn--ghost" type="submit">Rechazar</button>
         </form>

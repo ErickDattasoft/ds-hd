@@ -1,9 +1,12 @@
 {% extends "layouts/base.njk" %}
 {% block body %}
 <div class="auth-shell">
-  <main class="auth-card">
+  <main id="contenido" class="auth-card">
     <a class="auth-brand" href="/">ds-hd</a>
     {% block content %}{% endblock %}
+    <p style="text-align:center;margin-top:var(--space-4)">
+      <button type="button" class="theme-toggle" data-theme-toggle aria-label="Cambiar tema">◐</button>
+    </p>
   </main>
 </div>
 {% endblock %}

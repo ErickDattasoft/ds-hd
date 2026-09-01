@@ -53,7 +53,7 @@ describe('cotizaciones', () => {
       equipo_0_sistemas: ['CONTABILIDAD', 'BANCOS'],
     });
     expect(calc.status).toBe(200);
-    expect(calc.text).toContain('13400');
+    expect(calc.text).toMatch(/13[,.]?400/);
   });
 
   it('aprobar una cotización requiere permiso cotizaciones:aprobar', async () => {
