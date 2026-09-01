@@ -63,6 +63,7 @@ import { CotizacionService } from '../application/cotizaciones/CotizacionService
 import { CalculadoraCompacService } from '../application/cotizaciones/CalculadoraCompacService.js';
 import { SeguimientoService } from '../application/seguimiento/SeguimientoService.js';
 import { EventoService } from '../application/eventos/EventoService.js';
+import { ObtenerMetricasService } from '../application/dashboard/ObtenerMetricasService.js';
 import { AuthController } from '../interfaces/http/controllers/public/AuthController.js';
 import { UsuarioController } from '../interfaces/http/controllers/backoffice/UsuarioController.js';
 import { PortalPerfilController } from '../interfaces/http/controllers/portal/PortalPerfilController.js';
@@ -82,6 +83,7 @@ import { PapeleraController } from '../interfaces/http/controllers/backoffice/Pa
 import { EventoController } from '../interfaces/http/controllers/backoffice/EventoController.js';
 import { EventoPublicoController } from '../interfaces/http/controllers/public/EventoPublicoController.js';
 import { JobsController } from '../interfaces/http/controllers/webhooks/JobsController.js';
+import { DashboardController } from '../interfaces/http/controllers/backoffice/DashboardController.js';
 import { SESSION_COOKIE_MAX_AGE_MS } from './constants.js';
 import type { ILogger } from '../core/ports/services/ILogger.js';
 import type { IClock } from '../core/ports/services/IClock.js';
@@ -183,6 +185,7 @@ export interface Cradle {
   calculadoraCompacService: CalculadoraCompacService;
   seguimientoService: SeguimientoService;
   eventoService: EventoService;
+  obtenerMetricasService: ObtenerMetricasService;
 
   // Controllers
   authController: AuthController;
@@ -204,6 +207,7 @@ export interface Cradle {
   eventoController: EventoController;
   eventoPublicoController: EventoPublicoController;
   jobsController: JobsController;
+  dashboardController: DashboardController;
 }
 
 export type Container = AwilixContainer<Cradle>;
@@ -534,6 +538,17 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
           c.config.baseUrl,
         ),
     ).singleton(),
+    obtenerMetricasService: asFunction(
+      (c: Cradle) =>
+        new ObtenerMetricasService(
+          c.ticketQueries,
+          c.cotizacionRepo,
+          c.eventoRepo,
+          c.tareaRepo,
+          c.bitacoraRepo,
+          c.clock,
+        ),
+    ).singleton(),
 
     authController: asFunction(
       (c: Cradle) =>
@@ -624,6 +639,9 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
       (c: Cradle) => new PapeleraController(c.empresaService, c.contactoService),
     ).singleton(),
     eventoController: asFunction((c: Cradle) => new EventoController(c.eventoService)).singleton(),
+    dashboardController: asFunction(
+      (c: Cradle) => new DashboardController(c.obtenerMetricasService),
+    ).singleton(),
     eventoPublicoController: asFunction(
       (c: Cradle) => new EventoPublicoController(c.eventoService, c.config.turnstile.siteKey),
     ).singleton(),

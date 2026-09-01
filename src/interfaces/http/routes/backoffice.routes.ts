@@ -28,7 +28,9 @@ export function backofficeRoutes(container: Container): Router {
     next();
   });
 
-  r.get('/', (req, res) => res.render('pages/backoffice/dashboard', { titulo: 'Dashboard' }));
+  r.get('/', requirePermission('dashboard:ver'), (req, res) =>
+    container.resolve('dashboardController').ver(req, res),
+  );
 
   // ── Usuarios ───────────────────────────────────────────────────────────────
   r.get('/usuarios', gestUsuarios, (req, res) => usuarios().listar(req, res));

@@ -25,7 +25,21 @@ HTTP → middleware (sesión, RBAC, CSRF) → Controller → Caso de uso (applic
      ← Presenter → Vista Nunjucks (o fragmento htmx) → HTTP
 ```
 
-## Estado
+## Módulos implementados
 
-Fase 0: scaffolding, servidor base, `/healthz`, Docker, CI, generación de README.
-Ver el plan por fases para el resto.
+| Módulo | Ruta base | Notas |
+| --- | --- | --- |
+| Auth + RBAC + Usuarios/Perfiles | `/login`, `/app/usuarios` | 5 roles + overrides por usuario |
+| Tickets + Agentes técnicos | `/app/tickets` | SLA con pausa, kanban, carga de agentes, buzón público |
+| Portal de cliente | `/portal` | crea y da seguimiento a sus tickets; aislado por `solicitanteUid` |
+| Empresas / Contactos | `/app/empresas`, `/app/contactos` | + Bitácora de auditoría global (`/app/bitacora`) |
+| Versiones de sistemas | `/app/versiones` | catálogo CONTPAQi |
+| Base de conocimiento | `/kb`, `/portal/kb`, `/app/kb` | visibilidad staff/portal/público, Markdown |
+| Cotizaciones + Calculadora Compac | `/app/cotizaciones` | folio consecutivo, regla 1º+adicionales |
+| Seguimiento comercial | `/app/tareas`, interacciones en empresa | tareas asignables + log de contacto |
+| Papelera | `/app/papelera` | empresas/contactos archivados con restaurar |
+| Eventos / webinars | `/eventos`, `/app/eventos` | registro público (Turnstile), lista negra, recordatorios |
+| Dashboard | `/app` | métricas acotadas al rol |
+| Jobs (cron) | `/jobs/*` | recordatorios de eventos, recálculo de SLA (bearer `JOBS_SECRET`) |
+
+Migración desde el CRM viejo: `scripts/migrate/` (ver su README).

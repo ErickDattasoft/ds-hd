@@ -1,14 +1,58 @@
 {% extends "layouts/backoffice.njk" %}
 {% block title %}Dashboard{% endblock %}
+{% macro barras(datos, max) %}
+  <div class="bars">
+    {% for d in datos %}
+      <div class="bars__row">
+        <span class="bars__label">{{ d.etiqueta }}</span>
+        <span class="bars__track"><span class="bars__fill" style="width: {{ (d.valor / (max or 1) * 100) | round }}%"></span></span>
+        <span class="bars__val">{{ d.valor }}</span>
+      </div>
+    {% endfor %}
+  </div>
+{% endmacro %}
 {% block content %}
   <h1>Hola, {{ user.nombre }}</h1>
-  <p class="muted">Rol: {{ user.rol }}. Este panel se completa en fases siguientes.</p>
-  <div class="card">
-    <h2>Accesos rápidos</h2>
-    <ul>
-      {% for item in nav %}
-        <li><a href="{{ item.href }}">{{ item.icono }} {{ item.etiqueta }}</a></li>
-      {% endfor %}
-    </ul>
+
+  {% if m %}
+  <div class="stat-row">
+    <a class="stat" href="/app/tickets"><span class="stat__num">{{ m.tickets.abiertos }}</span><span class="stat__lbl">Tickets abiertos</span></a>
+    <a class="stat stat--danger" href="/app/tickets?prioridad="><span class="stat__num">{{ m.tickets.vencidos }}</span><span class="stat__lbl">SLA vencido</span></a>
+    <a class="stat" href="/app/tickets?sinAsignar=1"><span class="stat__num">{{ m.tickets.sinAsignar }}</span><span class="stat__lbl">Sin asignar</span></a>
+    <a class="stat" href="/app/tareas"><span class="stat__num">{{ m.misTareasPendientes }}</span><span class="stat__lbl">Mis tareas</span></a>
+    <div class="stat"><span class="stat__num">{{ m.cotizaciones.totalAbiertas }}</span><span class="stat__lbl">Cotizaciones abiertas</span></div>
   </div>
+
+  <div class="dash-grid">
+    <div class="card">
+      <h2>Tickets abiertos por estado</h2>
+      {{ barras(m.tickets.porEstado, m.tickets.abiertos) }}
+    </div>
+    <div class="card">
+      <h2>Por prioridad</h2>
+      {{ barras(m.tickets.porPrioridad, m.tickets.abiertos) }}
+    </div>
+    <div class="card">
+      <h2>Cotizaciones por estado</h2>
+      {{ barras(m.cotizaciones.porEstado, 0) }}
+    </div>
+    <div class="card">
+      <h2>Próximos eventos</h2>
+      <ul>
+        {% for e in m.proximosEventos %}<li><a href="/app/eventos/{{ e.id }}">{{ e.titulo }}</a> <span class="muted">{{ e.fechaHora }}</span></li>
+        {% else %}<li class="muted">Ninguno programado.</li>{% endfor %}
+      </ul>
+    </div>
+    {% if m.actividadReciente | length %}
+    <div class="card" style="grid-column:1/-1">
+      <h2>Actividad reciente</h2>
+      <ul class="timeline">
+        {% for a in m.actividadReciente %}<li><span class="muted">{{ a.at }}</span> · <strong>{{ a.modulo }}</strong> — {{ a.resumen }} <span class="muted">{{ a.actorNombre }}</span></li>{% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+  </div>
+  {% else %}
+    <p class="muted">Sin métricas disponibles.</p>
+  {% endif %}
 {% endblock %}
