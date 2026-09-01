@@ -1,8 +1,13 @@
 # Pendientes
 
-## Envío de correos — RESUELTO en código, falta la API key de producción
+## Envío de correos — RESUELTO
 
-El dominio de dattasoft ya se corrigió. La integración de correo quedó lista:
+Dominio `dattasoft.mx` verificado en Brevo y **API key `ds-hd-produccion` generada**
+(2026-09-01). Falta únicamente **pegar la key en el `.env` del servidor cuando se
+despliegue** (`BREVO_API_KEY=xkeysib-...`, con `SMTP_HOST` vacío) y, opcionalmente, dar de
+alta el webhook `/webhooks/brevo?key=<JOBS_SECRET>` en el panel de Brevo.
+
+La integración de correo en código está lista:
 
 - **Dev**: `SmtpEmailSender` (nodemailer) → MailHog (`SMTP_HOST=mailhog` en docker-compose).
   Los correos se ven en http://localhost:8025.
