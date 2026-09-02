@@ -87,6 +87,16 @@ export class FirebaseAuthProvider implements IAuthProvider {
       return '';
     }
   }
+
+  async getUidByEmail(email: string): Promise<string | null> {
+    try {
+      const user = await this.auth.getUserByEmail(email);
+      return user.uid;
+    } catch (err) {
+      if (isFirebaseError(err) && err.code === 'auth/user-not-found') return null;
+      throw err;
+    }
+  }
 }
 
 function isFirebaseError(err: unknown): err is { code: string } {

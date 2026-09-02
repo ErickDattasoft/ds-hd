@@ -39,4 +39,11 @@ export interface IAuthProvider {
 
   /** Genera un enlace de restablecimiento de contraseña para enviarlo por correo. */
   generatePasswordResetLink(email: string): Promise<string>;
+
+  /**
+   * Busca el uid de la cuenta de identidad con ese correo. `null` si no existe.
+   * Lo usa la migración para reasignar `usuarios/{uid}` al uid real tras `auth:import`
+   * (antes de eso, el uid migrado es un placeholder = el correo).
+   */
+  getUidByEmail(email: string): Promise<string | null>;
 }

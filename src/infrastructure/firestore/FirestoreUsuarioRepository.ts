@@ -66,4 +66,8 @@ export class FirestoreUsuarioRepository implements IUsuarioRepository {
     const agg = await this.db.collection(COL).where('rol', '==', rol).where('activo', '==', true).count().get();
     return agg.data().count;
   }
+
+  async delete(uid: string): Promise<void> {
+    await this.db.collection(COL).doc(uid).delete();
+  }
 }

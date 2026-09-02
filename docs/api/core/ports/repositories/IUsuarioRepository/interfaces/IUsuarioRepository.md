@@ -117,3 +117,25 @@ Cuántos usuarios hay con ese rol (para no dejar el sistema sin ningún admin).
 #### Returns
 
 `Promise`\<`number`\>
+
+***
+
+### delete()
+
+> **delete**(`uid`): `Promise`\<`void`\>
+
+Defined in: core/ports/repositories/IUsuarioRepository.ts:32
+
+Borra el documento. Solo lo usa la migración, para eliminar el doc placeholder
+(uid = correo) tras reasignarlo al uid real de Firebase Auth; el resto de la app nunca
+borra cuentas, solo las desactiva (`activo: false`).
+
+#### Parameters
+
+##### uid
+
+`string`
+
+#### Returns
+
+`Promise`\<`void`\>

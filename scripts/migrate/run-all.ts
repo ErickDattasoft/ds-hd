@@ -7,10 +7,9 @@ import 'dotenv/config';
  *   tsx scripts/migrate/run-all.ts                    # ejecuta la migración
  *   tsx scripts/migrate/run-all.ts --input=/ruta.json
  *
- * Pasos 09 (usuarios de Firebase Auth) y 10 (Storage) van aparte, con la CLI de Firebase:
- *   firebase auth:export usuarios.json --project VIEJO
- *   firebase auth:import usuarios.json --project NUEVO --hash-algo=... (parámetros del proyecto viejo)
- *   gsutil -m rsync -r gs://BUCKET_VIEJO gs://BUCKET_NUEVO
+ * Después de este script, ver README.md para los pasos restantes: auth:export/import (CLI de
+ * Firebase), `reasignar-uids-auth.ts` (uid real + custom claims), copia de Storage y
+ * `99-verify-migration.ts`.
  */
 import { DRY_RUN, leerExport, log, nuevoProyecto } from './lib.js';
 import {

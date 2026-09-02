@@ -54,6 +54,14 @@ export function contratoUsuarioRepository(
       expect(await repo.countByRol('admin')).toBe(1);
     });
 
+    it('delete quita el usuario (findByUid/findByEmail dejan de verlo)', async () => {
+      await repo.save(nuevoUsuario());
+      await repo.delete('u1');
+      expect(await repo.findByUid('u1')).toBeNull();
+      expect(await repo.findByEmail('ana@dattasoft.mx')).toBeNull();
+      expect(await repo.list()).toHaveLength(0);
+    });
+
     it('listAgentesAsignables filtra por rol, activo y disponibilidad', async () => {
       await repo.save(nuevoUsuario({ uid: 'g1', email: 'g1@x.com', rol: 'agente' }));
       await repo.save(

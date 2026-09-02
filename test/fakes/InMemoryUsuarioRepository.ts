@@ -48,4 +48,8 @@ export class InMemoryUsuarioRepository implements IUsuarioRepository {
   async countByRol(rol: Rol): Promise<number> {
     return [...this.porUid.values()].filter((u) => u.rol === rol && u.activo).length;
   }
+
+  async delete(uid: string): Promise<void> {
+    this.porUid.delete(uid);
+  }
 }

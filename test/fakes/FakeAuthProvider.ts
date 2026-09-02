@@ -64,4 +64,8 @@ export class FakeAuthProvider implements IAuthProvider {
   async generatePasswordResetLink(email: string): Promise<string> {
     return `https://example.test/reset?email=${encodeURIComponent(email)}`;
   }
+
+  async getUidByEmail(email: string): Promise<string | null> {
+    return this.porEmail.get(email.toLowerCase())?.uid ?? null;
+  }
 }

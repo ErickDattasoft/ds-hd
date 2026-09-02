@@ -24,4 +24,10 @@ export interface IUsuarioRepository {
   save(usuario: Usuario): Promise<void>;
   /** Cuántos usuarios hay con ese rol (para no dejar el sistema sin ningún admin). */
   countByRol(rol: Rol): Promise<number>;
+  /**
+   * Borra el documento. Solo lo usa la migración, para eliminar el doc placeholder
+   * (uid = correo) tras reasignarlo al uid real de Firebase Auth; el resto de la app nunca
+   * borra cuentas, solo las desactiva (`activo: false`).
+   */
+  delete(uid: string): Promise<void>;
 }

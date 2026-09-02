@@ -18,27 +18,34 @@ OLD_FIREBASE_SERVICE_ACCOUNT_B64=<base64 del service account viejo> \
 # 3. Dry-run contra el proyecto NUEVO (usa .env normal de ds-hd)
 tsx scripts/migrate/run-all.ts --dry-run
 
-# 4. Migración real
+# 4. Migración real (deja usuarios/{uid} con uid = correo, placeholder)
 tsx scripts/migrate/run-all.ts
 
-# 5. Verificar
-tsx scripts/migrate/99-verify-migration.ts
-
-# 6. Usuarios de Firebase Auth (contraseñas) — CLI de Firebase
+# 5. Usuarios de Firebase Auth (contraseñas) — CLI de Firebase
 firebase auth:export usuarios.json --project agenda-crm-netlify
 firebase auth:import usuarios.json --project ds-hd-xxxxx \
   --hash-algo=SCRYPT --hash-key=... --salt-separator=... --rounds=8 --mem-cost=14   # parámetros del proyecto viejo
 
+# 6. Reasignar cada usuarios/{uid} al uid real de Auth (dry-run primero)
+tsx scripts/migrate/reasignar-uids-auth.ts --dry-run
+tsx scripts/migrate/reasignar-uids-auth.ts
+
 # 7. Storage (adjuntos)
 gsutil -m rsync -r gs://agenda-crm-netlify.appspot.com gs://ds-hd-xxxxx.appspot.com
+
+# 8. Verificar
+tsx scripts/migrate/99-verify-migration.ts
 ```
 
 ## Notas
 
 - **Idempotente**: los importadores usan el id viejo y `set(merge:true)`; repetir no duplica.
-- `importarUsuarios` deja el `uid` = correo como placeholder. Tras el `auth:import`, corre un
-  paso que reasigne cada `usuarios/{uid}` al uid real de Firebase Auth (por correo) y setee
-  los custom claims. Usa `roles-override.json` para el rol de cada quien.
+  `reasignar-uids-auth.ts` también: un usuario cuyo uid ya coincide con el de Auth se deja
+  intacto.
+- `importarUsuarios` deja el `uid` = correo como placeholder. `reasignar-uids-auth.ts` busca
+  el uid real por correo (`IAuthProvider.getUidByEmail`), reescribe el doc bajo ese uid, fija
+  el custom claim de rol y borra el placeholder. Usa `roles-override.json` para corregir el
+  rol de correos puntuales (el CRM viejo solo distinguía `admin`/`normal`).
 - El CRM viejo tenía nombres de campo inconsistentes; donde el mapeo es incierto hay `TODO`
   en `importers.ts`. Ajusta con el `agenda-datos.json` real antes de la corrida definitiva.
 - El proyecto viejo y `agenda/datos` quedan **congelados** como rollback.

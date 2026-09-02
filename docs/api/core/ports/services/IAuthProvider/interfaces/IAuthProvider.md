@@ -169,3 +169,25 @@ Genera un enlace de restablecimiento de contraseña para enviarlo por correo.
 #### Returns
 
 `Promise`\<`string`\>
+
+***
+
+### getUidByEmail()
+
+> **getUidByEmail**(`email`): `Promise`\<`string` \| `null`\>
+
+Defined in: core/ports/services/IAuthProvider.ts:48
+
+Busca el uid de la cuenta de identidad con ese correo. `null` si no existe.
+Lo usa la migración para reasignar `usuarios/{uid}` al uid real tras `auth:import`
+(antes de eso, el uid migrado es un placeholder = el correo).
+
+#### Parameters
+
+##### email
+
+`string`
+
+#### Returns
+
+`Promise`\<`string` \| `null`\>
