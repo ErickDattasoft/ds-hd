@@ -50,6 +50,14 @@
         { "fieldPath": "grupo", "order": "ASCENDING" },
         { "fieldPath": "estado", "order": "ASCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "eventos",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "estado", "order": "ASCENDING" },
+        { "fieldPath": "fechaHora", "order": "ASCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []
