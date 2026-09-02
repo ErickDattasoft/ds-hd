@@ -5,6 +5,7 @@ import type { IClock } from '../../core/ports/services/IClock.js';
 import type { ILogger } from '../../core/ports/services/ILogger.js';
 import { NotFoundError, ValidationError } from '../../core/errors/DomainError.js';
 
+/** Datos del formulario donde el invitado fija su contraseña. */
 export interface AceptarInvitacionInput {
   token: string;
   password: string;

@@ -10,6 +10,8 @@ scratchpad
 *firebase-adminsdk*.json
 serviceAccount*.json
 docs/manual/dist
+docs/manual/screenshots
+docs/api
 .github
 test
 **/*.test.ts

@@ -1,6 +1,7 @@
 import js from '@eslint/js';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
+import jsdoc from 'eslint-plugin-jsdoc';
 
 export default tseslint.config(
   {
@@ -46,9 +47,36 @@ export default tseslint.config(
         'error',
         {
           patterns: [
-            { group: ['express', 'nunjucks', 'firebase-admin', 'helmet', 'pino*'], message: 'core/application no deben depender de frameworks ni infraestructura (DIP).' },
-            { group: ['../infrastructure/*', '**/infrastructure/*'], message: 'core/application dependen de core/ports, no de infrastructure (DIP).' },
-            { group: ['../interfaces/*', '**/interfaces/*'], message: 'core/application no dependen de la capa de entrega.' },
+            {
+              group: ['express', 'nunjucks', 'firebase-admin', 'helmet', 'pino*'],
+              message: 'core/application no deben depender de frameworks ni infraestructura (DIP).',
+            },
+            {
+              group: ['../infrastructure/*', '**/infrastructure/*'],
+              message: 'core/application dependen de core/ports, no de infrastructure (DIP).',
+            },
+            {
+              group: ['../interfaces/*', '**/interfaces/*'],
+              message: 'core/application no dependen de la capa de entrega.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    // Fase 6: core/ y application/ son la fuente de la referencia de API (TypeDoc), así
+    // que cada clase/interfaz exportada necesita al menos una línea de JSDoc.
+    files: ['src/core/**/*.ts', 'src/application/**/*.ts'],
+    plugins: { jsdoc },
+    rules: {
+      'jsdoc/require-jsdoc': [
+        'error',
+        {
+          contexts: [
+            'ExportNamedDeclaration > ClassDeclaration',
+            'ExportDefaultDeclaration > ClassDeclaration',
+            'ExportNamedDeclaration > TSInterfaceDeclaration',
           ],
         },
       ],

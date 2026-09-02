@@ -11,10 +11,12 @@ export const SLA_HORAS_POR_DEFECTO: Record<Prioridad, number> = {
   Baja: 72,
 };
 
+/** Type guard: ¿el valor es una de las prioridades válidas? */
 export function esPrioridad(v: unknown): v is Prioridad {
   return typeof v === 'string' && (PRIORIDADES as readonly string[]).includes(v);
 }
 
+/** Valida y normaliza una prioridad recibida de un formulario o de la BD. */
 export function parsePrioridad(v: unknown): Prioridad {
   if (!esPrioridad(v)) {
     throw new ValidationError(`Prioridad inválida: ${String(v)}`, { prioridad: 'No reconocida' });

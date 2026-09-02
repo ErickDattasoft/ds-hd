@@ -1,5 +1,6 @@
 import type { Ticket } from '../../entities/Ticket.js';
 
+/** Filtros para listar/contar tickets. */
 export interface FiltroTickets {
   estado?: string;
   prioridad?: string;

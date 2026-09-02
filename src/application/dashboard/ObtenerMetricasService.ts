@@ -6,6 +6,7 @@ import type { IBitacoraRepository } from '../../core/ports/repositories/IBitacor
 import type { IClock } from '../../core/ports/services/IClock.js';
 import type { SessionUser } from '../shared/SessionUser.js';
 
+/** Snapshot de métricas del dashboard, ya acotado al alcance de permisos del actor. */
 export interface Metricas {
   tickets: {
     abiertos: number;

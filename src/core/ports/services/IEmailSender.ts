@@ -1,3 +1,4 @@
+/** Correo transaccional a enviar, agnóstico del proveedor. */
 export interface CorreoSaliente {
   para: { email: string; nombre?: string }[];
   asunto: string;

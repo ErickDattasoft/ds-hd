@@ -15,6 +15,7 @@ import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '.
 import type { BitacoraService } from '../shared/BitacoraService.js';
 import type { SessionUser } from '../shared/SessionUser.js';
 
+/** Datos editables de un evento (alta o edición, uso staff). */
 export interface DatosEvento {
   titulo: string;
   descripcion?: string;
@@ -25,6 +26,7 @@ export interface DatosEvento {
   estado?: EstadoEvento;
 }
 
+/** Datos del formulario público de registro a un evento/webinar. */
 export interface RegistroPublicoInput {
   eventoId: string;
   nombre: string;

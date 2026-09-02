@@ -8,6 +8,7 @@ import { ForbiddenError, NotFoundError, ValidationError } from '../../core/error
 import type { BitacoraService } from '../shared/BitacoraService.js';
 import type { SessionUser } from '../shared/SessionUser.js';
 
+/** Datos para crear una cotización (folio y montos se calculan en el servicio). */
 export interface DatosCotizacion {
   empresaId: string;
   contactoId?: string;

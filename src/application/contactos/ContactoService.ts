@@ -7,6 +7,7 @@ import { ForbiddenError, NotFoundError, ValidationError } from '../../core/error
 import type { BitacoraService } from '../shared/BitacoraService.js';
 import type { SessionUser } from '../shared/SessionUser.js';
 
+/** Datos editables de un contacto (alta o edición). */
 export interface DatosContacto {
   nombre: string;
   empresaId: string;

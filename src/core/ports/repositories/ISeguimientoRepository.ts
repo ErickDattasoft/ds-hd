@@ -8,12 +8,14 @@ export interface IInteraccionRepository {
   listRecientes(limite: number): Promise<Interaccion[]>;
 }
 
+/** Filtros para listar tareas. */
 export interface ListarTareasFiltro {
   asignadoAUid?: string;
   completada?: boolean;
   empresaId?: string;
 }
 
+/** Persistencia de tareas de seguimiento (`tareas/{id}`). */
 export interface ITareaRepository {
   findById(id: string): Promise<Tarea | null>;
   list(filtro?: ListarTareasFiltro): Promise<Tarea[]>;

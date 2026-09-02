@@ -1,0 +1,62 @@
+name: Docs nightly
+
+on:
+  schedule:
+    - cron: "0 9 * * *" # 03:00 America/Mexico_City
+  workflow_dispatch:
+
+jobs:
+  refresh-screenshots:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright-core install --with-deps chromium
+
+      - name: Levantar app + emuladores
+        run: docker compose -f docker/docker-compose.yml up -d
+
+      - name: Esperar a que /healthz responda
+        run: |
+          for i in $(seq 1 60); do
+            curl -fs http://localhost:3000/healthz && exit 0
+            sleep 2
+          done
+          echo "La app no levantó a tiempo" >&2
+          docker compose -f docker/docker-compose.yml logs
+          exit 1
+
+      - name: Sembrar datos demo
+        run: |
+          SEED_ADMIN_EMAIL=admin@dattasoft.mx SEED_ADMIN_PASSWORD=admin12345 \
+            FIRESTORE_EMULATOR_HOST=localhost:8080 FIREBASE_AUTH_EMULATOR_HOST=localhost:9099 \
+            FIREBASE_PROJECT_ID=ds-hd-local npm run seed:roles
+          FIRESTORE_EMULATOR_HOST=localhost:8080 FIREBASE_AUTH_EMULATOR_HOST=localhost:9099 \
+            FIREBASE_PROJECT_ID=ds-hd-local npm run seed:demo
+
+      - name: Capturar pantallas y regenerar manuales
+        run: |
+          npm run docs:screenshots
+          npm run docs:manuals
+
+      - name: Bajar el stack
+        if: always()
+        run: docker compose -f docker/docker-compose.yml down -v
+
+      - name: Abrir PR si algo cambió
+        uses: peter-evans/create-pull-request@v6
+        with:
+          commit-message: "docs: refresco nocturno de capturas y manuales"
+          title: "docs: refresco nocturno de capturas y manuales"
+          branch: docs/nightly-refresh
+          delete-branch: true
+          add-paths: |
+            docs/manual/screenshots
+            docs/manual/dist

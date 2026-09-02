@@ -2,6 +2,7 @@ import { ValidationError } from '../errors/DomainError.js';
 
 export type TipoInteraccion = 'llamada' | 'correo' | 'reunion' | 'whatsapp' | 'nota';
 
+/** Props para construir una {@link Interaccion}. */
 export interface InteraccionProps {
   id: string;
   empresaId: string;

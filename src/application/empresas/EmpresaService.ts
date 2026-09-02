@@ -6,6 +6,7 @@ import { ConflictError, ForbiddenError, NotFoundError } from '../../core/errors/
 import type { BitacoraService } from '../shared/BitacoraService.js';
 import type { SessionUser } from '../shared/SessionUser.js';
 
+/** Datos editables de una empresa (alta o edición). */
 export interface DatosEmpresa {
   nombre: string;
   rfc?: string;

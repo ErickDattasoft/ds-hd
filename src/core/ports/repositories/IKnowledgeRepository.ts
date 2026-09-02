@@ -1,5 +1,6 @@
 import type { ArticuloKB } from '../../entities/ArticuloKB.js';
 
+/** Filtros para listar artículos de la base de conocimiento. */
 export interface ListarKBFiltro {
   categoria?: string;
   publicado?: boolean;

@@ -10,6 +10,7 @@ import { Email } from '../../core/entities/value-objects/Email.js';
 import { ConflictError, ValidationError } from '../../core/errors/DomainError.js';
 import type { SessionUser } from '../shared/SessionUser.js';
 
+/** Datos para invitar a un contacto de una empresa al portal de clientes. */
 export interface InvitarClienteInput {
   actor: SessionUser;
   email: string;
@@ -18,6 +19,7 @@ export interface InvitarClienteInput {
   empresaId: string;
 }
 
+/** Resultado de la invitación: el usuario creado y el link para fijar su contraseña. */
 export interface InvitarClienteResultado {
   usuario: Usuario;
   urlInvitacion: string;

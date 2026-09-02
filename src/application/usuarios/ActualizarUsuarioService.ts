@@ -7,6 +7,7 @@ import { parseRol, type Rol } from '../../core/entities/value-objects/Rol.js';
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '../../core/errors/DomainError.js';
 import type { SessionUser } from '../shared/SessionUser.js';
 
+/** Campos editables de un usuario; todos opcionales salvo `uid` (solo se aplica lo enviado). */
 export interface ActualizarUsuarioInput {
   actor: SessionUser;
   uid: string;

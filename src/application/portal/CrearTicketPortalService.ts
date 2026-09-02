@@ -4,6 +4,7 @@ import { parsePrioridad } from '../../core/entities/value-objects/Prioridad.js';
 import type { CrearTicketService } from '../tickets/CrearTicketService.js';
 import type { SessionUser } from '../shared/SessionUser.js';
 
+/** Datos del formulario del portal para que un cliente abra un ticket. */
 export interface CrearTicketPortalInput {
   actor: SessionUser;
   asunto: string;

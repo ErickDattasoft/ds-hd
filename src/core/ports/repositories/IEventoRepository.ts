@@ -1,6 +1,7 @@
 import type { Evento } from '../../entities/Evento.js';
 import type { EntradaListaNegra, Inscripcion } from '../../entities/Inscripcion.js';
 
+/** Persistencia de eventos/webinars (`eventos/{id}`). */
 export interface IEventoRepository {
   findById(id: string): Promise<Evento | null>;
   list(soloPublicados?: boolean): Promise<Evento[]>;
@@ -9,6 +10,7 @@ export interface IEventoRepository {
   save(evento: Evento): Promise<void>;
 }
 
+/** Persistencia de inscripciones a eventos (subcolección de cada evento). */
 export interface IInscripcionRepository {
   create(inscripcion: Inscripcion): Promise<void>;
   findByEmail(eventoId: string, email: string): Promise<Inscripcion | null>;
@@ -19,6 +21,7 @@ export interface IInscripcionRepository {
   save(inscripcion: Inscripcion): Promise<void>;
 }
 
+/** Persistencia de la lista negra de correos bloqueados para registro a eventos. */
 export interface IListaNegraRepository {
   contiene(email: string): Promise<boolean>;
   list(): Promise<EntradaListaNegra[]>;

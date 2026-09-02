@@ -8,6 +8,7 @@ import type { TicketPublico } from '../../core/entities/TicketPublico.js';
 import { Email } from '../../core/entities/value-objects/Email.js';
 import { ValidationError } from '../../core/errors/DomainError.js';
 
+/** Datos del formulario público (sin cuenta) para levantar un ticket. */
 export interface CrearTicketPublicoInput {
   nombre: string;
   empresa?: string;

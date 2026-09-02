@@ -3,7 +3,7 @@ import type { EventoTicket, NotaTicket } from '../../entities/NotaTicket.js';
 
 /**
  * Persistencia (lado comando) de tickets: `tickets/{id}` + subcolecciones `notas` y `eventos`.
- * Las consultas de listado/tablero viven en {@link ITicketQueries} (ISP).
+ * Las consultas de listado/tablero viven en `ITicketQueries` (ISP).
  *
  * Semántica compartida por la impl Firestore y los fakes (LSP): `findById` → `null` si no
  * existe; `save` hace upsert por `id`.

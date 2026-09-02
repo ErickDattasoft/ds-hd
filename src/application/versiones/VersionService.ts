@@ -6,6 +6,7 @@ import { ForbiddenError, NotFoundError } from '../../core/errors/DomainError.js'
 import type { BitacoraService } from '../shared/BitacoraService.js';
 import type { SessionUser } from '../shared/SessionUser.js';
 
+/** Datos editables de una versión de sistema (alta o edición). */
 export interface DatosVersion {
   sistema: string;
   versionActual: string;

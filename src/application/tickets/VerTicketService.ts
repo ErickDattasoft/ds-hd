@@ -6,6 +6,7 @@ import type { ConfiguracionTickets } from '../../core/entities/ConfiguracionTick
 import { ForbiddenError, NotFoundError } from '../../core/errors/DomainError.js';
 import type { SessionUser } from '../shared/SessionUser.js';
 
+/** Ticket con sus notas/eventos y los permisos del actor ya resueltos para la vista. */
 export interface DetalleTicket {
   ticket: Ticket;
   notas: NotaTicket[];

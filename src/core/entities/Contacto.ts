@@ -1,6 +1,7 @@
 import { ValidationError } from '../errors/DomainError.js';
 import { Email } from './value-objects/Email.js';
 
+/** Props para construir un {@link Contacto}. */
 export interface ContactoProps {
   id: string;
   nombre: string;

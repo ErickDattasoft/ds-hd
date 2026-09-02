@@ -11,6 +11,7 @@ import { esRolStaff, parseRol, type Rol } from '../../core/entities/value-object
 import { ConflictError, ValidationError } from '../../core/errors/DomainError.js';
 import type { SessionUser } from '../shared/SessionUser.js';
 
+/** Datos para dar de alta una cuenta de staff. */
 export interface CrearUsuarioInput {
   actor: SessionUser;
   email: string;
@@ -19,6 +20,7 @@ export interface CrearUsuarioInput {
   agente?: Partial<PerfilAgente>;
 }
 
+/** Resultado del alta: el usuario creado y el link para que fije su contraseña. */
 export interface CrearUsuarioResultado {
   usuario: Usuario;
   /** URL de un solo uso para que el usuario fije su contraseña. */

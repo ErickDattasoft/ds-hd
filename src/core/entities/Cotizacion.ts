@@ -2,6 +2,7 @@ import { ValidationError } from '../errors/DomainError.js';
 
 export type EstadoCotizacion = 'borrador' | 'enviada' | 'aceptada' | 'rechazada' | 'vencida';
 
+/** Una línea/renglón de una cotización. */
 export interface ConceptoCotizacion {
   descripcion: string;
   cantidad: number;
@@ -10,6 +11,7 @@ export interface ConceptoCotizacion {
   importe: number;
 }
 
+/** Props para construir una {@link Cotizacion}. */
 export interface CotizacionProps {
   id: string;
   folio: string;

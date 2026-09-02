@@ -6,11 +6,13 @@ import type { ILogger } from '../../core/ports/services/ILogger.js';
 import type { Usuario } from '../../core/entities/Usuario.js';
 import { UnauthorizedError } from '../../core/errors/DomainError.js';
 
+/** Credenciales enviadas desde el formulario de login. */
 export interface LoginInput {
   email: string;
   password: string;
 }
 
+/** Resultado de un login exitoso: sesión emitida más el usuario autenticado. */
 export interface LoginResultado {
   /** Valor para la cookie de sesión. */
   token: string;

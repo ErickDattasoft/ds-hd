@@ -1,3 +1,4 @@
+/** Invitación de un solo uso para fijar contraseña (staff nuevo o cliente del portal). */
 export interface Invitacion {
   /** Token opaco que viaja en la URL del correo de invitación. */
   token: string;

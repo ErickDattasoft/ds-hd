@@ -7,6 +7,7 @@ import { NotFoundError } from '../../core/errors/DomainError.js';
 import type { ConfiguracionTickets } from '../../core/entities/ConfiguracionTickets.js';
 import type { SessionUser } from '../shared/SessionUser.js';
 
+/** Detalle de ticket ya filtrado para el portal: sin notas ni eventos internos. */
 export interface MiTicketDetalle {
   ticket: Ticket;
   /** SOLO notas públicas — el portal nunca muestra notas internas. */

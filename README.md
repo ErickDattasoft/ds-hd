@@ -34,7 +34,13 @@ docker compose -f docker/docker-compose.yml up
 | `npm run typecheck` | `tsc --noEmit`. |
 | `npm run lint` / `lint:fix` | ESLint (incluye reglas de dependencia entre capas). |
 | `npm test` | Vitest (unit + integración + contrato + e2e). |
-| `npm run docs` | Regenera los bloques autogenerados de este README. |
+| `npm run docs` | Regenera README, manuales y referencia de API (los tres bloques de abajo). |
+| `npm run docs:readme` | Solo los bloques `<!-- GENERATED -->` de este README. |
+| `npm run docs:manuals` | `docs/manual/dist/{MANUAL-STAFF,MANUAL-USUARIO-FINAL}.md` desde `docs/manual/_sources/`. |
+| `npm run docs:api` | Referencia de API (TypeDoc) de `core/` y `application/` → `docs/api/`. |
+| `npm run docs:screenshots` | Capturas de pantalla del manual (Playwright, requiere la app corriendo + `seed:demo`). |
+| `npm run docs:manuals:pdf` | Exporta los manuales a PDF (`md-to-pdf`; descarga Chrome la primera vez si no hay uno disponible). |
+| `npm run docs:check` | Falla si README, manuales o `docs/api` están desactualizados (lo corre CI). |
 
 ## Arquitectura
 
@@ -49,7 +55,17 @@ config/         composition root (awilix) + carga de entorno + init de Firebase
 ```
 
 Detalle en [`docs/architecture/`](./docs/architecture/): `overview.md`, `layering.md`,
-`solid.md`, `data-model.md`, `rbac.md`, `deploy.md`.
+`solid.md`, `data-model.md`, `rbac.md`, `deploy.md`. Referencia de API generada desde el
+código (TSDoc) en [`docs/api/`](./docs/api/README.md).
+
+## Manuales
+
+Manuales de usuario generados desde `docs/manual/_sources/*.md` (uno por módulo, con
+front-matter de audiencia): [`docs/manual/dist/MANUAL-STAFF.md`](./docs/manual/dist/MANUAL-STAFF.md)
+para el equipo interno y
+[`docs/manual/dist/MANUAL-USUARIO-FINAL.md`](./docs/manual/dist/MANUAL-USUARIO-FINAL.md) para
+clientes del portal. Se regeneran con `npm run docs:manuals`; las capturas de pantalla que
+ilustran cada sección se toman con `npm run docs:screenshots` contra la app corriendo.
 
 ### Variables de entorno
 

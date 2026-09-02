@@ -5,6 +5,7 @@ import type { ILogger } from '../../core/ports/services/ILogger.js';
 import { Email } from '../../core/entities/value-objects/Email.js';
 import { ValidationError } from '../../core/errors/DomainError.js';
 
+/** Datos del formulario público de "solicitar acceso" al back-office. */
 export interface SolicitarAccesoInput {
   email: string;
   nombre: string;

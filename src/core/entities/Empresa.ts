@@ -1,5 +1,6 @@
 import { ValidationError } from '../errors/DomainError.js';
 
+/** Props para construir una {@link Empresa}. */
 export interface EmpresaProps {
   id: string;
   nombre: string;

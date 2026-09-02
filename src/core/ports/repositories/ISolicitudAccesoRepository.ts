@@ -1,3 +1,4 @@
+/** Solicitud de acceso al back-office hecha desde la pantalla de login. */
 export interface SolicitudAcceso {
   id: string;
   email: string;

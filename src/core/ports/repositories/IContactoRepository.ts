@@ -1,5 +1,6 @@
 import type { Contacto } from '../../entities/Contacto.js';
 
+/** Filtros para listar contactos. */
 export interface ListarContactosFiltro {
   empresaId?: string;
   activo?: boolean;

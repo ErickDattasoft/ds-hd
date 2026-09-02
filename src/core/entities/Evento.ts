@@ -2,6 +2,7 @@ import { ValidationError } from '../errors/DomainError.js';
 
 export type EstadoEvento = 'borrador' | 'publicado' | 'finalizado' | 'cancelado';
 
+/** Props para construir un {@link Evento}. */
 export interface EventoProps {
   id: string;
   titulo: string;

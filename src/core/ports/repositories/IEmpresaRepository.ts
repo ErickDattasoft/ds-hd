@@ -1,5 +1,6 @@
 import type { Empresa } from '../../entities/Empresa.js';
 
+/** Filtros para listar empresas. */
 export interface ListarEmpresasFiltro {
   activa?: boolean;
   texto?: string;

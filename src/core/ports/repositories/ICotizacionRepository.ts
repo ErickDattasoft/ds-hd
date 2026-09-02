@@ -1,5 +1,6 @@
 import type { Cotizacion, EstadoCotizacion } from '../../entities/Cotizacion.js';
 
+/** Filtros para listar cotizaciones. */
 export interface ListarCotizacionesFiltro {
   empresaId?: string;
   estado?: EstadoCotizacion;

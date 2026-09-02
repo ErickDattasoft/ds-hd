@@ -3,6 +3,7 @@ import type { ConceptoCotizacion } from './Cotizacion.js';
 
 export type TipoEquipo = 'Servidor' | 'Terminal';
 
+/** Catálogo de un sistema Compac/CONTPAQi con su precio como principal o adicional. */
 export interface SistemaCompac {
   clave: string;
   nombre: string;
@@ -12,6 +13,7 @@ export interface SistemaCompac {
   precioAdicional: number;
 }
 
+/** Catálogo completo de precios que consume {@link CalculadoraCompac}. */
 export interface ConfiguracionCalculadora {
   sistemas: SistemaCompac[];
   /**
@@ -38,12 +40,14 @@ export const CONFIG_CALCULADORA_POR_DEFECTO: ConfiguracionCalculadora = {
   moneda: 'MXN',
 };
 
+/** Un equipo (servidor o terminal) con los sistemas que se le licencian. */
 export interface EquipoInput {
   tipo: TipoEquipo;
   /** Claves de sistemas seleccionados para este equipo (puede incluir la clave de SQL). */
   sistemas: string[];
 }
 
+/** Conceptos e importes calculados, listos para volcarse a una cotización. */
 export interface ResultadoCalculadora {
   conceptos: ConceptoCotizacion[];
   subtotal: number;

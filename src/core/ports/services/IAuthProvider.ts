@@ -4,6 +4,7 @@ export interface CredencialesVerificadas {
   email: string;
 }
 
+/** Datos mínimos para crear una cuenta de identidad. */
 export interface CrearCuentaInput {
   email: string;
   password: string;
@@ -13,7 +14,7 @@ export interface CrearCuentaInput {
 /**
  * Puerto del proveedor de identidad (hoy: Firebase Auth). Cubre solo la gestión de la
  * identidad — verificar contraseña, crear/actualizar/inhabilitar la cuenta, custom claims,
- * enlaces de acción. La SESIÓN web se maneja aparte, en {@link ISessionManager}.
+ * enlaces de acción. La SESIÓN web se maneja aparte, en `ISessionManager`.
  *
  * La capa de aplicación depende de esta interfaz, nunca de `firebase-admin`.
  */

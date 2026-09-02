@@ -15,6 +15,7 @@ export abstract class DomainError extends Error {
   }
 }
 
+/** El recurso pedido no existe (o no es visible para el actor). → HTTP 404. */
 export class NotFoundError extends DomainError {
   readonly code = 'NO_ENCONTRADO';
   readonly httpStatus = 404;
@@ -24,6 +25,7 @@ export class NotFoundError extends DomainError {
   }
 }
 
+/** Los datos de entrada no cumplen una regla del dominio. → HTTP 422. */
 export class ValidationError extends DomainError {
   readonly code = 'VALIDACION';
   readonly httpStatus = 422;
@@ -36,6 +38,7 @@ export class ValidationError extends DomainError {
   }
 }
 
+/** El actor está autenticado pero no autorizado para esta acción. → HTTP 403. */
 export class ForbiddenError extends DomainError {
   readonly code = 'PROHIBIDO';
   readonly httpStatus = 403;
@@ -45,11 +48,13 @@ export class ForbiddenError extends DomainError {
   }
 }
 
+/** La operación choca con el estado actual del recurso (p. ej. nombre duplicado). → HTTP 409. */
 export class ConflictError extends DomainError {
   readonly code = 'CONFLICTO';
   readonly httpStatus = 409;
 }
 
+/** No hay sesión válida. → HTTP 401. */
 export class UnauthorizedError extends DomainError {
   readonly code = 'NO_AUTENTICADO';
   readonly httpStatus = 401;

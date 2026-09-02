@@ -12,11 +12,13 @@ import {
 
 export type CanalTicket = 'interno' | 'publico' | 'portal' | 'correo';
 
+/** Un registro del historial de estados de un ticket. */
 export interface CambioEstado {
   estado: string;
   at: Date;
 }
 
+/** Estado del "reloj" de SLA de un ticket, con soporte de pausa. */
 export interface SlaState {
   /** Horas objetivo de resolución (según prioridad al crear; no se recalcula sola). */
   horasResolucion: number;
@@ -26,6 +28,7 @@ export interface SlaState {
   msPausadoTotal: number;
 }
 
+/** Estado de facturación de un ticket. */
 export interface FacturacionState {
   /** Si el tipo de ticket amerita facturación (p. ej. consultorías). */
   requiere: boolean;
@@ -33,6 +36,7 @@ export interface FacturacionState {
   notificadaEn: Date | null;
 }
 
+/** Props para construir un {@link Ticket}. */
 export interface TicketProps {
   id: string;
   numero: number;

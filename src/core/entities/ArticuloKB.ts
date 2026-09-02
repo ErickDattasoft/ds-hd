@@ -2,6 +2,7 @@ import { ValidationError } from '../errors/DomainError.js';
 
 export type VisibilidadKB = 'staff' | 'portal' | 'publico';
 
+/** Props para construir un {@link ArticuloKB}; `slug` se autogenera del título si se omite. */
 export interface ArticuloKBProps {
   id: string;
   titulo: string;
@@ -17,6 +18,7 @@ export interface ArticuloKBProps {
   updatedAt?: Date;
 }
 
+/** Convierte un título a slug URL-friendly (sin acentos, minúsculas, guiones). */
 export function slugify(texto: string): string {
   return texto
     .normalize('NFD')

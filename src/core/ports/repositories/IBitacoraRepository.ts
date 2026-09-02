@@ -1,5 +1,6 @@
 import type { EntradaBitacora } from '../../entities/EntradaBitacora.js';
 
+/** Filtros para consultar la bitácora de auditoría. */
 export interface FiltroBitacora {
   modulo?: string;
   actorUid?: string;

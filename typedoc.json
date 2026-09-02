@@ -1,0 +1,15 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "entryPoints": ["src/core", "src/application"],
+  "entryPointStrategy": "expand",
+  "out": "docs/api",
+  "plugin": ["typedoc-plugin-markdown"],
+  "readme": "none",
+  "excludePrivate": true,
+  "excludeExternals": true,
+  "excludeInternal": true,
+  "githubPages": false,
+  "hideGenerator": true,
+  "titleLink": "/README.md",
+  "sort": ["source-order"]
+}

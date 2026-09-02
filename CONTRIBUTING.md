@@ -21,6 +21,8 @@
 - Toda dependencia externa entra por una interfaz en `core/ports/` (DIP); su implementación
   concreta se registra **solo** en `src/config/container.ts`.
 - Los controllers traducen HTTP ↔ caso de uso; no llevan reglas de negocio.
+- Toda clase/interfaz exportada en `core/` o `application/` necesita un comentario JSDoc
+  (lo exige ESLint: `jsdoc/require-jsdoc`) — es la fuente de `docs/api/` (TypeDoc).
 
 ## Añadir un módulo (vertical slice)
 

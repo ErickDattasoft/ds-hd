@@ -1,6 +1,7 @@
 import type { Usuario } from '../../entities/Usuario.js';
 import type { Rol } from '../../entities/value-objects/Rol.js';
 
+/** Filtros para listar usuarios. */
 export interface ListarUsuariosFiltro {
   rol?: Rol;
   activo?: boolean;

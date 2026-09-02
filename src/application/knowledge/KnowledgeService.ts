@@ -6,6 +6,7 @@ import { ForbiddenError, NotFoundError } from '../../core/errors/DomainError.js'
 import type { BitacoraService } from '../shared/BitacoraService.js';
 import type { SessionUser } from '../shared/SessionUser.js';
 
+/** Datos editables de un artículo de la base de conocimiento (alta o edición). */
 export interface DatosArticulo {
   titulo: string;
   categoria?: string;
@@ -15,7 +16,7 @@ export interface DatosArticulo {
   visibilidad?: VisibilidadKB;
 }
 
-type Contexto = { esStaff: boolean; esCliente: boolean; anonimo: boolean };
+export type Contexto = { esStaff: boolean; esCliente: boolean; anonimo: boolean };
 
 /** Base de conocimiento: gestión (staff) y consulta (staff / portal / público). */
 export class KnowledgeService {

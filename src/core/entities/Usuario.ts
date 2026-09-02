@@ -11,6 +11,7 @@ export interface PerfilAgente {
   disponibleAsignacion: boolean;
 }
 
+/** Props para construir un {@link Usuario}. */
 export interface UsuarioProps {
   uid: string;
   email: string;

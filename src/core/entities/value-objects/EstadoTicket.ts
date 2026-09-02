@@ -47,10 +47,12 @@ export function esEstadoFinal(estado: string): boolean {
   return FINALES.has(slugEstado(estado));
 }
 
+/** ¿Estado que marca el ticket como resuelto? */
 export function esEstadoResuelto(estado: string): boolean {
   return slugEstado(estado) === 'resuelto';
 }
 
+/** ¿Estado que marca el ticket como cerrado? */
 export function esEstadoCerrado(estado: string): boolean {
   return slugEstado(estado) === 'cerrado';
 }
