@@ -2,7 +2,9 @@ import type { Request, Response } from 'express';
 import type { EmpresaService } from '../../../../application/empresas/EmpresaService.js';
 import type { ContactoService } from '../../../../application/contactos/ContactoService.js';
 import type { SeguimientoService } from '../../../../application/seguimiento/SeguimientoService.js';
+import type { VersionService } from '../../../../application/versiones/VersionService.js';
 import type { ITicketQueries } from '../../../../core/ports/repositories/ITicketQueries.js';
+import { estadoActualizacion } from '../../../../core/entities/value-objects/version.js';
 import { camposDeError } from '../../support/errores.js';
 
 const str = (v: unknown): string => (typeof v === 'string' ? v : '');
@@ -12,6 +14,17 @@ const lista = (v: unknown): string[] =>
     .map((s) => s.trim())
     .filter(Boolean);
 
+/** Extrae un mapa `{sistema → valor}` de los campos `prefijo:Sistema` del body. */
+const mapaConPrefijo = (b: Record<string, unknown>, prefijo: string): Record<string, string> => {
+  const out: Record<string, string> = {};
+  for (const [clave, valor] of Object.entries(b)) {
+    if (clave.startsWith(prefijo) && typeof valor === 'string' && valor.trim()) {
+      out[clave.slice(prefijo.length)] = valor.trim();
+    }
+  }
+  return out;
+};
+
 /** CRUD de empresas. */
 export class EmpresaController {
   constructor(
@@ -19,15 +32,20 @@ export class EmpresaController {
     private readonly contactos: ContactoService,
     private readonly ticketQueries: ITicketQueries,
     private readonly seguimiento: SeguimientoService,
+    private readonly versiones: VersionService,
   ) {}
 
   listar = async (req: Request, res: Response): Promise<void> => {
     const texto = str(req.query.q);
     const incluirArchivadas = req.query.archivadas === '1';
-    const empresas = await this.empresas.listar({
-      ...(texto ? { texto } : {}),
-      ...(incluirArchivadas ? {} : { activa: true }),
-    });
+    const [empresas, versiones] = await Promise.all([
+      this.empresas.listar({
+        ...(texto ? { texto } : {}),
+        ...(incluirArchivadas ? {} : { activa: true }),
+      }),
+      this.versiones.listar(),
+    ]);
+    const oficial = this.mapaOficial(versiones);
     const hoy = new Date();
     const filas = empresas.map((empresa) => {
       const riesgo = empresa.licenciasEnRiesgo(hoy);
@@ -35,6 +53,9 @@ export class EmpresaController {
         empresa,
         vencidas: riesgo.filter((l) => l.estado === 'vencida').length,
         porVencer: riesgo.filter((l) => l.estado === 'por_vencer').length,
+        desactualizadas: empresa.sistemasContratados.filter(
+          (s) => estadoActualizacion(empresa.versionesInstaladas[s], oficial[s]) === 'desactualizada',
+        ).length,
       };
     });
     res.render('pages/backoffice/empresas/list', { titulo: 'Empresas', filas, q: texto, incluirArchivadas });
@@ -62,11 +83,13 @@ export class EmpresaController {
   ver = async (req: Request, res: Response): Promise<void> => {
     const id = str(req.params.id);
     const empresa = await this.empresas.obtener(id);
-    const [contactos, tickets, interacciones] = await Promise.all([
+    const [contactos, tickets, interacciones, versiones] = await Promise.all([
       this.contactos.listar({ empresaId: id }),
       this.ticketQueries.listar({ empresaId: id, limite: 20 }),
       this.seguimiento.interaccionesDe(id),
+      this.versiones.listar(),
     ]);
+    const oficial = this.mapaOficial(versiones);
     const hoy = new Date();
     res.render('pages/backoffice/empresas/detail', {
       titulo: empresa.nombre,
@@ -74,10 +97,13 @@ export class EmpresaController {
       contactos,
       tickets,
       interacciones,
-      licencias: empresa.sistemasContratados.map((sistema) => ({
+      sistemas: empresa.sistemasContratados.map((sistema) => ({
         sistema,
-        fecha: empresa.vigencias[sistema] ?? null,
-        estado: empresa.estadoVigencia(sistema, hoy),
+        vigencia: empresa.vigencias[sistema] ?? null,
+        estadoVigencia: empresa.estadoVigencia(sistema, hoy),
+        instalada: empresa.versionesInstaladas[sistema] ?? null,
+        oficial: oficial[sistema] ?? null,
+        estadoVersion: estadoActualizacion(empresa.versionesInstaladas[sistema], oficial[sistema]),
       })),
     });
   };
@@ -116,13 +142,14 @@ export class EmpresaController {
     res.redirect('/app/empresas');
   };
 
+  /** Versión oficial vigente por sistema (última si hay varias del mismo sistema). */
+  private mapaOficial(versiones: { sistema: string; versionActual: string }[]): Record<string, string> {
+    const out: Record<string, string> = {};
+    for (const v of versiones) out[v.sistema] = v.versionActual;
+    return out;
+  }
+
   private datos(b: Record<string, unknown>) {
-    const vigencias: Record<string, string> = {};
-    for (const [clave, valor] of Object.entries(b)) {
-      if (clave.startsWith('vigencia:') && typeof valor === 'string' && valor.trim()) {
-        vigencias[clave.slice('vigencia:'.length)] = valor.trim();
-      }
-    }
     return {
       nombre: str(b.nombre),
       rfc: str(b.rfc),
@@ -131,7 +158,8 @@ export class EmpresaController {
       telefono: str(b.telefono),
       email: str(b.email),
       sistemasContratados: lista(b.sistemasContratados),
-      vigencias,
+      vigencias: mapaConPrefijo(b, 'vigencia:'),
+      versionesInstaladas: mapaConPrefijo(b, 'version:'),
       notas: str(b.notas),
     };
   }

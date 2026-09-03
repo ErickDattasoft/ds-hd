@@ -60,6 +60,14 @@ Fecha de vigencia de licencia por sistema, formato ISO `YYYY-MM-DD`.
 
 ***
 
+### versionesInstaladas?
+
+> `optional` **versionesInstaladas?**: `Record`\<`string`, `string`\>
+
+Versión instalada por sistema (texto libre).
+
+***
+
 ### notas?
 
 > `optional` **notas?**: `string`

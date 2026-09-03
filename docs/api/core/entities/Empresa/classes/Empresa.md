@@ -80,6 +80,12 @@ Empresa/cliente del CRM.
 
 ***
 
+### versionesInstaladas
+
+> **versionesInstaladas**: `Record`\<`string`, `string`\>
+
+***
+
 ### contactoPrincipalId
 
 > **contactoPrincipalId**: `string` \| `null`
@@ -145,6 +151,32 @@ Empresa/cliente del CRM.
 #### Returns
 
 `void`
+
+***
+
+### sanearMapaSistemas()
+
+> `static` **sanearMapaSistemas**(`mapa`, `sistemasContratados`, `validar?`): `Record`\<`string`, `string`\>
+
+Deja solo entradas de un mapa {sistema → valor} cuyo sistema sigue contratado.
+
+#### Parameters
+
+##### mapa
+
+`Record`\<`string`, `string`\> \| `undefined`
+
+##### sistemasContratados
+
+`string`[]
+
+##### validar?
+
+(`valor`) => `boolean`
+
+#### Returns
+
+`Record`\<`string`, `string`\>
 
 ***
 

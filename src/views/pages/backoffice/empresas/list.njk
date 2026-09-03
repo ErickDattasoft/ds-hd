@@ -11,7 +11,7 @@
     <button class="btn btn--sm" type="submit">Buscar</button>
   </form>
   <table class="data-table">
-    <thead><tr><th>Nombre</th><th>RFC</th><th>Teléfono</th><th>Sistemas</th><th>Licencias</th><th>Estado</th></tr></thead>
+    <thead><tr><th>Nombre</th><th>RFC</th><th>Teléfono</th><th>Sistemas</th><th>Licencias</th><th>Versiones</th><th>Estado</th></tr></thead>
     <tbody>
       {% for fila in filas %}
         {% set e = fila.empresa %}
@@ -25,9 +25,12 @@
             {% if fila.porVencer %}<span class="badge badge--warning">{{ fila.porVencer }} por vencer</span>{% endif %}
             {% if not fila.vencidas and not fila.porVencer %}<span class="muted">—</span>{% endif %}
           </td>
+          <td>
+            {% if fila.desactualizadas %}<span class="badge badge--warning">{{ fila.desactualizadas }} desactualizada{{ 's' if fila.desactualizadas != 1 }}</span>{% else %}<span class="muted">—</span>{% endif %}
+          </td>
           <td>{{ 'Activa' if e.activa else 'Archivada' }}</td>
         </tr>
-      {% else %}<tr><td colspan="6" class="muted">Sin empresas.</td></tr>{% endfor %}
+      {% else %}<tr><td colspan="7" class="muted">Sin empresas.</td></tr>{% endfor %}
     </tbody>
   </table>
 {% endblock %}

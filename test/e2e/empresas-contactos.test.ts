@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import request from 'supertest';
 import { makeTestApp, cookieValor } from '../helpers/app.js';
+import { VersionSistema } from '../../src/core/entities/VersionSistema.js';
 
 const ADMIN = { uid: 'u-a', email: 'admin@dattasoft.mx', password: 'admin12345', nombre: 'Admin', rol: 'admin' as const };
 const AGENTE = { uid: 'u-g', email: 'ag@dattasoft.mx', password: 'agente12345', nombre: 'Agente', rol: 'agente' as const };
@@ -43,8 +44,9 @@ describe('empresas y contactos', () => {
     expect(verBitacora.text).toContain('ACME SA de CV');
   });
 
-  it('captura y muestra la vigencia de licencia por sistema', async () => {
+  it('captura vigencia y versión instalada por sistema, y las compara con la oficial', async () => {
     const t = makeTestApp({ usuarios: [ADMIN] });
+    t.versionRepo.items.set('v1', new VersionSistema({ id: 'v1', sistema: 'Contabilidad', versionActual: '16.3.1' }));
     const { agent, csrf } = await login(t.app, ADMIN.email, ADMIN.password);
 
     const crear = await agent
@@ -53,7 +55,7 @@ describe('empresas y contactos', () => {
       .send({ _csrf: csrf, nombre: 'Vigencias SA', sistemasContratados: 'Contabilidad\nNóminas' });
     const empId = String(crear.headers.location).split('/').pop()!;
 
-    // en el alta aún no hay vigencias; se cargan al editar
+    // en el alta aún no hay vigencias/versiones; se cargan al editar
     const editar = await agent
       .post(`/app/empresas/${empId}`)
       .type('form')
@@ -63,21 +65,26 @@ describe('empresas y contactos', () => {
         sistemasContratados: 'Contabilidad\nNóminas',
         'vigencia:Contabilidad': '2000-01-01',
         'vigencia:Nóminas': '',
+        'version:Contabilidad': '16.2.0',
       });
     expect(editar.status).toBe(302);
-    expect(t.empresaRepo.items.get(empId)!.vigencias).toEqual({ Contabilidad: '2000-01-01' });
+    const empresa = t.empresaRepo.items.get(empId)!;
+    expect(empresa.vigencias).toEqual({ Contabilidad: '2000-01-01' });
+    expect(empresa.versionesInstaladas).toEqual({ Contabilidad: '16.2.0' });
 
     const formEditar = await agent.get(`/app/empresas/${empId}/editar`);
     expect(formEditar.status).toBe(200);
-    expect(formEditar.text).toContain('Vigencia de licencias');
     expect(formEditar.text).toContain('name="vigencia:Contabilidad"');
-    expect(formEditar.text).toContain('value="2000-01-01"');
+    expect(formEditar.text).toContain('name="version:Contabilidad"');
+    expect(formEditar.text).toContain('value="16.2.0"');
 
     const detalle = await agent.get(`/app/empresas/${empId}`);
     expect(detalle.text).toContain('Vencida'); // 2000-01-01 ya pasó
+    expect(detalle.text).toContain('Desactualizada'); // 16.2.0 < 16.3.1
 
     const lista = await agent.get('/app/empresas');
     expect(lista.text).toContain('1 vencida');
+    expect(lista.text).toContain('1 desactualizada');
   });
 
   it('rechaza contacto con empresa inexistente', async () => {

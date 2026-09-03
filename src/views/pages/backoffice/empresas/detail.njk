@@ -15,19 +15,27 @@
     {% if empresa.notas %}<p class="muted">{{ empresa.notas }}</p>{% endif %}
   </div>
 
-  {% if licencias | length %}
-    <h2>Sistemas y licencias</h2>
+  {% if sistemas | length %}
+    <h2>Sistemas, licencias y versiones</h2>
     <table class="data-table">
-      <thead><tr><th>Sistema</th><th>Vence</th><th>Licencia</th></tr></thead>
+      <thead><tr><th>Sistema</th><th>Licencia</th><th>Vence</th><th>Instalada</th><th>Oficial</th><th>Versión</th></tr></thead>
       <tbody>
-        {% for l in licencias %}
+        {% for s in sistemas %}
           <tr>
-            <td>{{ l.sistema }}</td>
-            <td>{{ l.fecha | fecha if l.fecha else '—' }}</td>
+            <td>{{ s.sistema }}</td>
             <td>
-              {% if l.estado == 'vencida' %}<span class="badge badge--danger">Vencida</span>
-              {% elif l.estado == 'por_vencer' %}<span class="badge badge--warning">Por vencer</span>
-              {% elif l.estado == 'vigente' %}<span class="badge badge--ok">Vigente</span>
+              {% if s.estadoVigencia == 'vencida' %}<span class="badge badge--danger">Vencida</span>
+              {% elif s.estadoVigencia == 'por_vencer' %}<span class="badge badge--warning">Por vencer</span>
+              {% elif s.estadoVigencia == 'vigente' %}<span class="badge badge--ok">Vigente</span>
+              {% else %}<span class="badge">Sin dato</span>{% endif %}
+            </td>
+            <td>{{ s.vigencia | fecha if s.vigencia else '—' }}</td>
+            <td>{{ s.instalada or '—' }}</td>
+            <td>{{ s.oficial or '—' }}</td>
+            <td>
+              {% if s.estadoVersion == 'desactualizada' %}<span class="badge badge--warning">Desactualizada</span>
+              {% elif s.estadoVersion == 'actualizada' %}<span class="badge badge--ok">Al día</span>
+              {% elif s.estadoVersion == 'sin_oficial' %}<span class="muted">—</span>
               {% else %}<span class="badge">Sin dato</span>{% endif %}
             </td>
           </tr>

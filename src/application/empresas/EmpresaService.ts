@@ -17,6 +17,8 @@ export interface DatosEmpresa {
   sistemasContratados?: string[];
   /** Fecha de vigencia de licencia por sistema, formato ISO `YYYY-MM-DD`. */
   vigencias?: Record<string, string>;
+  /** Versión instalada por sistema (texto libre). */
+  versionesInstaladas?: Record<string, string>;
   notas?: string;
 }
 
@@ -83,6 +85,7 @@ export class EmpresaService {
     empresa.email = datos.email?.trim().toLowerCase() || null;
     empresa.sistemasContratados = [...new Set((datos.sistemasContratados ?? []).map((s) => s.trim()).filter(Boolean))];
     empresa.vigencias = Empresa.sanearVigencias(datos.vigencias, empresa.sistemasContratados);
+    empresa.versionesInstaladas = Empresa.sanearMapaSistemas(datos.versionesInstaladas, empresa.sistemasContratados);
     empresa.notas = datos.notas?.trim() || null;
     empresa.updatedAt = ahora;
     await this.repo.save(empresa);

@@ -29,14 +29,21 @@
 
     {% if modo == 'editar' and empresa and empresa.sistemasContratados | length %}
       <details class="disclosure" open>
-        <summary class="disclosure__summary">Vigencia de licencias</summary>
-        <div class="disclosure__body form">
-          <p class="muted">Fecha de vencimiento de la licencia de cada sistema contratado. Deja vacío si no aplica.</p>
-          {% for s in empresa.sistemasContratados %}
-            <label class="field"><span>{{ s }}</span>
-              <input type="date" name="vigencia:{{ s }}" value="{{ valores.vigencias[s] or empresa.vigencias[s] or '' }}" />
-            </label>
-          {% endfor %}
+        <summary class="disclosure__summary">Licencias y versiones por sistema</summary>
+        <div class="disclosure__body">
+          <p class="muted">Vencimiento de licencia y versión instalada de cada sistema contratado. Deja vacío lo que no aplique.</p>
+          <table class="data-table">
+            <thead><tr><th>Sistema</th><th>Vence</th><th>Versión instalada</th></tr></thead>
+            <tbody>
+              {% for s in empresa.sistemasContratados %}
+                <tr>
+                  <td>{{ s }}</td>
+                  <td><input type="date" name="vigencia:{{ s }}" value="{{ valores.vigencias[s] or empresa.vigencias[s] or '' }}" aria-label="Vigencia de {{ s }}" /></td>
+                  <td><input type="text" name="version:{{ s }}" value="{{ valores.versionesInstaladas[s] or empresa.versionesInstaladas[s] or '' }}" placeholder="ej. 16.3.1 SP2" aria-label="Versión instalada de {{ s }}" /></td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
         </div>
       </details>
     {% endif %}

@@ -36,6 +36,8 @@ export interface EmpresaProps {
   sistemasContratados?: string[];
   /** Vigencia de licencia por sistema, formato ISO `YYYY-MM-DD`. */
   vigencias?: Record<string, string>;
+  /** Versión instalada por sistema (texto libre, p. ej. `16.3.1 SP2`). */
+  versionesInstaladas?: Record<string, string>;
   contactoPrincipalId?: string | null;
   notas?: string | null;
   activa?: boolean;
@@ -55,6 +57,7 @@ export class Empresa {
   email: string | null;
   sistemasContratados: string[];
   vigencias: Record<string, string>;
+  versionesInstaladas: Record<string, string>;
   contactoPrincipalId: string | null;
   notas: string | null;
   activa: boolean;
@@ -75,6 +78,7 @@ export class Empresa {
     this.email = props.email?.trim().toLowerCase() || null;
     this.sistemasContratados = [...new Set((props.sistemasContratados ?? []).map((s) => s.trim()).filter(Boolean))];
     this.vigencias = Empresa.sanearVigencias(props.vigencias, this.sistemasContratados);
+    this.versionesInstaladas = Empresa.sanearMapaSistemas(props.versionesInstaladas, this.sistemasContratados);
     this.contactoPrincipalId = props.contactoPrincipalId ?? null;
     this.notas = props.notas?.trim() || null;
     this.activa = props.activa ?? true;
@@ -92,19 +96,29 @@ export class Empresa {
     this.updatedAt = ahora;
   }
 
+  /** Deja solo entradas de un mapa {sistema → valor} cuyo sistema sigue contratado. */
+  static sanearMapaSistemas(
+    mapa: Record<string, string> | undefined,
+    sistemasContratados: string[],
+    validar: (valor: string) => boolean = (v) => v.trim().length > 0,
+  ): Record<string, string> {
+    const limpio: Record<string, string> = {};
+    for (const [sistema, valor] of Object.entries(mapa ?? {})) {
+      const s = sistema.trim();
+      const v = String(valor ?? '').trim();
+      if (s && sistemasContratados.includes(s) && validar(v)) {
+        limpio[s] = v;
+      }
+    }
+    return limpio;
+  }
+
   /** Deja solo vigencias con fecha ISO válida y cuyo sistema sigue contratado. */
   static sanearVigencias(
     vigencias: Record<string, string> | undefined,
     sistemasContratados: string[],
   ): Record<string, string> {
-    const limpio: Record<string, string> = {};
-    for (const [sistema, fecha] of Object.entries(vigencias ?? {})) {
-      const s = sistema.trim();
-      if (s && sistemasContratados.includes(s) && RE_FECHA_ISO.test(String(fecha))) {
-        limpio[s] = String(fecha);
-      }
-    }
-    return limpio;
+    return Empresa.sanearMapaSistemas(vigencias, sistemasContratados, (v) => RE_FECHA_ISO.test(v));
   }
 
   /** Estado de la licencia de un sistema contratado a la fecha `hoy`. */

@@ -656,7 +656,7 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
     ).singleton(),
     empresaController: asFunction(
       (c: Cradle) =>
-        new EmpresaController(c.empresaService, c.contactoService, c.ticketQueries, c.seguimientoService),
+        new EmpresaController(c.empresaService, c.contactoService, c.ticketQueries, c.seguimientoService, c.versionService),
     ).singleton(),
     contactoController: asFunction(
       (c: Cradle) => new ContactoController(c.contactoService, c.empresaService),
