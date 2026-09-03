@@ -12,4 +12,13 @@
 
 ## Interfaces
 
+- [LicenciaSistema](interfaces/LicenciaSistema.md)
 - [EmpresaProps](interfaces/EmpresaProps.md)
+
+## Type Aliases
+
+- [EstadoVigencia](type-aliases/EstadoVigencia.md)
+
+## Variables
+
+- [DIAS\_AVISO\_VIGENCIA](variables/DIAS_AVISO_VIGENCIA.md)

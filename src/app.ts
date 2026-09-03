@@ -57,7 +57,10 @@ function installViewEngine(app: Express, config: AppConfig, precompiled: boolean
   const fmtFecha = new Intl.DateTimeFormat('es-MX', { dateStyle: 'medium' });
   const fmtFechaHora = new Intl.DateTimeFormat('es-MX', { dateStyle: 'medium', timeStyle: 'short' });
   const asDate = (v: unknown): Date | null => {
-    const d = v instanceof Date ? v : typeof v === 'string' || typeof v === 'number' ? new Date(v) : null;
+    // Una fecha ISO sin hora ("2026-10-15") se interpreta como mediodía local para que no
+    // "retroceda" un día al formatearse en la zona horaria de México.
+    const raw = typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v) ? `${v}T12:00:00` : v;
+    const d = raw instanceof Date ? raw : typeof raw === 'string' || typeof raw === 'number' ? new Date(raw) : null;
     return d && !Number.isNaN(d.getTime()) ? d : null;
   };
   env.addFilter('fecha', (v: unknown) => {

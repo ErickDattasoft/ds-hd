@@ -43,6 +43,43 @@ describe('empresas y contactos', () => {
     expect(verBitacora.text).toContain('ACME SA de CV');
   });
 
+  it('captura y muestra la vigencia de licencia por sistema', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    const { agent, csrf } = await login(t.app, ADMIN.email, ADMIN.password);
+
+    const crear = await agent
+      .post('/app/empresas')
+      .type('form')
+      .send({ _csrf: csrf, nombre: 'Vigencias SA', sistemasContratados: 'Contabilidad\nNóminas' });
+    const empId = String(crear.headers.location).split('/').pop()!;
+
+    // en el alta aún no hay vigencias; se cargan al editar
+    const editar = await agent
+      .post(`/app/empresas/${empId}`)
+      .type('form')
+      .send({
+        _csrf: csrf,
+        nombre: 'Vigencias SA',
+        sistemasContratados: 'Contabilidad\nNóminas',
+        'vigencia:Contabilidad': '2000-01-01',
+        'vigencia:Nóminas': '',
+      });
+    expect(editar.status).toBe(302);
+    expect(t.empresaRepo.items.get(empId)!.vigencias).toEqual({ Contabilidad: '2000-01-01' });
+
+    const formEditar = await agent.get(`/app/empresas/${empId}/editar`);
+    expect(formEditar.status).toBe(200);
+    expect(formEditar.text).toContain('Vigencia de licencias');
+    expect(formEditar.text).toContain('name="vigencia:Contabilidad"');
+    expect(formEditar.text).toContain('value="2000-01-01"');
+
+    const detalle = await agent.get(`/app/empresas/${empId}`);
+    expect(detalle.text).toContain('Vencida'); // 2000-01-01 ya pasó
+
+    const lista = await agent.get('/app/empresas');
+    expect(lista.text).toContain('1 vencida');
+  });
+
   it('rechaza contacto con empresa inexistente', async () => {
     const t = makeTestApp({ usuarios: [ADMIN] });
     const { agent, csrf } = await login(t.app, ADMIN.email, ADMIN.password);

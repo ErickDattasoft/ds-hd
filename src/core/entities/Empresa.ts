@@ -1,5 +1,29 @@
 import { ValidationError } from '../errors/DomainError.js';
 
+/** Estado de la licencia de un sistema respecto de su fecha de vigencia. */
+export type EstadoVigencia = 'sin_dato' | 'vigente' | 'por_vencer' | 'vencida';
+
+/** Días antes del vencimiento en que una licencia pasa a marcarse "por vencer". */
+export const DIAS_AVISO_VIGENCIA = 30;
+
+const RE_FECHA_ISO = /^\d{4}-\d{2}-\d{2}$/;
+
+/** Días de calendario entre `desde` y una fecha ISO `YYYY-MM-DD` (negativo si ya pasó). */
+function diasHasta(desde: Date, fechaISO: string): number {
+  const [a, m, d] = fechaISO.split('-').map(Number) as [number, number, number];
+  const inicio = Date.UTC(desde.getFullYear(), desde.getMonth(), desde.getDate());
+  const fin = Date.UTC(a, m - 1, d);
+  return Math.round((fin - inicio) / 86_400_000);
+}
+
+/** Licencia de un sistema con su estado calculado. */
+export interface LicenciaSistema {
+  sistema: string;
+  fecha: string;
+  dias: number;
+  estado: EstadoVigencia;
+}
+
 /** Props para construir una {@link Empresa}. */
 export interface EmpresaProps {
   id: string;
@@ -49,8 +73,8 @@ export class Empresa {
     this.direccion = props.direccion?.trim() || null;
     this.telefono = props.telefono?.trim() || null;
     this.email = props.email?.trim().toLowerCase() || null;
-    this.sistemasContratados = [...new Set(props.sistemasContratados ?? [])];
-    this.vigencias = props.vigencias ?? {};
+    this.sistemasContratados = [...new Set((props.sistemasContratados ?? []).map((s) => s.trim()).filter(Boolean))];
+    this.vigencias = Empresa.sanearVigencias(props.vigencias, this.sistemasContratados);
     this.contactoPrincipalId = props.contactoPrincipalId ?? null;
     this.notas = props.notas?.trim() || null;
     this.activa = props.activa ?? true;
@@ -66,5 +90,40 @@ export class Empresa {
   restaurar(ahora: Date): void {
     this.activa = true;
     this.updatedAt = ahora;
+  }
+
+  /** Deja solo vigencias con fecha ISO válida y cuyo sistema sigue contratado. */
+  static sanearVigencias(
+    vigencias: Record<string, string> | undefined,
+    sistemasContratados: string[],
+  ): Record<string, string> {
+    const limpio: Record<string, string> = {};
+    for (const [sistema, fecha] of Object.entries(vigencias ?? {})) {
+      const s = sistema.trim();
+      if (s && sistemasContratados.includes(s) && RE_FECHA_ISO.test(String(fecha))) {
+        limpio[s] = String(fecha);
+      }
+    }
+    return limpio;
+  }
+
+  /** Estado de la licencia de un sistema contratado a la fecha `hoy`. */
+  estadoVigencia(sistema: string, hoy: Date): EstadoVigencia {
+    const fecha = this.vigencias[sistema.trim()];
+    if (!fecha) return 'sin_dato';
+    const dias = diasHasta(hoy, fecha);
+    if (dias < 0) return 'vencida';
+    if (dias <= DIAS_AVISO_VIGENCIA) return 'por_vencer';
+    return 'vigente';
+  }
+
+  /** Sistemas contratados con licencia vencida o por vencer, ordenados por urgencia. */
+  licenciasEnRiesgo(hoy: Date): LicenciaSistema[] {
+    return this.sistemasContratados
+      .map((sistema) => ({ sistema, fecha: this.vigencias[sistema] }))
+      .filter((x): x is { sistema: string; fecha: string } => Boolean(x.fecha))
+      .map((x) => ({ ...x, dias: diasHasta(hoy, x.fecha), estado: this.estadoVigencia(x.sistema, hoy) }))
+      .filter((x) => x.estado === 'vencida' || x.estado === 'por_vencer')
+      .sort((a, b) => a.dias - b.dias);
   }
 }

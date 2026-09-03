@@ -52,6 +52,14 @@ Datos editables de una empresa (alta o edición).
 
 ***
 
+### vigencias?
+
+> `optional` **vigencias?**: `Record`\<`string`, `string`\>
+
+Fecha de vigencia de licencia por sistema, formato ISO `YYYY-MM-DD`.
+
+***
+
 ### notas?
 
 > `optional` **notas?**: `string`

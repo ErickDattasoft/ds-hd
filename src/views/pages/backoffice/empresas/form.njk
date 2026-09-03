@@ -27,6 +27,20 @@
       </div>
     </details>
 
+    {% if modo == 'editar' and empresa and empresa.sistemasContratados | length %}
+      <details class="disclosure" open>
+        <summary class="disclosure__summary">Vigencia de licencias</summary>
+        <div class="disclosure__body form">
+          <p class="muted">Fecha de vencimiento de la licencia de cada sistema contratado. Deja vacío si no aplica.</p>
+          {% for s in empresa.sistemasContratados %}
+            <label class="field"><span>{{ s }}</span>
+              <input type="date" name="vigencia:{{ s }}" value="{{ valores.vigencias[s] or empresa.vigencias[s] or '' }}" />
+            </label>
+          {% endfor %}
+        </div>
+      </details>
+    {% endif %}
+
     <div class="page-head__actions">
       <button class="btn" type="submit">Guardar</button>
       <a class="btn btn--ghost" href="/app/empresas">Cancelar</a>

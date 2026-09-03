@@ -15,6 +15,8 @@ export interface DatosEmpresa {
   telefono?: string;
   email?: string;
   sistemasContratados?: string[];
+  /** Fecha de vigencia de licencia por sistema, formato ISO `YYYY-MM-DD`. */
+  vigencias?: Record<string, string>;
   notas?: string;
 }
 
@@ -79,7 +81,8 @@ export class EmpresaService {
     empresa.direccion = datos.direccion?.trim() || null;
     empresa.telefono = datos.telefono?.trim() || null;
     empresa.email = datos.email?.trim().toLowerCase() || null;
-    empresa.sistemasContratados = [...new Set(datos.sistemasContratados ?? [])];
+    empresa.sistemasContratados = [...new Set((datos.sistemasContratados ?? []).map((s) => s.trim()).filter(Boolean))];
+    empresa.vigencias = Empresa.sanearVigencias(datos.vigencias, empresa.sistemasContratados);
     empresa.notas = datos.notas?.trim() || null;
     empresa.updatedAt = ahora;
     await this.repo.save(empresa);

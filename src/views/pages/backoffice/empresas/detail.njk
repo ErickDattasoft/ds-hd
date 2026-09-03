@@ -12,9 +12,29 @@
   <div class="card">
     <p><strong>RFC:</strong> {{ empresa.rfc or '—' }} · <strong>Tel:</strong> {{ empresa.telefono or '—' }} · <strong>Correo:</strong> {{ empresa.email or '—' }}</p>
     {% if empresa.direccion %}<p>{{ empresa.direccion }}</p>{% endif %}
-    {% if empresa.sistemasContratados | length %}<p><strong>Sistemas:</strong> {{ empresa.sistemasContratados | join(', ') }}</p>{% endif %}
     {% if empresa.notas %}<p class="muted">{{ empresa.notas }}</p>{% endif %}
   </div>
+
+  {% if licencias | length %}
+    <h2>Sistemas y licencias</h2>
+    <table class="data-table">
+      <thead><tr><th>Sistema</th><th>Vence</th><th>Licencia</th></tr></thead>
+      <tbody>
+        {% for l in licencias %}
+          <tr>
+            <td>{{ l.sistema }}</td>
+            <td>{{ l.fecha | fecha if l.fecha else '—' }}</td>
+            <td>
+              {% if l.estado == 'vencida' %}<span class="badge badge--danger">Vencida</span>
+              {% elif l.estado == 'por_vencer' %}<span class="badge badge--warning">Por vencer</span>
+              {% elif l.estado == 'vigente' %}<span class="badge badge--ok">Vigente</span>
+              {% else %}<span class="badge">Sin dato</span>{% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% endif %}
 
   {% if can('empresas:eliminar') %}
     <details class="disclosure">

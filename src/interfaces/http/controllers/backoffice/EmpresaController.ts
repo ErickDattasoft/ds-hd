@@ -28,7 +28,16 @@ export class EmpresaController {
       ...(texto ? { texto } : {}),
       ...(incluirArchivadas ? {} : { activa: true }),
     });
-    res.render('pages/backoffice/empresas/list', { titulo: 'Empresas', empresas, q: texto, incluirArchivadas });
+    const hoy = new Date();
+    const filas = empresas.map((empresa) => {
+      const riesgo = empresa.licenciasEnRiesgo(hoy);
+      return {
+        empresa,
+        vencidas: riesgo.filter((l) => l.estado === 'vencida').length,
+        porVencer: riesgo.filter((l) => l.estado === 'por_vencer').length,
+      };
+    });
+    res.render('pages/backoffice/empresas/list', { titulo: 'Empresas', filas, q: texto, incluirArchivadas });
   };
 
   nuevo = (_req: Request, res: Response): void => {
@@ -58,12 +67,18 @@ export class EmpresaController {
       this.ticketQueries.listar({ empresaId: id, limite: 20 }),
       this.seguimiento.interaccionesDe(id),
     ]);
+    const hoy = new Date();
     res.render('pages/backoffice/empresas/detail', {
       titulo: empresa.nombre,
       empresa,
       contactos,
       tickets,
       interacciones,
+      licencias: empresa.sistemasContratados.map((sistema) => ({
+        sistema,
+        fecha: empresa.vigencias[sistema] ?? null,
+        estado: empresa.estadoVigencia(sistema, hoy),
+      })),
     });
   };
 
@@ -102,6 +117,12 @@ export class EmpresaController {
   };
 
   private datos(b: Record<string, unknown>) {
+    const vigencias: Record<string, string> = {};
+    for (const [clave, valor] of Object.entries(b)) {
+      if (clave.startsWith('vigencia:') && typeof valor === 'string' && valor.trim()) {
+        vigencias[clave.slice('vigencia:'.length)] = valor.trim();
+      }
+    }
     return {
       nombre: str(b.nombre),
       rfc: str(b.rfc),
@@ -110,6 +131,7 @@ export class EmpresaController {
       telefono: str(b.telefono),
       email: str(b.email),
       sistemasContratados: lista(b.sistemasContratados),
+      vigencias,
       notas: str(b.notas),
     };
   }

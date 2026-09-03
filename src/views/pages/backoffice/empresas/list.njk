@@ -11,17 +11,23 @@
     <button class="btn btn--sm" type="submit">Buscar</button>
   </form>
   <table class="data-table">
-    <thead><tr><th>Nombre</th><th>RFC</th><th>Teléfono</th><th>Sistemas</th><th>Estado</th></tr></thead>
+    <thead><tr><th>Nombre</th><th>RFC</th><th>Teléfono</th><th>Sistemas</th><th>Licencias</th><th>Estado</th></tr></thead>
     <tbody>
-      {% for e in empresas %}
+      {% for fila in filas %}
+        {% set e = fila.empresa %}
         <tr>
           <td><a href="/app/empresas/{{ e.id }}">{{ e.nombre }}</a></td>
           <td>{{ e.rfc or '—' }}</td>
           <td>{{ e.telefono or '—' }}</td>
           <td>{{ e.sistemasContratados | length }}</td>
+          <td>
+            {% if fila.vencidas %}<span class="badge badge--danger">{{ fila.vencidas }} vencida{{ 's' if fila.vencidas != 1 }}</span>{% endif %}
+            {% if fila.porVencer %}<span class="badge badge--warning">{{ fila.porVencer }} por vencer</span>{% endif %}
+            {% if not fila.vencidas and not fila.porVencer %}<span class="muted">—</span>{% endif %}
+          </td>
           <td>{{ 'Activa' if e.activa else 'Archivada' }}</td>
         </tr>
-      {% else %}<tr><td colspan="5" class="muted">Sin empresas.</td></tr>{% endfor %}
+      {% else %}<tr><td colspan="6" class="muted">Sin empresas.</td></tr>{% endfor %}
     </tbody>
   </table>
 {% endblock %}
