@@ -264,12 +264,15 @@ export class FirestoreRestClient {
   }
 
   async _getDoc(ref: RestDocumentReference, transaction?: string): Promise<RestDocumentSnapshot> {
-    const url = new URL(`${this.docsUrl}/${ref.path}`);
-    if (transaction) url.searchParams.set('transaction', transaction);
-    const res = await this.fetchAuthed(url.toString());
-    if (res.status === 404) return new RestDocumentSnapshot(ref, null);
-    if (!res.ok) throw await this.error('getDoc', res);
-    return new RestDocumentSnapshot(ref, (await res.json()) as RestDocument);
+    // Se usa `:batchGet` (POST) en vez de `documents.get`: es lo que permite pasar la
+    // transacción en el body (`documents.get?transaction=` cuelga en el emulador) y sirve
+    // igual para lecturas sueltas.
+    const res = await this.call(`${this.docsUrl}:batchGet`, {
+      documents: [this._name(ref.path)],
+      ...(transaction ? { transaction } : {}),
+    });
+    const filas = (await res.json()) as Array<{ found?: RestDocument; missing?: string }>;
+    return new RestDocumentSnapshot(ref, filas.find((f) => f.found)?.found ?? null);
   }
 
   async _write(writes: object[]): Promise<void> {

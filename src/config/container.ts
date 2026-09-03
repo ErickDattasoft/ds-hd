@@ -1,6 +1,8 @@
 import { asFunction, asValue, createContainer, InjectionMode, type AwilixContainer } from 'awilix';
+import type { Firestore } from 'firebase-admin/firestore';
 import type { AppConfig } from './env.js';
 import { initFirebase, type FirebaseServices } from './firebase.js';
+import { resolverDriverFirestore, type DriverFirestore } from './firestoreDriver.js';
 import { PinoLogger } from '../infrastructure/system/PinoLogger.js';
 import { SystemClock } from '../infrastructure/system/SystemClock.js';
 import { UuidGenerator } from '../infrastructure/system/UuidGenerator.js';
@@ -128,6 +130,8 @@ export interface Cradle {
   clock: IClock;
   idGenerator: IIdGenerator;
   firebase: FirebaseServices | null;
+  /** Acceso a Firestore según el driver activo (admin SDK o cliente REST). */
+  firestoreDb: Firestore | null;
 
   // Puertos → adaptadores
   authProvider: IAuthProvider;
@@ -227,6 +231,15 @@ function requireFirebase(fb: FirebaseServices | null): FirebaseServices {
   return fb;
 }
 
+function requireFirestore(db: Firestore | null): Firestore {
+  if (!db) {
+    throw new Error(
+      'No hay acceso a Firestore (DISABLE_FIREBASE=true, o falta configuración del driver).',
+    );
+  }
+  return db;
+}
+
 /** Composition root: único lugar donde se instancian adaptadores concretos. */
 export function buildContainer(config: AppConfig, overrides: ContainerOverrides = {}): Container {
   const container = createContainer<Cradle>({ injectionMode: InjectionMode.PROXY, strict: true });
@@ -236,16 +249,23 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
     pretty: !config.isProduction && !config.isTest,
   });
 
+  // Driver de datos: `rest` (Cloudflare Workers) o `admin` (firebase-admin, por defecto).
+  const driverRest: DriverFirestore | null = resolverDriverFirestore(config, logger);
+  const firebase = driverRest ? null : initFirebase(config, logger);
+  const firestoreDb: Firestore | null = driverRest?.firestore ?? firebase?.firestore ?? null;
+
   container.register({
     config: asValue(config),
     logger: asValue(logger),
     clock: asFunction(() => new SystemClock()).singleton(),
     idGenerator: asFunction(() => new UuidGenerator()).singleton(),
-    firebase: asValue(initFirebase(config, logger)),
+    firebase: asValue(firebase),
+    firestoreDb: asValue(firestoreDb),
 
     authProvider: asFunction(
-      ({ firebase, config: c, logger: l }: Cradle): IAuthProvider =>
-        new FirebaseAuthProvider(requireFirebase(firebase).auth, {
+      ({ firebase: fb, config: c, logger: l }: Cradle): IAuthProvider =>
+        driverRest?.authProvider ??
+        new FirebaseAuthProvider(requireFirebase(fb).auth, {
           apiKey: c.firebase.apiKey,
           emulatorHost: c.firebase.authEmulatorHost || process.env.FIREBASE_AUTH_EMULATOR_HOST || '',
         }, l),
@@ -281,36 +301,36 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
     }).singleton(),
 
     usuarioRepo: asFunction(
-      ({ firebase }: Cradle): IUsuarioRepository =>
-        new FirestoreUsuarioRepository(requireFirebase(firebase).firestore),
+      ({ firestoreDb }: Cradle): IUsuarioRepository =>
+        new FirestoreUsuarioRepository(requireFirestore(firestoreDb)),
     ).singleton(),
     solicitudAccesoRepo: asFunction(
-      ({ firebase }: Cradle): ISolicitudAccesoRepository =>
-        new FirestoreSolicitudAccesoRepository(requireFirebase(firebase).firestore),
+      ({ firestoreDb }: Cradle): ISolicitudAccesoRepository =>
+        new FirestoreSolicitudAccesoRepository(requireFirestore(firestoreDb)),
     ).singleton(),
     invitacionRepo: asFunction(
-      ({ firebase }: Cradle): IInvitacionRepository =>
-        new FirestoreInvitacionRepository(requireFirebase(firebase).firestore),
+      ({ firestoreDb }: Cradle): IInvitacionRepository =>
+        new FirestoreInvitacionRepository(requireFirestore(firestoreDb)),
     ).singleton(),
     ticketRepo: asFunction(
-      ({ firebase }: Cradle): ITicketRepository =>
-        new FirestoreTicketRepository(requireFirebase(firebase).firestore),
+      ({ firestoreDb }: Cradle): ITicketRepository =>
+        new FirestoreTicketRepository(requireFirestore(firestoreDb)),
     ).singleton(),
     ticketQueries: asFunction(
-      ({ firebase }: Cradle): ITicketQueries =>
-        new FirestoreTicketQueries(requireFirebase(firebase).firestore),
+      ({ firestoreDb }: Cradle): ITicketQueries =>
+        new FirestoreTicketQueries(requireFirestore(firestoreDb)),
     ).singleton(),
     contadorRepo: asFunction(
-      ({ firebase }: Cradle): IContadorRepository =>
-        new FirestoreContadorRepository(requireFirebase(firebase).firestore),
+      ({ firestoreDb }: Cradle): IContadorRepository =>
+        new FirestoreContadorRepository(requireFirestore(firestoreDb)),
     ).singleton(),
     configuracionRepo: asFunction(
-      ({ firebase }: Cradle): IConfiguracionRepository =>
-        new FirestoreConfiguracionRepository(requireFirebase(firebase).firestore),
+      ({ firestoreDb }: Cradle): IConfiguracionRepository =>
+        new FirestoreConfiguracionRepository(requireFirestore(firestoreDb)),
     ).singleton(),
     ticketPublicoRepo: asFunction(
-      ({ firebase }: Cradle): ITicketPublicoRepository =>
-        new FirestoreTicketPublicoRepository(requireFirebase(firebase).firestore),
+      ({ firestoreDb }: Cradle): ITicketPublicoRepository =>
+        new FirestoreTicketPublicoRepository(requireFirestore(firestoreDb)),
     ).singleton(),
     webhookPublisher: asFunction(({ config: c, logger: l }: Cradle): IWebhookPublisher =>
       c.n8n.ticketsWebhook || c.n8n.cotizacionesWebhook
@@ -324,48 +344,48 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
       c.turnstile.secret ? new TurnstileVerifier(c.turnstile.secret, l) : new NullCaptchaVerifier(),
     ).singleton(),
     empresaRepo: asFunction(
-      ({ firebase }: Cradle): IEmpresaRepository =>
-        new FirestoreEmpresaRepository(requireFirebase(firebase).firestore),
+      ({ firestoreDb }: Cradle): IEmpresaRepository =>
+        new FirestoreEmpresaRepository(requireFirestore(firestoreDb)),
     ).singleton(),
     contactoRepo: asFunction(
-      ({ firebase }: Cradle): IContactoRepository =>
-        new FirestoreContactoRepository(requireFirebase(firebase).firestore),
+      ({ firestoreDb }: Cradle): IContactoRepository =>
+        new FirestoreContactoRepository(requireFirestore(firestoreDb)),
     ).singleton(),
     bitacoraRepo: asFunction(
-      ({ firebase }: Cradle): IBitacoraRepository =>
-        new FirestoreBitacoraRepository(requireFirebase(firebase).firestore),
+      ({ firestoreDb }: Cradle): IBitacoraRepository =>
+        new FirestoreBitacoraRepository(requireFirestore(firestoreDb)),
     ).singleton(),
     versionRepo: asFunction(
-      ({ firebase }: Cradle): IVersionRepository =>
-        new FirestoreVersionRepository(requireFirebase(firebase).firestore),
+      ({ firestoreDb }: Cradle): IVersionRepository =>
+        new FirestoreVersionRepository(requireFirestore(firestoreDb)),
     ).singleton(),
     knowledgeRepo: asFunction(
-      ({ firebase }: Cradle): IKnowledgeRepository =>
-        new FirestoreKnowledgeRepository(requireFirebase(firebase).firestore),
+      ({ firestoreDb }: Cradle): IKnowledgeRepository =>
+        new FirestoreKnowledgeRepository(requireFirestore(firestoreDb)),
     ).singleton(),
     cotizacionRepo: asFunction(
-      ({ firebase }: Cradle): ICotizacionRepository =>
-        new FirestoreCotizacionRepository(requireFirebase(firebase).firestore),
+      ({ firestoreDb }: Cradle): ICotizacionRepository =>
+        new FirestoreCotizacionRepository(requireFirestore(firestoreDb)),
     ).singleton(),
     interaccionRepo: asFunction(
-      ({ firebase }: Cradle): IInteraccionRepository =>
-        new FirestoreInteraccionRepository(requireFirebase(firebase).firestore),
+      ({ firestoreDb }: Cradle): IInteraccionRepository =>
+        new FirestoreInteraccionRepository(requireFirestore(firestoreDb)),
     ).singleton(),
     tareaRepo: asFunction(
-      ({ firebase }: Cradle): ITareaRepository =>
-        new FirestoreTareaRepository(requireFirebase(firebase).firestore),
+      ({ firestoreDb }: Cradle): ITareaRepository =>
+        new FirestoreTareaRepository(requireFirestore(firestoreDb)),
     ).singleton(),
     eventoRepo: asFunction(
-      ({ firebase }: Cradle): IEventoRepository =>
-        new FirestoreEventoRepository(requireFirebase(firebase).firestore),
+      ({ firestoreDb }: Cradle): IEventoRepository =>
+        new FirestoreEventoRepository(requireFirestore(firestoreDb)),
     ).singleton(),
     inscripcionRepo: asFunction(
-      ({ firebase }: Cradle): IInscripcionRepository =>
-        new FirestoreInscripcionRepository(requireFirebase(firebase).firestore),
+      ({ firestoreDb }: Cradle): IInscripcionRepository =>
+        new FirestoreInscripcionRepository(requireFirestore(firestoreDb)),
     ).singleton(),
     listaNegraRepo: asFunction(
-      ({ firebase }: Cradle): IListaNegraRepository =>
-        new FirestoreListaNegraRepository(requireFirebase(firebase).firestore),
+      ({ firestoreDb }: Cradle): IListaNegraRepository =>
+        new FirestoreListaNegraRepository(requireFirestore(firestoreDb)),
     ).singleton(),
 
     loginService: asFunction(

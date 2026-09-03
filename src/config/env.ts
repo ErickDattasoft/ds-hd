@@ -34,6 +34,12 @@ export const envSchema = z.object({
     .describe('Secreto para firmar la cookie de sesión y el token CSRF.'),
 
   FIREBASE_PROJECT_ID: z.string().min(1).describe('ID del proyecto Firebase (nuevo, aislado).'),
+  FIRESTORE_DRIVER: z
+    .enum(['admin', 'rest'])
+    .default('admin')
+    .describe(
+      'Cómo se accede a Firestore/Auth: `admin` = firebase-admin SDK (Node/Docker); `rest` = cliente REST propio vía fetch (Cloudflare Workers, sin gRPC).',
+    ),
   FIREBASE_API_KEY: z
     .string()
     .default('')
@@ -98,6 +104,7 @@ export type AppConfig = {
   readonly session: { readonly secret: string };
   readonly firebase: {
     readonly projectId: string;
+    readonly driver: 'admin' | 'rest';
     readonly apiKey: string;
     readonly serviceAccountB64: string;
     readonly storageBucket: string;
@@ -138,6 +145,7 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): AppConfig {
     session: { secret: e.SESSION_COOKIE_SECRET },
     firebase: {
       projectId: e.FIREBASE_PROJECT_ID,
+      driver: e.FIRESTORE_DRIVER,
       apiKey: e.FIREBASE_API_KEY,
       serviceAccountB64: e.FIREBASE_SERVICE_ACCOUNT_B64,
       storageBucket: e.FIREBASE_STORAGE_BUCKET,

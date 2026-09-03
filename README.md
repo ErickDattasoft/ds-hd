@@ -79,6 +79,7 @@ ilustran cada sección se toman con `npm run docs:screenshots` contra la app cor
 | `LOG_LEVEL` | sí | Nivel mínimo de log (pino). |
 | `SESSION_COOKIE_SECRET` | sí | Secreto para firmar la cookie de sesión y el token CSRF. |
 | `FIREBASE_PROJECT_ID` | no | ID del proyecto Firebase (nuevo, aislado). |
+| `FIRESTORE_DRIVER` | sí | Cómo se accede a Firestore/Auth: `admin` = firebase-admin SDK (Node/Docker); `rest` = cliente REST propio vía fetch (Cloudflare Workers, sin gRPC). |
 | `FIREBASE_API_KEY` | sí | API key web de Firebase; solo para el sign-in por REST (Identity Toolkit). |
 | `FIREBASE_SERVICE_ACCOUNT_B64` | sí | Service account JSON del proyecto, codificado en base64 (o usar GOOGLE_APPLICATION_CREDENTIALS). |
 | `FIREBASE_STORAGE_BUCKET` | sí | Bucket de Firebase Storage para adjuntos. |
