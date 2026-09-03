@@ -28,6 +28,21 @@ if (emulador) {
     };
     return { repo, limpiar };
   });
+
+  // Mismo contrato contra el cliente REST (el que se usará en Cloudflare Workers).
+  const { FirestoreRestClient } = await import(
+    '../../src/infrastructure/firestore-rest/FirestoreRestClient.js'
+  );
+  type FS = ConstructorParameters<typeof FirestoreUsuarioRepository>[0];
+  contratoUsuarioRepository('Firestore REST (emulador)', async () => {
+    const rest = new FirestoreRestClient({ projectId: 'ds-hd-test', emulatorHost: emulador });
+    const repo = new FirestoreUsuarioRepository(rest as unknown as FS);
+    const limpiar = async () => {
+      const snap = await rest.collection('usuarios').get();
+      await Promise.all(snap.docs.map((d) => d.ref.delete()));
+    };
+    return { repo, limpiar };
+  });
 } else {
   console.warn('Contrato Firestore omitido (define FIRESTORE_EMULATOR_HOST para incluirlo).');
 }

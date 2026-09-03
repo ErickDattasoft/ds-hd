@@ -85,4 +85,26 @@ if (emulador) {
       await Promise.all(snap.docs.map((d) => d.ref.delete()));
     },
   }));
+
+  // Mismo contrato contra el cliente REST (el que se usará en Cloudflare Workers).
+  const { FirestoreRestClient } = await import(
+    '../../src/infrastructure/firestore-rest/FirestoreRestClient.js'
+  );
+  type FS = ConstructorParameters<typeof FirestoreTicketRepository>[0];
+  contrato('Firestore REST (emulador)', async () => {
+    const rest = new FirestoreRestClient({ projectId: 'ds-hd-test', emulatorHost: emulador });
+    return {
+      repo: new FirestoreTicketRepository(rest as unknown as FS),
+      limpiar: async () => {
+        const tickets = await rest.collection('tickets').get();
+        for (const t of tickets.docs) {
+          for (const sub of ['notas', 'eventos']) {
+            const hijos = await rest.collection(`tickets/${t.id}/${sub}`).get();
+            await Promise.all(hijos.docs.map((h) => h.ref.delete()));
+          }
+          await t.ref.delete();
+        }
+      },
+    };
+  });
 }
