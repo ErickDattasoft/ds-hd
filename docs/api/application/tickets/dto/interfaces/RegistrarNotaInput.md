@@ -6,8 +6,6 @@
 
 # Interface: RegistrarNotaInput
 
-Defined in: application/tickets/dto.ts:44
-
 Datos para agregar una nota (pública o interna) a un ticket.
 
 ## Properties
@@ -16,15 +14,11 @@ Datos para agregar una nota (pública o interna) a un ticket.
 
 > **actor**: [`SessionUser`](../../../shared/SessionUser/interfaces/SessionUser.md)
 
-Defined in: application/tickets/dto.ts:45
-
 ***
 
 ### ticketId
 
 > **ticketId**: `string`
-
-Defined in: application/tickets/dto.ts:46
 
 ***
 
@@ -32,12 +26,8 @@ Defined in: application/tickets/dto.ts:46
 
 > **cuerpo**: `string`
 
-Defined in: application/tickets/dto.ts:47
-
 ***
 
 ### tipo
 
 > **tipo**: `"publica"` \| `"interna"`
-
-Defined in: application/tickets/dto.ts:48

@@ -8,8 +8,6 @@
 
 > **esEstadoCerrado**(`estado`): `boolean`
 
-Defined in: core/entities/value-objects/EstadoTicket.ts:56
-
 ¿Estado que marca el ticket como cerrado?
 
 ## Parameters

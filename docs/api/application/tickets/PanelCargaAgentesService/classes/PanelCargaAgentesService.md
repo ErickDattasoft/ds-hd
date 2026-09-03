@@ -6,8 +6,6 @@
 
 # Class: PanelCargaAgentesService
 
-Defined in: application/tickets/PanelCargaAgentesService.ts:6
-
 Caso de uso: panel de carga de trabajo por agente (para decidir asignaciones).
 
 ## Constructors
@@ -15,8 +13,6 @@ Caso de uso: panel de carga de trabajo por agente (para decidir asignaciones).
 ### Constructor
 
 > **new PanelCargaAgentesService**(`queries`, `usuarios`, `clock`): `PanelCargaAgentesService`
-
-Defined in: application/tickets/PanelCargaAgentesService.ts:7
 
 #### Parameters
 
@@ -41,8 +37,6 @@ Defined in: application/tickets/PanelCargaAgentesService.ts:7
 ### ejecutar()
 
 > **ejecutar**(): `Promise`\<[`CargaAgente`](../../../../core/ports/repositories/ITicketQueries/interfaces/CargaAgente.md)[]\>
-
-Defined in: application/tickets/PanelCargaAgentesService.ts:13
 
 #### Returns
 

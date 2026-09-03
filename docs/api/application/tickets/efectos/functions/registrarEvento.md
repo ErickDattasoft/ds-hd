@@ -8,8 +8,6 @@
 
 > **registrarEvento**(`tickets`, `ids`, `ticketId`, `data`): `Promise`\<`void`\>
 
-Defined in: application/tickets/efectos.ts:7
-
 Añade una entrada al registro de actividad del ticket. Helper compartido por los casos de uso.
 
 ## Parameters

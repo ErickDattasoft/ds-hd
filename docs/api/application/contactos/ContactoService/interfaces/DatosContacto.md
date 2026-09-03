@@ -6,8 +6,6 @@
 
 # Interface: DatosContacto
 
-Defined in: application/contactos/ContactoService.ts:11
-
 Datos editables de un contacto (alta o edición).
 
 ## Properties
@@ -16,15 +14,11 @@ Datos editables de un contacto (alta o edición).
 
 > **nombre**: `string`
 
-Defined in: application/contactos/ContactoService.ts:12
-
 ***
 
 ### empresaId
 
 > **empresaId**: `string`
-
-Defined in: application/contactos/ContactoService.ts:13
 
 ***
 
@@ -32,15 +26,11 @@ Defined in: application/contactos/ContactoService.ts:13
 
 > `optional` **puesto?**: `string`
 
-Defined in: application/contactos/ContactoService.ts:14
-
 ***
 
 ### email?
 
 > `optional` **email?**: `string`
-
-Defined in: application/contactos/ContactoService.ts:15
 
 ***
 
@@ -48,20 +38,14 @@ Defined in: application/contactos/ContactoService.ts:15
 
 > `optional` **telefono?**: `string`
 
-Defined in: application/contactos/ContactoService.ts:16
-
 ***
 
 ### celular?
 
 > `optional` **celular?**: `string`
 
-Defined in: application/contactos/ContactoService.ts:17
-
 ***
 
 ### notas?
 
 > `optional` **notas?**: `string`
-
-Defined in: application/contactos/ContactoService.ts:18

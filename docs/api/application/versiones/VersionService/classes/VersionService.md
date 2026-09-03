@@ -6,8 +6,6 @@
 
 # Class: VersionService
 
-Defined in: application/versiones/VersionService.ts:19
-
 Catálogo de versiones vigentes de sistemas.
 
 ## Constructors
@@ -15,8 +13,6 @@ Catálogo de versiones vigentes de sistemas.
 ### Constructor
 
 > **new VersionService**(`repo`, `ids`, `clock`, `bitacora`): `VersionService`
-
-Defined in: application/versiones/VersionService.ts:20
 
 #### Parameters
 
@@ -46,8 +42,6 @@ Defined in: application/versiones/VersionService.ts:20
 
 > **listar**(): `Promise`\<[`VersionSistema`](../../../../core/entities/VersionSistema/classes/VersionSistema.md)[]\>
 
-Defined in: application/versiones/VersionService.ts:27
-
 #### Returns
 
 `Promise`\<[`VersionSistema`](../../../../core/entities/VersionSistema/classes/VersionSistema.md)[]\>
@@ -57,8 +51,6 @@ Defined in: application/versiones/VersionService.ts:27
 ### obtener()
 
 > **obtener**(`id`): `Promise`\<[`VersionSistema`](../../../../core/entities/VersionSistema/classes/VersionSistema.md)\>
-
-Defined in: application/versiones/VersionService.ts:31
 
 #### Parameters
 
@@ -75,8 +67,6 @@ Defined in: application/versiones/VersionService.ts:31
 ### guardar()
 
 > **guardar**(`actor`, `datos`, `id?`): `Promise`\<[`VersionSistema`](../../../../core/entities/VersionSistema/classes/VersionSistema.md)\>
-
-Defined in: application/versiones/VersionService.ts:41
 
 #### Parameters
 
@@ -101,8 +91,6 @@ Defined in: application/versiones/VersionService.ts:41
 ### eliminar()
 
 > **eliminar**(`actor`, `id`): `Promise`\<`void`\>
-
-Defined in: application/versiones/VersionService.ts:62
 
 #### Parameters
 

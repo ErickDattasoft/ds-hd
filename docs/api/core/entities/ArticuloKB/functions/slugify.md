@@ -8,8 +8,6 @@
 
 > **slugify**(`texto`): `string`
 
-Defined in: core/entities/ArticuloKB.ts:22
-
 Convierte un título a slug URL-friendly (sin acentos, minúsculas, guiones).
 
 ## Parameters

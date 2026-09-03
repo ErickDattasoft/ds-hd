@@ -6,8 +6,6 @@
 
 # Class: InvitarClienteService
 
-Defined in: application/usuarios/InvitarClienteService.ts:33
-
 Caso de uso: el staff invita a un contacto de una empresa a usar el portal de clientes.
 Crea la identidad, el documento `usuarios/{uid}` con rol `cliente` vinculado a la empresa,
 y una invitación de un solo uso para que fije su contraseña.
@@ -17,8 +15,6 @@ y una invitación de un solo uso para que fije su contraseña.
 ### Constructor
 
 > **new InvitarClienteService**(`usuarios`, `invitaciones`, `auth`, `email`, `ids`, `clock`, `logger`, `baseUrl`, `invitacionTtlHoras`): `InvitarClienteService`
-
-Defined in: application/usuarios/InvitarClienteService.ts:34
 
 #### Parameters
 
@@ -67,8 +63,6 @@ Defined in: application/usuarios/InvitarClienteService.ts:34
 ### ejecutar()
 
 > **ejecutar**(`input`): `Promise`\<[`InvitarClienteResultado`](../interfaces/InvitarClienteResultado.md)\>
-
-Defined in: application/usuarios/InvitarClienteService.ts:46
 
 #### Parameters
 

@@ -28,8 +28,14 @@
     <label class="field">
       <span>Rol</span>
       <select name="rol">
-        {% for r in rolesDisponibles %}
-          <option value="{{ r }}" {{ 'selected' if valores.rol == r }}>{{ ROL_ETIQUETA[r] }}</option>
+        {% for g in ROL_GRUPOS %}
+          <optgroup label="{{ g.etiqueta }}">
+            {% for r in g.roles %}
+              {% if r in rolesDisponibles %}
+                <option value="{{ r }}" {{ 'selected' if valores.rol == r }}>{{ ROL_ETIQUETA[r] }}</option>
+              {% endif %}
+            {% endfor %}
+          </optgroup>
         {% endfor %}
       </select>
       {% if errores.rol %}<em class="field__error">{{ errores.rol }}</em>{% endif %}
@@ -47,35 +53,41 @@
         {% if errores.empresaId %}<em class="field__error">{{ errores.empresaId }}</em>{% endif %}
       </label>
 
-      <fieldset class="field">
-        <legend>Perfil de agente</legend>
-        <input name="agenteGrupo" value="{{ usuario.agente.grupo or '' }}" placeholder="Grupo / cola" />
-        <input type="number" name="agenteCapacidad" value="{{ usuario.agente.capacidadMax }}" min="0" placeholder="Capacidad máx (0 = sin límite)" />
-        <label class="field--check">
-          <input type="checkbox" name="agenteDisponible" {{ 'checked' if usuario.agente.disponibleAsignacion }} />
-          <span>Disponible para asignación</span>
-        </label>
-      </fieldset>
+      <details class="disclosure"{{ ' open' if usuario.agente.grupo or usuario.agente.capacidadMax or usuario.agente.disponibleAsignacion }}>
+        <summary class="disclosure__summary">Configuración de agente <span class="disclosure__hint">— solo para roles de soporte</span></summary>
+        <div class="disclosure__body form">
+          <input name="agenteGrupo" value="{{ usuario.agente.grupo or '' }}" placeholder="Grupo / cola" />
+          <input type="number" name="agenteCapacidad" value="{{ usuario.agente.capacidadMax }}" min="0" placeholder="Capacidad máx (0 = sin límite)" />
+          <label class="field--check">
+            <input type="checkbox" name="agenteDisponible" {{ 'checked' if usuario.agente.disponibleAsignacion }} />
+            <span>Disponible para asignación</span>
+          </label>
+        </div>
+      </details>
 
-      <fieldset class="field">
-        <legend>Permisos adicionales / revocados</legend>
-        <p class="muted">Marca EXTRA para conceder por encima del rol; REVOCAR para quitar.</p>
-        {% for modulo, permisos in permisosModulo %}
-          <div class="perm-group">
-            <strong>{{ modulo }}</strong>
-            {% for p in permisos %}
-              <span class="perm-row">
-                <code>{{ p }}</code>
-                <label><input type="checkbox" name="permisosExtra" value="{{ p }}" {{ 'checked' if p in usuario.permisosExtra }} /> extra</label>
-                <label><input type="checkbox" name="permisosRevocados" value="{{ p }}" {{ 'checked' if p in usuario.permisosRevocados }} /> revocar</label>
-              </span>
-            {% endfor %}
-          </div>
-        {% endfor %}
-      </fieldset>
+      <details class="disclosure"{{ ' open' if usuario.permisosExtra | length or usuario.permisosRevocados | length }}>
+        <summary class="disclosure__summary">Permisos avanzados <span class="disclosure__hint">— ajustar por encima del rol</span></summary>
+        <div class="disclosure__body">
+          <p class="muted">Marca EXTRA para conceder por encima del rol; REVOCAR para quitar.</p>
+          {% for modulo, permisos in permisosModulo %}
+            <div class="perm-group">
+              <strong>{{ modulo }}</strong>
+              {% for p in permisos %}
+                <span class="perm-row">
+                  <code>{{ p }}</code>
+                  <label><input type="checkbox" name="permisosExtra" value="{{ p }}" {{ 'checked' if p in usuario.permisosExtra }} /> extra</label>
+                  <label><input type="checkbox" name="permisosRevocados" value="{{ p }}" {{ 'checked' if p in usuario.permisosRevocados }} /> revocar</label>
+                </span>
+              {% endfor %}
+            </div>
+          {% endfor %}
+        </div>
+      </details>
     {% endif %}
 
-    <button type="submit" class="btn">{{ 'Crear y enviar invitación' if modo == 'crear' else 'Guardar cambios' }}</button>
-    <a class="btn btn--ghost" href="/app/usuarios">Cancelar</a>
+    <div class="page-head__actions">
+      <button type="submit" class="btn">{{ 'Crear y enviar invitación' if modo == 'crear' else 'Guardar cambios' }}</button>
+      <a class="btn btn--ghost" href="/app/usuarios">Cancelar</a>
+    </div>
   </form>
 {% endblock %}

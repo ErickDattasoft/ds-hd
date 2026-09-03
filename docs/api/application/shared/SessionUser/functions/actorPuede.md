@@ -8,8 +8,6 @@
 
 > **actorPuede**(`user`, `permiso`): `boolean`
 
-Defined in: application/shared/SessionUser.ts:22
-
 ¿El actor tiene este permiso concreto?
 
 ## Parameters

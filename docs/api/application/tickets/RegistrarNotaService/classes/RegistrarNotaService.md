@@ -6,8 +6,6 @@
 
 # Class: RegistrarNotaService
 
-Defined in: application/tickets/RegistrarNotaService.ts:12
-
 Caso de uso: agregar una nota (pública o interna) a un ticket.
 
 ## Constructors
@@ -15,8 +13,6 @@ Caso de uso: agregar una nota (pública o interna) a un ticket.
 ### Constructor
 
 > **new RegistrarNotaService**(`tickets`, `ids`, `clock`, `email`, `logger`): `RegistrarNotaService`
-
-Defined in: application/tickets/RegistrarNotaService.ts:13
 
 #### Parameters
 
@@ -49,8 +45,6 @@ Defined in: application/tickets/RegistrarNotaService.ts:13
 ### ejecutar()
 
 > **ejecutar**(`input`): `Promise`\<[`NotaTicket`](../../../../core/entities/NotaTicket/interfaces/NotaTicket.md)\>
-
-Defined in: application/tickets/RegistrarNotaService.ts:21
 
 #### Parameters
 

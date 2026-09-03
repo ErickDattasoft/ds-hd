@@ -6,8 +6,6 @@
 
 # Class: CotizacionService
 
-Defined in: application/cotizaciones/CotizacionService.ts:23
-
 Gestión de cotizaciones: folio consecutivo, conceptos, ciclo de estado.
 
 ## Constructors
@@ -15,8 +13,6 @@ Gestión de cotizaciones: folio consecutivo, conceptos, ciclo de estado.
 ### Constructor
 
 > **new CotizacionService**(`repo`, `contadores`, `empresas`, `ids`, `clock`, `bitacora`): `CotizacionService`
-
-Defined in: application/cotizaciones/CotizacionService.ts:24
 
 #### Parameters
 
@@ -54,8 +50,6 @@ Defined in: application/cotizaciones/CotizacionService.ts:24
 
 > **listar**(`filtro?`): `Promise`\<[`Cotizacion`](../../../../core/entities/Cotizacion/classes/Cotizacion.md)[]\>
 
-Defined in: application/cotizaciones/CotizacionService.ts:33
-
 #### Parameters
 
 ##### filtro?
@@ -72,8 +66,6 @@ Defined in: application/cotizaciones/CotizacionService.ts:33
 
 > **obtener**(`id`): `Promise`\<[`Cotizacion`](../../../../core/entities/Cotizacion/classes/Cotizacion.md)\>
 
-Defined in: application/cotizaciones/CotizacionService.ts:37
-
 #### Parameters
 
 ##### id
@@ -89,8 +81,6 @@ Defined in: application/cotizaciones/CotizacionService.ts:37
 ### crear()
 
 > **crear**(`actor`, `datos`): `Promise`\<[`Cotizacion`](../../../../core/entities/Cotizacion/classes/Cotizacion.md)\>
-
-Defined in: application/cotizaciones/CotizacionService.ts:49
 
 #### Parameters
 
@@ -111,8 +101,6 @@ Defined in: application/cotizaciones/CotizacionService.ts:49
 ### actualizarConceptos()
 
 > **actualizarConceptos**(`actor`, `id`, `conceptos`, `notas?`): `Promise`\<[`Cotizacion`](../../../../core/entities/Cotizacion/classes/Cotizacion.md)\>
-
-Defined in: application/cotizaciones/CotizacionService.ts:86
 
 #### Parameters
 
@@ -142,8 +130,6 @@ Defined in: application/cotizaciones/CotizacionService.ts:86
 
 > **cambiarEstado**(`actor`, `id`, `estado`): `Promise`\<`void`\>
 
-Defined in: application/cotizaciones/CotizacionService.ts:108
-
 #### Parameters
 
 ##### actor
@@ -167,8 +153,6 @@ Defined in: application/cotizaciones/CotizacionService.ts:108
 ### contarPorEstado()
 
 > **contarPorEstado**(): `Promise`\<`Record`\<`string`, `number`\>\>
-
-Defined in: application/cotizaciones/CotizacionService.ts:127
 
 #### Returns
 

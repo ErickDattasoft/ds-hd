@@ -6,8 +6,6 @@
 
 # Interface: IConfiguracionRepository
 
-Defined in: core/ports/repositories/IConfiguracionRepository.ts:5
-
 Documentos singleton de configuración (`configuracion/{seccion}`).
 
 ## Methods
@@ -15,8 +13,6 @@ Documentos singleton de configuración (`configuracion/{seccion}`).
 ### obtenerTickets()
 
 > **obtenerTickets**(): `Promise`\<[`ConfiguracionTickets`](../../../../entities/ConfiguracionTickets/interfaces/ConfiguracionTickets.md)\>
-
-Defined in: core/ports/repositories/IConfiguracionRepository.ts:6
 
 #### Returns
 
@@ -27,8 +23,6 @@ Defined in: core/ports/repositories/IConfiguracionRepository.ts:6
 ### guardarTickets()
 
 > **guardarTickets**(`config`): `Promise`\<`void`\>
-
-Defined in: core/ports/repositories/IConfiguracionRepository.ts:7
 
 #### Parameters
 
@@ -46,8 +40,6 @@ Defined in: core/ports/repositories/IConfiguracionRepository.ts:7
 
 > **obtenerCalculadora**(): `Promise`\<[`ConfiguracionCalculadora`](../../../../entities/CalculadoraCompac/interfaces/ConfiguracionCalculadora.md)\>
 
-Defined in: core/ports/repositories/IConfiguracionRepository.ts:8
-
 #### Returns
 
 `Promise`\<[`ConfiguracionCalculadora`](../../../../entities/CalculadoraCompac/interfaces/ConfiguracionCalculadora.md)\>
@@ -57,8 +49,6 @@ Defined in: core/ports/repositories/IConfiguracionRepository.ts:8
 ### guardarCalculadora()
 
 > **guardarCalculadora**(`config`): `Promise`\<`void`\>
-
-Defined in: core/ports/repositories/IConfiguracionRepository.ts:9
 
 #### Parameters
 

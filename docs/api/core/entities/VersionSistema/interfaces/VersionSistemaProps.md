@@ -6,8 +6,6 @@
 
 # Interface: VersionSistemaProps
 
-Defined in: core/entities/VersionSistema.ts:4
-
 Props para construir una [VersionSistema](../classes/VersionSistema.md).
 
 ## Properties
@@ -16,15 +14,11 @@ Props para construir una [VersionSistema](../classes/VersionSistema.md).
 
 > **id**: `string`
 
-Defined in: core/entities/VersionSistema.ts:5
-
 ***
 
 ### sistema
 
 > **sistema**: `string`
-
-Defined in: core/entities/VersionSistema.ts:6
 
 ***
 
@@ -32,15 +26,11 @@ Defined in: core/entities/VersionSistema.ts:6
 
 > **versionActual**: `string`
 
-Defined in: core/entities/VersionSistema.ts:7
-
 ***
 
 ### fechaLiberacion?
 
 > `optional` **fechaLiberacion?**: `string` \| `null`
-
-Defined in: core/entities/VersionSistema.ts:8
 
 ***
 
@@ -48,15 +38,11 @@ Defined in: core/entities/VersionSistema.ts:8
 
 > `optional` **notasVersion?**: `string` \| `null`
 
-Defined in: core/entities/VersionSistema.ts:9
-
 ***
 
 ### linkDescarga?
 
 > `optional` **linkDescarga?**: `string` \| `null`
-
-Defined in: core/entities/VersionSistema.ts:10
 
 ***
 
@@ -64,12 +50,8 @@ Defined in: core/entities/VersionSistema.ts:10
 
 > `optional` **updatedAt?**: `Date`
 
-Defined in: core/entities/VersionSistema.ts:11
-
 ***
 
 ### actualizadoPorUid?
 
 > `optional` **actualizadoPorUid?**: `string` \| `null`
-
-Defined in: core/entities/VersionSistema.ts:12

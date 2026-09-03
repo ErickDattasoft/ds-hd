@@ -6,8 +6,6 @@
 
 # Interface: DetalleTicket
 
-Defined in: application/tickets/VerTicketService.ts:10
-
 Ticket con sus notas/eventos y los permisos del actor ya resueltos para la vista.
 
 ## Properties
@@ -16,15 +14,11 @@ Ticket con sus notas/eventos y los permisos del actor ya resueltos para la vista
 
 > **ticket**: [`Ticket`](../../../../core/entities/Ticket/classes/Ticket.md)
 
-Defined in: application/tickets/VerTicketService.ts:11
-
 ***
 
 ### notas
 
 > **notas**: [`NotaTicket`](../../../../core/entities/NotaTicket/interfaces/NotaTicket.md)[]
-
-Defined in: application/tickets/VerTicketService.ts:12
 
 ***
 
@@ -32,15 +26,11 @@ Defined in: application/tickets/VerTicketService.ts:12
 
 > **eventos**: [`EventoTicket`](../../../../core/entities/NotaTicket/interfaces/EventoTicket.md)[]
 
-Defined in: application/tickets/VerTicketService.ts:13
-
 ***
 
 ### config
 
 > **config**: [`ConfiguracionTickets`](../../../../core/entities/ConfiguracionTickets/interfaces/ConfiguracionTickets.md)
-
-Defined in: application/tickets/VerTicketService.ts:14
 
 ***
 
@@ -48,20 +38,14 @@ Defined in: application/tickets/VerTicketService.ts:14
 
 > **puedeEditar**: `boolean`
 
-Defined in: application/tickets/VerTicketService.ts:15
-
 ***
 
 ### puedeAsignar
 
 > **puedeAsignar**: `boolean`
 
-Defined in: application/tickets/VerTicketService.ts:16
-
 ***
 
 ### puedeCambiarEstado
 
 > **puedeCambiarEstado**: `boolean`
-
-Defined in: application/tickets/VerTicketService.ts:17

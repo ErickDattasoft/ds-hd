@@ -6,8 +6,6 @@
 
 # Interface: LoginInput
 
-Defined in: application/auth/LoginService.ts:10
-
 Credenciales enviadas desde el formulario de login.
 
 ## Properties
@@ -16,12 +14,8 @@ Credenciales enviadas desde el formulario de login.
 
 > **email**: `string`
 
-Defined in: application/auth/LoginService.ts:11
-
 ***
 
 ### password
 
 > **password**: `string`
-
-Defined in: application/auth/LoginService.ts:12

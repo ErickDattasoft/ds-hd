@@ -6,8 +6,6 @@
 
 # Interface: IInteraccionRepository
 
-Defined in: core/ports/repositories/ISeguimientoRepository.ts:5
-
 Persistencia del seguimiento comercial: interacciones (`interacciones/{id}`) y tareas (`tareas/{id}`).
 
 ## Methods
@@ -15,8 +13,6 @@ Persistencia del seguimiento comercial: interacciones (`interacciones/{id}`) y t
 ### create()
 
 > **create**(`interaccion`): `Promise`\<`void`\>
-
-Defined in: core/ports/repositories/ISeguimientoRepository.ts:6
 
 #### Parameters
 
@@ -34,8 +30,6 @@ Defined in: core/ports/repositories/ISeguimientoRepository.ts:6
 
 > **listPorEmpresa**(`empresaId`): `Promise`\<[`Interaccion`](../../../../entities/Interaccion/classes/Interaccion.md)[]\>
 
-Defined in: core/ports/repositories/ISeguimientoRepository.ts:7
-
 #### Parameters
 
 ##### empresaId
@@ -51,8 +45,6 @@ Defined in: core/ports/repositories/ISeguimientoRepository.ts:7
 ### listRecientes()
 
 > **listRecientes**(`limite`): `Promise`\<[`Interaccion`](../../../../entities/Interaccion/classes/Interaccion.md)[]\>
-
-Defined in: core/ports/repositories/ISeguimientoRepository.ts:8
 
 #### Parameters
 

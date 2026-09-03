@@ -6,8 +6,6 @@
 
 # Interface: CorreoSaliente
 
-Defined in: core/ports/services/IEmailSender.ts:2
-
 Correo transaccional a enviar, agnóstico del proveedor.
 
 ## Properties
@@ -15,8 +13,6 @@ Correo transaccional a enviar, agnóstico del proveedor.
 ### para
 
 > **para**: `object`[]
-
-Defined in: core/ports/services/IEmailSender.ts:3
 
 #### email
 
@@ -32,23 +28,17 @@ Defined in: core/ports/services/IEmailSender.ts:3
 
 > **asunto**: `string`
 
-Defined in: core/ports/services/IEmailSender.ts:4
-
 ***
 
 ### html
 
 > **html**: `string`
 
-Defined in: core/ports/services/IEmailSender.ts:5
-
 ***
 
 ### texto?
 
 > `optional` **texto?**: `string`
-
-Defined in: core/ports/services/IEmailSender.ts:7
 
 Texto plano opcional (si se omite, el proveedor puede derivarlo del HTML).
 
@@ -57,8 +47,6 @@ Texto plano opcional (si se omite, el proveedor puede derivarlo del HTML).
 ### cc?
 
 > `optional` **cc?**: `object`[]
-
-Defined in: core/ports/services/IEmailSender.ts:8
 
 #### email
 
@@ -74,8 +62,6 @@ Defined in: core/ports/services/IEmailSender.ts:8
 
 > `optional` **cco?**: `object`[]
 
-Defined in: core/ports/services/IEmailSender.ts:9
-
 #### email
 
 > **email**: `string`
@@ -89,7 +75,5 @@ Defined in: core/ports/services/IEmailSender.ts:9
 ### tags?
 
 > `optional` **tags?**: `string`[]
-
-Defined in: core/ports/services/IEmailSender.ts:11
 
 Etiquetas para rastrear el correo en el proveedor (webhooks de entrega/rebote).

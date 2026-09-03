@@ -6,8 +6,6 @@
 
 # Interface: ILogger
 
-Defined in: core/ports/services/ILogger.ts:8
-
 Puerto de logging. La capa de aplicación depende de esta interfaz, nunca de pino
 directamente (DIP). El adaptador vive en infrastructure/system/PinoLogger.ts.
 
@@ -16,8 +14,6 @@ directamente (DIP). El adaptador vive en infrastructure/system/PinoLogger.ts.
 ### debug()
 
 > **debug**(`msg`, `fields?`): `void`
-
-Defined in: core/ports/services/ILogger.ts:9
 
 #### Parameters
 
@@ -39,8 +35,6 @@ Defined in: core/ports/services/ILogger.ts:9
 
 > **info**(`msg`, `fields?`): `void`
 
-Defined in: core/ports/services/ILogger.ts:10
-
 #### Parameters
 
 ##### msg
@@ -60,8 +54,6 @@ Defined in: core/ports/services/ILogger.ts:10
 ### warn()
 
 > **warn**(`msg`, `fields?`): `void`
-
-Defined in: core/ports/services/ILogger.ts:11
 
 #### Parameters
 
@@ -83,8 +75,6 @@ Defined in: core/ports/services/ILogger.ts:11
 
 > **error**(`msg`, `fields?`): `void`
 
-Defined in: core/ports/services/ILogger.ts:12
-
 #### Parameters
 
 ##### msg
@@ -104,8 +94,6 @@ Defined in: core/ports/services/ILogger.ts:12
 ### child()
 
 > **child**(`fields`): `ILogger`
-
-Defined in: core/ports/services/ILogger.ts:14
 
 Devuelve un logger hijo con campos fijos (p. ej. `{ requestId }`).
 

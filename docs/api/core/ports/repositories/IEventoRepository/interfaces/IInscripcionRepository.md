@@ -6,8 +6,6 @@
 
 # Interface: IInscripcionRepository
 
-Defined in: core/ports/repositories/IEventoRepository.ts:14
-
 Persistencia de inscripciones a eventos (subcolección de cada evento).
 
 ## Methods
@@ -15,8 +13,6 @@ Persistencia de inscripciones a eventos (subcolección de cada evento).
 ### create()
 
 > **create**(`inscripcion`): `Promise`\<`void`\>
-
-Defined in: core/ports/repositories/IEventoRepository.ts:15
 
 #### Parameters
 
@@ -33,8 +29,6 @@ Defined in: core/ports/repositories/IEventoRepository.ts:15
 ### findByEmail()
 
 > **findByEmail**(`eventoId`, `email`): `Promise`\<[`Inscripcion`](../../../../entities/Inscripcion/interfaces/Inscripcion.md) \| `null`\>
-
-Defined in: core/ports/repositories/IEventoRepository.ts:16
 
 #### Parameters
 
@@ -56,8 +50,6 @@ Defined in: core/ports/repositories/IEventoRepository.ts:16
 
 > **findGlobal**(`inscripcionId`): `Promise`\<[`Inscripcion`](../../../../entities/Inscripcion/interfaces/Inscripcion.md) \| `null`\>
 
-Defined in: core/ports/repositories/IEventoRepository.ts:18
-
 Busca una inscripción por id en cualquier evento (collection-group). Para el webhook de Brevo.
 
 #### Parameters
@@ -76,8 +68,6 @@ Busca una inscripción por id en cualquier evento (collection-group). Para el we
 
 > **listPorEvento**(`eventoId`): `Promise`\<[`Inscripcion`](../../../../entities/Inscripcion/interfaces/Inscripcion.md)[]\>
 
-Defined in: core/ports/repositories/IEventoRepository.ts:19
-
 #### Parameters
 
 ##### eventoId
@@ -94,8 +84,6 @@ Defined in: core/ports/repositories/IEventoRepository.ts:19
 
 > **contar**(`eventoId`): `Promise`\<`number`\>
 
-Defined in: core/ports/repositories/IEventoRepository.ts:20
-
 #### Parameters
 
 ##### eventoId
@@ -111,8 +99,6 @@ Defined in: core/ports/repositories/IEventoRepository.ts:20
 ### save()
 
 > **save**(`inscripcion`): `Promise`\<`void`\>
-
-Defined in: core/ports/repositories/IEventoRepository.ts:21
 
 #### Parameters
 

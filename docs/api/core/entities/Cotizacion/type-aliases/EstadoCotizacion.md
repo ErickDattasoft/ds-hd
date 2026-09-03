@@ -7,5 +7,3 @@
 # Type Alias: EstadoCotizacion
 
 > **EstadoCotizacion** = `"borrador"` \| `"enviada"` \| `"aceptada"` \| `"rechazada"` \| `"vencida"`
-
-Defined in: core/entities/Cotizacion.ts:3

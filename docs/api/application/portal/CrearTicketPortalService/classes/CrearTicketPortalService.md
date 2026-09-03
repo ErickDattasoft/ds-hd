@@ -6,8 +6,6 @@
 
 # Class: CrearTicketPortalService
 
-Defined in: application/portal/CrearTicketPortalService.ts:22
-
 Caso de uso: un cliente del portal crea un ticket. Reutiliza [CrearTicketService](../../../tickets/CrearTicketService/classes/CrearTicketService.md)
 fijando `canal='portal'`, `solicitanteUid` y la empresa del cliente — el cliente no puede
 elegir a nombre de quién ni para qué empresa.
@@ -17,8 +15,6 @@ elegir a nombre de quién ni para qué empresa.
 ### Constructor
 
 > **new CrearTicketPortalService**(`crearTicket`): `CrearTicketPortalService`
-
-Defined in: application/portal/CrearTicketPortalService.ts:23
 
 #### Parameters
 
@@ -35,8 +31,6 @@ Defined in: application/portal/CrearTicketPortalService.ts:23
 ### ejecutar()
 
 > **ejecutar**(`input`): `Promise`\<[`Ticket`](../../../../core/entities/Ticket/classes/Ticket.md)\>
-
-Defined in: application/portal/CrearTicketPortalService.ts:25
 
 #### Parameters
 

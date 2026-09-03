@@ -7,14 +7,19 @@
 {% endmacro %}
 <nav class="sidebar" aria-label="Navegación principal" id="menu-lateral">
   <a class="sidebar__brand" href="{{ '/portal' if area == 'portal' else '/app' }}">ds-hd</a>
-  <ul class="sidebar__list">
-    {% for item in nav %}
-      {% set cls = _activo(item.href) | trim %}
-      <li>
-        <a class="sidebar__link {{ cls }}" href="{{ item.href }}"{% if cls %} aria-current="page"{% endif %}>
-          <span class="sidebar__icon" aria-hidden="true">{{ item.icono }}</span>{{ item.etiqueta }}
-        </a>
-      </li>
-    {% endfor %}
-  </ul>
+  {% for seccion in navSecciones %}
+    <ul class="sidebar__list" aria-label="{{ seccion.etiqueta }}">
+      {% if navSecciones.length > 1 %}
+        <li class="sidebar__section" aria-hidden="true">{{ seccion.etiqueta }}</li>
+      {% endif %}
+      {% for item in seccion.items %}
+        {% set cls = _activo(item.href) | trim %}
+        <li>
+          <a class="sidebar__link {{ cls }}" href="{{ item.href }}"{% if cls %} aria-current="page"{% endif %}>
+            <span class="sidebar__icon" aria-hidden="true">{{ item.icono }}</span>{{ item.etiqueta }}
+          </a>
+        </li>
+      {% endfor %}
+    </ul>
+  {% endfor %}
 </nav>

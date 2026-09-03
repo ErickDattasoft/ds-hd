@@ -6,8 +6,6 @@
 
 # Class: Ticket
 
-Defined in: core/entities/Ticket.ts:91
-
 Ticket de soporte. Encapsula el ciclo de vida (transiciones de estado válidas), el cálculo
 de tiempo trabajado y el reloj de SLA con pausa. No conoce Firestore ni HTTP.
 
@@ -16,8 +14,6 @@ de tiempo trabajado y el reloj de SLA con pausa. No conoce Firestore ni HTTP.
 ### Constructor
 
 > **new Ticket**(`props`): `Ticket`
-
-Defined in: core/entities/Ticket.ts:129
 
 #### Parameters
 
@@ -35,15 +31,11 @@ Defined in: core/entities/Ticket.ts:129
 
 > `readonly` **id**: `string`
 
-Defined in: core/entities/Ticket.ts:92
-
 ***
 
 ### numero
 
 > `readonly` **numero**: `number`
-
-Defined in: core/entities/Ticket.ts:93
 
 ***
 
@@ -51,15 +43,11 @@ Defined in: core/entities/Ticket.ts:93
 
 > **asunto**: `string`
 
-Defined in: core/entities/Ticket.ts:94
-
 ***
 
 ### descripcion
 
 > **descripcion**: `string`
-
-Defined in: core/entities/Ticket.ts:95
 
 ***
 
@@ -67,15 +55,11 @@ Defined in: core/entities/Ticket.ts:95
 
 > **tipo**: `string`
 
-Defined in: core/entities/Ticket.ts:96
-
 ***
 
 ### sistema
 
 > **sistema**: `string` \| `null`
-
-Defined in: core/entities/Ticket.ts:97
 
 ***
 
@@ -83,15 +67,11 @@ Defined in: core/entities/Ticket.ts:97
 
 > **estado**: `string`
 
-Defined in: core/entities/Ticket.ts:98
-
 ***
 
 ### prioridad
 
 > **prioridad**: `"Baja"` \| `"Media"` \| `"Alta"` \| `"Urgente"`
-
-Defined in: core/entities/Ticket.ts:99
 
 ***
 
@@ -99,15 +79,11 @@ Defined in: core/entities/Ticket.ts:99
 
 > **grupo**: `string` \| `null`
 
-Defined in: core/entities/Ticket.ts:100
-
 ***
 
 ### canal
 
 > `readonly` **canal**: [`CanalTicket`](../type-aliases/CanalTicket.md)
-
-Defined in: core/entities/Ticket.ts:101
 
 ***
 
@@ -115,15 +91,11 @@ Defined in: core/entities/Ticket.ts:101
 
 > **empresaId**: `string` \| `null`
 
-Defined in: core/entities/Ticket.ts:103
-
 ***
 
 ### empresaNombre
 
 > **empresaNombre**: `string` \| `null`
-
-Defined in: core/entities/Ticket.ts:104
 
 ***
 
@@ -131,15 +103,11 @@ Defined in: core/entities/Ticket.ts:104
 
 > **contactoId**: `string` \| `null`
 
-Defined in: core/entities/Ticket.ts:105
-
 ***
 
 ### contactoNombre
 
 > **contactoNombre**: `string` \| `null`
-
-Defined in: core/entities/Ticket.ts:106
 
 ***
 
@@ -147,15 +115,11 @@ Defined in: core/entities/Ticket.ts:106
 
 > **contactoCorreo**: `string` \| `null`
 
-Defined in: core/entities/Ticket.ts:107
-
 ***
 
 ### agenteAsignadoUid
 
 > **agenteAsignadoUid**: `string` \| `null`
-
-Defined in: core/entities/Ticket.ts:109
 
 ***
 
@@ -163,15 +127,11 @@ Defined in: core/entities/Ticket.ts:109
 
 > **agenteAsignadoNombre**: `string` \| `null`
 
-Defined in: core/entities/Ticket.ts:110
-
 ***
 
 ### origenPublicoId
 
 > `readonly` **origenPublicoId**: `string` \| `null`
-
-Defined in: core/entities/Ticket.ts:112
 
 ***
 
@@ -179,15 +139,11 @@ Defined in: core/entities/Ticket.ts:112
 
 > `readonly` **solicitanteUid**: `string` \| `null`
 
-Defined in: core/entities/Ticket.ts:113
-
 ***
 
 ### creadoPorUid
 
 > `readonly` **creadoPorUid**: `string` \| `null`
-
-Defined in: core/entities/Ticket.ts:114
 
 ***
 
@@ -195,15 +151,11 @@ Defined in: core/entities/Ticket.ts:114
 
 > **sla**: [`SlaState`](../interfaces/SlaState.md)
 
-Defined in: core/entities/Ticket.ts:116
-
 ***
 
 ### facturacion
 
 > **facturacion**: [`FacturacionState`](../interfaces/FacturacionState.md)
-
-Defined in: core/entities/Ticket.ts:117
 
 ***
 
@@ -211,15 +163,11 @@ Defined in: core/entities/Ticket.ts:117
 
 > **tiempoTrabajadoMs**: `number`
 
-Defined in: core/entities/Ticket.ts:118
-
 ***
 
 ### abiertoEn
 
 > `readonly` **abiertoEn**: `Date`
-
-Defined in: core/entities/Ticket.ts:120
 
 ***
 
@@ -227,15 +175,11 @@ Defined in: core/entities/Ticket.ts:120
 
 > **ultimoCambioEstadoEn**: `Date`
 
-Defined in: core/entities/Ticket.ts:121
-
 ***
 
 ### primeraRespuestaEn
 
 > **primeraRespuestaEn**: `Date` \| `null`
-
-Defined in: core/entities/Ticket.ts:122
 
 ***
 
@@ -243,15 +187,11 @@ Defined in: core/entities/Ticket.ts:122
 
 > **resueltoEn**: `Date` \| `null`
 
-Defined in: core/entities/Ticket.ts:123
-
 ***
 
 ### cerradoEn
 
 > **cerradoEn**: `Date` \| `null`
-
-Defined in: core/entities/Ticket.ts:124
 
 ***
 
@@ -259,23 +199,17 @@ Defined in: core/entities/Ticket.ts:124
 
 > `readonly` **createdAt**: `Date`
 
-Defined in: core/entities/Ticket.ts:125
-
 ***
 
 ### updatedAt
 
 > **updatedAt**: `Date`
 
-Defined in: core/entities/Ticket.ts:126
-
 ***
 
 ### historialEstados
 
 > **historialEstados**: [`CambioEstado`](../interfaces/CambioEstado.md)[]
-
-Defined in: core/entities/Ticket.ts:127
 
 ## Accessors
 
@@ -284,8 +218,6 @@ Defined in: core/entities/Ticket.ts:127
 #### Get Signature
 
 > **get** **estaAbierto**(): `boolean`
-
-Defined in: core/entities/Ticket.ts:219
 
 ##### Returns
 
@@ -299,8 +231,6 @@ Defined in: core/entities/Ticket.ts:219
 
 > **get** **esResuelto**(): `boolean`
 
-Defined in: core/entities/Ticket.ts:322
-
 ##### Returns
 
 `boolean`
@@ -313,8 +243,6 @@ Defined in: core/entities/Ticket.ts:322
 
 > **get** **esCerrado**(): `boolean`
 
-Defined in: core/entities/Ticket.ts:325
-
 ##### Returns
 
 `boolean`
@@ -324,8 +252,6 @@ Defined in: core/entities/Ticket.ts:325
 ### crear()
 
 > `static` **crear**(`input`): `Ticket`
-
-Defined in: core/entities/Ticket.ts:178
 
 #### Parameters
 
@@ -425,8 +351,6 @@ Defined in: core/entities/Ticket.ts:178
 
 > **cambiarEstado**(`nuevo`, `catalogo`, `ahora`): [`ResultadoCambioEstado`](../interfaces/ResultadoCambioEstado.md)
 
-Defined in: core/entities/Ticket.ts:223
-
 #### Parameters
 
 ##### nuevo
@@ -450,8 +374,6 @@ readonly `string`[]
 ### asignar()
 
 > **asignar**(`agenteUid`, `agenteNombre`, `ahora`): `void`
-
-Defined in: core/entities/Ticket.ts:271
 
 #### Parameters
 
@@ -477,8 +399,6 @@ Defined in: core/entities/Ticket.ts:271
 
 > **desasignar**(`ahora`): `void`
 
-Defined in: core/entities/Ticket.ts:280
-
 #### Parameters
 
 ##### ahora
@@ -495,8 +415,6 @@ Defined in: core/entities/Ticket.ts:280
 
 > **registrarPrimeraRespuesta**(`ahora`): `void`
 
-Defined in: core/entities/Ticket.ts:286
-
 #### Parameters
 
 ##### ahora
@@ -512,8 +430,6 @@ Defined in: core/entities/Ticket.ts:286
 ### marcarFacturado()
 
 > **marcarFacturado**(`facturado`, `ahora`): `void`
-
-Defined in: core/entities/Ticket.ts:291
 
 #### Parameters
 
@@ -535,8 +451,6 @@ Defined in: core/entities/Ticket.ts:291
 
 > **slaConsumidoMs**(`ahora`): `number`
 
-Defined in: core/entities/Ticket.ts:298
-
 Milisegundos "de reloj SLA" consumidos hasta `ahora` (descontando pausas).
 
 #### Parameters
@@ -555,8 +469,6 @@ Milisegundos "de reloj SLA" consumidos hasta `ahora` (descontando pausas).
 
 > **slaObjetivoMs**(): `number`
 
-Defined in: core/entities/Ticket.ts:308
-
 #### Returns
 
 `number`
@@ -566,8 +478,6 @@ Defined in: core/entities/Ticket.ts:308
 ### estaVencido()
 
 > **estaVencido**(`ahora`): `boolean`
-
-Defined in: core/entities/Ticket.ts:312
 
 #### Parameters
 
@@ -584,8 +494,6 @@ Defined in: core/entities/Ticket.ts:312
 ### slaRestanteMs()
 
 > **slaRestanteMs**(`ahora`): `number`
-
-Defined in: core/entities/Ticket.ts:318
 
 ms restantes antes de incumplir el SLA (negativo si ya venció).
 
@@ -604,8 +512,6 @@ ms restantes antes de incumplir el SLA (negativo si ya venció).
 ### estadoFueraDeCatalogo()
 
 > **estadoFueraDeCatalogo**(`catalogo`): `boolean`
-
-Defined in: core/entities/Ticket.ts:330
 
 ¿El estado actual está fuera del catálogo dado? (para avisos de UI)
 

@@ -6,8 +6,6 @@
 
 # Interface: ColumnaKanban
 
-Defined in: core/ports/repositories/ITicketQueries.ts:32
-
 Columna del tablero kanban.
 
 ## Properties
@@ -16,12 +14,8 @@ Columna del tablero kanban.
 
 > **estado**: `string`
 
-Defined in: core/ports/repositories/ITicketQueries.ts:33
-
 ***
 
 ### tickets
 
 > **tickets**: [`Ticket`](../../../../entities/Ticket/classes/Ticket.md)[]
-
-Defined in: core/ports/repositories/ITicketQueries.ts:34

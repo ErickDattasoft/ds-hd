@@ -6,8 +6,6 @@
 
 # Class: SeguimientoService
 
-Defined in: application/seguimiento/SeguimientoService.ts:15
-
 Seguimiento comercial: interacciones (log) y tareas (asignables, con vencimiento).
 
 ## Constructors
@@ -15,8 +13,6 @@ Seguimiento comercial: interacciones (log) y tareas (asignables, con vencimiento
 ### Constructor
 
 > **new SeguimientoService**(`interacciones`, `tareas`, `ids`, `clock`, `bitacora`): `SeguimientoService`
-
-Defined in: application/seguimiento/SeguimientoService.ts:16
 
 #### Parameters
 
@@ -50,8 +46,6 @@ Defined in: application/seguimiento/SeguimientoService.ts:16
 
 > **interaccionesDe**(`empresaId`): `Promise`\<[`Interaccion`](../../../../core/entities/Interaccion/classes/Interaccion.md)[]\>
 
-Defined in: application/seguimiento/SeguimientoService.ts:25
-
 #### Parameters
 
 ##### empresaId
@@ -67,8 +61,6 @@ Defined in: application/seguimiento/SeguimientoService.ts:25
 ### registrarInteraccion()
 
 > **registrarInteraccion**(`input`): `Promise`\<`void`\>
-
-Defined in: application/seguimiento/SeguimientoService.ts:29
 
 #### Parameters
 
@@ -108,8 +100,6 @@ Defined in: application/seguimiento/SeguimientoService.ts:29
 
 > **listarTareas**(`filtro?`): `Promise`\<[`Tarea`](../../../../core/entities/Tarea/classes/Tarea.md)[]\>
 
-Defined in: application/seguimiento/SeguimientoService.ts:61
-
 #### Parameters
 
 ##### filtro?
@@ -125,8 +115,6 @@ Defined in: application/seguimiento/SeguimientoService.ts:61
 ### crearTarea()
 
 > **crearTarea**(`input`): `Promise`\<[`Tarea`](../../../../core/entities/Tarea/classes/Tarea.md)\>
-
-Defined in: application/seguimiento/SeguimientoService.ts:65
 
 #### Parameters
 
@@ -173,8 +161,6 @@ Defined in: application/seguimiento/SeguimientoService.ts:65
 ### marcarTarea()
 
 > **marcarTarea**(`actor`, `id`, `completada`): `Promise`\<`void`\>
-
-Defined in: application/seguimiento/SeguimientoService.ts:101
 
 #### Parameters
 

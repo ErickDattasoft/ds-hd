@@ -6,8 +6,6 @@
 
 # Class: Cotizacion
 
-Defined in: core/entities/Cotizacion.ts:44
-
 Cotización comercial con folio consecutivo, conceptos e importes.
 
 ## Constructors
@@ -15,8 +13,6 @@ Cotización comercial con folio consecutivo, conceptos e importes.
 ### Constructor
 
 > **new Cotizacion**(`props`): `Cotizacion`
-
-Defined in: core/entities/Cotizacion.ts:63
 
 #### Parameters
 
@@ -34,15 +30,11 @@ Defined in: core/entities/Cotizacion.ts:63
 
 > `readonly` **id**: `string`
 
-Defined in: core/entities/Cotizacion.ts:45
-
 ***
 
 ### folio
 
 > `readonly` **folio**: `string`
-
-Defined in: core/entities/Cotizacion.ts:46
 
 ***
 
@@ -50,15 +42,11 @@ Defined in: core/entities/Cotizacion.ts:46
 
 > **empresaId**: `string`
 
-Defined in: core/entities/Cotizacion.ts:47
-
 ***
 
 ### empresaNombre
 
 > **empresaNombre**: `string` \| `null`
-
-Defined in: core/entities/Cotizacion.ts:48
 
 ***
 
@@ -66,15 +54,11 @@ Defined in: core/entities/Cotizacion.ts:48
 
 > **contactoId**: `string` \| `null`
 
-Defined in: core/entities/Cotizacion.ts:49
-
 ***
 
 ### fecha
 
 > **fecha**: `Date`
-
-Defined in: core/entities/Cotizacion.ts:50
 
 ***
 
@@ -82,15 +66,11 @@ Defined in: core/entities/Cotizacion.ts:50
 
 > **vigenciaDias**: `number`
 
-Defined in: core/entities/Cotizacion.ts:51
-
 ***
 
 ### estado
 
 > **estado**: [`EstadoCotizacion`](../type-aliases/EstadoCotizacion.md)
-
-Defined in: core/entities/Cotizacion.ts:52
 
 ***
 
@@ -98,15 +78,11 @@ Defined in: core/entities/Cotizacion.ts:52
 
 > **moneda**: `string`
 
-Defined in: core/entities/Cotizacion.ts:53
-
 ***
 
 ### ivaTasa
 
 > **ivaTasa**: `number`
-
-Defined in: core/entities/Cotizacion.ts:54
 
 ***
 
@@ -114,15 +90,11 @@ Defined in: core/entities/Cotizacion.ts:54
 
 > **conceptos**: [`ConceptoCotizacion`](../interfaces/ConceptoCotizacion.md)[]
 
-Defined in: core/entities/Cotizacion.ts:55
-
 ***
 
 ### notas
 
 > **notas**: `string` \| `null`
-
-Defined in: core/entities/Cotizacion.ts:56
 
 ***
 
@@ -130,15 +102,11 @@ Defined in: core/entities/Cotizacion.ts:56
 
 > **origenCalculadora**: `boolean`
 
-Defined in: core/entities/Cotizacion.ts:57
-
 ***
 
 ### parametrosCompac
 
 > **parametrosCompac**: `Record`\<`string`, `unknown`\> \| `null`
-
-Defined in: core/entities/Cotizacion.ts:58
 
 ***
 
@@ -146,23 +114,17 @@ Defined in: core/entities/Cotizacion.ts:58
 
 > `readonly` **creadoPorUid**: `string` \| `null`
 
-Defined in: core/entities/Cotizacion.ts:59
-
 ***
 
 ### createdAt
 
 > `readonly` **createdAt**: `Date`
 
-Defined in: core/entities/Cotizacion.ts:60
-
 ***
 
 ### updatedAt
 
 > **updatedAt**: `Date`
-
-Defined in: core/entities/Cotizacion.ts:61
 
 ## Accessors
 
@@ -171,8 +133,6 @@ Defined in: core/entities/Cotizacion.ts:61
 #### Get Signature
 
 > **get** **subtotal**(): `number`
-
-Defined in: core/entities/Cotizacion.ts:88
 
 ##### Returns
 
@@ -186,8 +146,6 @@ Defined in: core/entities/Cotizacion.ts:88
 
 > **get** **iva**(): `number`
 
-Defined in: core/entities/Cotizacion.ts:91
-
 ##### Returns
 
 `number`
@@ -199,8 +157,6 @@ Defined in: core/entities/Cotizacion.ts:91
 #### Get Signature
 
 > **get** **total**(): `number`
-
-Defined in: core/entities/Cotizacion.ts:94
 
 ##### Returns
 
@@ -214,8 +170,6 @@ Defined in: core/entities/Cotizacion.ts:94
 
 > **get** **venceEl**(): `Date`
 
-Defined in: core/entities/Cotizacion.ts:97
-
 ##### Returns
 
 `Date`
@@ -225,8 +179,6 @@ Defined in: core/entities/Cotizacion.ts:97
 ### cambiarEstado()
 
 > **cambiarEstado**(`nuevo`, `ahora`): `void`
-
-Defined in: core/entities/Cotizacion.ts:101
 
 #### Parameters
 
@@ -247,8 +199,6 @@ Defined in: core/entities/Cotizacion.ts:101
 ### reemplazarConceptos()
 
 > **reemplazarConceptos**(`conceptos`, `ahora`): `void`
-
-Defined in: core/entities/Cotizacion.ts:110
 
 #### Parameters
 

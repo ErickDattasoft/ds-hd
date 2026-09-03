@@ -6,8 +6,6 @@
 
 # Interface: ListarContactosFiltro
 
-Defined in: core/ports/repositories/IContactoRepository.ts:4
-
 Filtros para listar contactos.
 
 ## Properties
@@ -16,15 +14,11 @@ Filtros para listar contactos.
 
 > `optional` **empresaId?**: `string`
 
-Defined in: core/ports/repositories/IContactoRepository.ts:5
-
 ***
 
 ### activo?
 
 > `optional` **activo?**: `boolean`
-
-Defined in: core/ports/repositories/IContactoRepository.ts:6
 
 ***
 
@@ -32,12 +26,8 @@ Defined in: core/ports/repositories/IContactoRepository.ts:6
 
 > `optional` **esPortal?**: `boolean`
 
-Defined in: core/ports/repositories/IContactoRepository.ts:7
-
 ***
 
 ### texto?
 
 > `optional` **texto?**: `string`
-
-Defined in: core/ports/repositories/IContactoRepository.ts:8

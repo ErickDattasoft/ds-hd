@@ -8,15 +8,13 @@
 
 > **esRolStaff**(`rol`): `boolean`
 
-Defined in: core/entities/value-objects/Rol.ts:17
-
 ¿El rol opera en el back-office (`/app`)?
 
 ## Parameters
 
 ### rol
 
-`"admin"` \| `"supervisor"` \| `"agente"` \| `"lectura"` \| `"cliente"`
+`"admin"` \| `"supervisor"` \| `"soporte"` \| `"ventas"` \| `"agente"` \| `"lectura"` \| `"cliente"`
 
 ## Returns
 

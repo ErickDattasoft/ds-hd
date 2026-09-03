@@ -6,8 +6,6 @@
 
 # Class: Contacto
 
-Defined in: core/entities/Contacto.ts:24
-
 Persona de contacto asociada a una empresa.
 
 ## Constructors
@@ -15,8 +13,6 @@ Persona de contacto asociada a una empresa.
 ### Constructor
 
 > **new Contacto**(`props`): `Contacto`
-
-Defined in: core/entities/Contacto.ts:39
 
 #### Parameters
 
@@ -34,15 +30,11 @@ Defined in: core/entities/Contacto.ts:39
 
 > `readonly` **id**: `string`
 
-Defined in: core/entities/Contacto.ts:25
-
 ***
 
 ### nombre
 
 > **nombre**: `string`
-
-Defined in: core/entities/Contacto.ts:26
 
 ***
 
@@ -50,15 +42,11 @@ Defined in: core/entities/Contacto.ts:26
 
 > **empresaId**: `string`
 
-Defined in: core/entities/Contacto.ts:27
-
 ***
 
 ### puesto
 
 > **puesto**: `string` \| `null`
-
-Defined in: core/entities/Contacto.ts:28
 
 ***
 
@@ -66,15 +54,11 @@ Defined in: core/entities/Contacto.ts:28
 
 > **email**: `string` \| `null`
 
-Defined in: core/entities/Contacto.ts:29
-
 ***
 
 ### telefono
 
 > **telefono**: `string` \| `null`
-
-Defined in: core/entities/Contacto.ts:30
 
 ***
 
@@ -82,15 +66,11 @@ Defined in: core/entities/Contacto.ts:30
 
 > **celular**: `string` \| `null`
 
-Defined in: core/entities/Contacto.ts:31
-
 ***
 
 ### esPortal
 
 > **esPortal**: `boolean`
-
-Defined in: core/entities/Contacto.ts:32
 
 ***
 
@@ -98,15 +78,11 @@ Defined in: core/entities/Contacto.ts:32
 
 > **uid**: `string` \| `null`
 
-Defined in: core/entities/Contacto.ts:33
-
 ***
 
 ### notas
 
 > **notas**: `string` \| `null`
-
-Defined in: core/entities/Contacto.ts:34
 
 ***
 
@@ -114,15 +90,11 @@ Defined in: core/entities/Contacto.ts:34
 
 > **activo**: `boolean`
 
-Defined in: core/entities/Contacto.ts:35
-
 ***
 
 ### createdAt
 
 > `readonly` **createdAt**: `Date`
-
-Defined in: core/entities/Contacto.ts:36
 
 ***
 
@@ -130,15 +102,11 @@ Defined in: core/entities/Contacto.ts:36
 
 > **updatedAt**: `Date`
 
-Defined in: core/entities/Contacto.ts:37
-
 ## Methods
 
 ### vincularPortal()
 
 > **vincularPortal**(`uid`, `ahora`): `void`
-
-Defined in: core/entities/Contacto.ts:61
 
 #### Parameters
 
@@ -160,8 +128,6 @@ Defined in: core/entities/Contacto.ts:61
 
 > **archivar**(`ahora`): `void`
 
-Defined in: core/entities/Contacto.ts:66
-
 #### Parameters
 
 ##### ahora
@@ -177,8 +143,6 @@ Defined in: core/entities/Contacto.ts:66
 ### restaurar()
 
 > **restaurar**(`ahora`): `void`
-
-Defined in: core/entities/Contacto.ts:70
 
 #### Parameters
 

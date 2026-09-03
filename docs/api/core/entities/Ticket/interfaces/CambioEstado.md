@@ -6,8 +6,6 @@
 
 # Interface: CambioEstado
 
-Defined in: core/entities/Ticket.ts:16
-
 Un registro del historial de estados de un ticket.
 
 ## Properties
@@ -16,12 +14,8 @@ Un registro del historial de estados de un ticket.
 
 > **estado**: `string`
 
-Defined in: core/entities/Ticket.ts:17
-
 ***
 
 ### at
 
 > **at**: `Date`
-
-Defined in: core/entities/Ticket.ts:18

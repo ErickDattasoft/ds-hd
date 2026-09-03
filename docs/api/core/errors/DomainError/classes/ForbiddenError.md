@@ -6,8 +6,6 @@
 
 # Class: ForbiddenError
 
-Defined in: core/errors/DomainError.ts:42
-
 El actor está autenticado pero no autorizado para esta acción. → HTTP 403.
 
 ## Extends
@@ -19,8 +17,6 @@ El actor está autenticado pero no autorizado para esta acción. → HTTP 403.
 ### Constructor
 
 > **new ForbiddenError**(`message?`): `ForbiddenError`
-
-Defined in: core/errors/DomainError.ts:46
 
 #### Parameters
 
@@ -42,8 +38,6 @@ Defined in: core/errors/DomainError.ts:46
 
 > `readonly` **code**: `"PROHIBIDO"` = `'PROHIBIDO'`
 
-Defined in: core/errors/DomainError.ts:43
-
 Código estable, legible por máquina (p. ej. `TICKET_NO_ENCONTRADO`).
 
 #### Overrides
@@ -55,8 +49,6 @@ Código estable, legible por máquina (p. ej. `TICKET_NO_ENCONTRADO`).
 ### httpStatus
 
 > `readonly` **httpStatus**: `403` = `403`
-
-Defined in: core/errors/DomainError.ts:44
 
 Código HTTP sugerido para la capa de entrega.
 

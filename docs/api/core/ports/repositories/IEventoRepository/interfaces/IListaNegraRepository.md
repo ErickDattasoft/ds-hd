@@ -6,8 +6,6 @@
 
 # Interface: IListaNegraRepository
 
-Defined in: core/ports/repositories/IEventoRepository.ts:25
-
 Persistencia de la lista negra de correos bloqueados para registro a eventos.
 
 ## Methods
@@ -15,8 +13,6 @@ Persistencia de la lista negra de correos bloqueados para registro a eventos.
 ### contiene()
 
 > **contiene**(`email`): `Promise`\<`boolean`\>
-
-Defined in: core/ports/repositories/IEventoRepository.ts:26
 
 #### Parameters
 
@@ -34,8 +30,6 @@ Defined in: core/ports/repositories/IEventoRepository.ts:26
 
 > **list**(): `Promise`\<[`EntradaListaNegra`](../../../../entities/Inscripcion/interfaces/EntradaListaNegra.md)[]\>
 
-Defined in: core/ports/repositories/IEventoRepository.ts:27
-
 #### Returns
 
 `Promise`\<[`EntradaListaNegra`](../../../../entities/Inscripcion/interfaces/EntradaListaNegra.md)[]\>
@@ -45,8 +39,6 @@ Defined in: core/ports/repositories/IEventoRepository.ts:27
 ### agregar()
 
 > **agregar**(`entrada`): `Promise`\<`void`\>
-
-Defined in: core/ports/repositories/IEventoRepository.ts:28
 
 #### Parameters
 
@@ -63,8 +55,6 @@ Defined in: core/ports/repositories/IEventoRepository.ts:28
 ### quitar()
 
 > **quitar**(`email`): `Promise`\<`void`\>
-
-Defined in: core/ports/repositories/IEventoRepository.ts:29
 
 #### Parameters
 

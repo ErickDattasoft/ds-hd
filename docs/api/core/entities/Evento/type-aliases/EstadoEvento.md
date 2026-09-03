@@ -7,5 +7,3 @@
 # Type Alias: EstadoEvento
 
 > **EstadoEvento** = `"borrador"` \| `"publicado"` \| `"finalizado"` \| `"cancelado"`
-
-Defined in: core/entities/Evento.ts:3

@@ -8,6 +8,4 @@
 
 > `const` **ROL\_ETIQUETA**: `Record`\<[`Rol`](../type-aliases/Rol.md), `string`\>
 
-Defined in: core/entities/value-objects/Rol.ts:30
-
 Etiqueta legible para la UI.

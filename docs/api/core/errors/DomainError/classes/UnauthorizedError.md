@@ -6,8 +6,6 @@
 
 # Class: UnauthorizedError
 
-Defined in: core/errors/DomainError.ts:58
-
 No hay sesión válida. → HTTP 401.
 
 ## Extends
@@ -19,8 +17,6 @@ No hay sesión válida. → HTTP 401.
 ### Constructor
 
 > **new UnauthorizedError**(`message?`): `UnauthorizedError`
-
-Defined in: core/errors/DomainError.ts:62
 
 #### Parameters
 
@@ -42,8 +38,6 @@ Defined in: core/errors/DomainError.ts:62
 
 > `readonly` **code**: `"NO_AUTENTICADO"` = `'NO_AUTENTICADO'`
 
-Defined in: core/errors/DomainError.ts:59
-
 Código estable, legible por máquina (p. ej. `TICKET_NO_ENCONTRADO`).
 
 #### Overrides
@@ -55,8 +49,6 @@ Código estable, legible por máquina (p. ej. `TICKET_NO_ENCONTRADO`).
 ### httpStatus
 
 > `readonly` **httpStatus**: `401` = `401`
-
-Defined in: core/errors/DomainError.ts:60
 
 Código HTTP sugerido para la capa de entrega.
 

@@ -3,7 +3,7 @@ import type {
   IUsuarioRepository,
   ListarUsuariosFiltro,
 } from '../../core/ports/repositories/IUsuarioRepository.js';
-import type { Rol } from '../../core/entities/value-objects/Rol.js';
+import { ROLES_TECNICOS, type Rol } from '../../core/entities/value-objects/Rol.js';
 import type { Usuario } from '../../core/entities/Usuario.js';
 import { UsuarioMapper } from './mappers/UsuarioMapper.js';
 
@@ -30,7 +30,8 @@ export class FirestoreUsuarioRepository implements IUsuarioRepository {
 
   async list(filtro: ListarUsuariosFiltro = {}): Promise<Usuario[]> {
     let q: Query = this.db.collection(COL);
-    if (filtro.rol) q = q.where('rol', '==', filtro.rol);
+    if (filtro.roles?.length) q = q.where('rol', 'in', [...filtro.roles]);
+    else if (filtro.rol) q = q.where('rol', '==', filtro.rol);
     if (filtro.activo !== undefined) q = q.where('activo', '==', filtro.activo);
     if (filtro.empresaId) q = q.where('empresaId', '==', filtro.empresaId);
 
@@ -49,7 +50,7 @@ export class FirestoreUsuarioRepository implements IUsuarioRepository {
   async listAgentesAsignables(): Promise<Usuario[]> {
     const snap = await this.db
       .collection(COL)
-      .where('rol', '==', 'agente')
+      .where('rol', 'in', [...ROLES_TECNICOS])
       .where('activo', '==', true)
       .get();
     return snap.docs

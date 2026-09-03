@@ -6,8 +6,6 @@
 
 # Interface: IClock
 
-Defined in: core/ports/services/IClock.ts:5
-
 Puerto de reloj. Los casos de uso obtienen "ahora" de aquí, nunca de `new Date()`
 directamente, para que los tests puedan fijar el tiempo (cálculo de SLA, vencimientos).
 
@@ -16,8 +14,6 @@ directamente, para que los tests puedan fijar el tiempo (cálculo de SLA, vencim
 ### now()
 
 > **now**(): `Date`
-
-Defined in: core/ports/services/IClock.ts:6
 
 #### Returns
 

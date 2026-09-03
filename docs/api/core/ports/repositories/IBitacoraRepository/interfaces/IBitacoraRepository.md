@@ -6,8 +6,6 @@
 
 # Interface: IBitacoraRepository
 
-Defined in: core/ports/repositories/IBitacoraRepository.ts:12
-
 Registro de auditoría global (`bitacora/{id}`), solo escritura vía append.
 
 ## Methods
@@ -15,8 +13,6 @@ Registro de auditoría global (`bitacora/{id}`), solo escritura vía append.
 ### registrar()
 
 > **registrar**(`entrada`): `Promise`\<`void`\>
-
-Defined in: core/ports/repositories/IBitacoraRepository.ts:13
 
 #### Parameters
 
@@ -33,8 +29,6 @@ Defined in: core/ports/repositories/IBitacoraRepository.ts:13
 ### listar()
 
 > **listar**(`filtro?`): `Promise`\<[`EntradaBitacora`](../../../../entities/EntradaBitacora/interfaces/EntradaBitacora.md)[]\>
-
-Defined in: core/ports/repositories/IBitacoraRepository.ts:14
 
 #### Parameters
 

@@ -7,5 +7,3 @@
 # Type Alias: TipoEquipo
 
 > **TipoEquipo** = `"Servidor"` \| `"Terminal"`
-
-Defined in: core/entities/CalculadoraCompac.ts:4

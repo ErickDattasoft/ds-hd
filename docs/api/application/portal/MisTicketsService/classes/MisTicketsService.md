@@ -6,8 +6,6 @@
 
 # Class: MisTicketsService
 
-Defined in: application/portal/MisTicketsService.ts:24
-
 Casos de uso de lectura del portal. Todas las consultas están acotadas a
 `solicitanteUid === actor.uid`: un cliente jamás ve tickets de otro (ni de otro contacto
 de su misma empresa).
@@ -17,8 +15,6 @@ de su misma empresa).
 ### Constructor
 
 > **new MisTicketsService**(`queries`, `tickets`, `config`): `MisTicketsService`
-
-Defined in: application/portal/MisTicketsService.ts:25
 
 #### Parameters
 
@@ -44,8 +40,6 @@ Defined in: application/portal/MisTicketsService.ts:25
 
 > **listar**(`actor`, `incluirCerrados`): `Promise`\<[`Ticket`](../../../../core/entities/Ticket/classes/Ticket.md)[]\>
 
-Defined in: application/portal/MisTicketsService.ts:31
-
 #### Parameters
 
 ##### actor
@@ -66,8 +60,6 @@ Defined in: application/portal/MisTicketsService.ts:31
 
 > **catalogoParaCrear**(): `Promise`\<[`ConfiguracionTickets`](../../../../core/entities/ConfiguracionTickets/interfaces/ConfiguracionTickets.md)\>
 
-Defined in: application/portal/MisTicketsService.ts:38
-
 #### Returns
 
 `Promise`\<[`ConfiguracionTickets`](../../../../core/entities/ConfiguracionTickets/interfaces/ConfiguracionTickets.md)\>
@@ -77,8 +69,6 @@ Defined in: application/portal/MisTicketsService.ts:38
 ### verDetalle()
 
 > **verDetalle**(`actor`, `ticketId`): `Promise`\<[`MiTicketDetalle`](../interfaces/MiTicketDetalle.md)\>
-
-Defined in: application/portal/MisTicketsService.ts:42
 
 #### Parameters
 

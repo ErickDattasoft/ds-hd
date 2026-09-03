@@ -6,8 +6,6 @@
 
 # Class: EventoService
 
-Defined in: application/eventos/EventoService.ts:41
-
 Eventos/webinars: gestión (staff), registro público, lista negra.
 
 ## Constructors
@@ -15,8 +13,6 @@ Eventos/webinars: gestión (staff), registro público, lista negra.
 ### Constructor
 
 > **new EventoService**(`eventos`, `inscripciones`, `listaNegra`, `captcha`, `email`, `ids`, `clock`, `logger`, `bitacora`, `baseUrl`): `EventoService`
-
-Defined in: application/eventos/EventoService.ts:42
 
 #### Parameters
 
@@ -70,8 +66,6 @@ Defined in: application/eventos/EventoService.ts:42
 
 > **listar**(`soloPublicados?`): `Promise`\<[`Evento`](../../../../core/entities/Evento/classes/Evento.md)[]\>
 
-Defined in: application/eventos/EventoService.ts:56
-
 #### Parameters
 
 ##### soloPublicados?
@@ -87,8 +81,6 @@ Defined in: application/eventos/EventoService.ts:56
 ### obtener()
 
 > **obtener**(`id`): `Promise`\<[`Evento`](../../../../core/entities/Evento/classes/Evento.md)\>
-
-Defined in: application/eventos/EventoService.ts:60
 
 #### Parameters
 
@@ -106,8 +98,6 @@ Defined in: application/eventos/EventoService.ts:60
 
 > **detalleConInscritos**(`id`): `Promise`\<\{ `evento`: [`Evento`](../../../../core/entities/Evento/classes/Evento.md); `inscritos`: [`Inscripcion`](../../../../core/entities/Inscripcion/interfaces/Inscripcion.md)[]; \}\>
 
-Defined in: application/eventos/EventoService.ts:66
-
 #### Parameters
 
 ##### id
@@ -123,8 +113,6 @@ Defined in: application/eventos/EventoService.ts:66
 ### guardar()
 
 > **guardar**(`actor`, `datos`, `id?`): `Promise`\<[`Evento`](../../../../core/entities/Evento/classes/Evento.md)\>
-
-Defined in: application/eventos/EventoService.ts:72
 
 #### Parameters
 
@@ -149,8 +137,6 @@ Defined in: application/eventos/EventoService.ts:72
 ### marcarInscripcion()
 
 > **marcarInscripcion**(`actor`, `eventoId`, `inscripcionId`, `estado`): `Promise`\<`void`\>
-
-Defined in: application/eventos/EventoService.ts:103
 
 #### Parameters
 
@@ -180,8 +166,6 @@ Defined in: application/eventos/EventoService.ts:103
 
 > **reenviarConfirmacion**(`actor`, `eventoId`, `inscripcionId`): `Promise`\<`void`\>
 
-Defined in: application/eventos/EventoService.ts:117
-
 #### Parameters
 
 ##### actor
@@ -206,8 +190,6 @@ Defined in: application/eventos/EventoService.ts:117
 
 > **listaNegraTodos**(): `Promise`\<[`EntradaListaNegra`](../../../../core/entities/Inscripcion/interfaces/EntradaListaNegra.md)[]\>
 
-Defined in: application/eventos/EventoService.ts:129
-
 #### Returns
 
 `Promise`\<[`EntradaListaNegra`](../../../../core/entities/Inscripcion/interfaces/EntradaListaNegra.md)[]\>
@@ -217,8 +199,6 @@ Defined in: application/eventos/EventoService.ts:129
 ### agregarListaNegra()
 
 > **agregarListaNegra**(`actor`, `email`, `motivo?`): `Promise`\<`void`\>
-
-Defined in: application/eventos/EventoService.ts:133
 
 #### Parameters
 
@@ -244,8 +224,6 @@ Defined in: application/eventos/EventoService.ts:133
 
 > **quitarListaNegra**(`actor`, `email`): `Promise`\<`void`\>
 
-Defined in: application/eventos/EventoService.ts:147
-
 #### Parameters
 
 ##### actor
@@ -266,8 +244,6 @@ Defined in: application/eventos/EventoService.ts:147
 
 > **registrarPublico**(`input`): `Promise`\<[`Inscripcion`](../../../../core/entities/Inscripcion/interfaces/Inscripcion.md)\>
 
-Defined in: application/eventos/EventoService.ts:153
-
 #### Parameters
 
 ##### input
@@ -283,8 +259,6 @@ Defined in: application/eventos/EventoService.ts:153
 ### procesarWebhookBrevo()
 
 > **procesarWebhookBrevo**(`payload`): `Promise`\<\{ `actualizada`: `boolean`; \}\>
-
-Defined in: application/eventos/EventoService.ts:197
 
 #### Parameters
 
@@ -315,8 +289,6 @@ Defined in: application/eventos/EventoService.ts:197
 ### enviarRecordatorios()
 
 > **enviarRecordatorios**(): `Promise`\<\{ `eventos`: `number`; `correos`: `number`; \}\>
-
-Defined in: application/eventos/EventoService.ts:225
 
 #### Returns
 

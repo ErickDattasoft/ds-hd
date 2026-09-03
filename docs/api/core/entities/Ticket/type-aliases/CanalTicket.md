@@ -7,5 +7,3 @@
 # Type Alias: CanalTicket
 
 > **CanalTicket** = `"interno"` \| `"publico"` \| `"portal"` \| `"correo"`
-
-Defined in: core/entities/Ticket.ts:13

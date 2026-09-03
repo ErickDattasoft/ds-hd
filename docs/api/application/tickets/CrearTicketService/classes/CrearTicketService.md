@@ -6,8 +6,6 @@
 
 # Class: CrearTicketService
 
-Defined in: application/tickets/CrearTicketService.ts:17
-
 Caso de uso: crear un ticket (interno, portal o al aceptar uno público).
 
 ## Constructors
@@ -15,8 +13,6 @@ Caso de uso: crear un ticket (interno, portal o al aceptar uno público).
 ### Constructor
 
 > **new CrearTicketService**(`tickets`, `contadores`, `config`, `ids`, `clock`, `webhooks`, `logger`): `CrearTicketService`
-
-Defined in: application/tickets/CrearTicketService.ts:18
 
 #### Parameters
 
@@ -57,8 +53,6 @@ Defined in: application/tickets/CrearTicketService.ts:18
 ### ejecutar()
 
 > **ejecutar**(`input`): `Promise`\<[`Ticket`](../../../../core/entities/Ticket/classes/Ticket.md)\>
-
-Defined in: application/tickets/CrearTicketService.ts:28
 
 #### Parameters
 

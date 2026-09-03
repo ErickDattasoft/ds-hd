@@ -6,8 +6,6 @@
 
 # Interface: ListarCotizacionesFiltro
 
-Defined in: core/ports/repositories/ICotizacionRepository.ts:4
-
 Filtros para listar cotizaciones.
 
 ## Properties
@@ -16,15 +14,11 @@ Filtros para listar cotizaciones.
 
 > `optional` **empresaId?**: `string`
 
-Defined in: core/ports/repositories/ICotizacionRepository.ts:5
-
 ***
 
 ### estado?
 
 > `optional` **estado?**: [`EstadoCotizacion`](../../../../entities/Cotizacion/type-aliases/EstadoCotizacion.md)
-
-Defined in: core/ports/repositories/ICotizacionRepository.ts:6
 
 ***
 
@@ -32,12 +26,8 @@ Defined in: core/ports/repositories/ICotizacionRepository.ts:6
 
 > `optional` **texto?**: `string`
 
-Defined in: core/ports/repositories/ICotizacionRepository.ts:7
-
 ***
 
 ### limite?
 
 > `optional` **limite?**: `number`
-
-Defined in: core/ports/repositories/ICotizacionRepository.ts:8

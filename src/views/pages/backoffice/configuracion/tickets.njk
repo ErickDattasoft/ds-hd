@@ -9,28 +9,47 @@
     <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
     <p class="muted">Un valor por línea.</p>
 
-    <label class="field"><span>Tipos</span><textarea name="tipos" rows="6">{{ config.tipos | join('\n') }}</textarea></label>
-    <label class="field"><span>Sistemas</span><textarea name="sistemas" rows="6">{{ config.sistemas | join('\n') }}</textarea></label>
-    <label class="field"><span>Grupos</span><textarea name="grupos" rows="4">{{ config.grupos | join('\n') }}</textarea></label>
-    <label class="field"><span>Estados (en orden del flujo)</span><textarea name="estados" rows="5">{{ config.estados | join('\n') }}</textarea>
-      {% if errores.estados %}<em class="field__error">{{ errores.estados }}</em>{% endif %}
-    </label>
-    <label class="field"><span>Estado inicial</span><input name="estadoInicial" value="{{ config.estadoInicial }}" />
-      {% if errores.estadoInicial %}<em class="field__error">{{ errores.estadoInicial }}</em>{% endif %}
-    </label>
-    <label class="field"><span>Prioridades</span><textarea name="prioridades" rows="4">{{ config.prioridades | join('\n') }}</textarea></label>
+    <details class="disclosure" open>
+      <summary class="disclosure__summary">Catálogos</summary>
+      <div class="disclosure__body form">
+        <label class="field"><span>Tipos</span><textarea name="tipos" rows="6">{{ config.tipos | join('\n') }}</textarea></label>
+        <label class="field"><span>Sistemas</span><textarea name="sistemas" rows="6">{{ config.sistemas | join('\n') }}</textarea></label>
+        <label class="field"><span>Grupos</span><textarea name="grupos" rows="4">{{ config.grupos | join('\n') }}</textarea></label>
+      </div>
+    </details>
 
-    <fieldset class="field">
-      <legend>Horas de SLA por prioridad</legend>
-      {% for p in config.prioridades %}
-        <label class="field">{{ p }}
-          <input type="number" name="sla_{{ p }}" min="1" value="{{ config.slaHoras[p] or 24 }}" />
+    <details class="disclosure"{{ ' open' if errores.estados or errores.estadoInicial }}>
+      <summary class="disclosure__summary">Flujo de estados</summary>
+      <div class="disclosure__body form">
+        <label class="field"><span>Estados (en orden del flujo)</span><textarea name="estados" rows="5">{{ config.estados | join('\n') }}</textarea>
+          {% if errores.estados %}<em class="field__error">{{ errores.estados }}</em>{% endif %}
         </label>
-      {% endfor %}
-    </fieldset>
+        <label class="field"><span>Estado inicial</span><input name="estadoInicial" value="{{ config.estadoInicial }}" />
+          {% if errores.estadoInicial %}<em class="field__error">{{ errores.estadoInicial }}</em>{% endif %}
+        </label>
+        <label class="field"><span>Prioridades</span><textarea name="prioridades" rows="4">{{ config.prioridades | join('\n') }}</textarea></label>
+      </div>
+    </details>
 
-    <label class="field"><span>Tipos facturables</span><textarea name="tiposFacturables" rows="3">{{ config.tiposFacturables | join('\n') }}</textarea></label>
-    <label class="field"><span>Correos a notificar cuando llega un ticket del portal</span><textarea name="correosNotificacion" rows="3">{{ config.correosNotificacion | join('\n') }}</textarea></label>
+    <details class="disclosure">
+      <summary class="disclosure__summary">SLA por prioridad</summary>
+      <fieldset class="field disclosure__body">
+        <legend>Horas de SLA por prioridad</legend>
+        {% for p in config.prioridades %}
+          <label class="field">{{ p }}
+            <input type="number" name="sla_{{ p }}" min="1" value="{{ config.slaHoras[p] or 24 }}" />
+          </label>
+        {% endfor %}
+      </fieldset>
+    </details>
+
+    <details class="disclosure">
+      <summary class="disclosure__summary">Facturación y avisos</summary>
+      <div class="disclosure__body form">
+        <label class="field"><span>Tipos facturables</span><textarea name="tiposFacturables" rows="3">{{ config.tiposFacturables | join('\n') }}</textarea></label>
+        <label class="field"><span>Correos a notificar cuando llega un ticket del portal</span><textarea name="correosNotificacion" rows="3">{{ config.correosNotificacion | join('\n') }}</textarea></label>
+      </div>
+    </details>
 
     <button class="btn" type="submit">Guardar</button>
   </form>

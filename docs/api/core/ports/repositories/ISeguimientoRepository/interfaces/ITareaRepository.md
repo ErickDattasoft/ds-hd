@@ -6,8 +6,6 @@
 
 # Interface: ITareaRepository
 
-Defined in: core/ports/repositories/ISeguimientoRepository.ts:19
-
 Persistencia de tareas de seguimiento (`tareas/{id}`).
 
 ## Methods
@@ -15,8 +13,6 @@ Persistencia de tareas de seguimiento (`tareas/{id}`).
 ### findById()
 
 > **findById**(`id`): `Promise`\<[`Tarea`](../../../../entities/Tarea/classes/Tarea.md) \| `null`\>
-
-Defined in: core/ports/repositories/ISeguimientoRepository.ts:20
 
 #### Parameters
 
@@ -34,8 +30,6 @@ Defined in: core/ports/repositories/ISeguimientoRepository.ts:20
 
 > **list**(`filtro?`): `Promise`\<[`Tarea`](../../../../entities/Tarea/classes/Tarea.md)[]\>
 
-Defined in: core/ports/repositories/ISeguimientoRepository.ts:21
-
 #### Parameters
 
 ##### filtro?
@@ -51,8 +45,6 @@ Defined in: core/ports/repositories/ISeguimientoRepository.ts:21
 ### save()
 
 > **save**(`tarea`): `Promise`\<`void`\>
-
-Defined in: core/ports/repositories/ISeguimientoRepository.ts:22
 
 #### Parameters
 

@@ -6,9 +6,7 @@
 
 # Function: parseRol()
 
-> **parseRol**(`value`): `"admin"` \| `"supervisor"` \| `"agente"` \| `"lectura"` \| `"cliente"`
-
-Defined in: core/entities/value-objects/Rol.ts:22
+> **parseRol**(`value`): `"admin"` \| `"supervisor"` \| `"soporte"` \| `"ventas"` \| `"agente"` \| `"lectura"` \| `"cliente"`
 
 Valida y normaliza un rol recibido de un formulario o de la BD.
 
@@ -20,4 +18,4 @@ Valida y normaliza un rol recibido de un formulario o de la BD.
 
 ## Returns
 
-`"admin"` \| `"supervisor"` \| `"agente"` \| `"lectura"` \| `"cliente"`
+`"admin"` \| `"supervisor"` \| `"soporte"` \| `"ventas"` \| `"agente"` \| `"lectura"` \| `"cliente"`

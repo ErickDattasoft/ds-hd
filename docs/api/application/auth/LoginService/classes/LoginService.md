@@ -6,8 +6,6 @@
 
 # Class: LoginService
 
-Defined in: application/auth/LoginService.ts:23
-
 Caso de uso: iniciar sesión con correo y contraseña.
 
 ## Constructors
@@ -15,8 +13,6 @@ Caso de uso: iniciar sesión con correo y contraseña.
 ### Constructor
 
 > **new LoginService**(`usuarios`, `auth`, `sesiones`, `clock`, `logger`): `LoginService`
-
-Defined in: application/auth/LoginService.ts:24
 
 #### Parameters
 
@@ -49,8 +45,6 @@ Defined in: application/auth/LoginService.ts:24
 ### ejecutar()
 
 > **ejecutar**(`input`): `Promise`\<[`LoginResultado`](../interfaces/LoginResultado.md)\>
-
-Defined in: application/auth/LoginService.ts:32
 
 #### Parameters
 

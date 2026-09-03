@@ -6,8 +6,6 @@
 
 # Variable: ROLES
 
-> `const` **ROLES**: readonly \[`"admin"`, `"supervisor"`, `"agente"`, `"lectura"`, `"cliente"`\]
-
-Defined in: core/entities/value-objects/Rol.ts:4
+> `const` **ROLES**: readonly \[`"admin"`, `"supervisor"`, `"soporte"`, `"ventas"`, `"agente"`, `"lectura"`, `"cliente"`\]
 
 Roles del sistema. El orden va de mayor a menor alcance en el back-office.

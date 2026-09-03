@@ -8,8 +8,6 @@
 
 > **slugEstado**(`estado`): `string`
 
-Defined in: core/entities/value-objects/EstadoTicket.ts:21
-
 Normaliza un estado a su forma comparable (minúsculas, sin acentos).
 
 ## Parameters

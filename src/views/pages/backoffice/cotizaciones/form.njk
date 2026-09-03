@@ -17,7 +17,6 @@
         </select>
         {% if errores.empresaId %}<em class="field__error">{{ errores.empresaId }}</em>{% endif %}
       </label>
-      <label class="field"><span>Vigencia (días)</span><input type="number" name="vigenciaDias" value="{{ valores.vigenciaDias or 15 }}" min="1" /></label>
     {% else %}
       <p class="muted">{{ cotizacion.folio }} · {{ cotizacion.empresaNombre }}</p>
     {% endif %}
@@ -43,8 +42,19 @@
       </tbody>
     </table>
 
-    <label class="field"><span>Notas</span><textarea name="notas" rows="3">{{ valores.notas }}</textarea></label>
-    <button class="btn" type="submit">Guardar</button>
-    <a class="btn btn--ghost" href="/app/cotizaciones">Cancelar</a>
+    <details class="disclosure"{{ ' open' if valores.notas or (modo != 'editar' and valores.vigenciaDias) }}>
+      <summary class="disclosure__summary">Opciones <span class="disclosure__hint">— vigencia y notas</span></summary>
+      <div class="disclosure__body form">
+        {% if modo != 'editar' %}
+          <label class="field"><span>Vigencia (días)</span><input type="number" name="vigenciaDias" value="{{ valores.vigenciaDias or 15 }}" min="1" /></label>
+        {% endif %}
+        <label class="field"><span>Notas</span><textarea name="notas" rows="3">{{ valores.notas }}</textarea></label>
+      </div>
+    </details>
+
+    <div class="page-head__actions">
+      <button class="btn" type="submit">Guardar</button>
+      <a class="btn btn--ghost" href="/app/cotizaciones">Cancelar</a>
+    </div>
   </form>
 {% endblock %}

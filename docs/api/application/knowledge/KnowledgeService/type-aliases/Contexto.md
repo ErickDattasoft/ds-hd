@@ -8,15 +8,11 @@
 
 > **Contexto** = `object`
 
-Defined in: application/knowledge/KnowledgeService.ts:19
-
 ## Properties
 
 ### esStaff
 
 > **esStaff**: `boolean`
-
-Defined in: application/knowledge/KnowledgeService.ts:19
 
 ***
 
@@ -24,12 +20,8 @@ Defined in: application/knowledge/KnowledgeService.ts:19
 
 > **esCliente**: `boolean`
 
-Defined in: application/knowledge/KnowledgeService.ts:19
-
 ***
 
 ### anonimo
 
 > **anonimo**: `boolean`
-
-Defined in: application/knowledge/KnowledgeService.ts:19

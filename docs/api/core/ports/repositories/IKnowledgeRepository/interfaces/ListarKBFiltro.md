@@ -6,8 +6,6 @@
 
 # Interface: ListarKBFiltro
 
-Defined in: core/ports/repositories/IKnowledgeRepository.ts:4
-
 Filtros para listar artículos de la base de conocimiento.
 
 ## Properties
@@ -16,20 +14,14 @@ Filtros para listar artículos de la base de conocimiento.
 
 > `optional` **categoria?**: `string`
 
-Defined in: core/ports/repositories/IKnowledgeRepository.ts:5
-
 ***
 
 ### publicado?
 
 > `optional` **publicado?**: `boolean`
 
-Defined in: core/ports/repositories/IKnowledgeRepository.ts:6
-
 ***
 
 ### texto?
 
 > `optional` **texto?**: `string`
-
-Defined in: core/ports/repositories/IKnowledgeRepository.ts:7

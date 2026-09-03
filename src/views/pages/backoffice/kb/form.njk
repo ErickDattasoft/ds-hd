@@ -7,21 +7,30 @@
     <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
     <label class="field"><span>Título</span><input name="titulo" value="{{ valores.titulo }}" required />
       {% if errores.titulo %}<em class="field__error">{{ errores.titulo }}</em>{% endif %}</label>
-    <label class="field"><span>Categoría</span><input name="categoria" value="{{ valores.categoria }}" /></label>
-    <label class="field"><span>Etiquetas (separadas por coma)</span><input name="tags" value="{{ valores.tags }}" /></label>
     <label class="field"><span>Contenido (Markdown)</span>
       <textarea name="cuerpoMarkdown" rows="16" required>{{ valores.cuerpoMarkdown }}</textarea>
       {% if errores.cuerpoMarkdown %}<em class="field__error">{{ errores.cuerpoMarkdown }}</em>{% endif %}
     </label>
-    <label class="field"><span>Visibilidad</span>
-      <select name="visibilidad">
-        <option value="staff" {{ 'selected' if valores.visibilidad == 'staff' }}>Solo staff</option>
-        <option value="portal" {{ 'selected' if valores.visibilidad == 'portal' }}>Staff + clientes del portal</option>
-        <option value="publico" {{ 'selected' if valores.visibilidad == 'publico' }}>Público</option>
-      </select>
-    </label>
-    <label class="field--check"><input type="checkbox" name="publicado" {{ 'checked' if valores.publicado }} /> <span>Publicado</span></label>
-    <button class="btn" type="submit">Guardar</button>
-    <a class="btn btn--ghost" href="/app/kb">Cancelar</a>
+
+    <details class="disclosure" open>
+      <summary class="disclosure__summary">Publicación y clasificación</summary>
+      <div class="disclosure__body form">
+        <label class="field"><span>Categoría</span><input name="categoria" value="{{ valores.categoria }}" /></label>
+        <label class="field"><span>Etiquetas (separadas por coma)</span><input name="tags" value="{{ valores.tags }}" /></label>
+        <label class="field"><span>Visibilidad</span>
+          <select name="visibilidad">
+            <option value="staff" {{ 'selected' if valores.visibilidad == 'staff' }}>Solo staff</option>
+            <option value="portal" {{ 'selected' if valores.visibilidad == 'portal' }}>Staff + clientes del portal</option>
+            <option value="publico" {{ 'selected' if valores.visibilidad == 'publico' }}>Público</option>
+          </select>
+        </label>
+        <label class="field--check"><input type="checkbox" name="publicado" {{ 'checked' if valores.publicado }} /> <span>Publicado</span></label>
+      </div>
+    </details>
+
+    <div class="page-head__actions">
+      <button class="btn" type="submit">Guardar</button>
+      <a class="btn btn--ghost" href="/app/kb">Cancelar</a>
+    </div>
   </form>
 {% endblock %}

@@ -6,8 +6,6 @@
 
 # Interface: IInvitacionRepository
 
-Defined in: core/ports/repositories/IInvitacionRepository.ts:18
-
 Invitaciones de un solo uso para que un cliente (o staff nuevo) fije su contraseña.
 Colección `invitaciones/{token}`.
 
@@ -16,8 +14,6 @@ Colección `invitaciones/{token}`.
 ### create()
 
 > **create**(`data`): `Promise`\<`void`\>
-
-Defined in: core/ports/repositories/IInvitacionRepository.ts:19
 
 #### Parameters
 
@@ -35,8 +31,6 @@ Defined in: core/ports/repositories/IInvitacionRepository.ts:19
 
 > **findByToken**(`token`): `Promise`\<[`Invitacion`](Invitacion.md) \| `null`\>
 
-Defined in: core/ports/repositories/IInvitacionRepository.ts:20
-
 #### Parameters
 
 ##### token
@@ -52,8 +46,6 @@ Defined in: core/ports/repositories/IInvitacionRepository.ts:20
 ### marcarUsada()
 
 > **marcarUsada**(`token`, `cuando`): `Promise`\<`void`\>
-
-Defined in: core/ports/repositories/IInvitacionRepository.ts:21
 
 #### Parameters
 

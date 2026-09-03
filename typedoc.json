@@ -8,6 +8,7 @@
   "excludePrivate": true,
   "excludeExternals": true,
   "excludeInternal": true,
+  "disableSources": true,
   "githubPages": false,
   "hideGenerator": true,
   "titleLink": "/README.md",

@@ -5,6 +5,7 @@
   {% if errores.general %}<p class="alert alert--error">{{ errores.general }}</p>{% endif %}
   <form method="post" action="/app/tickets" class="form form--wide">
     <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+
     <label class="field"><span>Asunto</span>
       <input name="asunto" value="{{ valores.asunto }}" required />
       {% if errores.asunto %}<em class="field__error">{{ errores.asunto }}</em>{% endif %}
@@ -13,23 +14,44 @@
       <textarea name="descripcion" rows="5" required>{{ valores.descripcion }}</textarea>
       {% if errores.descripcion %}<em class="field__error">{{ errores.descripcion }}</em>{% endif %}
     </label>
-    <label class="field"><span>Tipo</span>
-      <select name="tipo">{% for t in config.tipos %}<option {{ 'selected' if valores.tipo == t }}>{{ t }}</option>{% endfor %}</select>
-    </label>
-    <label class="field"><span>Sistema</span>
-      <select name="sistema"><option value="">—</option>{% for s in config.sistemas %}<option {{ 'selected' if valores.sistema == s }}>{{ s }}</option>{% endfor %}</select>
-    </label>
     <label class="field"><span>Prioridad</span>
       <select name="prioridad">{% for p in config.prioridades %}<option {{ 'selected' if valores.prioridad == p }}>{{ p }}</option>{% endfor %}</select>
     </label>
-    <label class="field"><span>Grupo</span>
-      <select name="grupo"><option value="">—</option>{% for g in config.grupos %}<option {{ 'selected' if valores.grupo == g }}>{{ g }}</option>{% endfor %}</select>
-    </label>
-    <label class="field"><span>Empresa (nombre)</span><input name="empresaNombre" value="{{ valores.empresaNombre }}" /></label>
-    <label class="field"><span>Contacto</span><input name="contactoNombre" value="{{ valores.contactoNombre }}" /></label>
-    <label class="field"><span>Correo del contacto</span><input type="email" name="contactoCorreo" value="{{ valores.contactoCorreo }}" /></label>
-    <label class="field--check"><input type="checkbox" name="asignarAMi" /> <span>Asignármelo (si soy agente)</span></label>
-    <button class="btn" type="submit">Crear ticket</button>
-    <a class="btn btn--ghost" href="/app/tickets">Cancelar</a>
+
+    <details class="disclosure"{{ ' open' if errores.tipo or valores.tipo or valores.sistema or valores.grupo }}>
+      <summary class="disclosure__summary">Clasificación <span class="disclosure__hint">— tipo, sistema, grupo (opcional)</span></summary>
+      <div class="disclosure__body form">
+        <label class="field"><span>Tipo</span>
+          <select name="tipo">{% for t in config.tipos %}<option {{ 'selected' if valores.tipo == t }}>{{ t }}</option>{% endfor %}</select>
+        </label>
+        <label class="field"><span>Sistema</span>
+          <select name="sistema"><option value="">—</option>{% for s in config.sistemas %}<option {{ 'selected' if valores.sistema == s }}>{{ s }}</option>{% endfor %}</select>
+        </label>
+        <label class="field"><span>Grupo</span>
+          <select name="grupo"><option value="">—</option>{% for g in config.grupos %}<option {{ 'selected' if valores.grupo == g }}>{{ g }}</option>{% endfor %}</select>
+        </label>
+      </div>
+    </details>
+
+    <details class="disclosure"{{ ' open' if valores.empresaNombre or valores.contactoNombre or valores.contactoCorreo }}>
+      <summary class="disclosure__summary">Datos del cliente <span class="disclosure__hint">— si el ticket llega por otra vía</span></summary>
+      <div class="disclosure__body form">
+        <label class="field"><span>Empresa (nombre)</span><input name="empresaNombre" value="{{ valores.empresaNombre }}" /></label>
+        <label class="field"><span>Contacto</span><input name="contactoNombre" value="{{ valores.contactoNombre }}" /></label>
+        <label class="field"><span>Correo del contacto</span><input type="email" name="contactoCorreo" value="{{ valores.contactoCorreo }}" /></label>
+      </div>
+    </details>
+
+    <details class="disclosure">
+      <summary class="disclosure__summary">Asignación</summary>
+      <div class="disclosure__body form">
+        <label class="field--check"><input type="checkbox" name="asignarAMi" /> <span>Asignármelo (si soy técnico de soporte)</span></label>
+      </div>
+    </details>
+
+    <div class="page-head__actions">
+      <button class="btn" type="submit">Crear ticket</button>
+      <a class="btn btn--ghost" href="/app/tickets">Cancelar</a>
+    </div>
   </form>
 {% endblock %}

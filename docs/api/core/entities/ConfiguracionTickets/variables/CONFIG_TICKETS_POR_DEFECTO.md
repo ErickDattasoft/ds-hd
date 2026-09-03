@@ -7,5 +7,3 @@
 # Variable: CONFIG\_TICKETS\_POR\_DEFECTO
 
 > `const` **CONFIG\_TICKETS\_POR\_DEFECTO**: [`ConfiguracionTickets`](../interfaces/ConfiguracionTickets.md)
-
-Defined in: core/entities/ConfiguracionTickets.ts:21

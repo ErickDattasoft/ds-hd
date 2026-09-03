@@ -6,8 +6,6 @@
 
 # Class: ConflictError
 
-Defined in: core/errors/DomainError.ts:52
-
 La operación choca con el estado actual del recurso (p. ej. nombre duplicado). → HTTP 409.
 
 ## Extends
@@ -19,8 +17,6 @@ La operación choca con el estado actual del recurso (p. ej. nombre duplicado). 
 ### Constructor
 
 > **new ConflictError**(`message`, `options?`): `ConflictError`
-
-Defined in: core/errors/DomainError.ts:12
 
 #### Parameters
 
@@ -48,8 +44,6 @@ Defined in: core/errors/DomainError.ts:12
 
 > `readonly` **code**: `"CONFLICTO"` = `'CONFLICTO'`
 
-Defined in: core/errors/DomainError.ts:53
-
 Código estable, legible por máquina (p. ej. `TICKET_NO_ENCONTRADO`).
 
 #### Overrides
@@ -61,8 +55,6 @@ Código estable, legible por máquina (p. ej. `TICKET_NO_ENCONTRADO`).
 ### httpStatus
 
 > `readonly` **httpStatus**: `409` = `409`
-
-Defined in: core/errors/DomainError.ts:54
 
 Código HTTP sugerido para la capa de entrega.
 

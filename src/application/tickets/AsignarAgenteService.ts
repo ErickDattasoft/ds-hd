@@ -7,6 +7,7 @@ import type { ILogger } from '../../core/ports/services/ILogger.js';
 import type { IEmailSender } from '../../core/ports/services/IEmailSender.js';
 import type { IWebhookPublisher } from '../../core/ports/services/IWebhookPublisher.js';
 import type { Ticket } from '../../core/entities/Ticket.js';
+import { esRolTecnico } from '../../core/entities/value-objects/Rol.js';
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '../../core/errors/DomainError.js';
 import { registrarEvento } from './efectos.js';
 import type { AsignarAgenteInput } from './dto.js';
@@ -33,7 +34,7 @@ export class AsignarAgenteService {
     if (!ticket) throw new NotFoundError('Ticket', input.ticketId);
 
     const agente = await this.usuarios.findByUid(input.agenteUid);
-    if (!agente || agente.rol !== 'agente' || !agente.activo) {
+    if (!agente || !esRolTecnico(agente.rol) || !agente.activo) {
       throw new ValidationError('El usuario no es un agente activo', { agenteUid: 'No válido' });
     }
 

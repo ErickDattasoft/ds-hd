@@ -6,8 +6,6 @@
 
 # Interface: ICotizacionRepository
 
-Defined in: core/ports/repositories/ICotizacionRepository.ts:12
-
 Persistencia de cotizaciones (`cotizaciones/{id}`).
 
 ## Methods
@@ -15,8 +13,6 @@ Persistencia de cotizaciones (`cotizaciones/{id}`).
 ### findById()
 
 > **findById**(`id`): `Promise`\<[`Cotizacion`](../../../../entities/Cotizacion/classes/Cotizacion.md) \| `null`\>
-
-Defined in: core/ports/repositories/ICotizacionRepository.ts:13
 
 #### Parameters
 
@@ -34,8 +30,6 @@ Defined in: core/ports/repositories/ICotizacionRepository.ts:13
 
 > **list**(`filtro?`): `Promise`\<[`Cotizacion`](../../../../entities/Cotizacion/classes/Cotizacion.md)[]\>
 
-Defined in: core/ports/repositories/ICotizacionRepository.ts:14
-
 #### Parameters
 
 ##### filtro?
@@ -52,8 +46,6 @@ Defined in: core/ports/repositories/ICotizacionRepository.ts:14
 
 > **save**(`cotizacion`): `Promise`\<`void`\>
 
-Defined in: core/ports/repositories/ICotizacionRepository.ts:15
-
 #### Parameters
 
 ##### cotizacion
@@ -69,8 +61,6 @@ Defined in: core/ports/repositories/ICotizacionRepository.ts:15
 ### contarPorEstado()
 
 > **contarPorEstado**(): `Promise`\<`Record`\<`string`, `number`\>\>
-
-Defined in: core/ports/repositories/ICotizacionRepository.ts:16
 
 #### Returns
 

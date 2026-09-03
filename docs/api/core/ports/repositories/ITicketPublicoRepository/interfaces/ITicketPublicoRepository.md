@@ -6,8 +6,6 @@
 
 # Interface: ITicketPublicoRepository
 
-Defined in: core/ports/repositories/ITicketPublicoRepository.ts:4
-
 Buzón de tickets entrantes del portal público (`tickets_publicos`).
 
 ## Methods
@@ -15,8 +13,6 @@ Buzón de tickets entrantes del portal público (`tickets_publicos`).
 ### create()
 
 > **create**(`data`): `Promise`\<[`TicketPublico`](../../../../entities/TicketPublico/interfaces/TicketPublico.md)\>
-
-Defined in: core/ports/repositories/ITicketPublicoRepository.ts:5
 
 #### Parameters
 
@@ -34,8 +30,6 @@ Defined in: core/ports/repositories/ITicketPublicoRepository.ts:5
 
 > **findById**(`id`): `Promise`\<[`TicketPublico`](../../../../entities/TicketPublico/interfaces/TicketPublico.md) \| `null`\>
 
-Defined in: core/ports/repositories/ITicketPublicoRepository.ts:6
-
 #### Parameters
 
 ##### id
@@ -52,8 +46,6 @@ Defined in: core/ports/repositories/ITicketPublicoRepository.ts:6
 
 > **listPendientes**(): `Promise`\<[`TicketPublico`](../../../../entities/TicketPublico/interfaces/TicketPublico.md)[]\>
 
-Defined in: core/ports/repositories/ITicketPublicoRepository.ts:7
-
 #### Returns
 
 `Promise`\<[`TicketPublico`](../../../../entities/TicketPublico/interfaces/TicketPublico.md)[]\>
@@ -63,8 +55,6 @@ Defined in: core/ports/repositories/ITicketPublicoRepository.ts:7
 ### marcarAceptado()
 
 > **marcarAceptado**(`id`, `ticketNumero`): `Promise`\<`void`\>
-
-Defined in: core/ports/repositories/ITicketPublicoRepository.ts:8
 
 #### Parameters
 
@@ -85,8 +75,6 @@ Defined in: core/ports/repositories/ITicketPublicoRepository.ts:8
 ### marcarRechazado()
 
 > **marcarRechazado**(`id`): `Promise`\<`void`\>
-
-Defined in: core/ports/repositories/ITicketPublicoRepository.ts:9
 
 #### Parameters
 

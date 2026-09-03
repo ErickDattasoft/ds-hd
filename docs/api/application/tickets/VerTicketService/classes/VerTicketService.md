@@ -6,8 +6,6 @@
 
 # Class: VerTicketService
 
-Defined in: application/tickets/VerTicketService.ts:21
-
 Caso de uso: cargar el detalle de un ticket para el back-office (notas internas filtradas).
 
 ## Constructors
@@ -15,8 +13,6 @@ Caso de uso: cargar el detalle de un ticket para el back-office (notas internas 
 ### Constructor
 
 > **new VerTicketService**(`tickets`, `config`): `VerTicketService`
-
-Defined in: application/tickets/VerTicketService.ts:22
 
 #### Parameters
 
@@ -37,8 +33,6 @@ Defined in: application/tickets/VerTicketService.ts:22
 ### ejecutar()
 
 > **ejecutar**(`actor`, `ticketId`): `Promise`\<[`DetalleTicket`](../interfaces/DetalleTicket.md)\>
-
-Defined in: application/tickets/VerTicketService.ts:27
 
 #### Parameters
 

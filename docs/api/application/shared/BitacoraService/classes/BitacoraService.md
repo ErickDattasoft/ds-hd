@@ -6,8 +6,6 @@
 
 # Class: BitacoraService
 
-Defined in: application/shared/BitacoraService.ts:12
-
 Servicio transversal de auditoría: los casos de uso lo invocan para dejar registro de una
 acción relevante. Best-effort — si el registro falla, se loguea pero no rompe la operación.
 
@@ -16,8 +14,6 @@ acción relevante. Best-effort — si el registro falla, se loguea pero no rompe
 ### Constructor
 
 > **new BitacoraService**(`repo`, `ids`, `clock`, `logger`): `BitacoraService`
-
-Defined in: application/shared/BitacoraService.ts:13
 
 #### Parameters
 
@@ -46,8 +42,6 @@ Defined in: application/shared/BitacoraService.ts:13
 ### registrar()
 
 > **registrar**(`data`): `Promise`\<`void`\>
-
-Defined in: application/shared/BitacoraService.ts:20
 
 #### Parameters
 
@@ -86,8 +80,6 @@ Defined in: application/shared/BitacoraService.ts:20
 ### listar()
 
 > **listar**(`filtro?`): `Promise`\<[`EntradaBitacora`](../../../../core/entities/EntradaBitacora/interfaces/EntradaBitacora.md)[]\>
-
-Defined in: application/shared/BitacoraService.ts:49
 
 #### Parameters
 

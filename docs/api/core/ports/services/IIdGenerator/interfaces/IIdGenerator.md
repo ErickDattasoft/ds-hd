@@ -6,8 +6,6 @@
 
 # Interface: IIdGenerator
 
-Defined in: core/ports/services/IIdGenerator.ts:5
-
 Puerto para generar identificadores opacos (ids de documento, tokens de invitación).
 Aislado para poder inyectar una secuencia determinista en los tests.
 
@@ -16,8 +14,6 @@ Aislado para poder inyectar una secuencia determinista en los tests.
 ### newId()
 
 > **newId**(): `string`
-
-Defined in: core/ports/services/IIdGenerator.ts:7
 
 Id corto para documentos (colecciones de Firestore).
 
@@ -30,8 +26,6 @@ Id corto para documentos (colecciones de Firestore).
 ### newToken()
 
 > **newToken**(): `string`
-
-Defined in: core/ports/services/IIdGenerator.ts:9
 
 Token largo, apto para URLs de un solo uso (invitaciones, reseteo de contraseña).
 

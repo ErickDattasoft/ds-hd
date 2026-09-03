@@ -13,6 +13,7 @@ import type { IUsuarioRepository } from '../../../../core/ports/repositories/IUs
 import type { IClock } from '../../../../core/ports/services/IClock.js';
 import type { FiltroTickets } from '../../../../core/ports/repositories/ITicketQueries.js';
 import { parsePrioridad } from '../../../../core/entities/value-objects/Prioridad.js';
+import { ROLES_TECNICOS } from '../../../../core/entities/value-objects/Rol.js';
 import { ticketVM } from '../../presenters/TicketPresenter.js';
 import { camposDeError } from '../../support/errores.js';
 
@@ -130,7 +131,9 @@ export class TicketController {
   detalleView = async (req: Request, res: Response): Promise<void> => {
     const d = await this.ver.ejecutar(req.user!, str(req.params.id));
     const ahora = this.clock.now();
-    const agentes = d.puedeAsignar ? await this.usuarios.list({ rol: 'agente', activo: true }) : [];
+    const agentes = d.puedeAsignar
+      ? await this.usuarios.list({ roles: ROLES_TECNICOS, activo: true })
+      : [];
     res.render('pages/backoffice/tickets/detail', {
       titulo: `Ticket #${d.ticket.numero}`,
       vm: ticketVM(d.ticket, ahora),

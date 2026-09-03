@@ -7,5 +7,3 @@
 # Type Alias: EstadoInscripcion
 
 > **EstadoInscripcion** = `"registrado"` \| `"confirmado"` \| `"asistio"` \| `"no_asistio"`
-
-Defined in: core/entities/Inscripcion.ts:1

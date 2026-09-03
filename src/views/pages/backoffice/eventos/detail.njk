@@ -5,7 +5,7 @@
     <h1>{{ evento.titulo }} <span class="badge badge--estado">{{ evento.estado }}</span></h1>
     <div class="page-head__actions">
       {% if can('eventos:gestionar') %}<a class="btn btn--sm" href="/app/eventos/{{ evento.id }}/editar">Editar</a>{% endif %}
-      <a class="btn btn--sm btn--ghost" href="/eventos/{{ evento.id }}">Ver página pública</a>
+      <a class="btn btn--sm btn--secondary" href="/eventos/{{ evento.id }}">Ver página pública</a>
     </div>
   </div>
   <p class="muted">{{ evento.fechaHora }} · {{ inscritos | length }} inscritos{% if evento.cupo %} / {{ evento.cupo }}{% endif %}</p>
@@ -42,23 +42,27 @@
   </table>
 
   {% if can('eventos:gestionar') %}
-    <h2>Lista negra</h2>
-    <form method="post" action="/app/eventos/{{ evento.id }}/lista-negra" class="filterbar">
-      <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
-      <input type="email" name="email" autocomplete="email" placeholder="correo@ejemplo.com" required />
-      <input name="motivo" placeholder="Motivo (opcional)" />
-      <button class="btn btn--sm" type="submit">Bloquear</button>
-    </form>
-    <ul class="kb-list">
-      {% for e in listaNegra %}
-        <li>{{ e.email }} <span class="muted">{{ e.motivo }}</span>
-          <form method="post" action="/app/eventos/{{ evento.id }}/lista-negra/quitar" class="inline">
-            <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
-            <input type="hidden" name="email" value="{{ e.email }}" />
-            <button class="btn btn--sm btn--ghost" type="submit">Quitar</button>
-          </form>
-        </li>
-      {% else %}<li class="muted">Vacía.</li>{% endfor %}
-    </ul>
+    <details class="disclosure"{{ ' open' if listaNegra | length }}>
+      <summary class="disclosure__summary">Lista negra <span class="disclosure__hint">— {{ listaNegra | length }} bloqueado(s)</span></summary>
+      <div class="disclosure__body">
+        <form method="post" action="/app/eventos/{{ evento.id }}/lista-negra" class="filterbar">
+          <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+          <input type="email" name="email" autocomplete="email" placeholder="correo@ejemplo.com" required />
+          <input name="motivo" placeholder="Motivo (opcional)" />
+          <button class="btn btn--sm btn--danger" type="submit">Bloquear</button>
+        </form>
+        <ul class="kb-list">
+          {% for e in listaNegra %}
+            <li>{{ e.email }} <span class="muted">{{ e.motivo }}</span>
+              <form method="post" action="/app/eventos/{{ evento.id }}/lista-negra/quitar" class="inline">
+                <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+                <input type="hidden" name="email" value="{{ e.email }}" />
+                <button class="btn btn--sm btn--ghost" type="submit">Quitar</button>
+              </form>
+            </li>
+          {% else %}<li class="muted">Vacía.</li>{% endfor %}
+        </ul>
+      </div>
+    </details>
   {% endif %}
 {% endblock %}

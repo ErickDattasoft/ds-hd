@@ -6,8 +6,6 @@
 
 # Interface: FacturacionState
 
-Defined in: core/entities/Ticket.ts:32
-
 Estado de facturación de un ticket.
 
 ## Properties
@@ -15,8 +13,6 @@ Estado de facturación de un ticket.
 ### requiere
 
 > **requiere**: `boolean`
-
-Defined in: core/entities/Ticket.ts:34
 
 Si el tipo de ticket amerita facturación (p. ej. consultorías).
 
@@ -26,12 +22,8 @@ Si el tipo de ticket amerita facturación (p. ej. consultorías).
 
 > **facturado**: `boolean`
 
-Defined in: core/entities/Ticket.ts:35
-
 ***
 
 ### notificadaEn
 
 > **notificadaEn**: `Date` \| `null`
-
-Defined in: core/entities/Ticket.ts:36

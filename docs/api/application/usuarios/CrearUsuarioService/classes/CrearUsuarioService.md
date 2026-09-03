@@ -6,8 +6,6 @@
 
 # Class: CrearUsuarioService
 
-Defined in: application/usuarios/CrearUsuarioService.ts:31
-
 Caso de uso: un administrador da de alta una cuenta de staff.
 
 ## Constructors
@@ -15,8 +13,6 @@ Caso de uso: un administrador da de alta una cuenta de staff.
 ### Constructor
 
 > **new CrearUsuarioService**(`usuarios`, `invitaciones`, `auth`, `email`, `ids`, `clock`, `logger`, `baseUrl`, `invitacionTtlHoras`): `CrearUsuarioService`
-
-Defined in: application/usuarios/CrearUsuarioService.ts:32
 
 #### Parameters
 
@@ -65,8 +61,6 @@ Defined in: application/usuarios/CrearUsuarioService.ts:32
 ### ejecutar()
 
 > **ejecutar**(`input`): `Promise`\<[`CrearUsuarioResultado`](../interfaces/CrearUsuarioResultado.md)\>
-
-Defined in: application/usuarios/CrearUsuarioService.ts:44
 
 #### Parameters
 

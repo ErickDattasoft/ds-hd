@@ -8,8 +8,6 @@
 
 > **horasSlaDe**(`config`, `prioridad`): `number`
 
-Defined in: core/entities/ConfiguracionTickets.ts:41
-
 Horas de SLA para una prioridad según la config (con fallback al valor por defecto).
 
 ## Parameters

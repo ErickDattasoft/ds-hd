@@ -6,8 +6,6 @@
 
 # Interface: EntradaBitacora
 
-Defined in: core/entities/EntradaBitacora.ts:2
-
 Entrada del registro de auditoría global del CRM (append-only, `bitacora/{id}`).
 
 ## Properties
@@ -16,15 +14,11 @@ Entrada del registro de auditoría global del CRM (append-only, `bitacora/{id}`)
 
 > **id**: `string`
 
-Defined in: core/entities/EntradaBitacora.ts:3
-
 ***
 
 ### at
 
 > **at**: `Date`
-
-Defined in: core/entities/EntradaBitacora.ts:4
 
 ***
 
@@ -32,23 +26,17 @@ Defined in: core/entities/EntradaBitacora.ts:4
 
 > **actorUid**: `string` \| `null`
 
-Defined in: core/entities/EntradaBitacora.ts:5
-
 ***
 
 ### actorNombre
 
 > **actorNombre**: `string` \| `null`
 
-Defined in: core/entities/EntradaBitacora.ts:6
-
 ***
 
 ### accion
 
 > **accion**: `string`
-
-Defined in: core/entities/EntradaBitacora.ts:8
 
 Acción, p. ej. `crear`, `editar`, `archivar`, `cambiar_estado`.
 
@@ -58,8 +46,6 @@ Acción, p. ej. `crear`, `editar`, `archivar`, `cambiar_estado`.
 
 > **modulo**: `string`
 
-Defined in: core/entities/EntradaBitacora.ts:10
-
 Módulo afectado: `empresas`, `contactos`, `tickets`, `cotizaciones`…
 
 ***
@@ -68,20 +54,14 @@ Módulo afectado: `empresas`, `contactos`, `tickets`, `cotizaciones`…
 
 > **entidadTipo**: `string`
 
-Defined in: core/entities/EntradaBitacora.ts:11
-
 ***
 
 ### entidadId
 
 > **entidadId**: `string`
 
-Defined in: core/entities/EntradaBitacora.ts:12
-
 ***
 
 ### resumen
 
 > **resumen**: `string`
-
-Defined in: core/entities/EntradaBitacora.ts:13

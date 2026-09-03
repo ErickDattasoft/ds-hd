@@ -6,8 +6,6 @@
 
 # Class: ListarTicketsService
 
-Defined in: application/tickets/ListarTicketsService.ts:9
-
 Caso de uso: listar / tablero de tickets del back-office, respetando el alcance del rol.
 
 ## Constructors
@@ -15,8 +13,6 @@ Caso de uso: listar / tablero de tickets del back-office, respetando el alcance 
 ### Constructor
 
 > **new ListarTicketsService**(`queries`, `config`): `ListarTicketsService`
-
-Defined in: application/tickets/ListarTicketsService.ts:10
 
 #### Parameters
 
@@ -38,8 +34,6 @@ Defined in: application/tickets/ListarTicketsService.ts:10
 
 > **listar**(`actor`, `filtro`): `Promise`\<\{ `tickets`: [`Ticket`](../../../../core/entities/Ticket/classes/Ticket.md)[]; `total`: `number`; `config`: [`ConfiguracionTickets`](../../../../core/entities/ConfiguracionTickets/interfaces/ConfiguracionTickets.md); \}\>
 
-Defined in: application/tickets/ListarTicketsService.ts:21
-
 #### Parameters
 
 ##### actor
@@ -59,8 +53,6 @@ Defined in: application/tickets/ListarTicketsService.ts:21
 ### tablero()
 
 > **tablero**(`actor`, `filtro`): `Promise`\<\{ `columnas`: [`ColumnaKanban`](../../../../core/ports/repositories/ITicketQueries/interfaces/ColumnaKanban.md)[]; `config`: [`ConfiguracionTickets`](../../../../core/entities/ConfiguracionTickets/interfaces/ConfiguracionTickets.md); \}\>
-
-Defined in: application/tickets/ListarTicketsService.ts:34
 
 #### Parameters
 

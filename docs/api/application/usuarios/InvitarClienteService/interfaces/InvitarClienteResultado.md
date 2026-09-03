@@ -6,8 +6,6 @@
 
 # Interface: InvitarClienteResultado
 
-Defined in: application/usuarios/InvitarClienteService.ts:23
-
 Resultado de la invitación: el usuario creado y el link para fijar su contraseña.
 
 ## Properties
@@ -16,12 +14,8 @@ Resultado de la invitación: el usuario creado y el link para fijar su contrase�
 
 > **usuario**: [`Usuario`](../../../../core/entities/Usuario/classes/Usuario.md)
 
-Defined in: application/usuarios/InvitarClienteService.ts:24
-
 ***
 
 ### urlInvitacion
 
 > **urlInvitacion**: `string`
-
-Defined in: application/usuarios/InvitarClienteService.ts:25

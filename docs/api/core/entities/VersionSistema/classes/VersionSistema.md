@@ -6,8 +6,6 @@
 
 # Class: VersionSistema
 
-Defined in: core/entities/VersionSistema.ts:16
-
 Versión vigente de un sistema (CONTPAQi/Compac) que el equipo instala/soporta.
 
 ## Constructors
@@ -15,8 +13,6 @@ Versión vigente de un sistema (CONTPAQi/Compac) que el equipo instala/soporta.
 ### Constructor
 
 > **new VersionSistema**(`props`): `VersionSistema`
-
-Defined in: core/entities/VersionSistema.ts:26
 
 #### Parameters
 
@@ -34,15 +30,11 @@ Defined in: core/entities/VersionSistema.ts:26
 
 > `readonly` **id**: `string`
 
-Defined in: core/entities/VersionSistema.ts:17
-
 ***
 
 ### sistema
 
 > **sistema**: `string`
-
-Defined in: core/entities/VersionSistema.ts:18
 
 ***
 
@@ -50,15 +42,11 @@ Defined in: core/entities/VersionSistema.ts:18
 
 > **versionActual**: `string`
 
-Defined in: core/entities/VersionSistema.ts:19
-
 ***
 
 ### fechaLiberacion
 
 > **fechaLiberacion**: `string` \| `null`
-
-Defined in: core/entities/VersionSistema.ts:20
 
 ***
 
@@ -66,15 +54,11 @@ Defined in: core/entities/VersionSistema.ts:20
 
 > **notasVersion**: `string` \| `null`
 
-Defined in: core/entities/VersionSistema.ts:21
-
 ***
 
 ### linkDescarga
 
 > **linkDescarga**: `string` \| `null`
-
-Defined in: core/entities/VersionSistema.ts:22
 
 ***
 
@@ -82,12 +66,8 @@ Defined in: core/entities/VersionSistema.ts:22
 
 > **updatedAt**: `Date`
 
-Defined in: core/entities/VersionSistema.ts:23
-
 ***
 
 ### actualizadoPorUid
 
 > **actualizadoPorUid**: `string` \| `null`
-
-Defined in: core/entities/VersionSistema.ts:24

@@ -6,8 +6,6 @@
 
 # Class: ConfiguracionTicketsService
 
-Defined in: application/configuracion/ConfiguracionTicketsService.ts:15
-
 Casos de uso: leer y actualizar los catálogos del módulo de tickets.
 
 ## Constructors
@@ -15,8 +13,6 @@ Casos de uso: leer y actualizar los catálogos del módulo de tickets.
 ### Constructor
 
 > **new ConfiguracionTicketsService**(`repo`, `logger`): `ConfiguracionTicketsService`
-
-Defined in: application/configuracion/ConfiguracionTicketsService.ts:16
 
 #### Parameters
 
@@ -38,8 +34,6 @@ Defined in: application/configuracion/ConfiguracionTicketsService.ts:16
 
 > **obtener**(): `Promise`\<[`ConfiguracionTickets`](../../../../core/entities/ConfiguracionTickets/interfaces/ConfiguracionTickets.md)\>
 
-Defined in: application/configuracion/ConfiguracionTicketsService.ts:21
-
 #### Returns
 
 `Promise`\<[`ConfiguracionTickets`](../../../../core/entities/ConfiguracionTickets/interfaces/ConfiguracionTickets.md)\>
@@ -49,8 +43,6 @@ Defined in: application/configuracion/ConfiguracionTicketsService.ts:21
 ### actualizar()
 
 > **actualizar**(`input`): `Promise`\<`void`\>
-
-Defined in: application/configuracion/ConfiguracionTicketsService.ts:25
 
 #### Parameters
 

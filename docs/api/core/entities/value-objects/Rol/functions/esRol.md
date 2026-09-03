@@ -6,9 +6,7 @@
 
 # Function: esRol()
 
-> **esRol**(`value`): value is "admin" \| "supervisor" \| "agente" \| "lectura" \| "cliente"
-
-Defined in: core/entities/value-objects/Rol.ts:12
+> **esRol**(`value`): value is "admin" \| "supervisor" \| "soporte" \| "ventas" \| "agente" \| "lectura" \| "cliente"
 
 Type guard: ¿el valor es uno de los roles válidos?
 
@@ -20,4 +18,4 @@ Type guard: ¿el valor es uno de los roles válidos?
 
 ## Returns
 
-value is "admin" \| "supervisor" \| "agente" \| "lectura" \| "cliente"
+value is "admin" \| "supervisor" \| "soporte" \| "ventas" \| "agente" \| "lectura" \| "cliente"

@@ -8,8 +8,6 @@
 
 > **esEstadoEspera**(`estado`): `boolean`
 
-Defined in: core/entities/value-objects/EstadoTicket.ts:33
-
 ¿Estado de espera para el cálculo de TIEMPO TRABAJADO (no cuenta como trabajo)?
 
 ## Parameters

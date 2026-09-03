@@ -6,8 +6,6 @@
 
 # Interface: ITicketRepository
 
-Defined in: core/ports/repositories/ITicketRepository.ts:11
-
 Persistencia (lado comando) de tickets: `tickets/{id}` + subcolecciones `notas` y `eventos`.
 Las consultas de listado/tablero viven en `ITicketQueries` (ISP).
 
@@ -19,8 +17,6 @@ existe; `save` hace upsert por `id`.
 ### findById()
 
 > **findById**(`id`): `Promise`\<[`Ticket`](../../../../entities/Ticket/classes/Ticket.md) \| `null`\>
-
-Defined in: core/ports/repositories/ITicketRepository.ts:12
 
 #### Parameters
 
@@ -38,8 +34,6 @@ Defined in: core/ports/repositories/ITicketRepository.ts:12
 
 > **findByNumero**(`numero`): `Promise`\<[`Ticket`](../../../../entities/Ticket/classes/Ticket.md) \| `null`\>
 
-Defined in: core/ports/repositories/ITicketRepository.ts:13
-
 #### Parameters
 
 ##### numero
@@ -56,8 +50,6 @@ Defined in: core/ports/repositories/ITicketRepository.ts:13
 
 > **save**(`ticket`): `Promise`\<`void`\>
 
-Defined in: core/ports/repositories/ITicketRepository.ts:14
-
 #### Parameters
 
 ##### ticket
@@ -73,8 +65,6 @@ Defined in: core/ports/repositories/ITicketRepository.ts:14
 ### agregarNota()
 
 > **agregarNota**(`ticketId`, `nota`): `Promise`\<`void`\>
-
-Defined in: core/ports/repositories/ITicketRepository.ts:16
 
 #### Parameters
 
@@ -96,8 +86,6 @@ Defined in: core/ports/repositories/ITicketRepository.ts:16
 
 > **listarNotas**(`ticketId`): `Promise`\<[`NotaTicket`](../../../../entities/NotaTicket/interfaces/NotaTicket.md)[]\>
 
-Defined in: core/ports/repositories/ITicketRepository.ts:17
-
 #### Parameters
 
 ##### ticketId
@@ -113,8 +101,6 @@ Defined in: core/ports/repositories/ITicketRepository.ts:17
 ### registrarEvento()
 
 > **registrarEvento**(`ticketId`, `evento`): `Promise`\<`void`\>
-
-Defined in: core/ports/repositories/ITicketRepository.ts:19
 
 #### Parameters
 
@@ -135,8 +121,6 @@ Defined in: core/ports/repositories/ITicketRepository.ts:19
 ### listarEventos()
 
 > **listarEventos**(`ticketId`): `Promise`\<[`EventoTicket`](../../../../entities/NotaTicket/interfaces/EventoTicket.md)[]\>
-
-Defined in: core/ports/repositories/ITicketRepository.ts:20
 
 #### Parameters
 

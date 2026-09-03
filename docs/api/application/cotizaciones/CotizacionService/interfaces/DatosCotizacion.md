@@ -6,8 +6,6 @@
 
 # Interface: DatosCotizacion
 
-Defined in: application/cotizaciones/CotizacionService.ts:12
-
 Datos para crear una cotización (folio y montos se calculan en el servicio).
 
 ## Properties
@@ -16,15 +14,11 @@ Datos para crear una cotización (folio y montos se calculan en el servicio).
 
 > **empresaId**: `string`
 
-Defined in: application/cotizaciones/CotizacionService.ts:13
-
 ***
 
 ### contactoId?
 
 > `optional` **contactoId?**: `string`
-
-Defined in: application/cotizaciones/CotizacionService.ts:14
 
 ***
 
@@ -32,15 +26,11 @@ Defined in: application/cotizaciones/CotizacionService.ts:14
 
 > `optional` **vigenciaDias?**: `number`
 
-Defined in: application/cotizaciones/CotizacionService.ts:15
-
 ***
 
 ### notas?
 
 > `optional` **notas?**: `string`
-
-Defined in: application/cotizaciones/CotizacionService.ts:16
 
 ***
 
@@ -48,20 +38,14 @@ Defined in: application/cotizaciones/CotizacionService.ts:16
 
 > **conceptos**: [`ConceptoCotizacion`](../../../../core/entities/Cotizacion/interfaces/ConceptoCotizacion.md)[]
 
-Defined in: application/cotizaciones/CotizacionService.ts:17
-
 ***
 
 ### origenCalculadora?
 
 > `optional` **origenCalculadora?**: `boolean`
 
-Defined in: application/cotizaciones/CotizacionService.ts:18
-
 ***
 
 ### parametrosCompac?
 
 > `optional` **parametrosCompac?**: `Record`\<`string`, `unknown`\> \| `null`
-
-Defined in: application/cotizaciones/CotizacionService.ts:19

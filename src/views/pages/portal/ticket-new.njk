@@ -13,16 +13,25 @@
       <textarea name="descripcion" rows="6" required>{{ valores.descripcion }}</textarea>
       {% if errores.descripcion %}<em class="field__error">{{ errores.descripcion }}</em>{% endif %}
     </label>
-    <label class="field"><span>Tipo</span>
-      <select name="tipo">{% for t in tipos %}<option {{ 'selected' if valores.tipo == t }}>{{ t }}</option>{% endfor %}</select>
-    </label>
-    <label class="field"><span>Sistema</span>
-      <select name="sistema"><option value="">—</option>{% for s in sistemas %}<option {{ 'selected' if valores.sistema == s }}>{{ s }}</option>{% endfor %}</select>
-    </label>
     <label class="field"><span>Prioridad</span>
       <select name="prioridad">{% for p in prioridades %}<option {{ 'selected' if valores.prioridad == p }}>{{ p }}</option>{% endfor %}</select>
     </label>
-    <button class="btn" type="submit">Enviar ticket</button>
-    <a class="btn btn--ghost" href="/portal/tickets">Cancelar</a>
+
+    <details class="disclosure"{{ ' open' if valores.tipo or valores.sistema }}>
+      <summary class="disclosure__summary">Más detalles <span class="disclosure__hint">— nos ayuda a atenderte más rápido</span></summary>
+      <div class="disclosure__body form">
+        <label class="field"><span>Tipo</span>
+          <select name="tipo">{% for t in tipos %}<option {{ 'selected' if valores.tipo == t }}>{{ t }}</option>{% endfor %}</select>
+        </label>
+        <label class="field"><span>Sistema</span>
+          <select name="sistema"><option value="">—</option>{% for s in sistemas %}<option {{ 'selected' if valores.sistema == s }}>{{ s }}</option>{% endfor %}</select>
+        </label>
+      </div>
+    </details>
+
+    <div class="page-head__actions">
+      <button class="btn" type="submit">Enviar ticket</button>
+      <a class="btn btn--ghost" href="/portal/tickets">Cancelar</a>
+    </div>
   </form>
 {% endblock %}

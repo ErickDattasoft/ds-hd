@@ -8,6 +8,4 @@
 
 > `const` **SLA\_HORAS\_POR\_DEFECTO**: `Record`\<[`Prioridad`](../type-aliases/Prioridad.md), `number`\>
 
-Defined in: core/entities/value-objects/Prioridad.ts:7
-
 Horas objetivo de resolución por prioridad (SLA por defecto; configurable en Configuración).

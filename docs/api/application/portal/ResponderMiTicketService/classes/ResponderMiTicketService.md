@@ -6,8 +6,6 @@
 
 # Class: ResponderMiTicketService
 
-Defined in: application/portal/ResponderMiTicketService.ts:13
-
 Caso de uso: el cliente responde en su propio ticket (siempre nota pública).
 
 ## Constructors
@@ -15,8 +13,6 @@ Caso de uso: el cliente responde en su propio ticket (siempre nota pública).
 ### Constructor
 
 > **new ResponderMiTicketService**(`tickets`, `usuarios`, `ids`, `clock`, `email`, `logger`): `ResponderMiTicketService`
-
-Defined in: application/portal/ResponderMiTicketService.ts:14
 
 #### Parameters
 
@@ -53,8 +49,6 @@ Defined in: application/portal/ResponderMiTicketService.ts:14
 ### ejecutar()
 
 > **ejecutar**(`input`): `Promise`\<[`NotaTicket`](../../../../core/entities/NotaTicket/interfaces/NotaTicket.md)\>
-
-Defined in: application/portal/ResponderMiTicketService.ts:23
 
 #### Parameters
 

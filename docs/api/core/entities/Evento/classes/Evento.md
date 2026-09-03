@@ -6,8 +6,6 @@
 
 # Class: Evento
 
-Defined in: core/entities/Evento.ts:22
-
 Evento / webinar con registro público.
 
 ## Constructors
@@ -15,8 +13,6 @@ Evento / webinar con registro público.
 ### Constructor
 
 > **new Evento**(`props`): `Evento`
-
-Defined in: core/entities/Evento.ts:35
 
 #### Parameters
 
@@ -34,15 +30,11 @@ Defined in: core/entities/Evento.ts:35
 
 > `readonly` **id**: `string`
 
-Defined in: core/entities/Evento.ts:23
-
 ***
 
 ### titulo
 
 > **titulo**: `string`
-
-Defined in: core/entities/Evento.ts:24
 
 ***
 
@@ -50,15 +42,11 @@ Defined in: core/entities/Evento.ts:24
 
 > **descripcion**: `string` \| `null`
 
-Defined in: core/entities/Evento.ts:25
-
 ***
 
 ### fechaHora
 
 > **fechaHora**: `Date`
-
-Defined in: core/entities/Evento.ts:26
 
 ***
 
@@ -66,15 +54,11 @@ Defined in: core/entities/Evento.ts:26
 
 > **cupo**: `number`
 
-Defined in: core/entities/Evento.ts:27
-
 ***
 
 ### estado
 
 > **estado**: [`EstadoEvento`](../type-aliases/EstadoEvento.md)
-
-Defined in: core/entities/Evento.ts:28
 
 ***
 
@@ -82,15 +66,11 @@ Defined in: core/entities/Evento.ts:28
 
 > **urlWebinar**: `string` \| `null`
 
-Defined in: core/entities/Evento.ts:29
-
 ***
 
 ### horasRecordatorio
 
 > **horasRecordatorio**: `number`
-
-Defined in: core/entities/Evento.ts:30
 
 ***
 
@@ -98,23 +78,17 @@ Defined in: core/entities/Evento.ts:30
 
 > `readonly` **creadoPorUid**: `string` \| `null`
 
-Defined in: core/entities/Evento.ts:31
-
 ***
 
 ### createdAt
 
 > `readonly` **createdAt**: `Date`
 
-Defined in: core/entities/Evento.ts:32
-
 ***
 
 ### updatedAt
 
 > **updatedAt**: `Date`
-
-Defined in: core/entities/Evento.ts:33
 
 ## Accessors
 
@@ -123,8 +97,6 @@ Defined in: core/entities/Evento.ts:33
 #### Get Signature
 
 > **get** **abiertoARegistro**(): `boolean`
-
-Defined in: core/entities/Evento.ts:52
 
 ##### Returns
 
@@ -137,8 +109,6 @@ Defined in: core/entities/Evento.ts:52
 #### Get Signature
 
 > **get** **sinCupo**(): `boolean`
-
-Defined in: core/entities/Evento.ts:56
 
 ##### Returns
 

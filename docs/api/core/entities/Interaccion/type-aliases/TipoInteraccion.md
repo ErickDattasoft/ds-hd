@@ -7,5 +7,3 @@
 # Type Alias: TipoInteraccion
 
 > **TipoInteraccion** = `"llamada"` \| `"correo"` \| `"reunion"` \| `"whatsapp"` \| `"nota"`
-
-Defined in: core/entities/Interaccion.ts:3

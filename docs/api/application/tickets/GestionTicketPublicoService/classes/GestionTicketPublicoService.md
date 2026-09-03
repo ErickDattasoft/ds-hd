@@ -6,8 +6,6 @@
 
 # Class: GestionTicketPublicoService
 
-Defined in: application/tickets/GestionTicketPublicoService.ts:10
-
 Casos de uso: aceptar o rechazar un ticket del buzón público.
 
 ## Constructors
@@ -15,8 +13,6 @@ Casos de uso: aceptar o rechazar un ticket del buzón público.
 ### Constructor
 
 > **new GestionTicketPublicoService**(`buzon`, `crearTicket`, `logger`): `GestionTicketPublicoService`
-
-Defined in: application/tickets/GestionTicketPublicoService.ts:11
 
 #### Parameters
 
@@ -42,8 +38,6 @@ Defined in: application/tickets/GestionTicketPublicoService.ts:11
 
 > **aceptar**(`input`): `Promise`\<[`Ticket`](../../../../core/entities/Ticket/classes/Ticket.md)\>
 
-Defined in: application/tickets/GestionTicketPublicoService.ts:17
-
 #### Parameters
 
 ##### input
@@ -65,8 +59,6 @@ Defined in: application/tickets/GestionTicketPublicoService.ts:17
 ### rechazar()
 
 > **rechazar**(`input`): `Promise`\<`void`\>
-
-Defined in: application/tickets/GestionTicketPublicoService.ts:50
 
 #### Parameters
 

@@ -50,6 +50,40 @@ export const ROLE_PERMISSIONS: Record<Rol, readonly Permiso[]> = {
     'seguimiento:gestionar',
   ],
 
+  // Front-line de soporte: solo la cola de tickets + consulta. Nada comercial.
+  soporte: [
+    'dashboard:ver',
+    'tickets:leer',
+    'tickets:crear',
+    'tickets:editar',
+    'tickets:asignar',
+    'tickets:cambiar_estado',
+    'tickets:ver_notas_internas',
+    'empresas:leer',
+    'contactos:leer',
+    'versiones:leer',
+    'kb:leer',
+    'kb:escribir',
+  ],
+
+  // Comercial: empresas, contactos, cotizaciones y seguimiento. Sin la cola de soporte.
+  ventas: [
+    'dashboard:ver',
+    'empresas:leer',
+    'empresas:crear',
+    'empresas:editar',
+    'contactos:leer',
+    'contactos:crear',
+    'contactos:editar',
+    'cotizaciones:leer',
+    'cotizaciones:crear',
+    'cotizaciones:editar',
+    'versiones:leer',
+    'kb:leer',
+    'seguimiento:leer',
+    'seguimiento:gestionar',
+  ],
+
   lectura: SOLO_LECTURA,
 
   cliente: ['portal:tickets', 'portal:perfil'],

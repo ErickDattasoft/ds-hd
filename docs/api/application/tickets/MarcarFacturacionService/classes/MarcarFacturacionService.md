@@ -6,8 +6,6 @@
 
 # Class: MarcarFacturacionService
 
-Defined in: application/tickets/MarcarFacturacionService.ts:10
-
 Caso de uso: marcar/desmarcar un ticket como facturado.
 
 ## Constructors
@@ -15,8 +13,6 @@ Caso de uso: marcar/desmarcar un ticket como facturado.
 ### Constructor
 
 > **new MarcarFacturacionService**(`tickets`, `ids`, `clock`, `webhooks`): `MarcarFacturacionService`
-
-Defined in: application/tickets/MarcarFacturacionService.ts:11
 
 #### Parameters
 
@@ -45,8 +41,6 @@ Defined in: application/tickets/MarcarFacturacionService.ts:11
 ### ejecutar()
 
 > **ejecutar**(`input`): `Promise`\<`void`\>
-
-Defined in: application/tickets/MarcarFacturacionService.ts:18
 
 #### Parameters
 

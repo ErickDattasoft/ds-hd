@@ -13,6 +13,18 @@
   --brand-hover: #115e59;
   --accent: #0e7490;
 }
+:root[data-role="soporte"] {
+  --brand: #0369a1;
+  --brand-hover: #075985;
+  --accent: #0284c7;
+  --brand-weak: color-mix(in srgb, #0369a1 12%, var(--color-surface));
+}
+:root[data-role="ventas"] {
+  --brand: #047857;
+  --brand-hover: #065f46;
+  --accent: #059669;
+  --brand-weak: color-mix(in srgb, #047857 12%, var(--color-surface));
+}
 :root[data-role="agente"] {
   --brand: #1d4ed8;
   --brand-hover: #1e40af;

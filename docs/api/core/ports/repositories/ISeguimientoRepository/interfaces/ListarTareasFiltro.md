@@ -6,8 +6,6 @@
 
 # Interface: ListarTareasFiltro
 
-Defined in: core/ports/repositories/ISeguimientoRepository.ts:12
-
 Filtros para listar tareas.
 
 ## Properties
@@ -16,20 +14,14 @@ Filtros para listar tareas.
 
 > `optional` **asignadoAUid?**: `string`
 
-Defined in: core/ports/repositories/ISeguimientoRepository.ts:13
-
 ***
 
 ### completada?
 
 > `optional` **completada?**: `boolean`
 
-Defined in: core/ports/repositories/ISeguimientoRepository.ts:14
-
 ***
 
 ### empresaId?
 
 > `optional` **empresaId?**: `string`
-
-Defined in: core/ports/repositories/ISeguimientoRepository.ts:15

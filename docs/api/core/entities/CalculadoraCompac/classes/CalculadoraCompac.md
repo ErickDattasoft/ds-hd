@@ -6,8 +6,6 @@
 
 # Class: CalculadoraCompac
 
-Defined in: core/entities/CalculadoraCompac.ts:65
-
 Calculadora de licenciamiento Compac/CONTPAQi. Regla base: en cada equipo, el sistema más
 caro se cobra a "precioPrimero" y los demás a "precioAdicional". SQL es un complemento
 aparte por equipo (según tipo).
@@ -27,8 +25,6 @@ aparte por equipo (según tipo).
 ### calcular()
 
 > `static` **calcular**(`equipos`, `config`): [`ResultadoCalculadora`](../interfaces/ResultadoCalculadora.md)
-
-Defined in: core/entities/CalculadoraCompac.ts:66
 
 #### Parameters
 

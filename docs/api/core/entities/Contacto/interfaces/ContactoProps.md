@@ -6,8 +6,6 @@
 
 # Interface: ContactoProps
 
-Defined in: core/entities/Contacto.ts:5
-
 Props para construir un [Contacto](../classes/Contacto.md).
 
 ## Properties
@@ -16,15 +14,11 @@ Props para construir un [Contacto](../classes/Contacto.md).
 
 > **id**: `string`
 
-Defined in: core/entities/Contacto.ts:6
-
 ***
 
 ### nombre
 
 > **nombre**: `string`
-
-Defined in: core/entities/Contacto.ts:7
 
 ***
 
@@ -32,15 +26,11 @@ Defined in: core/entities/Contacto.ts:7
 
 > **empresaId**: `string`
 
-Defined in: core/entities/Contacto.ts:8
-
 ***
 
 ### puesto?
 
 > `optional` **puesto?**: `string` \| `null`
-
-Defined in: core/entities/Contacto.ts:9
 
 ***
 
@@ -48,15 +38,11 @@ Defined in: core/entities/Contacto.ts:9
 
 > `optional` **email?**: `string` \| `null`
 
-Defined in: core/entities/Contacto.ts:10
-
 ***
 
 ### telefono?
 
 > `optional` **telefono?**: `string` \| `null`
-
-Defined in: core/entities/Contacto.ts:11
 
 ***
 
@@ -64,15 +50,11 @@ Defined in: core/entities/Contacto.ts:11
 
 > `optional` **celular?**: `string` \| `null`
 
-Defined in: core/entities/Contacto.ts:12
-
 ***
 
 ### esPortal?
 
 > `optional` **esPortal?**: `boolean`
-
-Defined in: core/entities/Contacto.ts:14
 
 Si el contacto tiene (o tendrá) acceso al portal de clientes.
 
@@ -82,8 +64,6 @@ Si el contacto tiene (o tendrá) acceso al portal de clientes.
 
 > `optional` **uid?**: `string` \| `null`
 
-Defined in: core/entities/Contacto.ts:16
-
 uid de la cuenta de portal vinculada, si existe.
 
 ***
@@ -92,15 +72,11 @@ uid de la cuenta de portal vinculada, si existe.
 
 > `optional` **notas?**: `string` \| `null`
 
-Defined in: core/entities/Contacto.ts:17
-
 ***
 
 ### activo?
 
 > `optional` **activo?**: `boolean`
-
-Defined in: core/entities/Contacto.ts:18
 
 ***
 
@@ -108,12 +84,8 @@ Defined in: core/entities/Contacto.ts:18
 
 > `optional` **createdAt?**: `Date`
 
-Defined in: core/entities/Contacto.ts:19
-
 ***
 
 ### updatedAt?
 
 > `optional` **updatedAt?**: `Date`
-
-Defined in: core/entities/Contacto.ts:20

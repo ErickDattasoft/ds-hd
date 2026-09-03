@@ -6,17 +6,21 @@
 
 # Interface: ListarUsuariosFiltro
 
-Defined in: core/ports/repositories/IUsuarioRepository.ts:5
-
 Filtros para listar usuarios.
 
 ## Properties
 
 ### rol?
 
-> `optional` **rol?**: `"admin"` \| `"supervisor"` \| `"agente"` \| `"lectura"` \| `"cliente"`
+> `optional` **rol?**: `"admin"` \| `"supervisor"` \| `"soporte"` \| `"ventas"` \| `"agente"` \| `"lectura"` \| `"cliente"`
 
-Defined in: core/ports/repositories/IUsuarioRepository.ts:6
+***
+
+### roles?
+
+> `optional` **roles?**: readonly (`"admin"` \| `"supervisor"` \| `"soporte"` \| `"ventas"` \| `"agente"` \| `"lectura"` \| `"cliente"`)[]
+
+Varios roles a la vez (OR). Se combina con `activo`/`empresaId`; ignora `rol` si viene.
 
 ***
 
@@ -24,22 +28,16 @@ Defined in: core/ports/repositories/IUsuarioRepository.ts:6
 
 > `optional` **activo?**: `boolean`
 
-Defined in: core/ports/repositories/IUsuarioRepository.ts:7
-
 ***
 
 ### empresaId?
 
 > `optional` **empresaId?**: `string`
 
-Defined in: core/ports/repositories/IUsuarioRepository.ts:8
-
 ***
 
 ### texto?
 
 > `optional` **texto?**: `string`
-
-Defined in: core/ports/repositories/IUsuarioRepository.ts:10
 
 Búsqueda simple por nombre/correo (contains, case-insensitive).

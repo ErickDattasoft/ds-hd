@@ -6,8 +6,6 @@
 
 # Class: EmpresaService
 
-Defined in: application/empresas/EmpresaService.ts:22
-
 Gestión de empresas (CRUD + archivar).
 
 ## Constructors
@@ -15,8 +13,6 @@ Gestión de empresas (CRUD + archivar).
 ### Constructor
 
 > **new EmpresaService**(`repo`, `ids`, `clock`, `bitacora`): `EmpresaService`
-
-Defined in: application/empresas/EmpresaService.ts:23
 
 #### Parameters
 
@@ -46,8 +42,6 @@ Defined in: application/empresas/EmpresaService.ts:23
 
 > **listar**(`filtro?`): `Promise`\<[`Empresa`](../../../../core/entities/Empresa/classes/Empresa.md)[]\>
 
-Defined in: application/empresas/EmpresaService.ts:30
-
 #### Parameters
 
 ##### filtro?
@@ -64,8 +58,6 @@ Defined in: application/empresas/EmpresaService.ts:30
 
 > **obtener**(`id`): `Promise`\<[`Empresa`](../../../../core/entities/Empresa/classes/Empresa.md)\>
 
-Defined in: application/empresas/EmpresaService.ts:34
-
 #### Parameters
 
 ##### id
@@ -81,8 +73,6 @@ Defined in: application/empresas/EmpresaService.ts:34
 ### crear()
 
 > **crear**(`actor`, `datos`): `Promise`\<[`Empresa`](../../../../core/entities/Empresa/classes/Empresa.md)\>
-
-Defined in: application/empresas/EmpresaService.ts:46
 
 #### Parameters
 
@@ -103,8 +93,6 @@ Defined in: application/empresas/EmpresaService.ts:46
 ### actualizar()
 
 > **actualizar**(`actor`, `id`, `datos`): `Promise`\<[`Empresa`](../../../../core/entities/Empresa/classes/Empresa.md)\>
-
-Defined in: application/empresas/EmpresaService.ts:69
 
 #### Parameters
 
@@ -129,8 +117,6 @@ Defined in: application/empresas/EmpresaService.ts:69
 ### archivar()
 
 > **archivar**(`actor`, `id`, `archivar`): `Promise`\<`void`\>
-
-Defined in: application/empresas/EmpresaService.ts:97
 
 #### Parameters
 

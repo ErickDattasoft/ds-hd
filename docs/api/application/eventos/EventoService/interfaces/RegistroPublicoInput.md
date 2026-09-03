@@ -6,8 +6,6 @@
 
 # Interface: RegistroPublicoInput
 
-Defined in: application/eventos/EventoService.ts:30
-
 Datos del formulario público de registro a un evento/webinar.
 
 ## Properties
@@ -16,15 +14,11 @@ Datos del formulario público de registro a un evento/webinar.
 
 > **eventoId**: `string`
 
-Defined in: application/eventos/EventoService.ts:31
-
 ***
 
 ### nombre
 
 > **nombre**: `string`
-
-Defined in: application/eventos/EventoService.ts:32
 
 ***
 
@@ -32,15 +26,11 @@ Defined in: application/eventos/EventoService.ts:32
 
 > **email**: `string`
 
-Defined in: application/eventos/EventoService.ts:33
-
 ***
 
 ### telefono?
 
 > `optional` **telefono?**: `string`
-
-Defined in: application/eventos/EventoService.ts:34
 
 ***
 
@@ -48,20 +38,14 @@ Defined in: application/eventos/EventoService.ts:34
 
 > `optional` **empresa?**: `string`
 
-Defined in: application/eventos/EventoService.ts:35
-
 ***
 
 ### captchaToken?
 
 > `optional` **captchaToken?**: `string`
 
-Defined in: application/eventos/EventoService.ts:36
-
 ***
 
 ### ip?
 
 > `optional` **ip?**: `string`
-
-Defined in: application/eventos/EventoService.ts:37

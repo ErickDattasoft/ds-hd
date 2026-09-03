@@ -6,8 +6,6 @@
 
 # Interface: PerfilAgente
 
-Defined in: core/entities/Usuario.ts:5
-
 Datos de perfil de agente técnico (solo relevantes cuando `rol === 'agente'`).
 
 ## Properties
@@ -15,8 +13,6 @@ Datos de perfil de agente técnico (solo relevantes cuando `rol === 'agente'`).
 ### grupo
 
 > **grupo**: `string` \| `null`
-
-Defined in: core/entities/Usuario.ts:7
 
 Grupo/cola al que pertenece (Soporte, Ventas…).
 
@@ -26,8 +22,6 @@ Grupo/cola al que pertenece (Soporte, Ventas…).
 
 > **capacidadMax**: `number`
 
-Defined in: core/entities/Usuario.ts:9
-
 Máximo de tickets abiertos que se le pueden asignar (0 = sin límite).
 
 ***
@@ -35,7 +29,5 @@ Máximo de tickets abiertos que se le pueden asignar (0 = sin límite).
 ### disponibleAsignacion
 
 > **disponibleAsignacion**: `boolean`
-
-Defined in: core/entities/Usuario.ts:11
 
 Si está disponible para recibir asignaciones nuevas.

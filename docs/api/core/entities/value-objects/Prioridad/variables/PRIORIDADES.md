@@ -7,5 +7,3 @@
 # Variable: PRIORIDADES
 
 > `const` **PRIORIDADES**: readonly \[`"Baja"`, `"Media"`, `"Alta"`, `"Urgente"`\]
-
-Defined in: core/entities/value-objects/Prioridad.ts:3

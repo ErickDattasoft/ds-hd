@@ -34,24 +34,34 @@ const actorSistema: SessionUser = {
   permisos: ['tickets:crear', 'empresas:crear', 'contactos:crear'],
 };
 
-async function agente(email: string, nombre: string, grupo: string) {
+async function staff(
+  email: string,
+  nombre: string,
+  rol: 'agente' | 'soporte' | 'ventas',
+  password: string,
+  grupo?: string,
+) {
   if (await usuarios.findByEmail(email)) return;
-  const { uid } = await auth.createAccount({ email, password: 'agente12345', nombre });
-  await auth.setRoleClaim(uid, 'agente');
+  const { uid } = await auth.createAccount({ email, password, nombre });
+  await auth.setRoleClaim(uid, rol);
   await usuarios.save(
     new Usuario({
       uid,
       email,
       nombre,
-      rol: 'agente',
-      agente: { grupo, capacidadMax: 5, disponibleAsignacion: true },
+      rol,
+      ...(grupo
+        ? { agente: { grupo, capacidadMax: 5, disponibleAsignacion: true } }
+        : {}),
     }),
   );
-  console.log(`Agente: ${email} / agente12345`);
+  console.log(`Staff (${rol}): ${email} / ${password}`);
 }
 
-await agente('ana@dattasoft.mx', 'Ana Soporte', 'Soporte');
-await agente('beto@dattasoft.mx', 'Beto Sistemas', 'Sistemas');
+await staff('ana@dattasoft.mx', 'Ana Soporte', 'agente', 'agente12345', 'Soporte');
+await staff('beto@dattasoft.mx', 'Beto Sistemas', 'agente', 'agente12345', 'Sistemas');
+await staff('soporte@dattasoft.mx', 'Sofía Soporte', 'soporte', 'soporte12345', 'Soporte');
+await staff('ventas@dattasoft.mx', 'Valeria Ventas', 'ventas', 'ventas12345');
 
 const EMPRESA_DEMO = 'Comercializadora Demo SA de CV';
 let empresaDemo = (await empresas.listar()).find((e) => e.nombre === EMPRESA_DEMO);

@@ -10,19 +10,22 @@
   {% if errores.general %}<p class="alert alert--error">{{ errores.general }}</p>{% endif %}
 
   {% if can('seguimiento:gestionar') %}
-    <form method="post" action="/app/tareas" class="form form--wide card">
-      <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
-      <label class="field"><span>Título</span><input name="titulo" required />
-        {% if errores.titulo %}<em class="field__error">{{ errores.titulo }}</em>{% endif %}</label>
-      <label class="field"><span>Descripción</span><textarea name="descripcion" rows="2"></textarea></label>
-      <div class="filterbar">
-        <select name="asignadoAUid">
-          {% for u in staff %}<option value="{{ u.uid }}" {{ 'selected' if u.uid == user.uid }}>{{ u.nombre }}</option>{% endfor %}
-        </select>
-        <input type="date" name="vence" />
-        <button class="btn btn--sm" type="submit">Crear tarea</button>
-      </div>
-    </form>
+    <details class="disclosure"{{ ' open' if errores.titulo }}>
+      <summary class="disclosure__summary">➕ Nueva tarea</summary>
+      <form method="post" action="/app/tareas" class="form form--wide disclosure__body">
+        <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+        <label class="field"><span>Título</span><input name="titulo" required />
+          {% if errores.titulo %}<em class="field__error">{{ errores.titulo }}</em>{% endif %}</label>
+        <label class="field"><span>Descripción</span><textarea name="descripcion" rows="2"></textarea></label>
+        <div class="filterbar">
+          <select name="asignadoAUid">
+            {% for u in staff %}<option value="{{ u.uid }}" {{ 'selected' if u.uid == user.uid }}>{{ u.nombre }}</option>{% endfor %}
+          </select>
+          <input type="date" name="vence" />
+          <button class="btn btn--sm" type="submit">Crear tarea</button>
+        </div>
+      </form>
+    </details>
   {% endif %}
 
   <table class="data-table">

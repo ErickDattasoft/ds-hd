@@ -6,8 +6,6 @@
 
 # Class: AsignarAgenteService
 
-Defined in: application/tickets/AsignarAgenteService.ts:15
-
 Caso de uso: asignar un ticket a un agente técnico, respetando su capacidad.
 
 ## Constructors
@@ -15,8 +13,6 @@ Caso de uso: asignar un ticket a un agente técnico, respetando su capacidad.
 ### Constructor
 
 > **new AsignarAgenteService**(`tickets`, `queries`, `usuarios`, `ids`, `clock`, `email`, `webhooks`, `logger`): `AsignarAgenteService`
-
-Defined in: application/tickets/AsignarAgenteService.ts:16
 
 #### Parameters
 
@@ -61,8 +57,6 @@ Defined in: application/tickets/AsignarAgenteService.ts:16
 ### ejecutar()
 
 > **ejecutar**(`input`): `Promise`\<[`Ticket`](../../../../core/entities/Ticket/classes/Ticket.md)\>
-
-Defined in: application/tickets/AsignarAgenteService.ts:27
 
 #### Parameters
 

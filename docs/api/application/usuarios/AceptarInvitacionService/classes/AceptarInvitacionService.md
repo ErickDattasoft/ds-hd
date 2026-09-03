@@ -6,8 +6,6 @@
 
 # Class: AceptarInvitacionService
 
-Defined in: application/usuarios/AceptarInvitacionService.ts:16
-
 Caso de uso: el invitado abre el enlace y fija su contraseña.
 
 ## Constructors
@@ -15,8 +13,6 @@ Caso de uso: el invitado abre el enlace y fija su contraseña.
 ### Constructor
 
 > **new AceptarInvitacionService**(`invitaciones`, `usuarios`, `auth`, `clock`, `logger`): `AceptarInvitacionService`
-
-Defined in: application/usuarios/AceptarInvitacionService.ts:17
 
 #### Parameters
 
@@ -49,8 +45,6 @@ Defined in: application/usuarios/AceptarInvitacionService.ts:17
 ### ejecutar()
 
 > **ejecutar**(`input`): `Promise`\<\{ `email`: `string`; \}\>
-
-Defined in: application/usuarios/AceptarInvitacionService.ts:25
 
 #### Parameters
 

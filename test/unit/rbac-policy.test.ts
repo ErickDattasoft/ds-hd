@@ -40,6 +40,24 @@ describe('catálogo de permisos y roles', () => {
   it('cliente solo tiene permisos de portal', () => {
     expect([...ROLE_PERMISSIONS.cliente]).toEqual(['portal:tickets', 'portal:perfil']);
   });
+
+  it('soporte trabaja tickets pero no ve nada comercial', () => {
+    const soporte = new Set(ROLE_PERMISSIONS.soporte);
+    expect(soporte.has('tickets:leer')).toBe(true);
+    expect(soporte.has('tickets:asignar')).toBe(true);
+    expect(soporte.has('cotizaciones:leer')).toBe(false);
+    expect(soporte.has('seguimiento:gestionar')).toBe(false);
+    expect(soporte.has('empresas:crear')).toBe(false);
+  });
+
+  it('ventas gestiona lo comercial pero no la cola de soporte', () => {
+    const ventas = new Set(ROLE_PERMISSIONS.ventas);
+    expect(ventas.has('cotizaciones:crear')).toBe(true);
+    expect(ventas.has('empresas:editar')).toBe(true);
+    expect(ventas.has('seguimiento:gestionar')).toBe(true);
+    expect(ventas.has('tickets:leer')).toBe(false);
+    expect(ventas.has('tickets:crear')).toBe(false);
+  });
 });
 
 describe('permisosEfectivos', () => {

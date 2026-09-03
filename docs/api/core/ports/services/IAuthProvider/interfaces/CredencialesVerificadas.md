@@ -6,8 +6,6 @@
 
 # Interface: CredencialesVerificadas
 
-Defined in: core/ports/services/IAuthProvider.ts:2
-
 Resultado de verificar credenciales.
 
 ## Properties
@@ -16,12 +14,8 @@ Resultado de verificar credenciales.
 
 > **uid**: `string`
 
-Defined in: core/ports/services/IAuthProvider.ts:3
-
 ***
 
 ### email
 
 > **email**: `string`
-
-Defined in: core/ports/services/IAuthProvider.ts:4

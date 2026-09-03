@@ -6,8 +6,6 @@
 
 # Interface: IKnowledgeRepository
 
-Defined in: core/ports/repositories/IKnowledgeRepository.ts:11
-
 Persistencia de la base de conocimiento (`knowledge_base/{id}`).
 
 ## Methods
@@ -15,8 +13,6 @@ Persistencia de la base de conocimiento (`knowledge_base/{id}`).
 ### findById()
 
 > **findById**(`id`): `Promise`\<[`ArticuloKB`](../../../../entities/ArticuloKB/classes/ArticuloKB.md) \| `null`\>
-
-Defined in: core/ports/repositories/IKnowledgeRepository.ts:12
 
 #### Parameters
 
@@ -34,8 +30,6 @@ Defined in: core/ports/repositories/IKnowledgeRepository.ts:12
 
 > **findBySlug**(`slug`): `Promise`\<[`ArticuloKB`](../../../../entities/ArticuloKB/classes/ArticuloKB.md) \| `null`\>
 
-Defined in: core/ports/repositories/IKnowledgeRepository.ts:13
-
 #### Parameters
 
 ##### slug
@@ -51,8 +45,6 @@ Defined in: core/ports/repositories/IKnowledgeRepository.ts:13
 ### list()
 
 > **list**(`filtro?`): `Promise`\<[`ArticuloKB`](../../../../entities/ArticuloKB/classes/ArticuloKB.md)[]\>
-
-Defined in: core/ports/repositories/IKnowledgeRepository.ts:14
 
 #### Parameters
 
@@ -70,8 +62,6 @@ Defined in: core/ports/repositories/IKnowledgeRepository.ts:14
 
 > **save**(`articulo`): `Promise`\<`void`\>
 
-Defined in: core/ports/repositories/IKnowledgeRepository.ts:15
-
 #### Parameters
 
 ##### articulo
@@ -87,8 +77,6 @@ Defined in: core/ports/repositories/IKnowledgeRepository.ts:15
 ### eliminar()
 
 > **eliminar**(`id`): `Promise`\<`void`\>
-
-Defined in: core/ports/repositories/IKnowledgeRepository.ts:16
 
 #### Parameters
 

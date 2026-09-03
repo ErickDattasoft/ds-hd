@@ -6,8 +6,6 @@
 
 # Interface: IUsuarioRepository
 
-Defined in: core/ports/repositories/IUsuarioRepository.ts:18
-
 Persistencia de cuentas de usuario (`usuarios/{uid}`).
 Semántica compartida por la implementación Firestore y los fakes de test (LSP):
 los `findBy*` devuelven `null` si no hay coincidencia; `save` hace upsert por `uid`.
@@ -17,8 +15,6 @@ los `findBy*` devuelven `null` si no hay coincidencia; `save` hace upsert por `u
 ### findByUid()
 
 > **findByUid**(`uid`): `Promise`\<[`Usuario`](../../../../entities/Usuario/classes/Usuario.md) \| `null`\>
-
-Defined in: core/ports/repositories/IUsuarioRepository.ts:19
 
 #### Parameters
 
@@ -36,8 +32,6 @@ Defined in: core/ports/repositories/IUsuarioRepository.ts:19
 
 > **findByEmail**(`email`): `Promise`\<[`Usuario`](../../../../entities/Usuario/classes/Usuario.md) \| `null`\>
 
-Defined in: core/ports/repositories/IUsuarioRepository.ts:20
-
 #### Parameters
 
 ##### email
@@ -53,8 +47,6 @@ Defined in: core/ports/repositories/IUsuarioRepository.ts:20
 ### list()
 
 > **list**(`filtro?`): `Promise`\<[`Usuario`](../../../../entities/Usuario/classes/Usuario.md)[]\>
-
-Defined in: core/ports/repositories/IUsuarioRepository.ts:21
 
 #### Parameters
 
@@ -72,8 +64,6 @@ Defined in: core/ports/repositories/IUsuarioRepository.ts:21
 
 > **listAgentesAsignables**(): `Promise`\<[`Usuario`](../../../../entities/Usuario/classes/Usuario.md)[]\>
 
-Defined in: core/ports/repositories/IUsuarioRepository.ts:23
-
 Agentes activos y disponibles para asignación (para dropdowns y panel de carga).
 
 #### Returns
@@ -85,8 +75,6 @@ Agentes activos y disponibles para asignación (para dropdowns y panel de carga)
 ### save()
 
 > **save**(`usuario`): `Promise`\<`void`\>
-
-Defined in: core/ports/repositories/IUsuarioRepository.ts:24
 
 #### Parameters
 
@@ -104,15 +92,13 @@ Defined in: core/ports/repositories/IUsuarioRepository.ts:24
 
 > **countByRol**(`rol`): `Promise`\<`number`\>
 
-Defined in: core/ports/repositories/IUsuarioRepository.ts:26
-
 Cuántos usuarios hay con ese rol (para no dejar el sistema sin ningún admin).
 
 #### Parameters
 
 ##### rol
 
-`"admin"` \| `"supervisor"` \| `"agente"` \| `"lectura"` \| `"cliente"`
+`"admin"` \| `"supervisor"` \| `"soporte"` \| `"ventas"` \| `"agente"` \| `"lectura"` \| `"cliente"`
 
 #### Returns
 
@@ -123,8 +109,6 @@ Cuántos usuarios hay con ese rol (para no dejar el sistema sin ningún admin).
 ### delete()
 
 > **delete**(`uid`): `Promise`\<`void`\>
-
-Defined in: core/ports/repositories/IUsuarioRepository.ts:32
 
 Borra el documento. Solo lo usa la migración, para eliminar el doc placeholder
 (uid = correo) tras reasignarlo al uid real de Firebase Auth; el resto de la app nunca

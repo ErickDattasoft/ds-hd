@@ -6,8 +6,6 @@
 
 # Class: Interaccion
 
-Defined in: core/entities/Interaccion.ts:19
-
 Registro de una interacción comercial con una empresa/contacto (seguimiento).
 
 ## Constructors
@@ -15,8 +13,6 @@ Registro de una interacción comercial con una empresa/contacto (seguimiento).
 ### Constructor
 
 > **new Interaccion**(`props`): `Interaccion`
-
-Defined in: core/entities/Interaccion.ts:30
 
 #### Parameters
 
@@ -34,15 +30,11 @@ Defined in: core/entities/Interaccion.ts:30
 
 > `readonly` **id**: `string`
 
-Defined in: core/entities/Interaccion.ts:20
-
 ***
 
 ### empresaId
 
 > `readonly` **empresaId**: `string`
-
-Defined in: core/entities/Interaccion.ts:21
 
 ***
 
@@ -50,15 +42,11 @@ Defined in: core/entities/Interaccion.ts:21
 
 > `readonly` **contactoId**: `string` \| `null`
 
-Defined in: core/entities/Interaccion.ts:22
-
 ***
 
 ### tipo
 
 > `readonly` **tipo**: [`TipoInteraccion`](../type-aliases/TipoInteraccion.md)
-
-Defined in: core/entities/Interaccion.ts:23
 
 ***
 
@@ -66,15 +54,11 @@ Defined in: core/entities/Interaccion.ts:23
 
 > `readonly` **fecha**: `Date`
 
-Defined in: core/entities/Interaccion.ts:24
-
 ***
 
 ### resumen
 
 > `readonly` **resumen**: `string`
-
-Defined in: core/entities/Interaccion.ts:25
 
 ***
 
@@ -82,20 +66,14 @@ Defined in: core/entities/Interaccion.ts:25
 
 > `readonly` **creadoPorUid**: `string` \| `null`
 
-Defined in: core/entities/Interaccion.ts:26
-
 ***
 
 ### creadoPorNombre
 
 > `readonly` **creadoPorNombre**: `string` \| `null`
 
-Defined in: core/entities/Interaccion.ts:27
-
 ***
 
 ### createdAt
 
 > `readonly` **createdAt**: `Date`
-
-Defined in: core/entities/Interaccion.ts:28

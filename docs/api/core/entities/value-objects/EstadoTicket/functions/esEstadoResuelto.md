@@ -8,8 +8,6 @@
 
 > **esEstadoResuelto**(`estado`): `boolean`
 
-Defined in: core/entities/value-objects/EstadoTicket.ts:51
-
 ¿Estado que marca el ticket como resuelto?
 
 ## Parameters

@@ -6,8 +6,6 @@
 
 # Interface: Metricas
 
-Defined in: application/dashboard/ObtenerMetricasService.ts:10
-
 Snapshot de métricas del dashboard, ya acotado al alcance de permisos del actor.
 
 ## Properties
@@ -15,8 +13,6 @@ Snapshot de métricas del dashboard, ya acotado al alcance de permisos del actor
 ### tickets
 
 > **tickets**: `object`
-
-Defined in: application/dashboard/ObtenerMetricasService.ts:11
 
 #### abiertos
 
@@ -48,8 +44,6 @@ Defined in: application/dashboard/ObtenerMetricasService.ts:11
 
 > **cotizaciones**: `object`
 
-Defined in: application/dashboard/ObtenerMetricasService.ts:19
-
 #### porEstado
 
 > **porEstado**: `object`[]
@@ -64,15 +58,11 @@ Defined in: application/dashboard/ObtenerMetricasService.ts:19
 
 > **misTareasPendientes**: `number`
 
-Defined in: application/dashboard/ObtenerMetricasService.ts:20
-
 ***
 
 ### proximosEventos
 
 > **proximosEventos**: `object`[]
-
-Defined in: application/dashboard/ObtenerMetricasService.ts:21
 
 #### id
 
@@ -91,8 +81,6 @@ Defined in: application/dashboard/ObtenerMetricasService.ts:21
 ### actividadReciente
 
 > **actividadReciente**: `object`[]
-
-Defined in: application/dashboard/ObtenerMetricasService.ts:22
 
 #### at
 

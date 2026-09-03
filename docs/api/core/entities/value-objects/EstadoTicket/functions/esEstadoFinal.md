@@ -8,8 +8,6 @@
 
 > **esEstadoFinal**(`estado`): `boolean`
 
-Defined in: core/entities/value-objects/EstadoTicket.ts:46
-
 ¿Estado final (resuelto o cerrado)?
 
 ## Parameters

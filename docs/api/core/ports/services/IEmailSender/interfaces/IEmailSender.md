@@ -6,8 +6,6 @@
 
 # Interface: IEmailSender
 
-Defined in: core/ports/services/IEmailSender.ts:18
-
 Puerto de envío de correo transaccional (hoy: Brevo). En desarrollo/tests se usa
 un fake que solo registra los correos en memoria.
 
@@ -16,8 +14,6 @@ un fake que solo registra los correos en memoria.
 ### enviar()
 
 > **enviar**(`correo`): `Promise`\<`void`\>
-
-Defined in: core/ports/services/IEmailSender.ts:19
 
 #### Parameters
 

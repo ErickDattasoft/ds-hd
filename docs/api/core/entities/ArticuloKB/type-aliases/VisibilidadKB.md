@@ -7,5 +7,3 @@
 # Type Alias: VisibilidadKB
 
 > **VisibilidadKB** = `"staff"` \| `"portal"` \| `"publico"`
-
-Defined in: core/entities/ArticuloKB.ts:3

@@ -4,7 +4,7 @@
 {% block content %}
   <div class="page-head">
     <h1>#{{ ticket.numero }} — {{ ticket.asunto }}</h1>
-    <a class="btn btn--sm btn--ghost" href="/app/tickets">← Tickets</a>
+    <a class="btn btn--sm btn--ghost" href="/app/tickets">← Volver</a>
   </div>
 
   <div class="ticket-grid">
@@ -39,12 +39,14 @@
         {% endif %}
       </div>
 
-      <div class="card">
-        <p><strong>Actividad</strong></p>
-        <ul class="timeline">
-          {% for e in eventos %}<li><span class="muted">{{ e.at | fechahora }}</span> — {{ e.resumen }}{% if e.actorNombre %} ({{ e.actorNombre }}){% endif %}</li>{% endfor %}
-        </ul>
-      </div>
+      <details class="disclosure">
+        <summary class="disclosure__summary">Historial de actividad</summary>
+        <div class="disclosure__body">
+          <ul class="timeline">
+            {% for e in eventos %}<li><span class="muted">{{ e.at | fechahora }}</span> — {{ e.resumen }}{% if e.actorNombre %} ({{ e.actorNombre }}){% endif %}</li>{% endfor %}
+          </ul>
+        </div>
+      </details>
     </section>
 
     <aside class="ticket-side">
@@ -72,27 +74,33 @@
       {% endif %}
 
       {% if permisos.asignar %}
-        <form method="post" action="/app/tickets/{{ ticket.id }}/asignar" class="card form">
-          <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
-          <label class="field"><span>Asignar a</span>
-            <select name="agenteUid">
-              {% for a in agentes %}<option value="{{ a.uid }}" {{ 'selected' if a.uid == ticket.agenteAsignadoUid }}>{{ a.nombre }}</option>{% endfor %}
-            </select>
-          </label>
-          <label class="field--check"><input type="checkbox" name="forzar" /> <span>Ignorar límite de capacidad</span></label>
-          <button class="btn btn--sm" type="submit">Asignar</button>
-        </form>
+        <details class="disclosure"{{ ' open' if not ticket.agenteAsignadoUid }}>
+          <summary class="disclosure__summary">Asignación <span class="disclosure__hint">— {{ ticket.agenteAsignadoNombre or 'sin asignar' }}</span></summary>
+          <form method="post" action="/app/tickets/{{ ticket.id }}/asignar" class="form">
+            <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+            <label class="field"><span>Asignar a</span>
+              <select name="agenteUid">
+                {% for a in agentes %}<option value="{{ a.uid }}" {{ 'selected' if a.uid == ticket.agenteAsignadoUid }}>{{ a.nombre }}</option>{% endfor %}
+              </select>
+            </label>
+            <label class="field--check"><input type="checkbox" name="forzar" /> <span>Ignorar límite de capacidad</span></label>
+            <button class="btn btn--sm" type="submit">Asignar</button>
+          </form>
+        </details>
       {% endif %}
 
       {% if permisos.editar %}
-        <form method="post" action="/app/tickets/{{ ticket.id }}/facturar" class="card form">
-          <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
-          <label class="field--check">
-            <input type="checkbox" name="facturado" {{ 'checked' if ticket.facturacion.facturado }} />
-            <span>Facturado</span>
-          </label>
-          <button class="btn btn--sm" type="submit">Guardar</button>
-        </form>
+        <details class="disclosure">
+          <summary class="disclosure__summary">Facturación <span class="disclosure__hint">— {{ 'facturado' if ticket.facturacion.facturado else 'pendiente' }}</span></summary>
+          <form method="post" action="/app/tickets/{{ ticket.id }}/facturar" class="form">
+            <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+            <label class="field--check">
+              <input type="checkbox" name="facturado" {{ 'checked' if ticket.facturacion.facturado }} />
+              <span>Marcar como facturado</span>
+            </label>
+            <button class="btn btn--sm" type="submit">Guardar</button>
+          </form>
+        </details>
       {% endif %}
     </aside>
   </div>

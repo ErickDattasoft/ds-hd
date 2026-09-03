@@ -15,7 +15,7 @@ export interface FlowStep {
 }
 
 export interface Flow {
-  rol: 'admin' | 'agente' | 'cliente';
+  rol: 'admin' | 'soporte' | 'ventas' | 'agente' | 'cliente';
   email: string;
   password: string;
   pasos: FlowStep[];
@@ -50,6 +50,25 @@ export const FLOWS: Flow[] = [
     email: 'ana@dattasoft.mx',
     password: 'agente12345',
     pasos: [{ modulo: 'tickets', paso: 'mis-asignados', ruta: '/app/tickets/mis-asignados' }],
+  },
+  {
+    rol: 'soporte',
+    email: 'soporte@dattasoft.mx',
+    password: 'soporte12345',
+    pasos: [
+      { modulo: 'tickets', paso: 'soporte-lista', ruta: '/app/tickets' },
+      { modulo: 'base-conocimiento', paso: 'soporte', ruta: '/app/kb' },
+    ],
+  },
+  {
+    rol: 'ventas',
+    email: 'ventas@dattasoft.mx',
+    password: 'ventas12345',
+    pasos: [
+      { modulo: 'empresas-contactos', paso: 'ventas', ruta: '/app/empresas' },
+      { modulo: 'cotizaciones', paso: 'ventas-lista', ruta: '/app/cotizaciones' },
+      { modulo: 'seguimiento-comercial', paso: 'ventas-tareas', ruta: '/app/tareas' },
+    ],
   },
   {
     rol: 'cliente',

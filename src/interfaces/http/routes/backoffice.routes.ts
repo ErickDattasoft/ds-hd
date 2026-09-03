@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import type { Container } from '../../../config/container.js';
 import { requireAuth, requireStaff, requirePermission } from '../middlewares/authz.js';
-import { construirNav } from '../view-helpers/nav.js';
+import { construirNavSecciones } from '../view-helpers/nav.js';
 
 /** Rutas del back-office (`/app`). Requiere sesión de staff. */
 export function backofficeRoutes(container: Container): Router {
@@ -23,7 +23,7 @@ export function backofficeRoutes(container: Container): Router {
 
   r.use(requireAuth, requireStaff);
   r.use((req, res, next) => {
-    res.locals.nav = construirNav(req.user!);
+    res.locals.navSecciones = construirNavSecciones(req.user!);
     res.locals.area = 'backoffice';
     next();
   });

@@ -6,8 +6,6 @@
 
 # Interface: ITicketQueries
 
-Defined in: core/ports/repositories/ITicketQueries.ts:38
-
 Lado consulta (lectura) de tickets: listados, tablero y agregados.
 
 ## Methods
@@ -15,8 +13,6 @@ Lado consulta (lectura) de tickets: listados, tablero y agregados.
 ### listar()
 
 > **listar**(`filtro`): `Promise`\<[`Ticket`](../../../../entities/Ticket/classes/Ticket.md)[]\>
-
-Defined in: core/ports/repositories/ITicketQueries.ts:39
 
 #### Parameters
 
@@ -34,8 +30,6 @@ Defined in: core/ports/repositories/ITicketQueries.ts:39
 
 > **contar**(`filtro`): `Promise`\<`number`\>
 
-Defined in: core/ports/repositories/ITicketQueries.ts:40
-
 #### Parameters
 
 ##### filtro
@@ -51,8 +45,6 @@ Defined in: core/ports/repositories/ITicketQueries.ts:40
 ### tablero()
 
 > **tablero**(`filtro`, `estados`): `Promise`\<[`ColumnaKanban`](ColumnaKanban.md)[]\>
-
-Defined in: core/ports/repositories/ITicketQueries.ts:41
 
 #### Parameters
 
@@ -73,8 +65,6 @@ readonly `string`[]
 ### cargaPorAgente()
 
 > **cargaPorAgente**(`agentes`, `ahora`): `Promise`\<[`CargaAgente`](CargaAgente.md)[]\>
-
-Defined in: core/ports/repositories/ITicketQueries.ts:42
 
 #### Parameters
 

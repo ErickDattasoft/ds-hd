@@ -6,8 +6,6 @@
 
 # Class: KnowledgeService
 
-Defined in: application/knowledge/KnowledgeService.ts:22
-
 Base de conocimiento: gestión (staff) y consulta (staff / portal / público).
 
 ## Constructors
@@ -15,8 +13,6 @@ Base de conocimiento: gestión (staff) y consulta (staff / portal / público).
 ### Constructor
 
 > **new KnowledgeService**(`repo`, `ids`, `clock`, `bitacora`): `KnowledgeService`
-
-Defined in: application/knowledge/KnowledgeService.ts:23
 
 #### Parameters
 
@@ -46,8 +42,6 @@ Defined in: application/knowledge/KnowledgeService.ts:23
 
 > **listarVisibles**(`ctx`, `filtro?`): `Promise`\<[`ArticuloKB`](../../../../core/entities/ArticuloKB/classes/ArticuloKB.md)[]\>
 
-Defined in: application/knowledge/KnowledgeService.ts:31
-
 Lista visible para un contexto dado (aplica publicado + visibilidad).
 
 #### Parameters
@@ -70,8 +64,6 @@ Lista visible para un contexto dado (aplica publicado + visibilidad).
 
 > **verVisible**(`ctx`, `idOSlug`): `Promise`\<[`ArticuloKB`](../../../../core/entities/ArticuloKB/classes/ArticuloKB.md)\>
 
-Defined in: application/knowledge/KnowledgeService.ts:36
-
 #### Parameters
 
 ##### ctx
@@ -92,8 +84,6 @@ Defined in: application/knowledge/KnowledgeService.ts:36
 
 > **obtenerParaEditar**(`actor`, `id`): `Promise`\<[`ArticuloKB`](../../../../core/entities/ArticuloKB/classes/ArticuloKB.md)\>
 
-Defined in: application/knowledge/KnowledgeService.ts:43
-
 #### Parameters
 
 ##### actor
@@ -113,8 +103,6 @@ Defined in: application/knowledge/KnowledgeService.ts:43
 ### guardar()
 
 > **guardar**(`actor`, `datos`, `id?`): `Promise`\<[`ArticuloKB`](../../../../core/entities/ArticuloKB/classes/ArticuloKB.md)\>
-
-Defined in: application/knowledge/KnowledgeService.ts:50
 
 #### Parameters
 
@@ -139,8 +127,6 @@ Defined in: application/knowledge/KnowledgeService.ts:50
 ### eliminar()
 
 > **eliminar**(`actor`, `id`): `Promise`\<`void`\>
-
-Defined in: application/knowledge/KnowledgeService.ts:84
 
 #### Parameters
 

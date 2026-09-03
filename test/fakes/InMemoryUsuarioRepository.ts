@@ -2,7 +2,7 @@ import type {
   IUsuarioRepository,
   ListarUsuariosFiltro,
 } from '../../src/core/ports/repositories/IUsuarioRepository.js';
-import type { Rol } from '../../src/core/entities/value-objects/Rol.js';
+import { esRolTecnico, type Rol } from '../../src/core/entities/value-objects/Rol.js';
 import type { Usuario } from '../../src/core/entities/Usuario.js';
 
 /** Fake en memoria de {@link IUsuarioRepository} con la misma semántica que la impl Firestore. */
@@ -25,7 +25,8 @@ export class InMemoryUsuarioRepository implements IUsuarioRepository {
 
   async list(filtro: ListarUsuariosFiltro = {}): Promise<Usuario[]> {
     let out = [...this.porUid.values()];
-    if (filtro.rol) out = out.filter((u) => u.rol === filtro.rol);
+    if (filtro.roles?.length) out = out.filter((u) => filtro.roles!.includes(u.rol));
+    else if (filtro.rol) out = out.filter((u) => u.rol === filtro.rol);
     if (filtro.activo !== undefined) out = out.filter((u) => u.activo === filtro.activo);
     if (filtro.empresaId) out = out.filter((u) => u.empresaId === filtro.empresaId);
     if (filtro.texto) {
@@ -37,7 +38,7 @@ export class InMemoryUsuarioRepository implements IUsuarioRepository {
 
   async listAgentesAsignables(): Promise<Usuario[]> {
     return [...this.porUid.values()]
-      .filter((u) => u.rol === 'agente' && u.activo && u.agente.disponibleAsignacion)
+      .filter((u) => esRolTecnico(u.rol) && u.activo && u.agente.disponibleAsignacion)
       .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
   }
 

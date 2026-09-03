@@ -6,8 +6,6 @@
 
 # Interface: CambiarEstadoInput
 
-Defined in: application/tickets/dto.ts:27
-
 Datos para transicionar el estado de un ticket, con nota opcional del cambio.
 
 ## Properties
@@ -16,15 +14,11 @@ Datos para transicionar el estado de un ticket, con nota opcional del cambio.
 
 > **actor**: [`SessionUser`](../../../shared/SessionUser/interfaces/SessionUser.md)
 
-Defined in: application/tickets/dto.ts:28
-
 ***
 
 ### ticketId
 
 > **ticketId**: `string`
-
-Defined in: application/tickets/dto.ts:29
 
 ***
 
@@ -32,12 +26,8 @@ Defined in: application/tickets/dto.ts:29
 
 > **nuevoEstado**: `string`
 
-Defined in: application/tickets/dto.ts:30
-
 ***
 
 ### nota?
 
 > `optional` **nota?**: `string`
-
-Defined in: application/tickets/dto.ts:31

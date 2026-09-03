@@ -6,8 +6,6 @@
 
 # Interface: ISessionManager
 
-Defined in: core/ports/services/ISessionManager.ts:15
-
 Emite y verifica la credencial de sesión que va en la cookie `__session`.
 
 Implementación de Fase 1: token propio firmado con `SESSION_COOKIE_SECRET`
@@ -19,8 +17,6 @@ Implementación de Fase 1: token propio firmado con `SESSION_COOKIE_SECRET`
 ### issue()
 
 > **issue**(`claims`): `Promise`\<`string`\>
-
-Defined in: core/ports/services/ISessionManager.ts:16
 
 #### Parameters
 
@@ -37,8 +33,6 @@ Defined in: core/ports/services/ISessionManager.ts:16
 ### verify()
 
 > **verify**(`token`): `Promise`\<[`SessionClaims`](SessionClaims.md) \| `null`\>
-
-Defined in: core/ports/services/ISessionManager.ts:17
 
 #### Parameters
 

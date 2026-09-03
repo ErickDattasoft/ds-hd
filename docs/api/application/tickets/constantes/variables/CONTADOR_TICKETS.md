@@ -8,6 +8,4 @@
 
 > `const` **CONTADOR\_TICKETS**: `"tickets"` = `'tickets'`
 
-Defined in: application/tickets/constantes.ts:2
-
 Nombre del contador de folios de tickets en `contadores/{nombre}`.

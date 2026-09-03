@@ -6,8 +6,6 @@
 
 # Interface: ListarEmpresasFiltro
 
-Defined in: core/ports/repositories/IEmpresaRepository.ts:4
-
 Filtros para listar empresas.
 
 ## Properties
@@ -16,12 +14,8 @@ Filtros para listar empresas.
 
 > `optional` **activa?**: `boolean`
 
-Defined in: core/ports/repositories/IEmpresaRepository.ts:5
-
 ***
 
 ### texto?
 
 > `optional` **texto?**: `string`
-
-Defined in: core/ports/repositories/IEmpresaRepository.ts:6

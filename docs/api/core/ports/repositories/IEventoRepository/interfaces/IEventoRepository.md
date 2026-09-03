@@ -6,8 +6,6 @@
 
 # Interface: IEventoRepository
 
-Defined in: core/ports/repositories/IEventoRepository.ts:5
-
 Persistencia de eventos/webinars (`eventos/{id}`).
 
 ## Methods
@@ -15,8 +13,6 @@ Persistencia de eventos/webinars (`eventos/{id}`).
 ### findById()
 
 > **findById**(`id`): `Promise`\<[`Evento`](../../../../entities/Evento/classes/Evento.md) \| `null`\>
-
-Defined in: core/ports/repositories/IEventoRepository.ts:6
 
 #### Parameters
 
@@ -34,8 +30,6 @@ Defined in: core/ports/repositories/IEventoRepository.ts:6
 
 > **list**(`soloPublicados?`): `Promise`\<[`Evento`](../../../../entities/Evento/classes/Evento.md)[]\>
 
-Defined in: core/ports/repositories/IEventoRepository.ts:7
-
 #### Parameters
 
 ##### soloPublicados?
@@ -51,8 +45,6 @@ Defined in: core/ports/repositories/IEventoRepository.ts:7
 ### proximos()
 
 > **proximos**(`desde`, `hasta`): `Promise`\<[`Evento`](../../../../entities/Evento/classes/Evento.md)[]\>
-
-Defined in: core/ports/repositories/IEventoRepository.ts:9
 
 Eventos publicados cuya fecha cae dentro de la ventana [desde, hasta].
 
@@ -75,8 +67,6 @@ Eventos publicados cuya fecha cae dentro de la ventana [desde, hasta].
 ### save()
 
 > **save**(`evento`): `Promise`\<`void`\>
-
-Defined in: core/ports/repositories/IEventoRepository.ts:10
 
 #### Parameters
 

@@ -6,8 +6,6 @@
 
 # Class: CrearTicketPublicoService
 
-Defined in: application/tickets/CrearTicketPublicoService.ts:27
-
 Caso de uso: alguien sin cuenta levanta un ticket desde el formulario público.
 
 ## Constructors
@@ -15,8 +13,6 @@ Caso de uso: alguien sin cuenta levanta un ticket desde el formulario público.
 ### Constructor
 
 > **new CrearTicketPublicoService**(`buzon`, `config`, `captcha`, `email`, `clock`, `logger`): `CrearTicketPublicoService`
-
-Defined in: application/tickets/CrearTicketPublicoService.ts:28
 
 #### Parameters
 
@@ -53,8 +49,6 @@ Defined in: application/tickets/CrearTicketPublicoService.ts:28
 ### ejecutar()
 
 > **ejecutar**(`input`): `Promise`\<[`TicketPublico`](../../../../core/entities/TicketPublico/interfaces/TicketPublico.md)\>
-
-Defined in: application/tickets/CrearTicketPublicoService.ts:37
 
 #### Parameters
 

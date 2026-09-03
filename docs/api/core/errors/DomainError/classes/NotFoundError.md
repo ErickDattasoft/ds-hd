@@ -6,8 +6,6 @@
 
 # Class: NotFoundError
 
-Defined in: core/errors/DomainError.ts:19
-
 El recurso pedido no existe (o no es visible para el actor). → HTTP 404.
 
 ## Extends
@@ -19,8 +17,6 @@ El recurso pedido no existe (o no es visible para el actor). → HTTP 404.
 ### Constructor
 
 > **new NotFoundError**(`recurso`, `id?`): `NotFoundError`
-
-Defined in: core/errors/DomainError.ts:23
 
 #### Parameters
 
@@ -46,8 +42,6 @@ Defined in: core/errors/DomainError.ts:23
 
 > `readonly` **code**: `"NO_ENCONTRADO"` = `'NO_ENCONTRADO'`
 
-Defined in: core/errors/DomainError.ts:20
-
 Código estable, legible por máquina (p. ej. `TICKET_NO_ENCONTRADO`).
 
 #### Overrides
@@ -59,8 +53,6 @@ Código estable, legible por máquina (p. ej. `TICKET_NO_ENCONTRADO`).
 ### httpStatus
 
 > `readonly` **httpStatus**: `404` = `404`
-
-Defined in: core/errors/DomainError.ts:21
 
 Código HTTP sugerido para la capa de entrega.
 

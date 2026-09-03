@@ -6,8 +6,6 @@
 
 # Interface: EventoTicket
 
-Defined in: core/entities/NotaTicket.ts:15
-
 Entrada del registro de actividad de un ticket (append-only). Sirve de bitácora local
 visible en el detalle.
 
@@ -17,15 +15,11 @@ visible en el detalle.
 
 > **id**: `string`
 
-Defined in: core/entities/NotaTicket.ts:16
-
 ***
 
 ### tipo
 
 > **tipo**: `"correo"` \| `"creacion"` \| `"cambio_estado"` \| `"asignacion"` \| `"nota"` \| `"sla_incumplido"` \| `"facturacion"`
-
-Defined in: core/entities/NotaTicket.ts:17
 
 ***
 
@@ -33,15 +27,11 @@ Defined in: core/entities/NotaTicket.ts:17
 
 > **resumen**: `string`
 
-Defined in: core/entities/NotaTicket.ts:18
-
 ***
 
 ### actorUid
 
 > **actorUid**: `string` \| `null`
-
-Defined in: core/entities/NotaTicket.ts:19
 
 ***
 
@@ -49,12 +39,8 @@ Defined in: core/entities/NotaTicket.ts:19
 
 > **actorNombre**: `string` \| `null`
 
-Defined in: core/entities/NotaTicket.ts:20
-
 ***
 
 ### at
 
 > **at**: `Date`
-
-Defined in: core/entities/NotaTicket.ts:21

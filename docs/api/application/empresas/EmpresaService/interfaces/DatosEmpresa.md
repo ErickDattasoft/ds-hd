@@ -6,8 +6,6 @@
 
 # Interface: DatosEmpresa
 
-Defined in: application/empresas/EmpresaService.ts:10
-
 Datos editables de una empresa (alta o edición).
 
 ## Properties
@@ -16,15 +14,11 @@ Datos editables de una empresa (alta o edición).
 
 > **nombre**: `string`
 
-Defined in: application/empresas/EmpresaService.ts:11
-
 ***
 
 ### rfc?
 
 > `optional` **rfc?**: `string`
-
-Defined in: application/empresas/EmpresaService.ts:12
 
 ***
 
@@ -32,15 +26,11 @@ Defined in: application/empresas/EmpresaService.ts:12
 
 > `optional` **razonSocial?**: `string`
 
-Defined in: application/empresas/EmpresaService.ts:13
-
 ***
 
 ### direccion?
 
 > `optional` **direccion?**: `string`
-
-Defined in: application/empresas/EmpresaService.ts:14
 
 ***
 
@@ -48,15 +38,11 @@ Defined in: application/empresas/EmpresaService.ts:14
 
 > `optional` **telefono?**: `string`
 
-Defined in: application/empresas/EmpresaService.ts:15
-
 ***
 
 ### email?
 
 > `optional` **email?**: `string`
-
-Defined in: application/empresas/EmpresaService.ts:16
 
 ***
 
@@ -64,12 +50,8 @@ Defined in: application/empresas/EmpresaService.ts:16
 
 > `optional` **sistemasContratados?**: `string`[]
 
-Defined in: application/empresas/EmpresaService.ts:17
-
 ***
 
 ### notas?
 
 > `optional` **notas?**: `string`
-
-Defined in: application/empresas/EmpresaService.ts:18

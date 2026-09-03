@@ -6,8 +6,6 @@
 
 # Interface: UsuarioProps
 
-Defined in: core/entities/Usuario.ts:15
-
 Props para construir un [Usuario](../classes/Usuario.md).
 
 ## Properties
@@ -16,15 +14,11 @@ Props para construir un [Usuario](../classes/Usuario.md).
 
 > **uid**: `string`
 
-Defined in: core/entities/Usuario.ts:16
-
 ***
 
 ### email
 
 > **email**: `string`
-
-Defined in: core/entities/Usuario.ts:17
 
 ***
 
@@ -32,23 +26,17 @@ Defined in: core/entities/Usuario.ts:17
 
 > **nombre**: `string`
 
-Defined in: core/entities/Usuario.ts:18
-
 ***
 
 ### rol
 
-> **rol**: `"admin"` \| `"supervisor"` \| `"agente"` \| `"lectura"` \| `"cliente"`
-
-Defined in: core/entities/Usuario.ts:19
+> **rol**: `"admin"` \| `"supervisor"` \| `"soporte"` \| `"ventas"` \| `"agente"` \| `"lectura"` \| `"cliente"`
 
 ***
 
 ### permisosExtra?
 
 > `optional` **permisosExtra?**: `string`[]
-
-Defined in: core/entities/Usuario.ts:21
 
 Permisos concedidos por encima de los de su rol.
 
@@ -58,8 +46,6 @@ Permisos concedidos por encima de los de su rol.
 
 > `optional` **permisosRevocados?**: `string`[]
 
-Defined in: core/entities/Usuario.ts:23
-
 Permisos retirados respecto a los de su rol.
 
 ***
@@ -68,15 +54,11 @@ Permisos retirados respecto a los de su rol.
 
 > `optional` **activo?**: `boolean`
 
-Defined in: core/entities/Usuario.ts:24
-
 ***
 
 ### empresaId?
 
 > `optional` **empresaId?**: `string` \| `null`
-
-Defined in: core/entities/Usuario.ts:26
 
 Empresa asociada; obligatoria para `rol === 'cliente'`.
 
@@ -86,15 +68,11 @@ Empresa asociada; obligatoria para `rol === 'cliente'`.
 
 > `optional` **agente?**: `Partial`\<[`PerfilAgente`](PerfilAgente.md)\>
 
-Defined in: core/entities/Usuario.ts:27
-
 ***
 
 ### createdAt?
 
 > `optional` **createdAt?**: `Date`
-
-Defined in: core/entities/Usuario.ts:28
 
 ***
 
@@ -102,12 +80,8 @@ Defined in: core/entities/Usuario.ts:28
 
 > `optional` **updatedAt?**: `Date`
 
-Defined in: core/entities/Usuario.ts:29
-
 ***
 
 ### lastLoginAt?
 
 > `optional` **lastLoginAt?**: `Date` \| `null`
-
-Defined in: core/entities/Usuario.ts:30

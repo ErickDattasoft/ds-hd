@@ -6,8 +6,6 @@
 
 # Interface: IEmpresaRepository
 
-Defined in: core/ports/repositories/IEmpresaRepository.ts:10
-
 Persistencia de empresas (`empresas/{id}`).
 
 ## Methods
@@ -15,8 +13,6 @@ Persistencia de empresas (`empresas/{id}`).
 ### findById()
 
 > **findById**(`id`): `Promise`\<[`Empresa`](../../../../entities/Empresa/classes/Empresa.md) \| `null`\>
-
-Defined in: core/ports/repositories/IEmpresaRepository.ts:11
 
 #### Parameters
 
@@ -34,8 +30,6 @@ Defined in: core/ports/repositories/IEmpresaRepository.ts:11
 
 > **list**(`filtro?`): `Promise`\<[`Empresa`](../../../../entities/Empresa/classes/Empresa.md)[]\>
 
-Defined in: core/ports/repositories/IEmpresaRepository.ts:12
-
 #### Parameters
 
 ##### filtro?
@@ -52,8 +46,6 @@ Defined in: core/ports/repositories/IEmpresaRepository.ts:12
 
 > **save**(`empresa`): `Promise`\<`void`\>
 
-Defined in: core/ports/repositories/IEmpresaRepository.ts:13
-
 #### Parameters
 
 ##### empresa
@@ -69,8 +61,6 @@ Defined in: core/ports/repositories/IEmpresaRepository.ts:13
 ### existePorNombre()
 
 > **existePorNombre**(`nombre`, `exceptoId?`): `Promise`\<`boolean`\>
-
-Defined in: core/ports/repositories/IEmpresaRepository.ts:14
 
 #### Parameters
 

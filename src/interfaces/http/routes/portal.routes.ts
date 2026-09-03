@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import type { Container } from '../../../config/container.js';
 import { requireAuth, requireCliente, requirePermission } from '../middlewares/authz.js';
-import { construirNav } from '../view-helpers/nav.js';
+import { construirNavSecciones } from '../view-helpers/nav.js';
 
 /** Rutas del portal de clientes (`/portal`). Requiere sesión con rol `cliente`. */
 export function portalRoutes(container: Container): Router {
@@ -11,7 +11,7 @@ export function portalRoutes(container: Container): Router {
 
   r.use(requireAuth, requireCliente);
   r.use((req, res, next) => {
-    res.locals.nav = construirNav(req.user!);
+    res.locals.navSecciones = construirNavSecciones(req.user!);
     res.locals.area = 'portal';
     next();
   });

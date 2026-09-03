@@ -5,7 +5,13 @@ import type { ActualizarUsuarioService } from '../../../../application/usuarios/
 import type { InvitarClienteService } from '../../../../application/usuarios/InvitarClienteService.js';
 import type { IEmpresaRepository } from '../../../../core/ports/repositories/IEmpresaRepository.js';
 import { DomainError, NotFoundError } from '../../../../core/errors/DomainError.js';
-import { ROLES, ROLES_STAFF, ROL_ETIQUETA, parseRol } from '../../../../core/entities/value-objects/Rol.js';
+import {
+  ROLES,
+  ROLES_STAFF,
+  ROL_ETIQUETA,
+  ROL_GRUPOS,
+  parseRol,
+} from '../../../../core/entities/value-objects/Rol.js';
 import { permisosPorModulo } from '../../rbac/permissions.js';
 import { invalidarCacheUsuario } from '../../middlewares/sessionAuth.js';
 
@@ -36,13 +42,14 @@ export class UsuarioController {
       modo: 'crear',
       rolesDisponibles: ROLES_STAFF,
       ROL_ETIQUETA,
-      valores: { rol: 'agente' },
+      ROL_GRUPOS,
+      valores: { rol: 'soporte' },
       errores: {},
     });
   };
 
   crearPost = async (req: Request, res: Response): Promise<void> => {
-    const { email = '', nombre = '', rol = 'agente' } = req.body ?? {};
+    const { email = '', nombre = '', rol = 'soporte' } = req.body ?? {};
     try {
       const { urlInvitacion } = await this.crear.ejecutar({
         actor: req.user!,
@@ -71,6 +78,7 @@ export class UsuarioController {
       usuario,
       rolesDisponibles: ROLES,
       ROL_ETIQUETA,
+      ROL_GRUPOS,
       permisosModulo: permisosPorModulo(),
       valores: usuario,
       errores: {},
@@ -110,6 +118,7 @@ export class UsuarioController {
         usuario,
         rolesDisponibles: ROLES,
         ROL_ETIQUETA,
+        ROL_GRUPOS,
         permisosModulo: permisosPorModulo(),
         valores: { ...usuario, ...body },
         errores,
@@ -170,6 +179,7 @@ export class UsuarioController {
       modo,
       rolesDisponibles: modo === 'crear' ? ROLES_STAFF : ROLES,
       ROL_ETIQUETA,
+      ROL_GRUPOS,
       permisosModulo: permisosPorModulo(),
       valores,
       errores,

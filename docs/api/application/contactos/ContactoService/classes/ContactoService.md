@@ -6,8 +6,6 @@
 
 # Class: ContactoService
 
-Defined in: application/contactos/ContactoService.ts:22
-
 Gestión de contactos (CRUD + archivar).
 
 ## Constructors
@@ -15,8 +13,6 @@ Gestión de contactos (CRUD + archivar).
 ### Constructor
 
 > **new ContactoService**(`repo`, `empresas`, `ids`, `clock`, `bitacora`): `ContactoService`
-
-Defined in: application/contactos/ContactoService.ts:23
 
 #### Parameters
 
@@ -50,8 +46,6 @@ Defined in: application/contactos/ContactoService.ts:23
 
 > **listar**(`filtro?`): `Promise`\<[`Contacto`](../../../../core/entities/Contacto/classes/Contacto.md)[]\>
 
-Defined in: application/contactos/ContactoService.ts:31
-
 #### Parameters
 
 ##### filtro?
@@ -68,8 +62,6 @@ Defined in: application/contactos/ContactoService.ts:31
 
 > **obtener**(`id`): `Promise`\<[`Contacto`](../../../../core/entities/Contacto/classes/Contacto.md)\>
 
-Defined in: application/contactos/ContactoService.ts:35
-
 #### Parameters
 
 ##### id
@@ -85,8 +77,6 @@ Defined in: application/contactos/ContactoService.ts:35
 ### crear()
 
 > **crear**(`actor`, `datos`): `Promise`\<[`Contacto`](../../../../core/entities/Contacto/classes/Contacto.md)\>
-
-Defined in: application/contactos/ContactoService.ts:53
 
 #### Parameters
 
@@ -107,8 +97,6 @@ Defined in: application/contactos/ContactoService.ts:53
 ### actualizar()
 
 > **actualizar**(`actor`, `id`, `datos`): `Promise`\<[`Contacto`](../../../../core/entities/Contacto/classes/Contacto.md)\>
-
-Defined in: application/contactos/ContactoService.ts:69
 
 #### Parameters
 
@@ -133,8 +121,6 @@ Defined in: application/contactos/ContactoService.ts:69
 ### archivar()
 
 > **archivar**(`actor`, `id`, `archivar`): `Promise`\<`void`\>
-
-Defined in: application/contactos/ContactoService.ts:94
 
 #### Parameters
 

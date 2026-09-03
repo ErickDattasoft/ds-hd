@@ -6,8 +6,6 @@
 
 # Interface: DatosArticulo
 
-Defined in: application/knowledge/KnowledgeService.ts:10
-
 Datos editables de un artículo de la base de conocimiento (alta o edición).
 
 ## Properties
@@ -16,15 +14,11 @@ Datos editables de un artículo de la base de conocimiento (alta o edición).
 
 > **titulo**: `string`
 
-Defined in: application/knowledge/KnowledgeService.ts:11
-
 ***
 
 ### categoria?
 
 > `optional` **categoria?**: `string`
-
-Defined in: application/knowledge/KnowledgeService.ts:12
 
 ***
 
@@ -32,15 +26,11 @@ Defined in: application/knowledge/KnowledgeService.ts:12
 
 > **cuerpoMarkdown**: `string`
 
-Defined in: application/knowledge/KnowledgeService.ts:13
-
 ***
 
 ### tags?
 
 > `optional` **tags?**: `string`[]
-
-Defined in: application/knowledge/KnowledgeService.ts:14
 
 ***
 
@@ -48,12 +38,8 @@ Defined in: application/knowledge/KnowledgeService.ts:14
 
 > `optional` **publicado?**: `boolean`
 
-Defined in: application/knowledge/KnowledgeService.ts:15
-
 ***
 
 ### visibilidad?
 
 > `optional` **visibilidad?**: [`VisibilidadKB`](../../../../core/entities/ArticuloKB/type-aliases/VisibilidadKB.md)
-
-Defined in: application/knowledge/KnowledgeService.ts:16

@@ -6,8 +6,6 @@
 
 # Class: ObtenerMetricasService
 
-Defined in: application/dashboard/ObtenerMetricasService.ts:26
-
 Caso de uso: métricas del dashboard, acotadas al alcance del actor.
 
 ## Constructors
@@ -15,8 +13,6 @@ Caso de uso: métricas del dashboard, acotadas al alcance del actor.
 ### Constructor
 
 > **new ObtenerMetricasService**(`ticketQueries`, `cotizaciones`, `eventos`, `tareas`, `bitacora`, `clock`): `ObtenerMetricasService`
-
-Defined in: application/dashboard/ObtenerMetricasService.ts:27
 
 #### Parameters
 
@@ -53,8 +49,6 @@ Defined in: application/dashboard/ObtenerMetricasService.ts:27
 ### ejecutar()
 
 > **ejecutar**(`actor`): `Promise`\<[`Metricas`](../interfaces/Metricas.md)\>
-
-Defined in: application/dashboard/ObtenerMetricasService.ts:36
 
 #### Parameters
 

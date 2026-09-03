@@ -62,19 +62,29 @@ export function contratoUsuarioRepository(
       expect(await repo.list()).toHaveLength(0);
     });
 
-    it('listAgentesAsignables filtra por rol, activo y disponibilidad', async () => {
+    it('listAgentesAsignables incluye roles técnicos (agente y soporte), activos y disponibles', async () => {
       await repo.save(nuevoUsuario({ uid: 'g1', email: 'g1@x.com', rol: 'agente' }));
+      await repo.save(nuevoUsuario({ uid: 'g2', email: 'g2@x.com', rol: 'soporte' }));
       await repo.save(
         nuevoUsuario({
-          uid: 'g2',
-          email: 'g2@x.com',
+          uid: 'g3',
+          email: 'g3@x.com',
           rol: 'agente',
           agente: { disponibleAsignacion: false },
         }),
       );
+      await repo.save(nuevoUsuario({ uid: 'v1', email: 'v1@x.com', rol: 'ventas' }));
       await repo.save(nuevoUsuario({ uid: 's1', email: 's1@x.com', rol: 'supervisor' }));
       const asignables = await repo.listAgentesAsignables();
-      expect(asignables.map((u) => u.uid)).toEqual(['g1']);
+      expect(asignables.map((u) => u.uid).sort()).toEqual(['g1', 'g2']);
+    });
+
+    it('list({ roles }) filtra por varios roles a la vez', async () => {
+      await repo.save(nuevoUsuario({ uid: 'g1', email: 'g1@x.com', rol: 'agente' }));
+      await repo.save(nuevoUsuario({ uid: 'g2', email: 'g2@x.com', rol: 'soporte' }));
+      await repo.save(nuevoUsuario({ uid: 'v1', email: 'v1@x.com', rol: 'ventas' }));
+      const tecnicos = await repo.list({ roles: ['agente', 'soporte'] });
+      expect(tecnicos.map((u) => u.uid).sort()).toEqual(['g1', 'g2']);
     });
   });
 }

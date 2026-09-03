@@ -5,7 +5,7 @@
     <h1>{{ empresa.nombre }} {% if not empresa.activa %}<span class="badge">archivada</span>{% endif %}</h1>
     <div class="page-head__actions">
       {% if can('empresas:editar') %}<a class="btn btn--sm" href="/app/empresas/{{ empresa.id }}/editar">Editar</a>{% endif %}
-      {% if can('contactos:crear') %}<a class="btn btn--sm btn--ghost" href="/app/contactos/nuevo?empresa={{ empresa.id }}">Agregar contacto</a>{% endif %}
+      {% if can('contactos:crear') %}<a class="btn btn--sm btn--secondary" href="/app/contactos/nuevo?empresa={{ empresa.id }}">Agregar contacto</a>{% endif %}
     </div>
   </div>
 
@@ -14,14 +14,18 @@
     {% if empresa.direccion %}<p>{{ empresa.direccion }}</p>{% endif %}
     {% if empresa.sistemasContratados | length %}<p><strong>Sistemas:</strong> {{ empresa.sistemasContratados | join(', ') }}</p>{% endif %}
     {% if empresa.notas %}<p class="muted">{{ empresa.notas }}</p>{% endif %}
-    {% if can('empresas:eliminar') %}
-      <form method="post" action="/app/empresas/{{ empresa.id }}/archivar" class="inline" data-confirm="¿Archivar esta empresa?">
+  </div>
+
+  {% if can('empresas:eliminar') %}
+    <details class="disclosure">
+      <summary class="disclosure__summary">Administración</summary>
+      <form method="post" action="/app/empresas/{{ empresa.id }}/archivar" class="disclosure__body" data-confirm="¿{{ 'Restaurar' if not empresa.activa else 'Archivar' }} esta empresa?">
         <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
         <input type="hidden" name="archivar" value="{{ 'false' if not empresa.activa else 'true' }}" />
-        <button class="btn btn--sm btn--ghost" type="submit">{{ 'Restaurar' if not empresa.activa else 'Archivar' }}</button>
+        <button class="btn btn--sm {{ 'btn--secondary' if not empresa.activa else 'btn--danger' }}" type="submit">{{ 'Restaurar empresa' if not empresa.activa else 'Archivar empresa' }}</button>
       </form>
-    {% endif %}
-  </div>
+    </details>
+  {% endif %}
 
   <h2>Contactos ({{ contactos | length }})</h2>
   <table class="data-table">

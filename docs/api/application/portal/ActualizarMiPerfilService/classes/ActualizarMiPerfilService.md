@@ -6,8 +6,6 @@
 
 # Class: ActualizarMiPerfilService
 
-Defined in: application/portal/ActualizarMiPerfilService.ts:7
-
 Caso de uso: el cliente actualiza los datos de su propio perfil (hoy: solo el nombre).
 
 ## Constructors
@@ -15,8 +13,6 @@ Caso de uso: el cliente actualiza los datos de su propio perfil (hoy: solo el no
 ### Constructor
 
 > **new ActualizarMiPerfilService**(`usuarios`, `clock`): `ActualizarMiPerfilService`
-
-Defined in: application/portal/ActualizarMiPerfilService.ts:8
 
 #### Parameters
 
@@ -37,8 +33,6 @@ Defined in: application/portal/ActualizarMiPerfilService.ts:8
 ### ejecutar()
 
 > **ejecutar**(`input`): `Promise`\<`void`\>
-
-Defined in: application/portal/ActualizarMiPerfilService.ts:13
 
 #### Parameters
 

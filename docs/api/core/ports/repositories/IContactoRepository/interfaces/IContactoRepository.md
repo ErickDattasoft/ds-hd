@@ -6,8 +6,6 @@
 
 # Interface: IContactoRepository
 
-Defined in: core/ports/repositories/IContactoRepository.ts:12
-
 Persistencia de contactos (`contactos/{id}`).
 
 ## Methods
@@ -15,8 +13,6 @@ Persistencia de contactos (`contactos/{id}`).
 ### findById()
 
 > **findById**(`id`): `Promise`\<[`Contacto`](../../../../entities/Contacto/classes/Contacto.md) \| `null`\>
-
-Defined in: core/ports/repositories/IContactoRepository.ts:13
 
 #### Parameters
 
@@ -34,8 +30,6 @@ Defined in: core/ports/repositories/IContactoRepository.ts:13
 
 > **findByUid**(`uid`): `Promise`\<[`Contacto`](../../../../entities/Contacto/classes/Contacto.md) \| `null`\>
 
-Defined in: core/ports/repositories/IContactoRepository.ts:14
-
 #### Parameters
 
 ##### uid
@@ -51,8 +45,6 @@ Defined in: core/ports/repositories/IContactoRepository.ts:14
 ### findByEmail()
 
 > **findByEmail**(`email`): `Promise`\<[`Contacto`](../../../../entities/Contacto/classes/Contacto.md) \| `null`\>
-
-Defined in: core/ports/repositories/IContactoRepository.ts:15
 
 #### Parameters
 
@@ -70,8 +62,6 @@ Defined in: core/ports/repositories/IContactoRepository.ts:15
 
 > **list**(`filtro?`): `Promise`\<[`Contacto`](../../../../entities/Contacto/classes/Contacto.md)[]\>
 
-Defined in: core/ports/repositories/IContactoRepository.ts:16
-
 #### Parameters
 
 ##### filtro?
@@ -88,8 +78,6 @@ Defined in: core/ports/repositories/IContactoRepository.ts:16
 
 > **save**(`contacto`): `Promise`\<`void`\>
 
-Defined in: core/ports/repositories/IContactoRepository.ts:17
-
 #### Parameters
 
 ##### contacto
@@ -105,8 +93,6 @@ Defined in: core/ports/repositories/IContactoRepository.ts:17
 ### contarPorEmpresa()
 
 > **contarPorEmpresa**(`empresaId`): `Promise`\<`number`\>
-
-Defined in: core/ports/repositories/IContactoRepository.ts:18
 
 #### Parameters
 

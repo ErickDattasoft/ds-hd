@@ -4,6 +4,8 @@ import type { Rol } from '../../entities/value-objects/Rol.js';
 /** Filtros para listar usuarios. */
 export interface ListarUsuariosFiltro {
   rol?: Rol;
+  /** Varios roles a la vez (OR). Se combina con `activo`/`empresaId`; ignora `rol` si viene. */
+  roles?: readonly Rol[];
   activo?: boolean;
   empresaId?: string;
   /** Búsqueda simple por nombre/correo (contains, case-insensitive). */

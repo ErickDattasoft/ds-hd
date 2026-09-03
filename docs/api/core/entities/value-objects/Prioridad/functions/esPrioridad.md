@@ -8,8 +8,6 @@
 
 > **esPrioridad**(`v`): v is "Baja" \| "Media" \| "Alta" \| "Urgente"
 
-Defined in: core/entities/value-objects/Prioridad.ts:15
-
 Type guard: ¿el valor es una de las prioridades válidas?
 
 ## Parameters

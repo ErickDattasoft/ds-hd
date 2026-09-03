@@ -6,8 +6,6 @@
 
 # Class: ActualizarEstadoTicketService
 
-Defined in: application/tickets/ActualizarEstadoTicketService.ts:17
-
 Caso de uso: cambiar el estado de un ticket, con los efectos colaterales del ciclo de vida
 (primera respuesta, correos y webhooks de resuelto/cerrado).
 
@@ -16,8 +14,6 @@ Caso de uso: cambiar el estado de un ticket, con los efectos colaterales del cic
 ### Constructor
 
 > **new ActualizarEstadoTicketService**(`tickets`, `config`, `ids`, `clock`, `email`, `webhooks`, `logger`): `ActualizarEstadoTicketService`
-
-Defined in: application/tickets/ActualizarEstadoTicketService.ts:18
 
 #### Parameters
 
@@ -58,8 +54,6 @@ Defined in: application/tickets/ActualizarEstadoTicketService.ts:18
 ### ejecutar()
 
 > **ejecutar**(`input`): `Promise`\<[`Ticket`](../../../../core/entities/Ticket/classes/Ticket.md)\>
-
-Defined in: application/tickets/ActualizarEstadoTicketService.ts:28
 
 #### Parameters
 

@@ -6,8 +6,6 @@
 
 # Class: ActualizarUsuarioService
 
-Defined in: application/usuarios/ActualizarUsuarioService.ts:24
-
 Caso de uso: editar nombre, rol, estado, permisos y perfil de agente de un usuario.
 
 ## Constructors
@@ -15,8 +13,6 @@ Caso de uso: editar nombre, rol, estado, permisos y perfil de agente de un usuar
 ### Constructor
 
 > **new ActualizarUsuarioService**(`usuarios`, `auth`, `clock`, `logger`): `ActualizarUsuarioService`
-
-Defined in: application/usuarios/ActualizarUsuarioService.ts:25
 
 #### Parameters
 
@@ -45,8 +41,6 @@ Defined in: application/usuarios/ActualizarUsuarioService.ts:25
 ### ejecutar()
 
 > **ejecutar**(`input`): `Promise`\<`void`\>
-
-Defined in: application/usuarios/ActualizarUsuarioService.ts:32
 
 #### Parameters
 

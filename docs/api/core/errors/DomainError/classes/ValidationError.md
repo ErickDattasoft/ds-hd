@@ -6,8 +6,6 @@
 
 # Class: ValidationError
 
-Defined in: core/errors/DomainError.ts:29
-
 Los datos de entrada no cumplen una regla del dominio. → HTTP 422.
 
 ## Extends
@@ -19,8 +17,6 @@ Los datos de entrada no cumplen una regla del dominio. → HTTP 422.
 ### Constructor
 
 > **new ValidationError**(`message`, `campos?`): `ValidationError`
-
-Defined in: core/errors/DomainError.ts:35
 
 #### Parameters
 
@@ -46,8 +42,6 @@ Defined in: core/errors/DomainError.ts:35
 
 > `readonly` **code**: `"VALIDACION"` = `'VALIDACION'`
 
-Defined in: core/errors/DomainError.ts:30
-
 Código estable, legible por máquina (p. ej. `TICKET_NO_ENCONTRADO`).
 
 #### Overrides
@@ -60,8 +54,6 @@ Código estable, legible por máquina (p. ej. `TICKET_NO_ENCONTRADO`).
 
 > `readonly` **httpStatus**: `422` = `422`
 
-Defined in: core/errors/DomainError.ts:31
-
 Código HTTP sugerido para la capa de entrega.
 
 #### Overrides
@@ -73,7 +65,5 @@ Código HTTP sugerido para la capa de entrega.
 ### campos
 
 > `readonly` **campos**: `Readonly`\<`Record`\<`string`, `string`\>\>
-
-Defined in: core/errors/DomainError.ts:33
 
 Errores por campo, para pintarlos junto a cada input del formulario.

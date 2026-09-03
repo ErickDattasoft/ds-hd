@@ -6,8 +6,6 @@
 
 # Class: SolicitarAccesoService
 
-Defined in: application/auth/SolicitarAccesoService.ts:18
-
 Caso de uso: alguien pide acceso al back-office desde la pantalla de login.
 
 ## Constructors
@@ -15,8 +13,6 @@ Caso de uso: alguien pide acceso al back-office desde la pantalla de login.
 ### Constructor
 
 > **new SolicitarAccesoService**(`solicitudes`, `usuarios`, `email`, `logger`): `SolicitarAccesoService`
-
-Defined in: application/auth/SolicitarAccesoService.ts:19
 
 #### Parameters
 
@@ -45,8 +41,6 @@ Defined in: application/auth/SolicitarAccesoService.ts:19
 ### ejecutar()
 
 > **ejecutar**(`input`): `Promise`\<`void`\>
-
-Defined in: application/auth/SolicitarAccesoService.ts:26
 
 #### Parameters
 
