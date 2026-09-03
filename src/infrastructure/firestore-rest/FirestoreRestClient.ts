@@ -9,7 +9,7 @@
  * inyecta en su lugar sin tocar los repos (se castea a `Firestore` en el composition root,
  * igual que hoy se castea el Proxy de `wrapFirestoreAdmin`).
  */
-import { ServiceAccountTokenSource, type ServiceAccount } from './serviceAccountAuth.js';
+import { makeBearerTokenGetter, type ServiceAccount } from './serviceAccountAuth.js';
 import {
   fromRestFields,
   toRest,
@@ -204,12 +204,7 @@ export class FirestoreRestClient {
 
   constructor(opts: FirestoreRestOptions) {
     this.fetchImpl = opts.fetchImpl ?? fetch;
-    if (opts.serviceAccount) {
-      const tokens = new ServiceAccountTokenSource(opts.serviceAccount, this.fetchImpl);
-      this.obtenerToken = () => tokens.token();
-    } else {
-      this.obtenerToken = () => Promise.resolve('owner'); // emulador: no valida el token
-    }
+    this.obtenerToken = makeBearerTokenGetter(opts.serviceAccount, this.fetchImpl);
     const base =
       opts.baseUrl ??
       (opts.emulatorHost

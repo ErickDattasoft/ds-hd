@@ -124,6 +124,20 @@ export class ServiceAccountTokenSource {
   }
 }
 
+/**
+ * Devuelve un getter de bearer token: con service account, un access token OAuth2 real
+ * (cacheado); sin service account (emulador), el string fijo `owner` que los emuladores de
+ * Firestore/Auth aceptan sin validar.
+ */
+export function makeBearerTokenGetter(
+  sa?: ServiceAccount,
+  fetchImpl: typeof fetch = fetch,
+): () => Promise<string> {
+  if (!sa) return () => Promise.resolve('owner');
+  const src = new ServiceAccountTokenSource(sa, fetchImpl);
+  return () => src.token();
+}
+
 /** Decodifica `FIREBASE_SERVICE_ACCOUNT_B64` a `ServiceAccount`. */
 export function parseServiceAccount(b64: string): ServiceAccount {
   const json = JSON.parse(
