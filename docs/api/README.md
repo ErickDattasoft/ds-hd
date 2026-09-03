@@ -61,6 +61,7 @@
 - [core/entities/value-objects/EstadoTicket](core/entities/value-objects/EstadoTicket/README.md)
 - [core/entities/value-objects/Prioridad](core/entities/value-objects/Prioridad/README.md)
 - [core/entities/value-objects/Rol](core/entities/value-objects/Rol/README.md)
+- [core/entities/value-objects/Timestamp](core/entities/value-objects/Timestamp/README.md)
 - [core/errors/DomainError](core/errors/DomainError/README.md)
 - [core/ports/repositories/IBitacoraRepository](core/ports/repositories/IBitacoraRepository/README.md)
 - [core/ports/repositories/IConfiguracionRepository](core/ports/repositories/IConfiguracionRepository/README.md)

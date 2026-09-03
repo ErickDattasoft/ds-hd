@@ -1,5 +1,6 @@
-import { FieldValue, type Firestore } from 'firebase-admin/firestore';
+import type { Firestore } from 'firebase-admin/firestore';
 import type { IContadorRepository } from '../../core/ports/repositories/IContadorRepository.js';
+import { Timestamp } from '../../core/entities/value-objects/Timestamp.js';
 
 const COL = 'contadores';
 
@@ -13,7 +14,7 @@ export class FirestoreContadorRepository implements IContadorRepository {
       const snap = await tx.get(ref);
       const actual = snap.exists ? Number(snap.data()!.valor ?? 0) : 0;
       const nuevo = actual + 1;
-      tx.set(ref, { valor: nuevo, actualizadoEn: FieldValue.serverTimestamp() }, { merge: true });
+      tx.set(ref, { valor: nuevo, actualizadoEn: Timestamp.now() }, { merge: true });
       return nuevo;
     });
   }

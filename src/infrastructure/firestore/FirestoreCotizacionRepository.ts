@@ -1,4 +1,5 @@
-import { Timestamp, type DocumentData, type Firestore, type Query } from 'firebase-admin/firestore';
+import { type DocumentData, type Firestore, type Query } from 'firebase-admin/firestore';
+import { Timestamp } from '../../core/entities/value-objects/Timestamp.js';
 import type { ICotizacionRepository, ListarCotizacionesFiltro } from '../../core/ports/repositories/ICotizacionRepository.js';
 import { Cotizacion, type ConceptoCotizacion, type EstadoCotizacion } from '../../core/entities/Cotizacion.js';
 

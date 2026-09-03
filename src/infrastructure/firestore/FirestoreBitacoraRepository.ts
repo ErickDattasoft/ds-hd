@@ -1,4 +1,5 @@
-import { Timestamp, type DocumentData, type Firestore, type Query } from 'firebase-admin/firestore';
+import { type DocumentData, type Firestore, type Query } from 'firebase-admin/firestore';
+import { Timestamp } from '../../core/entities/value-objects/Timestamp.js';
 import type { IBitacoraRepository, FiltroBitacora } from '../../core/ports/repositories/IBitacoraRepository.js';
 import type { EntradaBitacora } from '../../core/entities/EntradaBitacora.js';
 

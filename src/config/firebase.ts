@@ -4,6 +4,7 @@ import { getFirestore, type Firestore } from 'firebase-admin/firestore';
 import { getStorage, type Storage } from 'firebase-admin/storage';
 import type { AppConfig } from './env.js';
 import type { ILogger } from '../core/ports/services/ILogger.js';
+import { wrapFirestoreAdmin } from '../infrastructure/firestore/wrapFirestoreAdmin.js';
 
 /**
  * Inicialización única de firebase-admin. Todo acceso a Firestore/Auth/Storage del servidor
@@ -51,8 +52,9 @@ export function initFirebase(config: AppConfig, logger: ILogger): FirebaseServic
       ...(config.firebase.storageBucket ? { storageBucket: config.firebase.storageBucket } : {}),
     });
 
-  const firestore = getFirestore(app);
-  firestore.settings({ ignoreUndefinedProperties: true });
+  const firestoreRaw = getFirestore(app);
+  firestoreRaw.settings({ ignoreUndefinedProperties: true });
+  const firestore = wrapFirestoreAdmin(firestoreRaw);
 
   logger.info('firebase-admin inicializado', {
     projectId: config.firebase.projectId,

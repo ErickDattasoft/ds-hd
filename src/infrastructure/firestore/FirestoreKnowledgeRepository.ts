@@ -1,4 +1,5 @@
-import { Timestamp, type DocumentData, type Firestore, type Query } from 'firebase-admin/firestore';
+import { type DocumentData, type Firestore, type Query } from 'firebase-admin/firestore';
+import { Timestamp } from '../../core/entities/value-objects/Timestamp.js';
 import type { IKnowledgeRepository, ListarKBFiltro } from '../../core/ports/repositories/IKnowledgeRepository.js';
 import { ArticuloKB, type VisibilidadKB } from '../../core/entities/ArticuloKB.js';
 

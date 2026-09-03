@@ -1,4 +1,5 @@
-import { Timestamp, type DocumentData, type Firestore, type Query } from 'firebase-admin/firestore';
+import { type DocumentData, type Firestore, type Query } from 'firebase-admin/firestore';
+import { Timestamp } from '../../core/entities/value-objects/Timestamp.js';
 import type { IContactoRepository, ListarContactosFiltro } from '../../core/ports/repositories/IContactoRepository.js';
 import { Contacto } from '../../core/entities/Contacto.js';
 

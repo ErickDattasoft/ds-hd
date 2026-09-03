@@ -75,10 +75,11 @@ if (emulador) {
   const { FirestoreTicketRepository } = await import(
     '../../src/infrastructure/firestore/FirestoreTicketRepository.js'
   );
+  const { wrapFirestoreAdmin } = await import('../../src/infrastructure/firestore/wrapFirestoreAdmin.js');
   const app = getApps()[0] ?? initializeApp({ projectId: 'ds-hd-test' });
   const db = getFirestore(app);
   contrato('Firestore (emulador)', async () => ({
-    repo: new FirestoreTicketRepository(db),
+    repo: new FirestoreTicketRepository(wrapFirestoreAdmin(db)),
     limpiar: async () => {
       const snap = await db.collection('tickets').get();
       await Promise.all(snap.docs.map((d) => d.ref.delete()));

@@ -1,4 +1,5 @@
-import { Timestamp, type DocumentData, type Firestore } from 'firebase-admin/firestore';
+import { type DocumentData, type Firestore } from 'firebase-admin/firestore';
+import { Timestamp } from '../../core/entities/value-objects/Timestamp.js';
 import type { ITicketPublicoRepository } from '../../core/ports/repositories/ITicketPublicoRepository.js';
 import type { TicketPublico } from '../../core/entities/TicketPublico.js';
 

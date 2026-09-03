@@ -1,4 +1,5 @@
-import { Timestamp, type Firestore } from 'firebase-admin/firestore';
+import { type Firestore } from 'firebase-admin/firestore';
+import { Timestamp } from '../../core/entities/value-objects/Timestamp.js';
 import type {
   IInvitacionRepository,
   Invitacion,

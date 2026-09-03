@@ -16,11 +16,12 @@ if (emulador) {
     '../../src/infrastructure/firestore/FirestoreUsuarioRepository.js'
   );
 
+  const { wrapFirestoreAdmin } = await import('../../src/infrastructure/firestore/wrapFirestoreAdmin.js');
   const app = getApps()[0] ?? initializeApp({ projectId: 'ds-hd-test' });
   const db = getFirestore(app);
 
   contratoUsuarioRepository('Firestore (emulador)', async () => {
-    const repo = new FirestoreUsuarioRepository(db);
+    const repo = new FirestoreUsuarioRepository(wrapFirestoreAdmin(db));
     const limpiar = async () => {
       const snap = await db.collection('usuarios').get();
       await Promise.all(snap.docs.map((d) => d.ref.delete()));

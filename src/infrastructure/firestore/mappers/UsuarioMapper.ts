@@ -1,4 +1,5 @@
-import { Timestamp, type DocumentData } from 'firebase-admin/firestore';
+import { type DocumentData } from 'firebase-admin/firestore';
+import { Timestamp } from '../../../core/entities/value-objects/Timestamp.js';
 import { Usuario } from '../../../core/entities/Usuario.js';
 import { parseRol } from '../../../core/entities/value-objects/Rol.js';
 
