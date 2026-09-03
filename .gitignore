@@ -3,6 +3,8 @@ node_modules/
 
 # Build
 /dist/
+/worker-dist/
+.wrangler/
 public/build/
 public/vendor/
 

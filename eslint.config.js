@@ -5,7 +5,15 @@ import jsdoc from 'eslint-plugin-jsdoc';
 
 export default tseslint.config(
   {
-    ignores: ['dist/**', 'node_modules/**', 'public/**', 'coverage/**', '*.mjs'],
+    ignores: [
+      'dist/**',
+      'worker-dist/**',
+      '.wrangler/**',
+      'node_modules/**',
+      'public/**',
+      'coverage/**',
+      '*.mjs',
+    ],
   },
   js.configs.recommended,
   ...tseslint.configs.recommended,

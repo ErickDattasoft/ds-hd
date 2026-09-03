@@ -1,0 +1,27 @@
+{
+  // Config de despliegue en Cloudflare Workers. El bundle y los assets los produce
+  // `npm run build:worker` (ver scripts/build-worker.mjs). Guía: docs/deploy/CLOUDFLARE.md.
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "ds-hd",
+  "main": "worker-dist/index.js",
+  "compatibility_date": "2025-09-01",
+  // `nodejs_compat` = APIs de Node; `enable_nodejs_http_server_modules` = `app.listen()` +
+  // `httpServerHandler` (con compat date >= 2025-09-01 se activa solo, se deja explícito).
+  "compatibility_flags": ["nodejs_compat", "enable_nodejs_http_server_modules"],
+  "assets": {
+    // Sirve /static/* directamente (CSS/JS/vendor) sin invocar al Worker.
+    "directory": "worker-dist/assets",
+    "binding": "ASSETS"
+  },
+  "observability": {
+    "enabled": true
+  },
+  // Variables NO secretas. Las secretas (FIREBASE_API_KEY, FIREBASE_SERVICE_ACCOUNT_B64,
+  // SESSION_COOKIE_SECRET, TURNSTILE_SECRET, JOBS_SECRET, BREVO_API_KEY, …) se cargan con
+  // `wrangler secret put <NOMBRE>` — ver docs/deploy/CLOUDFLARE.md.
+  "vars": {
+    "NODE_ENV": "production",
+    "FIRESTORE_DRIVER": "rest",
+    "LOG_LEVEL": "info"
+  }
+}

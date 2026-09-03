@@ -244,10 +244,15 @@ function requireFirestore(db: Firestore | null): Firestore {
 export function buildContainer(config: AppConfig, overrides: ContainerOverrides = {}): Container {
   const container = createContainer<Cradle>({ injectionMode: InjectionMode.PROXY, strict: true });
 
-  const logger = PinoLogger.create({
-    level: config.logLevel,
-    pretty: !config.isProduction && !config.isTest,
-  });
+  // El logger se resuelve primero: lo usan `resolverDriverFirestore`/`initFirebase` antes
+  // de que se apliquen los overrides genéricos (al final). `main.worker.ts` inyecta un
+  // `ConsoleLogger` porque pino no corre en Cloudflare Workers.
+  const logger =
+    overrides.logger ??
+    PinoLogger.create({
+      level: config.logLevel,
+      pretty: !config.isProduction && !config.isTest,
+    });
 
   // Driver de datos: `rest` (Cloudflare Workers) o `admin` (firebase-admin, por defecto).
   const driverRest: DriverFirestore | null = resolverDriverFirestore(config, logger);
