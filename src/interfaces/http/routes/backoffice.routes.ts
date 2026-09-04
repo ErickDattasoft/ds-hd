@@ -178,6 +178,9 @@ export function backofficeRoutes(container: Container): Router {
   r.get('/configuracion/backup/descargar', requirePermission('configuracion:integraciones'), (req, res) =>
     configuracion().backupDescargar(req, res),
   );
+  r.post('/configuracion/backup/restaurar', requirePermission('configuracion:integraciones'), (req, res) =>
+    configuracion().backupRestaurarPost(req, res),
+  );
 
   return r;
 }

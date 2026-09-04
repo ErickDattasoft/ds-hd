@@ -10,6 +10,10 @@
 
 - [BackupService](classes/BackupService.md)
 
+## Interfaces
+
+- [ResumenRestauracion](interfaces/ResumenRestauracion.md)
+
 ## Variables
 
 - [VERSION\_BACKUP](variables/VERSION_BACKUP.md)

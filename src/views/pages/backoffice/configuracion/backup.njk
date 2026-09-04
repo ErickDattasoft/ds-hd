@@ -8,4 +8,23 @@
     Firebase Auth, no aquí) y la configuración de tickets/calculadora/avisos.
   </p>
   <a class="btn" href="/app/configuracion/backup/descargar">Descargar backup completo (JSON)</a>
+
+  <h2>Restaurar</h2>
+  <p class="alert alert--warning">
+    Restaurar <strong>agrega o actualiza</strong> lo que traiga el archivo (por id) — nunca
+    borra empresas, contactos, tickets ni nada que ya exista en ds-hd y no venga en el
+    archivo. Solo funciona con un archivo generado por "Descargar backup" de este mismo
+    sistema (no el respaldo del CRM viejo — para eso está la migración).
+  </p>
+  <form data-restaurar-backup action="/app/configuracion/backup/restaurar" class="form">
+    <label class="field"><span>Archivo de backup (JSON)</span>
+      <input type="file" accept="application/json,.json" required />
+    </label>
+    <label class="field--check">
+      <input type="checkbox" required />
+      Entiendo que esto puede sobrescribir empresas, contactos, tickets y demás con lo que traiga el archivo
+    </label>
+    <button class="btn btn--danger" type="submit">Restaurar backup</button>
+  </form>
+  <div id="resultado-restaurar-backup"></div>
 {% endblock %}

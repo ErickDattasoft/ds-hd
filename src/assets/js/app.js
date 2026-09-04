@@ -97,6 +97,49 @@
     toast('No se pudo completar la acción. Recarga la página.', 'error');
   });
 
+  // ── Restaurar backup: lee el archivo en el navegador y lo manda como JSON ──
+  document.addEventListener('submit', function (e) {
+    var form = e.target.closest('[data-restaurar-backup]');
+    if (!form) return;
+    e.preventDefault();
+    var input = form.querySelector('input[type="file"]');
+    var file = input && input.files[0];
+    var salida = document.getElementById('resultado-restaurar-backup');
+    if (!file || !salida) return;
+    if (!window.confirm('¿Restaurar este backup? Se agregará o actualizará lo que traiga el archivo — no se borra nada existente.')) return;
+    var reader = new FileReader();
+    reader.onload = function () {
+      salida.innerHTML = '<p class="muted">Restaurando…</p>';
+      fetch(form.getAttribute('action'), {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'x-csrf-token': cookie('x-csrf-token') },
+        body: reader.result,
+      })
+        .then(function (r) {
+          return r.json();
+        })
+        .then(function (data) {
+          if (data.ok) {
+            var r = data.resumen;
+            salida.innerHTML =
+              '<p class="alert alert--ok">Restaurado: ' +
+              r.empresas + ' empresas, ' + r.contactos + ' contactos, ' + r.tickets + ' tickets, ' +
+              r.cotizaciones + ' cotizaciones, ' + r.versiones + ' versiones, ' + r.kb + ' artículos de KB, ' +
+              r.usuarios + ' usuarios.' +
+              (r.errores.length ? ' ' + r.errores.length + ' con error (revisa la consola).' : '') +
+              '</p>';
+            if (r.errores.length) console.warn('Errores al restaurar:', r.errores);
+          } else {
+            salida.innerHTML = '<p class="alert alert--error">' + data.error + '</p>';
+          }
+        })
+        .catch(function () {
+          salida.innerHTML = '<p class="alert alert--error">No se pudo restaurar. Revisa tu conexión e inténtalo de nuevo.</p>';
+        });
+    };
+    reader.readAsText(file);
+  });
+
   // ── Doble clic en una fila de tabla → abrir el primer enlace de la fila ──
   document.addEventListener('dblclick', function (e) {
     if (e.target.closest('a, button, input, select, textarea, label')) return;

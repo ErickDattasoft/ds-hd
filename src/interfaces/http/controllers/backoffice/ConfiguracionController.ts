@@ -23,6 +23,17 @@ export class ConfiguracionController {
     res.type('application/json').send(JSON.stringify(datos, null, 2));
   };
 
+  /** El archivo llega como JSON crudo en el body (lo sube el JS del navegador con `fetch`,
+   * no un `<input type=file>` con envío normal — así no hace falta multer). */
+  backupRestaurarPost = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const resumen = await this.backup.restaurar(req.user!, req.body ?? {});
+      res.json({ ok: true, resumen });
+    } catch (err) {
+      res.status(422).json({ ok: false, error: err instanceof Error ? err.message : 'No se pudo restaurar' });
+    }
+  };
+
   ticketsView = async (_req: Request, res: Response): Promise<void> => {
     const config = await this.configTickets.obtener();
     res.render('pages/backoffice/configuracion/tickets', {
