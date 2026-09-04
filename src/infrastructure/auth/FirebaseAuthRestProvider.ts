@@ -38,7 +38,9 @@ export class FirebaseAuthRestProvider implements IAuthProvider {
     private readonly opts: FirebaseAuthRestOptions,
     private readonly logger: ILogger,
   ) {
-    this.fetchImpl = opts.fetchImpl ?? fetch;
+    // Ver nota en serviceAccountAuth.ts: `fetch` sin `.bind(globalThis)` revienta en workerd
+    // ("Illegal invocation") al llamarse desreferenciado como `this.fetchImpl(...)`.
+    this.fetchImpl = opts.fetchImpl ?? fetch.bind(globalThis);
     this.bearer = makeBearerTokenGetter(opts.serviceAccount, this.fetchImpl);
     const host = opts.emulatorHost
       ? `http://${opts.emulatorHost}/identitytoolkit.googleapis.com/v1`

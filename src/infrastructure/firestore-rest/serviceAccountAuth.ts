@@ -58,7 +58,12 @@ export class ServiceAccountTokenSource {
 
   constructor(
     private readonly sa: ServiceAccount,
-    private readonly fetchImpl: typeof fetch = fetch,
+    // `fetch` a secas (sin `.bind`), guardado y llamado luego como `this.fetchImpl(...)`,
+    // revienta en workerd con "Illegal invocation: function called with incorrect `this`
+    // reference" — el `fetch` nativo de Workers exige que el receptor de la llamada sea el
+    // global scope. En Node funciona igual desreferenciado, así que nunca se vio hasta correr
+    // esto en workerd real.
+    private readonly fetchImpl: typeof fetch = fetch.bind(globalThis),
   ) {}
 
   /** Un access token válido (del cache si aún sirve, si no lo renueva). */
@@ -131,7 +136,7 @@ export class ServiceAccountTokenSource {
  */
 export function makeBearerTokenGetter(
   sa?: ServiceAccount,
-  fetchImpl: typeof fetch = fetch,
+  fetchImpl: typeof fetch = fetch.bind(globalThis),
 ): () => Promise<string> {
   if (!sa) return () => Promise.resolve('owner');
   const src = new ServiceAccountTokenSource(sa, fetchImpl);

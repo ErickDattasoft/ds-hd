@@ -203,7 +203,9 @@ export class FirestoreRestClient {
   private readonly fetchImpl: typeof fetch;
 
   constructor(opts: FirestoreRestOptions) {
-    this.fetchImpl = opts.fetchImpl ?? fetch;
+    // Ver nota en serviceAccountAuth.ts: `fetch` sin `.bind(globalThis)` revienta en workerd
+    // ("Illegal invocation") al llamarse desreferenciado como `this.fetchImpl(...)`.
+    this.fetchImpl = opts.fetchImpl ?? fetch.bind(globalThis);
     this.obtenerToken = makeBearerTokenGetter(opts.serviceAccount, this.fetchImpl);
     const base =
       opts.baseUrl ??

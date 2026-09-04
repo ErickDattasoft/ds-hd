@@ -88,6 +88,30 @@ export { Buffer };
 export default { Buffer };
 `,
   },
+  // Mismo problema que safe(r)-buffer: `require('events')` vía el `require` del banner
+  // (createRequire de node:module) devuelve el namespace del módulo en vez de la clase
+  // `EventEmitter` en sí (sin `.prototype`), y nunjucks hace `class extends EventEmitter`
+  // (`object.js` → `EmitterObj`) al cargar, que revienta con "Object prototype may only be
+  // an Object or null: undefined". El `import ... from 'node:events'` ESM nativo sí da la
+  // clase real con `.prototype` en workerd.
+  events: {
+    // OJO: solo el 'events' pelado (lo que pide nunjucks vía `require`) — el stub mismo
+    // pide 'node:events' con prefijo, que debe quedar SIN interceptar o el plugin se
+    // autorreferenciaría en un ciclo infinito al resolver su propio require.
+    //
+    // CJS puro a propósito (nada de `import`/`export`): un primer intento con
+    // `export default EventEmitter` funcionaba mal — esbuild envuelve ese módulo ESM con
+    // `__toCommonJS` al consumirlo desde `require()`, lo que devuelve `{default, EventEmitter}`
+    // (un namespace), no la clase en sí — mismo bug original, solo trasladado. El `events`
+    // real de Node es CJS puro donde `module.exports` ES la clase (con `.EventEmitter`
+    // apuntándose a sí misma) — hay que replicar exactamente esa forma.
+    match: (a) => a.path === 'events',
+    code: `const mod = require('node:events');
+const EventEmitter = mod.default || mod.EventEmitter || mod;
+module.exports = EventEmitter;
+module.exports.EventEmitter = EventEmitter;
+`,
+  },
   // `send` = motor de `res.sendFile`/`express.static`. La app en modo `workers` no lo usa
   // (assets por el binding de CF), pero `require('stream')` en workerd no devuelve un
   // constructor y su `util.inherits(SendStream, Stream)` revienta al cargar el módulo.
@@ -112,6 +136,32 @@ export const createReadStream = () => { throw new Error('fs.createReadStream no 
 export default { existsSync, readFileSync, readdirSync, statSync, realpathSync, createReadStream };
 `,
   },
+  // `nodemailer`: además de `node:os` (hostname/networkInterfaces), su transporte
+  // `sendmail-transport` pide `node:child_process` solo con requerirlo — y detrás vendrían
+  // `net`/`tls`/`dns` del transporte SMTP real, ninguno disponible en workerd (sin sockets TCP
+  // crudos). SMTP no funciona en Workers de todas formas (`container.ts` solo instancia
+  // `SmtpEmailSender` si `SMTP_HOST` está seteado, que en prod Workers no lo está — ahí corre
+  // `BrevoEmailSender` por HTTP); se stubbea el paquete entero, igual que `config/firebase.js`.
+  nodemailer: {
+    match: (a) => a.path === 'nodemailer',
+    code: `export default {
+  createTransport() {
+    throw new Error('nodemailer no está disponible en Workers (usar BREVO_API_KEY / BrevoEmailSender).');
+  },
+};
+`,
+  },
+  // `fast-glob` (vía `awilix/lib/list-modules.js`, que respalda `loadModules`/`listModules`
+  // de awilix) pide `node:os`, que no existe en workerd ("No such module"). El proyecto NO
+  // usa `loadModules`/`listModules` — `container.ts` registra todo explícito con
+  // `asClass`/`asFunction`/`asValue` — así que un stub vacío es seguro.
+  'fast-glob': {
+    match: (a) => a.path === 'fast-glob',
+    code: `export default function fastGlob() {
+  throw new Error('fast-glob no está disponible en Workers (awilix.loadModules no se usa).');
+}
+`,
+  },
 };
 
 for (const [name, { code }] of Object.entries(stubs)) {
@@ -122,7 +172,7 @@ const stubPlugin = {
   name: 'stub-node-only',
   setup(b) {
     const filtro =
-      /(^|\/)(firebase(\.js)?|compression|pino(-http)?|send|(node:)?tty|(node:)?fs|safe-buffer|safer-buffer)$/;
+      /(^|\/)(firebase(\.js)?|compression|pino(-http)?|send|(node:)?tty|(node:)?fs|events|safe-buffer|safer-buffer|fast-glob|nodemailer)$/;
     b.onResolve({ filter: filtro }, (args) => {
       for (const [name, { match }] of Object.entries(stubs)) {
         if (match(args)) return { path: join(outDir, 'stubs', `${name.replace(/\W+/g, '_')}.js`) };
