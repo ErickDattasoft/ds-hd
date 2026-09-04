@@ -104,8 +104,15 @@ ilustran cada sección se toman con `npm run docs:screenshots` contra la app cor
 
 ## Despliegue
 
-Docker multi-stage + Caddy (HTTPS automático) en un droplet de DigitalOcean.
-CI/CD con GitHub Actions (`ci.yml`, `deploy.yml`). Ver [`docs/deploy/DROPLET.md`](./docs/deploy/DROPLET.md).
+Cloudflare Workers (gratis, sin tarjeta) — bundle único con Express real
+(`nodejs_compat` + `httpServerHandler`), Firestore/Auth por API REST (`FIRESTORE_DRIVER=rest`,
+sin `firebase-admin`/gRPC). CI/CD con GitHub Actions (`ci.yml`, `deploy.yml` vía
+`wrangler deploy`). Ver [`docs/deploy/CLOUDFLARE.md`](./docs/deploy/CLOUDFLARE.md).
+
+Docker sigue siendo el entorno de desarrollo local (emulador de Firebase + MailHog); el
+`Dockerfile`/`docker-compose.prod.yml` y la guía de un droplet real quedan dormidos como
+alternativa en [`docs/deploy/DROPLET.md`](./docs/deploy/DROPLET.md) por si algún día hay
+presupuesto para un VPS.
 
 ## Contribuir
 

@@ -17,11 +17,13 @@
     "enabled": true
   },
   // Variables NO secretas. Las secretas (FIREBASE_API_KEY, FIREBASE_SERVICE_ACCOUNT_B64,
-  // SESSION_COOKIE_SECRET, TURNSTILE_SECRET, JOBS_SECRET, BREVO_API_KEY, …) se cargan con
-  // `wrangler secret put <NOMBRE>` — ver docs/deploy/CLOUDFLARE.md.
+  // SESSION_COOKIE_SECRET, TURNSTILE_SECRET, APP_BASE_URL, JOBS_SECRET, BREVO_API_KEY, …) se
+  // cargan con `wrangler secret put <NOMBRE>` — ver docs/deploy/CLOUDFLARE.md.
   "vars": {
     "NODE_ENV": "production",
     "FIRESTORE_DRIVER": "rest",
-    "LOG_LEVEL": "info"
+    "LOG_LEVEL": "info",
+    "FIREBASE_PROJECT_ID": "ds-hd-b4939",
+    "TURNSTILE_SITE_KEY": "0x4AAAAAAElIoYKcevpkmti3"
   }
 }
