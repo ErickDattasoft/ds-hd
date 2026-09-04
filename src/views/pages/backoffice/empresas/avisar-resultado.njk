@@ -1,0 +1,29 @@
+{% extends "layouts/backoffice.njk" %}
+{% block title %}Resultado del aviso{% endblock %}
+{% block content %}
+  <div class="page-head">
+    <h1>Resultado del aviso de {{ 'versiones' if tipo == 'versiones' else 'licencias' }}</h1>
+    <a class="btn btn--sm btn--ghost" href="/app/empresas">Volver a empresas</a>
+  </div>
+  <table class="data-table">
+    <thead><tr><th>Empresa</th><th>Resultado</th></tr></thead>
+    <tbody>
+      {% for r in resultados %}
+        <tr>
+          <td>{{ r.empresaNombre }}</td>
+          <td>
+            {% if r.enviado %}
+              <span class="badge badge--ok">Enviado</span>
+            {% elif r.motivo == 'sin_pendientes' %}
+              <span class="badge">Sin pendientes, no se envió</span>
+            {% elif r.motivo == 'sin_contacto_correo' %}
+              <span class="badge badge--warning">Sin contacto con correo</span>
+            {% else %}
+              <span class="badge badge--danger">No encontrada</span>
+            {% endif %}
+          </td>
+        </tr>
+      {% else %}<tr><td colspan="2" class="muted">No se seleccionó ninguna empresa.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+{% endblock %}

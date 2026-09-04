@@ -42,6 +42,10 @@
         {% endfor %}
       </tbody>
     </table>
+    <p class="muted">
+      Último aviso de versiones: {{ empresa.ultimoAvisoVersionesEn | fechahora if empresa.ultimoAvisoVersionesEn else 'nunca' }}
+      · Último aviso de licencias: {{ empresa.ultimoAvisoLicenciasEn | fechahora if empresa.ultimoAvisoLicenciasEn else 'nunca' }}
+    </p>
   {% endif %}
 
   {% if can('empresas:eliminar') %}

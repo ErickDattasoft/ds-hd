@@ -59,3 +59,29 @@ Documentos singleton de configuración (`configuracion/{seccion}`).
 #### Returns
 
 `Promise`\<`void`\>
+
+***
+
+### obtenerAvisos()
+
+> **obtenerAvisos**(): `Promise`\<[`ConfiguracionAvisos`](../../../../entities/ConfiguracionAvisos/interfaces/ConfiguracionAvisos.md)\>
+
+#### Returns
+
+`Promise`\<[`ConfiguracionAvisos`](../../../../entities/ConfiguracionAvisos/interfaces/ConfiguracionAvisos.md)\>
+
+***
+
+### guardarAvisos()
+
+> **guardarAvisos**(`config`): `Promise`\<`void`\>
+
+#### Parameters
+
+##### config
+
+[`ConfiguracionAvisos`](../../../../entities/ConfiguracionAvisos/interfaces/ConfiguracionAvisos.md)
+
+#### Returns
+
+`Promise`\<`void`\>

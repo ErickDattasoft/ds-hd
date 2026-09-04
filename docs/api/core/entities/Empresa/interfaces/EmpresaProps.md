@@ -107,3 +107,17 @@ Versión instalada por sistema (texto libre, p. ej. `16.3.1 SP2`).
 ### updatedAt?
 
 > `optional` **updatedAt?**: `Date`
+
+***
+
+### ultimoAvisoVersionesEn?
+
+> `optional` **ultimoAvisoVersionesEn?**: `Date` \| `null`
+
+Último aviso masivo de versiones/licencias enviado (para el panel de pendientes).
+
+***
+
+### ultimoAvisoLicenciasEn?
+
+> `optional` **ultimoAvisoLicenciasEn?**: `Date` \| `null`

@@ -19,6 +19,7 @@ import {
   importarKB,
   importarBitacora,
   importarConfiguracionTickets,
+  importarConfiguracionAvisos,
   importarUsuarios,
 } from './importers.js';
 
@@ -34,6 +35,7 @@ await importarVersiones(c, datos);
 await importarKB(c, datos);
 await importarBitacora(c, datos);
 await importarConfiguracionTickets(c, datos);
+await importarConfiguracionAvisos(c, datos);
 await importarTickets(c, datos);
 
 if (contactos.sinEmpresa.length) {

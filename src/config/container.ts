@@ -77,6 +77,7 @@ import { ConfiguracionController } from '../interfaces/http/controllers/backoffi
 import { TicketPublicoController } from '../interfaces/http/controllers/public/TicketPublicoController.js';
 import { BrevoWebhookController } from '../interfaces/http/controllers/webhooks/BrevoWebhookController.js';
 import { EmpresaController } from '../interfaces/http/controllers/backoffice/EmpresaController.js';
+import { AvisarEmpresasService } from '../application/empresas/AvisarEmpresasService.js';
 import { ContactoController } from '../interfaces/http/controllers/backoffice/ContactoController.js';
 import { BitacoraController } from '../interfaces/http/controllers/backoffice/BitacoraController.js';
 import { VersionController } from '../interfaces/http/controllers/backoffice/VersionController.js';
@@ -187,6 +188,7 @@ export interface Cradle {
   configuracionTicketsService: ConfiguracionTicketsService;
   bitacoraService: BitacoraService;
   empresaService: EmpresaService;
+  avisarEmpresasService: AvisarEmpresasService;
   contactoService: ContactoService;
   versionService: VersionService;
   knowledgeService: KnowledgeService;
@@ -545,6 +547,18 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
     empresaService: asFunction(
       (c: Cradle) => new EmpresaService(c.empresaRepo, c.idGenerator, c.clock, c.bitacoraService),
     ).singleton(),
+    avisarEmpresasService: asFunction(
+      (c: Cradle) =>
+        new AvisarEmpresasService(
+          c.empresaRepo,
+          c.contactoRepo,
+          c.versionRepo,
+          c.configuracionRepo,
+          c.emailSender,
+          c.bitacoraService,
+          c.clock,
+        ),
+    ).singleton(),
     contactoService: asFunction(
       (c: Cradle) =>
         new ContactoService(c.contactoRepo, c.empresaRepo, c.idGenerator, c.clock, c.bitacoraService),
@@ -666,7 +680,14 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
     ).singleton(),
     empresaController: asFunction(
       (c: Cradle) =>
-        new EmpresaController(c.empresaService, c.contactoService, c.ticketQueries, c.seguimientoService, c.versionService),
+        new EmpresaController(
+          c.empresaService,
+          c.contactoService,
+          c.ticketQueries,
+          c.seguimientoService,
+          c.versionService,
+          c.avisarEmpresasService,
+        ),
     ).singleton(),
     contactoController: asFunction(
       (c: Cradle) => new ContactoController(c.contactoService, c.empresaService),
@@ -675,7 +696,7 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
       (c: Cradle) => new BitacoraController(c.bitacoraService),
     ).singleton(),
     versionController: asFunction(
-      (c: Cradle) => new VersionController(c.versionService),
+      (c: Cradle) => new VersionController(c.versionService, c.configuracionRepo),
     ).singleton(),
     knowledgeController: asFunction(
       (c: Cradle) => new KnowledgeController(c.knowledgeService),

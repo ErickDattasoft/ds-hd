@@ -16,6 +16,7 @@ import { ArticuloKB } from '../../src/core/entities/ArticuloKB.js';
 import type { EntradaBitacora } from '../../src/core/entities/EntradaBitacora.js';
 import { PRIORIDADES, type Prioridad } from '../../src/core/entities/value-objects/Prioridad.js';
 import { CONFIG_TICKETS_POR_DEFECTO, type ConfiguracionTickets } from '../../src/core/entities/ConfiguracionTickets.js';
+import { CONFIG_AVISOS_POR_DEFECTO, type ConfiguracionAvisos, type ContactoSoporte } from '../../src/core/entities/ConfiguracionAvisos.js';
 import { CONTADOR_TICKETS } from '../../src/application/tickets/constantes.js';
 import { arr, DRY_RUN, hashId, log, slug } from './lib.js';
 import type { Container } from '../../src/config/container.js';
@@ -419,6 +420,39 @@ export async function importarConfiguracionTickets(c: Container, datos: Dato): P
   };
   if (!DRY_RUN) await repo.guardarTickets(nueva);
   log('configTickets', `catálogos reales importados (${nueva.tipos.length} tipos, ${nueva.estados.length} estados)`);
+  return true;
+}
+
+// ── Plantillas de aviso de Versiones/Licencias (`plantillaMensaje`, `plantillaLicencias`,
+// contactos de soporte dentro de `configTickets`) — comparten el nombre de comodines que ya
+// usaba el viejo (`[contacto]`, `[empresa]`, `[sistemas_pendientes]`, `[contacto_soporte]`).
+function contactosDe(v: unknown): ContactoSoporte[] {
+  return arr(v as Dato[])
+    .map((c) => ({ nombre: s(c.nombre), telefono: s(c.telefono) }))
+    .filter((c) => c.nombre || c.telefono);
+}
+
+export async function importarConfiguracionAvisos(c: Container, datos: Dato): Promise<boolean> {
+  const cfg = (datos.configTickets ?? {}) as Dato;
+  const plantillaVersiones = s(datos.plantillaMensaje);
+  const plantillaLicencias = s(datos.plantillaLicencias);
+  if (!plantillaVersiones && !plantillaLicencias) {
+    log('configAvisos', 'el respaldo no trae plantillas de aviso, se dejan las de por defecto');
+    return false;
+  }
+  // Si el respaldo no tiene contactos específicos de versiones/licencias, cae al general
+  // `contactosSoporte` (así lo hacía el viejo: un solo directorio, comodín compartido).
+  const generales = contactosDe(cfg.contactosSoporte);
+  const contactosSoporteVersiones = contactosDe(cfg.contactosSoporteVersiones);
+  const contactosSoporteLicencias = contactosDe(cfg.contactosSoporteLicencias);
+  const nueva: ConfiguracionAvisos = {
+    plantillaVersiones: plantillaVersiones || CONFIG_AVISOS_POR_DEFECTO.plantillaVersiones,
+    plantillaLicencias: plantillaLicencias || CONFIG_AVISOS_POR_DEFECTO.plantillaLicencias,
+    contactosSoporteVersiones: contactosSoporteVersiones.length ? contactosSoporteVersiones : generales,
+    contactosSoporteLicencias: contactosSoporteLicencias.length ? contactosSoporteLicencias : generales,
+  };
+  if (!DRY_RUN) await c.resolve('configuracionRepo').guardarAvisos(nueva);
+  log('configAvisos', 'plantillas y contactos de soporte reales importados');
   return true;
 }
 

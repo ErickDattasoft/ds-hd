@@ -120,6 +120,18 @@ Empresa/cliente del CRM.
 
 > **updatedAt**: `Date`
 
+***
+
+### ultimoAvisoVersionesEn
+
+> **ultimoAvisoVersionesEn**: `Date` \| `null`
+
+***
+
+### ultimoAvisoLicenciasEn
+
+> **ultimoAvisoLicenciasEn**: `Date` \| `null`
+
 ## Methods
 
 ### archivar()
@@ -141,6 +153,38 @@ Empresa/cliente del CRM.
 ### restaurar()
 
 > **restaurar**(`ahora`): `void`
+
+#### Parameters
+
+##### ahora
+
+`Date`
+
+#### Returns
+
+`void`
+
+***
+
+### marcarAvisoVersiones()
+
+> **marcarAvisoVersiones**(`ahora`): `void`
+
+#### Parameters
+
+##### ahora
+
+`Date`
+
+#### Returns
+
+`void`
+
+***
+
+### marcarAvisoLicencias()
+
+> **marcarAvisoLicencias**(`ahora`): `void`
 
 #### Parameters
 

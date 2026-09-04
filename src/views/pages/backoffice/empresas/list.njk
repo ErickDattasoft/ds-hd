@@ -8,29 +8,48 @@
   <form method="get" class="filterbar">
     <input type="search" name="q" value="{{ q }}" placeholder="Buscar por nombre o RFC…" autocomplete="off" spellcheck="false" />
     <label class="field--check"><input type="checkbox" name="archivadas" value="1" {{ 'checked' if incluirArchivadas }} /> incluir archivadas</label>
+    <label class="field--check"><input type="checkbox" name="pendientes" value="1" {{ 'checked' if soloPendientes }} /> solo con pendientes (licencia o versión)</label>
     <button class="btn btn--sm" type="submit">Buscar</button>
   </form>
-  <table class="data-table">
-    <thead><tr><th>Nombre</th><th>RFC</th><th>Teléfono</th><th>Sistemas</th><th>Licencias</th><th>Versiones</th><th>Estado</th></tr></thead>
-    <tbody>
-      {% for fila in filas %}
-        {% set e = fila.empresa %}
+
+  <form method="post" action="/app/empresas/avisar" data-confirm="¿Enviar el aviso por correo a las empresas seleccionadas?">
+    <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+    <table class="data-table">
+      <thead>
         <tr>
-          <td><a href="/app/empresas/{{ e.id }}">{{ e.nombre }}</a></td>
-          <td>{{ e.rfc or '—' }}</td>
-          <td>{{ e.telefono or '—' }}</td>
-          <td>{{ e.sistemasContratados | length }}</td>
-          <td>
-            {% if fila.vencidas %}<span class="badge badge--danger">{{ fila.vencidas }} vencida{{ 's' if fila.vencidas != 1 }}</span>{% endif %}
-            {% if fila.porVencer %}<span class="badge badge--warning">{{ fila.porVencer }} por vencer</span>{% endif %}
-            {% if not fila.vencidas and not fila.porVencer %}<span class="muted">—</span>{% endif %}
-          </td>
-          <td>
-            {% if fila.desactualizadas %}<span class="badge badge--warning">{{ fila.desactualizadas }} desactualizada{{ 's' if fila.desactualizadas != 1 }}</span>{% else %}<span class="muted">—</span>{% endif %}
-          </td>
-          <td>{{ 'Activa' if e.activa else 'Archivada' }}</td>
+          {% if can('empresas:editar') %}<th></th>{% endif %}
+          <th>Nombre</th><th>RFC</th><th>Teléfono</th><th>Sistemas</th><th>Licencias</th><th>Versiones</th><th>Estado</th>
         </tr>
-      {% else %}<tr><td colspan="7" class="muted">Sin empresas.</td></tr>{% endfor %}
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+        {% for fila in filas %}
+          {% set e = fila.empresa %}
+          <tr>
+            {% if can('empresas:editar') %}
+              <td><input type="checkbox" name="empresaIds" value="{{ e.id }}" aria-label="Seleccionar {{ e.nombre }}" /></td>
+            {% endif %}
+            <td><a href="/app/empresas/{{ e.id }}">{{ e.nombre }}</a></td>
+            <td>{{ e.rfc or '—' }}</td>
+            <td>{{ e.telefono or '—' }}</td>
+            <td>{{ e.sistemasContratados | length }}</td>
+            <td>
+              {% if fila.vencidas %}<span class="badge badge--danger">{{ fila.vencidas }} vencida{{ 's' if fila.vencidas != 1 }}</span>{% endif %}
+              {% if fila.porVencer %}<span class="badge badge--warning">{{ fila.porVencer }} por vencer</span>{% endif %}
+              {% if not fila.vencidas and not fila.porVencer %}<span class="muted">—</span>{% endif %}
+            </td>
+            <td>
+              {% if fila.desactualizadas %}<span class="badge badge--warning">{{ fila.desactualizadas }} desactualizada{{ 's' if fila.desactualizadas != 1 }}</span>{% else %}<span class="muted">—</span>{% endif %}
+            </td>
+            <td>{{ 'Activa' if e.activa else 'Archivada' }}</td>
+          </tr>
+        {% else %}<tr><td colspan="8" class="muted">Sin empresas.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+    {% if can('empresas:editar') and filas | length %}
+      <div class="page-head__actions" style="margin-top: var(--space-3)">
+        <button class="btn btn--sm btn--secondary" type="submit" name="tipo" value="versiones">Avisar versiones a seleccionadas</button>
+        <button class="btn btn--sm btn--secondary" type="submit" name="tipo" value="licencias">Avisar licencias a seleccionadas</button>
+      </div>
+    {% endif %}
+  </form>
 {% endblock %}

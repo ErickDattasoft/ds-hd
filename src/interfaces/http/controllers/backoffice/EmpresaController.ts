@@ -1,5 +1,6 @@
 import type { Request, Response } from 'express';
 import type { EmpresaService } from '../../../../application/empresas/EmpresaService.js';
+import type { AvisarEmpresasService } from '../../../../application/empresas/AvisarEmpresasService.js';
 import type { ContactoService } from '../../../../application/contactos/ContactoService.js';
 import type { SeguimientoService } from '../../../../application/seguimiento/SeguimientoService.js';
 import type { VersionService } from '../../../../application/versiones/VersionService.js';
@@ -33,11 +34,13 @@ export class EmpresaController {
     private readonly ticketQueries: ITicketQueries,
     private readonly seguimiento: SeguimientoService,
     private readonly versiones: VersionService,
+    private readonly avisar: AvisarEmpresasService,
   ) {}
 
   listar = async (req: Request, res: Response): Promise<void> => {
     const texto = str(req.query.q);
     const incluirArchivadas = req.query.archivadas === '1';
+    const soloPendientes = req.query.pendientes === '1';
     const [empresas, versiones] = await Promise.all([
       this.empresas.listar({
         ...(texto ? { texto } : {}),
@@ -47,7 +50,7 @@ export class EmpresaController {
     ]);
     const oficial = this.mapaOficial(versiones);
     const hoy = new Date();
-    const filas = empresas.map((empresa) => {
+    let filas = empresas.map((empresa) => {
       const riesgo = empresa.licenciasEnRiesgo(hoy);
       return {
         empresa,
@@ -58,7 +61,29 @@ export class EmpresaController {
         ).length,
       };
     });
-    res.render('pages/backoffice/empresas/list', { titulo: 'Empresas', filas, q: texto, incluirArchivadas });
+    if (soloPendientes) {
+      filas = filas.filter((f) => f.vencidas || f.porVencer || f.desactualizadas);
+    }
+    res.render('pages/backoffice/empresas/list', {
+      titulo: 'Empresas',
+      filas,
+      q: texto,
+      incluirArchivadas,
+      soloPendientes,
+    });
+  };
+
+  avisarPost = async (req: Request, res: Response): Promise<void> => {
+    const tipo = req.body?.tipo === 'licencias' ? 'licencias' : 'versiones';
+    const empresaIds = ([] as string[]).concat(req.body?.empresaIds ?? []).filter(Boolean);
+    const resultados = empresaIds.length
+      ? await this.avisar.ejecutar({ actor: req.user!, empresaIds, tipo })
+      : [];
+    res.render('pages/backoffice/empresas/avisar-resultado', {
+      titulo: 'Resultado del aviso',
+      tipo,
+      resultados,
+    });
   };
 
   nuevo = (_req: Request, res: Response): void => {

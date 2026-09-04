@@ -5,6 +5,7 @@ import { Empresa } from '../../core/entities/Empresa.js';
 
 const COL = 'empresas';
 const fecha = (v: unknown): Date | undefined => (v instanceof Timestamp ? v.toDate() : undefined);
+const ts = (d: Date | null): Timestamp | null => (d ? Timestamp.fromDate(d) : null);
 
 function toDomain(id: string, d: DocumentData): Empresa {
   return new Empresa({
@@ -24,6 +25,8 @@ function toDomain(id: string, d: DocumentData): Empresa {
     creadoPorUid: d.creadoPorUid ?? null,
     createdAt: fecha(d.createdAt) ?? new Date(),
     updatedAt: fecha(d.updatedAt) ?? new Date(),
+    ultimoAvisoVersionesEn: fecha(d.ultimoAvisoVersionesEn) ?? null,
+    ultimoAvisoLicenciasEn: fecha(d.ultimoAvisoLicenciasEn) ?? null,
   });
 }
 
@@ -68,6 +71,8 @@ export class FirestoreEmpresaRepository implements IEmpresaRepository {
         creadoPorUid: empresa.creadoPorUid,
         createdAt: Timestamp.fromDate(empresa.createdAt),
         updatedAt: Timestamp.fromDate(empresa.updatedAt),
+        ultimoAvisoVersionesEn: ts(empresa.ultimoAvisoVersionesEn),
+        ultimoAvisoLicenciasEn: ts(empresa.ultimoAvisoLicenciasEn),
       },
       { merge: true },
     );

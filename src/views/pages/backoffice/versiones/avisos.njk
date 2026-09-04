@@ -1,0 +1,45 @@
+{% extends "layouts/backoffice.njk" %}
+{% block title %}Avisos de versiones y licencias{% endblock %}
+{% block content %}
+  <div class="page-head">
+    <h1>Avisos de versiones y licencias</h1>
+    <a class="btn btn--sm btn--ghost" href="/app/versiones">Volver a versiones</a>
+  </div>
+  {% if guardado %}<p class="alert alert--ok">Configuración guardada.</p>{% endif %}
+  <p class="muted">
+    Plantillas usadas al enviar avisos masivos desde <a href="/app/empresas">Empresas</a>.
+    Comodines disponibles: <code>[contacto]</code>, <code>[empresa]</code>,
+    <code>[sistemas_pendientes]</code> o <code>[licencias_pendientes]</code> según la plantilla,
+    y <code>[contacto_soporte]</code>.
+  </p>
+
+  <form method="post" action="/app/versiones/avisos" class="form form--wide">
+    <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+
+    <details class="disclosure" open>
+      <summary class="disclosure__summary">Aviso de versiones desactualizadas</summary>
+      <div class="disclosure__body form">
+        <label class="field"><span>Plantilla del mensaje</span>
+          <textarea name="plantillaVersiones" rows="10">{{ config.plantillaVersiones }}</textarea>
+        </label>
+        <label class="field"><span>Contactos de soporte (uno por línea, "Nombre: Teléfono")</span>
+          <textarea name="contactosSoporteVersiones" rows="3">{{ contactosVersionesTexto }}</textarea>
+        </label>
+      </div>
+    </details>
+
+    <details class="disclosure">
+      <summary class="disclosure__summary">Aviso de licencias por vencer</summary>
+      <div class="disclosure__body form">
+        <label class="field"><span>Plantilla del mensaje</span>
+          <textarea name="plantillaLicencias" rows="10">{{ config.plantillaLicencias }}</textarea>
+        </label>
+        <label class="field"><span>Contactos de soporte (uno por línea, "Nombre: Teléfono")</span>
+          <textarea name="contactosSoporteLicencias" rows="3">{{ contactosLicenciasTexto }}</textarea>
+        </label>
+      </div>
+    </details>
+
+    <button class="btn" type="submit">Guardar</button>
+  </form>
+{% endblock %}

@@ -44,6 +44,9 @@ export interface EmpresaProps {
   creadoPorUid?: string | null;
   createdAt?: Date;
   updatedAt?: Date;
+  /** Último aviso masivo de versiones/licencias enviado (para el panel de pendientes). */
+  ultimoAvisoVersionesEn?: Date | null;
+  ultimoAvisoLicenciasEn?: Date | null;
 }
 
 /** Empresa/cliente del CRM. */
@@ -64,6 +67,8 @@ export class Empresa {
   readonly creadoPorUid: string | null;
   readonly createdAt: Date;
   updatedAt: Date;
+  ultimoAvisoVersionesEn: Date | null;
+  ultimoAvisoLicenciasEn: Date | null;
 
   constructor(props: EmpresaProps) {
     if (props.nombre.trim().length < 2) {
@@ -85,6 +90,8 @@ export class Empresa {
     this.creadoPorUid = props.creadoPorUid ?? null;
     this.createdAt = props.createdAt ?? new Date();
     this.updatedAt = props.updatedAt ?? this.createdAt;
+    this.ultimoAvisoVersionesEn = props.ultimoAvisoVersionesEn ?? null;
+    this.ultimoAvisoLicenciasEn = props.ultimoAvisoLicenciasEn ?? null;
   }
 
   archivar(ahora: Date): void {
@@ -93,6 +100,15 @@ export class Empresa {
   }
   restaurar(ahora: Date): void {
     this.activa = true;
+    this.updatedAt = ahora;
+  }
+
+  marcarAvisoVersiones(ahora: Date): void {
+    this.ultimoAvisoVersionesEn = ahora;
+    this.updatedAt = ahora;
+  }
+  marcarAvisoLicencias(ahora: Date): void {
+    this.ultimoAvisoLicenciasEn = ahora;
     this.updatedAt = ahora;
   }
 

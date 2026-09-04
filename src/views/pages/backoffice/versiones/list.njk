@@ -3,7 +3,10 @@
 {% block content %}
   <div class="page-head">
     <h1>Versiones de sistemas</h1>
-    {% if can('versiones:editar') %}<a class="btn btn--sm" href="/app/versiones/nueva">Nueva versión</a>{% endif %}
+    <div class="page-head__actions">
+      {% if can('versiones:editar') %}<a class="btn btn--sm btn--secondary" href="/app/versiones/avisos">Avisos a empresas</a>{% endif %}
+      {% if can('versiones:editar') %}<a class="btn btn--sm" href="/app/versiones/nueva">Nueva versión</a>{% endif %}
+    </div>
   </div>
   <table class="data-table">
     <thead><tr><th>Sistema</th><th>Versión actual</th><th>Liberación</th><th>Descarga</th><th></th></tr></thead>

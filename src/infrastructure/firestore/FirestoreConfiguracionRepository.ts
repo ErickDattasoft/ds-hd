@@ -8,6 +8,11 @@ import {
   CONFIG_CALCULADORA_POR_DEFECTO,
   type ConfiguracionCalculadora,
 } from '../../core/entities/CalculadoraCompac.js';
+import {
+  CONFIG_AVISOS_POR_DEFECTO,
+  type ConfiguracionAvisos,
+  type ContactoSoporte,
+} from '../../core/entities/ConfiguracionAvisos.js';
 
 const COL = 'configuracion';
 
@@ -51,6 +56,29 @@ export class FirestoreConfiguracionRepository implements IConfiguracionRepositor
   async guardarCalculadora(config: ConfiguracionCalculadora): Promise<void> {
     await this.db.collection(COL).doc('calculadora').set(config, { merge: true });
   }
+
+  async obtenerAvisos(): Promise<ConfiguracionAvisos> {
+    const snap = await this.db.collection(COL).doc('avisos').get();
+    if (!snap.exists) return { ...CONFIG_AVISOS_POR_DEFECTO };
+    const d = snap.data()!;
+    return {
+      plantillaVersiones: String(d.plantillaVersiones ?? CONFIG_AVISOS_POR_DEFECTO.plantillaVersiones),
+      plantillaLicencias: String(d.plantillaLicencias ?? CONFIG_AVISOS_POR_DEFECTO.plantillaLicencias),
+      contactosSoporteVersiones: contactos(d.contactosSoporteVersiones),
+      contactosSoporteLicencias: contactos(d.contactosSoporteLicencias),
+    };
+  }
+
+  async guardarAvisos(config: ConfiguracionAvisos): Promise<void> {
+    await this.db.collection(COL).doc('avisos').set(config, { merge: true });
+  }
+}
+
+function contactos(v: unknown): ContactoSoporte[] {
+  if (!Array.isArray(v)) return [];
+  return v
+    .map((x) => ({ nombre: String((x as Record<string, unknown>)?.nombre ?? ''), telefono: String((x as Record<string, unknown>)?.telefono ?? '') }))
+    .filter((c) => c.nombre || c.telefono);
 }
 
 function arr(v: unknown, fallback: readonly string[]): string[] {

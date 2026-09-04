@@ -21,6 +21,10 @@ import {
   CONFIG_CALCULADORA_POR_DEFECTO,
   type ConfiguracionCalculadora,
 } from '../../src/core/entities/CalculadoraCompac.js';
+import {
+  CONFIG_AVISOS_POR_DEFECTO,
+  type ConfiguracionAvisos,
+} from '../../src/core/entities/ConfiguracionAvisos.js';
 import { esEstadoFinal, slugEstado } from '../../src/core/entities/value-objects/EstadoTicket.js';
 
 /** Almacén compartido por el repo y las queries en memoria. */
@@ -143,6 +147,7 @@ export class InMemoryContadorRepository implements IContadorRepository {
 export class InMemoryConfiguracionRepository implements IConfiguracionRepository {
   config: ConfiguracionTickets = { ...CONFIG_TICKETS_POR_DEFECTO };
   calculadora: ConfiguracionCalculadora = { ...CONFIG_CALCULADORA_POR_DEFECTO };
+  avisos: ConfiguracionAvisos = { ...CONFIG_AVISOS_POR_DEFECTO };
   async obtenerTickets(): Promise<ConfiguracionTickets> {
     return this.config;
   }
@@ -154,6 +159,12 @@ export class InMemoryConfiguracionRepository implements IConfiguracionRepository
   }
   async guardarCalculadora(config: ConfiguracionCalculadora): Promise<void> {
     this.calculadora = config;
+  }
+  async obtenerAvisos(): Promise<ConfiguracionAvisos> {
+    return this.avisos;
+  }
+  async guardarAvisos(config: ConfiguracionAvisos): Promise<void> {
+    this.avisos = config;
   }
 }
 
