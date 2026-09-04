@@ -1,0 +1,14 @@
+{% extends "layouts/backoffice.njk" %}
+{% block title %}Mi perfil{% endblock %}
+{% block content %}
+  <h1>Mi perfil</h1>
+  {% if guardado %}<p class="alert alert--ok">Firma guardada.</p>{% endif %}
+  <p class="muted">Se agrega automáticamente al final de tus respuestas públicas en tickets.</p>
+  <form method="post" action="/app/mi-perfil" class="form form--wide">
+    <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+    <label class="field"><span>Firma</span>
+      <textarea name="firma" rows="6" placeholder="Ej. Saludos, Erick Casas — Soporte DATTASOFT">{{ firma }}</textarea>
+    </label>
+    <button class="btn" type="submit">Guardar</button>
+  </form>
+{% endblock %}

@@ -1,12 +1,27 @@
 import type { Request, Response } from 'express';
 import type { ConfiguracionTicketsService } from '../../../../application/configuracion/ConfiguracionTicketsService.js';
+import type { BackupService } from '../../../../application/configuracion/BackupService.js';
 import { camposDeError } from '../../support/errores.js';
 
 const str = (v: unknown): string => (typeof v === 'string' ? v : '');
 
-/** Configuración → Tickets (catálogos, SLA, notificaciones del portal). */
+/** Configuración → Tickets (catálogos, SLA, notificaciones del portal) y backup. */
 export class ConfiguracionController {
-  constructor(private readonly configTickets: ConfiguracionTicketsService) {}
+  constructor(
+    private readonly configTickets: ConfiguracionTicketsService,
+    private readonly backup: BackupService,
+  ) {}
+
+  backupView = (_req: Request, res: Response): void => {
+    res.render('pages/backoffice/configuracion/backup', { titulo: 'Backup' });
+  };
+
+  backupDescargar = async (_req: Request, res: Response): Promise<void> => {
+    const datos = await this.backup.exportar();
+    const fecha = new Date().toISOString().slice(0, 10);
+    res.setHeader('Content-Disposition', `attachment; filename="ds-hd-backup-${fecha}.json"`);
+    res.type('application/json').send(JSON.stringify(datos, null, 2));
+  };
 
   ticketsView = async (_req: Request, res: Response): Promise<void> => {
     const config = await this.configTickets.obtener();

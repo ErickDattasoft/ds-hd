@@ -47,6 +47,9 @@ export function backofficeRoutes(container: Container): Router {
   r.get('/buscar', (req, res) => container.resolve('busquedaController').buscar(req, res));
 
   // ── Usuarios ───────────────────────────────────────────────────────────────
+  r.get('/mi-perfil', (req, res) => usuarios().miPerfilView(req, res));
+  r.post('/mi-perfil', (req, res) => usuarios().miPerfilPost(req, res));
+
   r.get('/usuarios', gestUsuarios, (req, res) => usuarios().listar(req, res));
   r.get('/usuarios/nuevo', gestUsuarios, (req, res) => usuarios().nuevo(req, res));
   r.post('/usuarios', gestUsuarios, (req, res) => usuarios().crearPost(req, res));
@@ -168,6 +171,12 @@ export function backofficeRoutes(container: Container): Router {
   );
   r.post('/configuracion/tickets', requirePermission('configuracion:catalogos'), (req, res) =>
     configuracion().ticketsPost(req, res),
+  );
+  r.get('/configuracion/backup', requirePermission('configuracion:integraciones'), (req, res) =>
+    configuracion().backupView(req, res),
+  );
+  r.get('/configuracion/backup/descargar', requirePermission('configuracion:integraciones'), (req, res) =>
+    configuracion().backupDescargar(req, res),
   );
 
   return r;

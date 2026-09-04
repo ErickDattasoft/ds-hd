@@ -171,7 +171,8 @@
 }
 .topbar__title { font-weight: 650; }
 .topbar__user { display: flex; align-items: center; gap: var(--space-3); }
-.topbar__name { font-size: var(--text-sm); color: var(--color-text-muted); }
+.topbar__name { font-size: var(--text-sm); color: var(--color-text-muted); text-decoration: none; }
+a.topbar__name:hover { color: var(--color-text); text-decoration: underline; }
 .nav-toggle { display: none; }
 
 @media (max-width: 860px) {

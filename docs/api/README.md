@@ -8,6 +8,7 @@
 
 - [application/auth/LoginService](application/auth/LoginService/README.md)
 - [application/auth/SolicitarAccesoService](application/auth/SolicitarAccesoService/README.md)
+- [application/configuracion/BackupService](application/configuracion/BackupService/README.md)
 - [application/configuracion/ConfiguracionTicketsService](application/configuracion/ConfiguracionTicketsService/README.md)
 - [application/contactos/ContactoService](application/contactos/ContactoService/README.md)
 - [application/cotizaciones/CalculadoraCompacService](application/cotizaciones/CalculadoraCompacService/README.md)
@@ -41,6 +42,7 @@
 - [application/tickets/dto](application/tickets/dto/README.md)
 - [application/tickets/efectos](application/tickets/efectos/README.md)
 - [application/usuarios/AceptarInvitacionService](application/usuarios/AceptarInvitacionService/README.md)
+- [application/usuarios/ActualizarMiFirmaService](application/usuarios/ActualizarMiFirmaService/README.md)
 - [application/usuarios/ActualizarUsuarioService](application/usuarios/ActualizarUsuarioService/README.md)
 - [application/usuarios/CrearUsuarioService](application/usuarios/CrearUsuarioService/README.md)
 - [application/usuarios/InvitarClienteService](application/usuarios/InvitarClienteService/README.md)

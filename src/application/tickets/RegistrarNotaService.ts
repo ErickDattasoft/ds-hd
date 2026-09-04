@@ -63,10 +63,11 @@ export class RegistrarNotaService {
     }
 
     if (nota.tipo === 'publica' && input.actor.esStaff && ticket.contactoCorreo) {
+      const firma = input.actor.firma ? `<hr />${input.actor.firma}` : '';
       await this.email.enviar({
         para: [{ email: ticket.contactoCorreo, ...(ticket.contactoNombre ? { nombre: ticket.contactoNombre } : {}) }],
         asunto: `Actualización de tu ticket #${ticket.numero}`,
-        html: `<p>${cuerpo}</p><hr /><p class="muted">Ticket #${ticket.numero} — ${ticket.asunto}</p>`,
+        html: `<p>${cuerpo}</p>${firma}<hr /><p class="muted">Ticket #${ticket.numero} — ${ticket.asunto}</p>`,
         tags: ['ticket-nota', `ticket-${ticket.numero}`],
       });
     }

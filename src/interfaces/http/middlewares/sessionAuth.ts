@@ -21,6 +21,7 @@ function aSessionUser(u: Usuario): SessionUser {
     esStaff: u.esStaff,
     esCliente: u.esCliente,
     permisos: permisosEfectivos(u),
+    firma: u.firma,
   };
 }
 

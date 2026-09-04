@@ -70,6 +70,14 @@ Empresa asociada; obligatoria para `rol === 'cliente'`.
 
 ***
 
+### firma?
+
+> `optional` **firma?**: `string` \| `null`
+
+Firma que se agrega a las respuestas públicas de tickets, si la tiene configurada.
+
+***
+
 ### createdAt?
 
 > `optional` **createdAt?**: `Date`

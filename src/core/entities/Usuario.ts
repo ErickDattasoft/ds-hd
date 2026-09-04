@@ -25,6 +25,8 @@ export interface UsuarioProps {
   /** Empresa asociada; obligatoria para `rol === 'cliente'`. */
   empresaId?: string | null;
   agente?: Partial<PerfilAgente>;
+  /** Firma que se agrega a las respuestas públicas de tickets, si la tiene configurada. */
+  firma?: string | null;
   createdAt?: Date;
   updatedAt?: Date;
   lastLoginAt?: Date | null;
@@ -51,6 +53,7 @@ export class Usuario {
   activo: boolean;
   empresaId: string | null;
   agente: PerfilAgente;
+  firma: string | null;
   readonly createdAt: Date;
   updatedAt: Date;
   lastLoginAt: Date | null;
@@ -65,6 +68,7 @@ export class Usuario {
     this.activo = props.activo ?? true;
     this.empresaId = props.empresaId ?? null;
     this.agente = { ...AGENTE_POR_DEFECTO, ...props.agente };
+    this.firma = props.firma?.trim() || null;
     this.createdAt = props.createdAt ?? new Date();
     this.updatedAt = props.updatedAt ?? this.createdAt;
     this.lastLoginAt = props.lastLoginAt ?? null;
@@ -90,5 +94,10 @@ export class Usuario {
   activar(): void {
     this.activo = true;
     this.updatedAt = new Date();
+  }
+
+  fijarFirma(firma: string, ahora: Date): void {
+    this.firma = firma.trim() || null;
+    this.updatedAt = ahora;
   }
 }

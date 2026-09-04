@@ -2,6 +2,7 @@ import type { Request, Response } from 'express';
 import type { IUsuarioRepository } from '../../../../core/ports/repositories/IUsuarioRepository.js';
 import type { CrearUsuarioService } from '../../../../application/usuarios/CrearUsuarioService.js';
 import type { ActualizarUsuarioService } from '../../../../application/usuarios/ActualizarUsuarioService.js';
+import type { ActualizarMiFirmaService } from '../../../../application/usuarios/ActualizarMiFirmaService.js';
 import type { InvitarClienteService } from '../../../../application/usuarios/InvitarClienteService.js';
 import type { IEmpresaRepository } from '../../../../core/ports/repositories/IEmpresaRepository.js';
 import { DomainError, NotFoundError } from '../../../../core/errors/DomainError.js';
@@ -23,7 +24,20 @@ export class UsuarioController {
     private readonly actualizar: ActualizarUsuarioService,
     private readonly invitarCliente: InvitarClienteService,
     private readonly empresas: IEmpresaRepository,
+    private readonly actualizarFirma: ActualizarMiFirmaService,
   ) {}
+
+  miPerfilView = async (req: Request, res: Response): Promise<void> => {
+    const usuario = await this.usuarios.findByUid(req.user!.uid);
+    res.render('pages/backoffice/mi-perfil', { titulo: 'Mi perfil', firma: usuario?.firma ?? '', guardado: false });
+  };
+
+  miPerfilPost = async (req: Request, res: Response): Promise<void> => {
+    const firma = String(req.body?.firma ?? '');
+    await this.actualizarFirma.ejecutar({ actor: req.user!, firma });
+    invalidarCacheUsuario(req.user!.uid);
+    res.render('pages/backoffice/mi-perfil', { titulo: 'Mi perfil', firma, guardado: true });
+  };
 
   listar = async (req: Request, res: Response): Promise<void> => {
     const texto = typeof req.query.q === 'string' ? req.query.q : '';

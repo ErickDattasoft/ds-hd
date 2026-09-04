@@ -1,0 +1,11 @@
+{% extends "layouts/backoffice.njk" %}
+{% block title %}Backup{% endblock %}
+{% block content %}
+  <h1>Backup</h1>
+  <p class="muted">
+    Descarga un respaldo completo en JSON: empresas, contactos, tickets, cotizaciones,
+    versiones de sistemas, base de conocimiento, usuarios (sin contraseñas — esas viven en
+    Firebase Auth, no aquí) y la configuración de tickets/calculadora/avisos.
+  </p>
+  <a class="btn" href="/app/configuracion/backup/descargar">Descargar backup completo (JSON)</a>
+{% endblock %}

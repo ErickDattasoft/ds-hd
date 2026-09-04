@@ -82,6 +82,12 @@ efectivo vive en la capa de entrega (`interfaces/http/rbac/policy.ts`).
 
 ***
 
+### firma
+
+> **firma**: `string` \| `null`
+
+***
+
 ### createdAt
 
 > `readonly` **createdAt**: `Date`
@@ -153,6 +159,26 @@ efectivo vive en la capa de entrega (`interfaces/http/rbac/policy.ts`).
 ### activar()
 
 > **activar**(): `void`
+
+#### Returns
+
+`void`
+
+***
+
+### fijarFirma()
+
+> **fijarFirma**(`firma`, `ahora`): `void`
+
+#### Parameters
+
+##### firma
+
+`string`
+
+##### ahora
+
+`Date`
 
 #### Returns
 

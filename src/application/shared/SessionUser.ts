@@ -16,6 +16,8 @@ export interface SessionUser {
   readonly esCliente: boolean;
   /** Permisos efectivos (`modulo:accion`). */
   readonly permisos: readonly string[];
+  /** Firma que se agrega a las respuestas públicas de tickets, si la tiene configurada. */
+  readonly firma?: string | null;
 }
 
 /** ¿El actor tiene este permiso concreto? */

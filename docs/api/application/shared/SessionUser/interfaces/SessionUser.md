@@ -65,3 +65,11 @@ calculado en la capa de entrega para que `application/` no dependa del catálogo
 > `readonly` **permisos**: readonly `string`[]
 
 Permisos efectivos (`modulo:accion`).
+
+***
+
+### firma?
+
+> `readonly` `optional` **firma?**: `string` \| `null`
+
+Firma que se agrega a las respuestas públicas de tickets, si la tiene configurada.

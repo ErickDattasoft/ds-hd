@@ -40,6 +40,7 @@ import { LoginService } from '../application/auth/LoginService.js';
 import { SolicitarAccesoService } from '../application/auth/SolicitarAccesoService.js';
 import { CrearUsuarioService } from '../application/usuarios/CrearUsuarioService.js';
 import { ActualizarUsuarioService } from '../application/usuarios/ActualizarUsuarioService.js';
+import { ActualizarMiFirmaService } from '../application/usuarios/ActualizarMiFirmaService.js';
 import { InvitarClienteService } from '../application/usuarios/InvitarClienteService.js';
 import { AceptarInvitacionService } from '../application/usuarios/AceptarInvitacionService.js';
 import { ActualizarMiPerfilService } from '../application/portal/ActualizarMiPerfilService.js';
@@ -74,6 +75,7 @@ import { PortalPerfilController } from '../interfaces/http/controllers/portal/Po
 import { PortalTicketController } from '../interfaces/http/controllers/portal/PortalTicketController.js';
 import { TicketController } from '../interfaces/http/controllers/backoffice/TicketController.js';
 import { ConfiguracionController } from '../interfaces/http/controllers/backoffice/ConfiguracionController.js';
+import { BackupService } from '../application/configuracion/BackupService.js';
 import { TicketPublicoController } from '../interfaces/http/controllers/public/TicketPublicoController.js';
 import { BrevoWebhookController } from '../interfaces/http/controllers/webhooks/BrevoWebhookController.js';
 import { EmpresaController } from '../interfaces/http/controllers/backoffice/EmpresaController.js';
@@ -168,6 +170,7 @@ export interface Cradle {
   solicitarAccesoService: SolicitarAccesoService;
   crearUsuarioService: CrearUsuarioService;
   actualizarUsuarioService: ActualizarUsuarioService;
+  actualizarMiFirmaService: ActualizarMiFirmaService;
   invitarClienteService: InvitarClienteService;
   aceptarInvitacionService: AceptarInvitacionService;
   actualizarMiPerfilService: ActualizarMiPerfilService;
@@ -205,6 +208,7 @@ export interface Cradle {
   portalTicketController: PortalTicketController;
   ticketController: TicketController;
   configuracionController: ConfiguracionController;
+  backupService: BackupService;
   ticketPublicoController: TicketPublicoController;
   brevoWebhookController: BrevoWebhookController;
   empresaController: EmpresaController;
@@ -427,6 +431,9 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
       (c: Cradle) =>
         new ActualizarUsuarioService(c.usuarioRepo, c.authProvider, c.clock, c.logger),
     ).singleton(),
+    actualizarMiFirmaService: asFunction(
+      (c: Cradle) => new ActualizarMiFirmaService(c.usuarioRepo, c.clock),
+    ).singleton(),
     invitarClienteService: asFunction(
       (c: Cradle) =>
         new InvitarClienteService(
@@ -632,6 +639,7 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
           c.actualizarUsuarioService,
           c.invitarClienteService,
           c.empresaRepo,
+          c.actualizarMiFirmaService,
         ),
     ).singleton(),
     portalPerfilController: asFunction(
@@ -664,8 +672,22 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
           c.clock,
         ),
     ).singleton(),
+    backupService: asFunction(
+      (c: Cradle) =>
+        new BackupService(
+          c.empresaRepo,
+          c.contactoRepo,
+          c.ticketQueries,
+          c.cotizacionRepo,
+          c.versionRepo,
+          c.knowledgeRepo,
+          c.usuarioRepo,
+          c.configuracionRepo,
+          c.clock,
+        ),
+    ).singleton(),
     configuracionController: asFunction(
-      (c: Cradle) => new ConfiguracionController(c.configuracionTicketsService),
+      (c: Cradle) => new ConfiguracionController(c.configuracionTicketsService, c.backupService),
     ).singleton(),
     ticketPublicoController: asFunction(
       (c: Cradle) =>
