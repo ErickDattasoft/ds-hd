@@ -106,6 +106,33 @@
     if (link) window.location.href = link.href;
   });
 
+  // ── Búsqueda global (Ctrl/Cmd+K) ─────────────────────────────────────────
+  function abrirBusquedaGlobal() {
+    var dialog = document.getElementById('busqueda-global');
+    if (!dialog) return;
+    dialog.showModal();
+    var input = dialog.querySelector('input[name="q"]');
+    if (input) {
+      input.value = '';
+      input.focus();
+    }
+    var resultados = document.getElementById('busqueda-global-resultados');
+    if (resultados) resultados.innerHTML = '';
+  }
+  document.addEventListener('keydown', function (e) {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+      e.preventDefault();
+      abrirBusquedaGlobal();
+    }
+  });
+  document.addEventListener('click', function (e) {
+    if (e.target.closest('[data-busqueda-abrir]')) abrirBusquedaGlobal();
+  });
+  document.addEventListener('click', function (e) {
+    var dialog = document.getElementById('busqueda-global');
+    if (dialog && e.target === dialog) dialog.close();
+  });
+
   // ── Kanban: arrastrar tarjeta → cambiar estado ──────────────────────────
   function initKanban() {
     var board = document.querySelector('[data-kanban]');

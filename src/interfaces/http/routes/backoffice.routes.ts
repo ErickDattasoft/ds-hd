@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import type { Container } from '../../../config/container.js';
 import { requireAuth, requireStaff, requirePermission } from '../middlewares/authz.js';
-import { construirNavSecciones } from '../view-helpers/nav.js';
+import { construirNavSecciones, contadoresNecesarios, conContadores, type ContadoresNav } from '../view-helpers/nav.js';
 
 /** Rutas del back-office (`/app`). Requiere sesión de staff. */
 export function backofficeRoutes(container: Container): Router {
@@ -22,8 +22,20 @@ export function backofficeRoutes(container: Container): Router {
   const leerTickets = requirePermission('tickets:leer');
 
   r.use(requireAuth, requireStaff);
-  r.use((req, res, next) => {
-    res.locals.navSecciones = construirNavSecciones(req.user!);
+  r.use(async (req, res, next) => {
+    const secciones = construirNavSecciones(req.user!);
+    const claves = contadoresNecesarios(secciones);
+    const contadores: ContadoresNav = {};
+    if (claves.includes('ticketsAbiertos')) {
+      contadores.ticketsAbiertos = await container
+        .resolve('ticketQueries')
+        .contar({ soloAbiertos: true, archivado: false });
+    }
+    if (claves.includes('cotizacionesBorrador')) {
+      const porEstado = await container.resolve('cotizacionRepo').contarPorEstado();
+      contadores.cotizacionesBorrador = porEstado.borrador ?? 0;
+    }
+    res.locals.navSecciones = conContadores(secciones, contadores);
     res.locals.area = 'backoffice';
     next();
   });
@@ -31,6 +43,8 @@ export function backofficeRoutes(container: Container): Router {
   r.get('/', requirePermission('dashboard:ver'), (req, res) =>
     container.resolve('dashboardController').ver(req, res),
   );
+
+  r.get('/buscar', (req, res) => container.resolve('busquedaController').buscar(req, res));
 
   // ── Usuarios ───────────────────────────────────────────────────────────────
   r.get('/usuarios', gestUsuarios, (req, res) => usuarios().listar(req, res));

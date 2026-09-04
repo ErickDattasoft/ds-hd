@@ -1,0 +1,17 @@
+{% if q | length < 2 %}
+  <p class="muted busqueda-global__hint">Escribe al menos 2 letras…</p>
+{% elif resultados | length == 0 %}
+  <p class="muted busqueda-global__hint">Sin resultados para "{{ q }}".</p>
+{% else %}
+  <ul class="busqueda-global__lista">
+    {% for r in resultados %}
+      <li>
+        <a href="{{ r.href }}">
+          <span class="badge badge--estado">{{ r.etiquetaTipo }}</span>
+          <span class="busqueda-global__titulo">{{ r.titulo }}</span>
+          {% if r.subtitulo %}<span class="muted busqueda-global__sub">{{ r.subtitulo }}</span>{% endif %}
+        </a>
+      </li>
+    {% endfor %}
+  </ul>
+{% endif %}

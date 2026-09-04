@@ -22,6 +22,7 @@
 - [application/portal/ResponderMiTicketService](application/portal/ResponderMiTicketService/README.md)
 - [application/seguimiento/SeguimientoService](application/seguimiento/SeguimientoService/README.md)
 - [application/shared/BitacoraService](application/shared/BitacoraService/README.md)
+- [application/shared/BusquedaGlobalService](application/shared/BusquedaGlobalService/README.md)
 - [application/shared/SessionUser](application/shared/SessionUser/README.md)
 - [application/tickets/ActualizarEstadoTicketService](application/tickets/ActualizarEstadoTicketService/README.md)
 - [application/tickets/ArchivarTicketService](application/tickets/ArchivarTicketService/README.md)

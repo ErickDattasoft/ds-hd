@@ -17,6 +17,7 @@
         <li>
           <a class="sidebar__link {{ cls }}" href="{{ item.href }}"{% if cls %} aria-current="page"{% endif %}>
             <span class="sidebar__icon" aria-hidden="true">{{ item.icono }}</span>{{ item.etiqueta }}
+            {% if item.contador %}<span class="badge sidebar__badge">{{ item.contador }}</span>{% endif %}
           </a>
         </li>
       {% endfor %}

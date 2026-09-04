@@ -4,6 +4,10 @@
     <span class="topbar__title">{{ titulo }}</span>
   </div>
   <div class="topbar__user">
+    {% if area == 'backoffice' %}
+      <button type="button" class="btn btn--ghost btn--sm" data-busqueda-abrir title="Buscar (Ctrl/Cmd+K)">🔎 <span class="busqueda-global__atajo">Ctrl K</span></button>
+    {% endif %}
+    {% if can('tickets:crear') %}<a class="btn btn--sm" href="/app/tickets/nuevo" title="Crear un ticket nuevo — funciona desde cualquier sección">➕ Ticket</a>{% endif %}
     <button type="button" class="theme-toggle" data-theme-toggle aria-label="Cambiar tema">◐</button>
     {% if user %}
       <span class="topbar__name">{{ user.nombre }}</span>
@@ -15,3 +19,23 @@
     {% endif %}
   </div>
 </header>
+
+{% if area == 'backoffice' %}
+  <dialog id="busqueda-global" class="busqueda-global">
+    <form method="dialog" class="busqueda-global__form">
+      <input
+        type="search"
+        name="q"
+        placeholder="Buscar empresas, contactos, tickets, base de conocimiento…"
+        autocomplete="off"
+        spellcheck="false"
+        aria-label="Buscar"
+        hx-get="/app/buscar"
+        hx-trigger="input changed delay:300ms, search"
+        hx-target="#busqueda-global-resultados"
+        hx-swap="innerHTML"
+      />
+    </form>
+    <div id="busqueda-global-resultados" class="busqueda-global__resultados"></div>
+  </dialog>
+{% endif %}
