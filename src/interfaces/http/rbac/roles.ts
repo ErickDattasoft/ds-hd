@@ -82,6 +82,8 @@ export const ROLE_PERMISSIONS: Record<Rol, readonly Permiso[]> = {
     'kb:leer',
     'seguimiento:leer',
     'seguimiento:gestionar',
+    'eventos:leer',
+    'eventos:gestionar',
   ],
 
   lectura: SOLO_LECTURA,
