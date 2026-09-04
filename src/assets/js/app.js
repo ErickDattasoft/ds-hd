@@ -97,6 +97,15 @@
     toast('No se pudo completar la acción. Recarga la página.', 'error');
   });
 
+  // ── Doble clic en una fila de tabla → abrir el primer enlace de la fila ──
+  document.addEventListener('dblclick', function (e) {
+    if (e.target.closest('a, button, input, select, textarea, label')) return;
+    var row = e.target.closest('.data-table tbody tr');
+    if (!row) return;
+    var link = row.querySelector('a[href]');
+    if (link) window.location.href = link.href;
+  });
+
   // ── Kanban: arrastrar tarjeta → cambiar estado ──────────────────────────
   function initKanban() {
     var board = document.querySelector('[data-kanban]');
