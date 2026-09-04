@@ -1,24 +1,24 @@
 import 'dotenv/config';
 /**
- * Orquestador de la migración. Lee el export (`00-export-agenda-datos.ts`) y corre todos los
- * importadores contra el proyecto Firebase NUEVO.
+ * Orquestador de la migración. Lee el respaldo real (botón "Respaldar" del CRM viejo) y corre
+ * todos los importadores contra el proyecto Firebase NUEVO.
  *
- *   tsx scripts/migrate/run-all.ts --dry-run          # sin escribir, solo conteos
- *   tsx scripts/migrate/run-all.ts                    # ejecuta la migración
- *   tsx scripts/migrate/run-all.ts --input=/ruta.json
+ *   tsx scripts/migrate/run-all.ts --dry-run --input=/ruta/al/respaldo.json
+ *   tsx scripts/migrate/run-all.ts --input=/ruta/al/respaldo.json   # ejecuta la migración
  *
- * Después de este script, ver README.md para los pasos restantes: auth:export/import (CLI de
- * Firebase), `reasignar-uids-auth.ts` (uid real + custom claims), copia de Storage y
- * `99-verify-migration.ts`.
+ * Los usuarios NO se crean aquí (requiere una cuenta real de Firebase Auth) — dalos de alta
+ * por invitación desde /app/usuarios; `importarUsuarios` solo reporta cuáles faltan.
+ * Ver README.md para los pasos restantes: `99-verify-migration.ts`.
  */
 import { DRY_RUN, leerExport, log, nuevoProyecto } from './lib.js';
 import {
   importarEmpresas,
   importarContactos,
   importarTickets,
-  importarCotizaciones,
   importarVersiones,
   importarKB,
+  importarBitacora,
+  importarConfiguracionTickets,
   importarUsuarios,
 } from './importers.js';
 
@@ -29,11 +29,17 @@ log('run-all', DRY_RUN ? 'DRY-RUN (no se escribe nada)' : 'MIGRACIÓN REAL');
 
 await importarUsuarios(c, datos);
 await importarEmpresas(c, datos);
-await importarContactos(c, datos);
+const contactos = await importarContactos(c, datos);
 await importarVersiones(c, datos);
 await importarKB(c, datos);
-await importarCotizaciones(c, datos);
+await importarBitacora(c, datos);
+await importarConfiguracionTickets(c, datos);
 await importarTickets(c, datos);
+
+if (contactos.sinEmpresa.length) {
+  log('run-all', `contactos sin empresa emparejada (revisar en "Sin empresa (revisar tras migración)"):`);
+  for (const linea of contactos.sinEmpresa) log('run-all', `  - ${linea}`);
+}
 
 log('run-all', 'terminado. Ejecuta 99-verify-migration.ts para validar.');
 process.exit(0);

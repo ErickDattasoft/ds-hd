@@ -1,5 +1,0 @@
-{
-  "_comentario": "Mapea el correo del usuario viejo al rol que debe tener en ds-hd. Los que no aparezcan aquí caen a 'agente' (o 'admin' si en el CRM viejo tenían rol admin).",
-  "erick@dattasoft.mx": "admin",
-  "arturo@dattasoft.mx": "supervisor"
-}

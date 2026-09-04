@@ -25,7 +25,6 @@
     "seed:roles": "tsx scripts/seed/seed-roles.ts",
     "seed:demo": "tsx scripts/seed/seed-demo.ts",
     "migrate": "tsx scripts/migrate/run-all.ts",
-    "migrate:reasignar-uids": "tsx scripts/migrate/reasignar-uids-auth.ts",
     "migrate:verify": "tsx scripts/migrate/99-verify-migration.ts",
     "docs": "npm run docs:readme && npm run docs:manuals && npm run docs:api",
     "docs:readme": "tsx scripts/docs/generate-readme.ts",
