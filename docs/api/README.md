@@ -24,6 +24,7 @@
 - [application/shared/BitacoraService](application/shared/BitacoraService/README.md)
 - [application/shared/SessionUser](application/shared/SessionUser/README.md)
 - [application/tickets/ActualizarEstadoTicketService](application/tickets/ActualizarEstadoTicketService/README.md)
+- [application/tickets/ArchivarTicketService](application/tickets/ArchivarTicketService/README.md)
 - [application/tickets/AsignarAgenteService](application/tickets/AsignarAgenteService/README.md)
 - [application/tickets/CrearTicketPublicoService](application/tickets/CrearTicketPublicoService/README.md)
 - [application/tickets/CrearTicketService](application/tickets/CrearTicketService/README.md)

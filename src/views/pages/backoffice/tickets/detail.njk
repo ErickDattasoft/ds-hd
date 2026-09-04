@@ -102,6 +102,17 @@
           </form>
         </details>
       {% endif %}
+
+      {% if permisos.eliminar %}
+        <details class="disclosure">
+          <summary class="disclosure__summary">Administración</summary>
+          <form method="post" action="/app/tickets/{{ ticket.id }}/archivar" class="disclosure__body" data-confirm="¿{{ 'Restaurar' if ticket.archivado else 'Enviar a la papelera' }} este ticket?">
+            <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+            <input type="hidden" name="archivar" value="{{ 'false' if ticket.archivado else 'true' }}" />
+            <button class="btn btn--sm {{ 'btn--secondary' if ticket.archivado else 'btn--danger' }}" type="submit">{{ 'Restaurar ticket' if ticket.archivado else 'Enviar a la papelera' }}</button>
+          </form>
+        </details>
+      {% endif %}
     </aside>
   </div>
 {% endblock %}

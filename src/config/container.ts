@@ -51,6 +51,7 @@ import { ActualizarEstadoTicketService } from '../application/tickets/Actualizar
 import { AsignarAgenteService } from '../application/tickets/AsignarAgenteService.js';
 import { RegistrarNotaService } from '../application/tickets/RegistrarNotaService.js';
 import { MarcarFacturacionService } from '../application/tickets/MarcarFacturacionService.js';
+import { ArchivarTicketService } from '../application/tickets/ArchivarTicketService.js';
 import { ListarTicketsService } from '../application/tickets/ListarTicketsService.js';
 import { VerTicketService } from '../application/tickets/VerTicketService.js';
 import { PanelCargaAgentesService } from '../application/tickets/PanelCargaAgentesService.js';
@@ -175,6 +176,7 @@ export interface Cradle {
   asignarAgenteService: AsignarAgenteService;
   registrarNotaService: RegistrarNotaService;
   marcarFacturacionService: MarcarFacturacionService;
+  archivarTicketService: ArchivarTicketService;
   listarTicketsService: ListarTicketsService;
   verTicketService: VerTicketService;
   panelCargaAgentesService: PanelCargaAgentesService;
@@ -503,6 +505,9 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
       (c: Cradle) =>
         new MarcarFacturacionService(c.ticketRepo, c.idGenerator, c.clock, c.webhookPublisher),
     ).singleton(),
+    archivarTicketService: asFunction(
+      (c: Cradle) => new ArchivarTicketService(c.ticketRepo, c.idGenerator, c.clock),
+    ).singleton(),
     listarTicketsService: asFunction(
       (c: Cradle) => new ListarTicketsService(c.ticketQueries, c.configuracionRepo),
     ).singleton(),
@@ -631,6 +636,7 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
           c.asignarAgenteService,
           c.registrarNotaService,
           c.marcarFacturacionService,
+          c.archivarTicketService,
           c.listarTicketsService,
           c.verTicketService,
           c.panelCargaAgentesService,
@@ -678,7 +684,7 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
       (c: Cradle) => new SeguimientoController(c.seguimientoService, c.usuarioRepo),
     ).singleton(),
     papeleraController: asFunction(
-      (c: Cradle) => new PapeleraController(c.empresaService, c.contactoService),
+      (c: Cradle) => new PapeleraController(c.empresaService, c.contactoService, c.ticketQueries),
     ).singleton(),
     eventoController: asFunction((c: Cradle) => new EventoController(c.eventoService)).singleton(),
     dashboardController: asFunction(

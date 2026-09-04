@@ -54,6 +54,7 @@ export const TicketMapper = {
       createdAt: fecha(d.createdAt) ?? new Date(),
       updatedAt: fecha(d.updatedAt) ?? new Date(),
       historialEstados: historial,
+      archivado: Boolean(d.archivado),
     });
   },
 
@@ -99,6 +100,7 @@ export const TicketMapper = {
       createdAt: Timestamp.fromDate(t.createdAt),
       updatedAt: Timestamp.fromDate(t.updatedAt),
       historialEstados: t.historialEstados.map((h) => ({ estado: h.estado, at: Timestamp.fromDate(h.at) })),
+      archivado: t.archivado,
     };
   },
 

@@ -75,6 +75,7 @@ export class InMemoryTicketQueries implements ITicketQueries {
     if (f.solicitanteUid && t.solicitanteUid !== f.solicitanteUid) return false;
     if (f.canal && t.canal !== f.canal) return false;
     if (f.soloAbiertos && esEstadoFinal(t.estado)) return false;
+    if (f.archivado !== undefined && t.archivado !== f.archivado) return false;
     if (f.texto) {
       const q = f.texto.toLowerCase();
       if (

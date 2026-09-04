@@ -15,6 +15,8 @@ export interface FiltroTickets {
   soloAbiertos?: boolean;
   texto?: string;
   limite?: number;
+  /** `false` (por defecto en las vistas normales) excluye tickets en la papelera. */
+  archivado?: boolean;
 }
 
 /** Carga de trabajo de un agente para el panel de asignación. */

@@ -74,6 +74,7 @@ export interface TicketProps {
   createdAt?: Date;
   updatedAt?: Date;
   historialEstados?: CambioEstado[];
+  archivado?: boolean;
 }
 
 /** Resultado de una mutación: describe qué pasó para la bitácora y los efectos colaterales. */
@@ -125,6 +126,7 @@ export class Ticket {
   readonly createdAt: Date;
   updatedAt: Date;
   historialEstados: CambioEstado[];
+  archivado: boolean;
 
   constructor(props: TicketProps) {
     this.id = props.id;
@@ -172,6 +174,7 @@ export class Ticket {
       facturado: props.facturacion?.facturado ?? false,
       notificadaEn: props.facturacion?.notificadaEn ?? null,
     };
+    this.archivado = props.archivado ?? false;
   }
 
   // ── Fábrica ────────────────────────────────────────────────────────────────
@@ -290,6 +293,15 @@ export class Ticket {
 
   marcarFacturado(facturado: boolean, ahora: Date): void {
     this.facturacion.facturado = facturado;
+    this.updatedAt = ahora;
+  }
+
+  archivar(ahora: Date): void {
+    this.archivado = true;
+    this.updatedAt = ahora;
+  }
+  restaurar(ahora: Date): void {
+    this.archivado = false;
     this.updatedAt = ahora;
   }
 

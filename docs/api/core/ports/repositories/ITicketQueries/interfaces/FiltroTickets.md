@@ -77,3 +77,11 @@ Excluye estados finales (resuelto/cerrado).
 ### limite?
 
 > `optional` **limite?**: `number`
+
+***
+
+### archivado?
+
+> `optional` **archivado?**: `boolean`
+
+`false` (por defecto en las vistas normales) excluye tickets en la papelera.

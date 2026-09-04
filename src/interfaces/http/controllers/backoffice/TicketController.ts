@@ -4,6 +4,7 @@ import type { ActualizarEstadoTicketService } from '../../../../application/tick
 import type { AsignarAgenteService } from '../../../../application/tickets/AsignarAgenteService.js';
 import type { RegistrarNotaService } from '../../../../application/tickets/RegistrarNotaService.js';
 import type { MarcarFacturacionService } from '../../../../application/tickets/MarcarFacturacionService.js';
+import type { ArchivarTicketService } from '../../../../application/tickets/ArchivarTicketService.js';
 import type { ListarTicketsService } from '../../../../application/tickets/ListarTicketsService.js';
 import type { VerTicketService } from '../../../../application/tickets/VerTicketService.js';
 import type { PanelCargaAgentesService } from '../../../../application/tickets/PanelCargaAgentesService.js';
@@ -27,6 +28,7 @@ export class TicketController {
     private readonly asignar: AsignarAgenteService,
     private readonly registrarNota: RegistrarNotaService,
     private readonly facturar: MarcarFacturacionService,
+    private readonly archivar: ArchivarTicketService,
     private readonly listar: ListarTicketsService,
     private readonly ver: VerTicketService,
     private readonly cargaAgentes: PanelCargaAgentesService,
@@ -46,6 +48,7 @@ export class TicketController {
       ...(q.sinAsignar === '1' ? { sinAsignar: true } : {}),
       ...(str(q.texto) ? { texto: str(q.texto) } : {}),
       ...(q.abiertos !== '0' ? { soloAbiertos: true } : {}),
+      archivado: false,
     };
   }
 
@@ -76,6 +79,7 @@ export class TicketController {
     const { tickets, config } = await this.listar.listar(req.user!, {
       agenteAsignadoUid: req.user!.uid,
       soloAbiertos: req.query.abiertos !== '0',
+      archivado: false,
     });
     const ahora = this.clock.now();
     res.render('pages/backoffice/tickets/mis-asignados', {
@@ -146,6 +150,7 @@ export class TicketController {
         asignar: d.puedeAsignar,
         cambiarEstado: d.puedeCambiarEstado,
         notasInternas: req.user!.permisos.includes('tickets:ver_notas_internas'),
+        eliminar: req.user!.permisos.includes('tickets:eliminar'),
       },
       agentes,
       errores: {},
@@ -189,6 +194,15 @@ export class TicketController {
       facturado: req.body?.facturado === 'on' || req.body?.facturado === 'true',
     });
     res.redirect(`/app/tickets/${str(req.params.id)}`);
+  };
+
+  archivarPost = async (req: Request, res: Response): Promise<void> => {
+    await this.archivar.ejecutar({
+      actor: req.user!,
+      ticketId: str(req.params.id),
+      archivar: req.body?.archivar !== 'false',
+    });
+    res.redirect('/app/tickets');
   };
 
   // ── Buzón público ─────────────────────────────────────────────────────────

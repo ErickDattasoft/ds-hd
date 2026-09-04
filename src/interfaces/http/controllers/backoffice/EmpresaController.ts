@@ -85,7 +85,7 @@ export class EmpresaController {
     const empresa = await this.empresas.obtener(id);
     const [contactos, tickets, interacciones, versiones] = await Promise.all([
       this.contactos.listar({ empresaId: id }),
-      this.ticketQueries.listar({ empresaId: id, limite: 20 }),
+      this.ticketQueries.listar({ empresaId: id, limite: 20, archivado: false }),
       this.seguimiento.interaccionesDe(id),
       this.versiones.listar(),
     ]);

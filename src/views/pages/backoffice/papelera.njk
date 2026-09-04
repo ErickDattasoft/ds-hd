@@ -41,4 +41,24 @@
       {% else %}<tr><td colspan="2" class="muted">Nada archivado.</td></tr>{% endfor %}
     </tbody>
   </table>
+
+  <h2>Tickets archivados ({{ tickets | length }})</h2>
+  <table class="data-table">
+    <thead><tr><th>#</th><th>Asunto</th><th></th></tr></thead>
+    <tbody>
+      {% for t in tickets %}
+        <tr>
+          <td><a href="/app/tickets/{{ t.id }}">#{{ t.numero }}</a></td>
+          <td>{{ t.asunto }}</td>
+          <td>
+            <form method="post" action="/app/tickets/{{ t.id }}/archivar" class="inline">
+              <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+              <input type="hidden" name="archivar" value="false" />
+              <button class="btn btn--sm btn--ghost" type="submit">Restaurar</button>
+            </form>
+          </td>
+        </tr>
+      {% else %}<tr><td colspan="3" class="muted">Nada archivado.</td></tr>{% endfor %}
+    </tbody>
+  </table>
 {% endblock %}

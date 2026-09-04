@@ -211,6 +211,12 @@ de tiempo trabajado y el reloj de SLA con pausa. No conoce Firestore ni HTTP.
 
 > **historialEstados**: [`CambioEstado`](../interfaces/CambioEstado.md)[]
 
+***
+
+### archivado
+
+> **archivado**: `boolean`
+
 ## Accessors
 
 ### estaAbierto
@@ -436,6 +442,38 @@ readonly `string`[]
 ##### facturado
 
 `boolean`
+
+##### ahora
+
+`Date`
+
+#### Returns
+
+`void`
+
+***
+
+### archivar()
+
+> **archivar**(`ahora`): `void`
+
+#### Parameters
+
+##### ahora
+
+`Date`
+
+#### Returns
+
+`void`
+
+***
+
+### restaurar()
+
+> **restaurar**(`ahora`): `void`
+
+#### Parameters
 
 ##### ahora
 

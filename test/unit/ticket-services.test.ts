@@ -2,8 +2,9 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { CrearTicketService } from '../../src/application/tickets/CrearTicketService.js';
 import { AsignarAgenteService } from '../../src/application/tickets/AsignarAgenteService.js';
 import { ActualizarEstadoTicketService } from '../../src/application/tickets/ActualizarEstadoTicketService.js';
+import { ArchivarTicketService } from '../../src/application/tickets/ArchivarTicketService.js';
 import { Usuario } from '../../src/core/entities/Usuario.js';
-import { ConflictError } from '../../src/core/errors/DomainError.js';
+import { ConflictError, ForbiddenError } from '../../src/core/errors/DomainError.js';
 import type { SessionUser } from '../../src/application/shared/SessionUser.js';
 import {
   InMemoryTicketStore,
@@ -155,5 +156,42 @@ describe('ActualizarEstadoTicketService', () => {
     await expect(
       cambiar.ejecutar({ actor: agenteOtro, ticketId: t.id, nuevoEstado: 'En proceso' }),
     ).rejects.toThrow(/asignados a ti/);
+  });
+});
+
+describe('ArchivarTicketService', () => {
+  it('manda a la papelera y se puede restaurar; queda fuera de las listas normales', async () => {
+    seq = 0;
+    const store = new InMemoryTicketStore();
+    const clock = new FixedClock(new Date());
+    const repo = new InMemoryTicketRepository(store);
+    const queries = new InMemoryTicketQueries(store);
+    const crear = new CrearTicketService(repo, new InMemoryContadorRepository(), new InMemoryConfiguracionRepository(), ids, clock, new FakeWebhookPublisher(), silentLogger);
+    const archivar = new ArchivarTicketService(repo, ids, clock);
+    const t = await crear.ejecutar({ actor: actor(), asunto: 'Para archivar', descripcion: 'descripción larga', tipo: 'General', prioridad: 'Media' });
+
+    await archivar.ejecutar({ actor: actor({ permisos: ['tickets:eliminar'] }), ticketId: t.id, archivar: true });
+    let recargado = await repo.findById(t.id);
+    expect(recargado?.archivado).toBe(true);
+    expect(await queries.listar({ archivado: false })).toHaveLength(0);
+    expect(await queries.listar({ archivado: true })).toHaveLength(1);
+
+    await archivar.ejecutar({ actor: actor({ permisos: ['tickets:eliminar'] }), ticketId: t.id, archivar: false });
+    recargado = await repo.findById(t.id);
+    expect(recargado?.archivado).toBe(false);
+  });
+
+  it('sin el permiso tickets:eliminar no se puede archivar', async () => {
+    seq = 0;
+    const store = new InMemoryTicketStore();
+    const clock = new FixedClock(new Date());
+    const repo = new InMemoryTicketRepository(store);
+    const crear = new CrearTicketService(repo, new InMemoryContadorRepository(), new InMemoryConfiguracionRepository(), ids, clock, new FakeWebhookPublisher(), silentLogger);
+    const archivar = new ArchivarTicketService(repo, ids, clock);
+    const t = await crear.ejecutar({ actor: actor(), asunto: 'Sin permiso', descripcion: 'descripción larga', tipo: 'General', prioridad: 'Media' });
+
+    await expect(
+      archivar.ejecutar({ actor: actor({ permisos: [] }), ticketId: t.id, archivar: true }),
+    ).rejects.toThrow(ForbiddenError);
   });
 });

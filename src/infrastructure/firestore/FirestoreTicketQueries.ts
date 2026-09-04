@@ -31,6 +31,12 @@ export class FirestoreTicketQueries implements ITicketQueries {
 
   private postFiltro(tickets: Ticket[], filtro: FiltroTickets): Ticket[] {
     let out = tickets;
+    // El campo es nuevo: los tickets creados antes no lo tienen en Firestore. Filtrar en
+    // memoria (en vez de un `where` de Firestore) evita que esos documentos desaparezcan de
+    // golpe de todas las vistas por no matchear una igualdad contra un campo ausente.
+    if (filtro.archivado !== undefined) {
+      out = out.filter((x) => x.archivado === filtro.archivado);
+    }
     if (filtro.texto) {
       const t = filtro.texto.toLowerCase();
       out = out.filter(
@@ -51,8 +57,8 @@ export class FirestoreTicketQueries implements ITicketQueries {
   }
 
   async contar(filtro: FiltroTickets): Promise<number> {
-    // Con soloAbiertos ya es una query indexable; el resto se cuenta tras traer los docs.
-    if (!filtro.texto) {
+    // Con soloAbiertos ya es una query indexable; texto/archivado se filtran en memoria.
+    if (!filtro.texto && filtro.archivado === undefined) {
       const agg = await this.aplicar(filtro).count().get();
       return agg.data().count;
     }

@@ -193,3 +193,9 @@ Props para construir un [Ticket](../classes/Ticket.md).
 ### historialEstados?
 
 > `optional` **historialEstados?**: [`CambioEstado`](CambioEstado.md)[]
+
+***
+
+### archivado?
+
+> `optional` **archivado?**: `boolean`
