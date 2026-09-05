@@ -1,0 +1,80 @@
+{% extends "layouts/backoffice.njk" %}
+{% block title %}Integraciones{% endblock %}
+{% block content %}
+  <div class="page-head">
+    <h1>Integraciones</h1>
+    <div class="page-head__actions">
+      <a class="btn btn--ghost btn--sm" href="/app/configuracion/tickets">Configuración de tickets</a>
+      <a class="btn btn--ghost btn--sm" href="/app/configuracion/backup">Backup</a>
+    </div>
+  </div>
+  {% if guardado %}<p class="alert alert--ok">Configuración guardada.</p>{% endif %}
+  {% if errores.general %}<p class="alert alert--error">{{ errores.general }}</p>{% endif %}
+
+  <form method="post" action="/app/configuracion/integraciones" class="form form--wide">
+    <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+
+    <details class="disclosure" open>
+      <summary class="disclosure__summary">Webhooks n8n</summary>
+      <div class="disclosure__body form">
+        <label class="field"><span>Webhook de tickets</span>
+          <input type="url" name="n8nWebhookTickets" value="{{ config.n8nWebhookTickets }}" placeholder="https://..." data-n8n-url="tickets" />
+          {% if errores.n8nWebhookTickets %}<em class="field__error">{{ errores.n8nWebhookTickets }}</em>{% endif %}
+        </label>
+        <button type="button" class="btn btn--ghost btn--sm" data-probar-webhook="tickets">Probar conexión</button>
+        <span class="muted" data-resultado-webhook="tickets"></span>
+
+        <label class="field"><span>Webhook de cotizaciones</span>
+          <input type="url" name="n8nWebhookCotizaciones" value="{{ config.n8nWebhookCotizaciones }}" placeholder="https://..." data-n8n-url="cotizaciones" />
+          {% if errores.n8nWebhookCotizaciones %}<em class="field__error">{{ errores.n8nWebhookCotizaciones }}</em>{% endif %}
+        </label>
+        <button type="button" class="btn btn--ghost btn--sm" data-probar-webhook="cotizaciones">Probar conexión</button>
+        <span class="muted" data-resultado-webhook="cotizaciones"></span>
+        <p class="muted">Si se deja vacío, se usa la variable de entorno del servidor como respaldo (compatibilidad).</p>
+      </div>
+    </details>
+
+    <details class="disclosure">
+      <summary class="disclosure__summary">WhatsApp (CallMeBot)</summary>
+      <div class="disclosure__body form">
+        <label class="field--check">
+          <input type="checkbox" name="whatsappHabilitado" {{ 'checked' if config.whatsappHabilitado }} />
+          Habilitado
+        </label>
+        <label class="field"><span>Teléfono (con lada de país, sin espacios)</span>
+          <input name="whatsappTelefono" value="{{ config.whatsappTelefono }}" placeholder="+521234567890" data-whatsapp-tel />
+        </label>
+        <label class="field"><span>API key de CallMeBot</span>
+          <input name="whatsappApiKey" value="{{ config.whatsappApiKey }}" data-whatsapp-key />
+        </label>
+        <button type="button" class="btn btn--ghost btn--sm" data-probar-whatsapp>Probar conexión</button>
+        <span class="muted" data-resultado-whatsapp></span>
+        <p class="muted">
+          Requiere haber activado el número en <a href="https://www.callmebot.com/blog/free-api-whatsapp-messages/" target="_blank" rel="noopener">CallMeBot</a> (envía "I allow callmebot to send me messages" al número oficial y guarda el API key que te respondan).
+        </p>
+      </div>
+    </details>
+
+    <details class="disclosure">
+      <summary class="disclosure__summary">Matriz de reglas por evento</summary>
+      <div class="disclosure__body">
+        <table class="data-table">
+          <thead>
+            <tr><th>Evento</th><th>Webhook</th><th>WhatsApp</th></tr>
+          </thead>
+          <tbody>
+            {% for evento, etiqueta in eventosEtiquetas %}
+              <tr>
+                <td>{{ etiqueta }}</td>
+                <td><input type="checkbox" name="regla_{{ evento }}_webhook" {{ 'checked' if config.reglas[evento].webhook }} /></td>
+                <td><input type="checkbox" name="regla_{{ evento }}_whatsapp" {{ 'checked' if config.reglas[evento].whatsapp }} /></td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </details>
+
+    <button class="btn" type="submit">Guardar</button>
+  </form>
+{% endblock %}

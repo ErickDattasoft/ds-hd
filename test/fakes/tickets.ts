@@ -25,6 +25,10 @@ import {
   CONFIG_AVISOS_POR_DEFECTO,
   type ConfiguracionAvisos,
 } from '../../src/core/entities/ConfiguracionAvisos.js';
+import {
+  CONFIG_INTEGRACIONES_POR_DEFECTO,
+  type ConfiguracionIntegraciones,
+} from '../../src/core/entities/ConfiguracionIntegraciones.js';
 import { esEstadoFinal, slugEstado } from '../../src/core/entities/value-objects/EstadoTicket.js';
 
 /** Almacén compartido por el repo y las queries en memoria. */
@@ -165,6 +169,13 @@ export class InMemoryConfiguracionRepository implements IConfiguracionRepository
   }
   async guardarAvisos(config: ConfiguracionAvisos): Promise<void> {
     this.avisos = config;
+  }
+  integraciones: ConfiguracionIntegraciones = { ...CONFIG_INTEGRACIONES_POR_DEFECTO };
+  async obtenerIntegraciones(): Promise<ConfiguracionIntegraciones> {
+    return this.integraciones;
+  }
+  async guardarIntegraciones(config: ConfiguracionIntegraciones): Promise<void> {
+    this.integraciones = config;
   }
 }
 

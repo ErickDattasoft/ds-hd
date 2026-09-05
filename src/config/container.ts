@@ -34,7 +34,8 @@ import {
   FirestoreInscripcionRepository,
   FirestoreListaNegraRepository,
 } from '../infrastructure/firestore/FirestoreEventoRepository.js';
-import { N8nWebhookPublisher, NullWebhookPublisher } from '../infrastructure/webhooks/N8nWebhookPublisher.js';
+import { N8nWebhookPublisher } from '../infrastructure/webhooks/N8nWebhookPublisher.js';
+import { HttpIntegracionesGateway } from '../infrastructure/integraciones/HttpIntegracionesGateway.js';
 import { TurnstileVerifier, NullCaptchaVerifier } from '../infrastructure/captcha/TurnstileVerifier.js';
 import { LoginService } from '../application/auth/LoginService.js';
 import { SolicitarAccesoService } from '../application/auth/SolicitarAccesoService.js';
@@ -59,6 +60,7 @@ import { PanelCargaAgentesService } from '../application/tickets/PanelCargaAgent
 import { CrearTicketPublicoService } from '../application/tickets/CrearTicketPublicoService.js';
 import { GestionTicketPublicoService } from '../application/tickets/GestionTicketPublicoService.js';
 import { ConfiguracionTicketsService } from '../application/configuracion/ConfiguracionTicketsService.js';
+import { ConfiguracionIntegracionesService } from '../application/configuracion/ConfiguracionIntegracionesService.js';
 import { BitacoraService } from '../application/shared/BitacoraService.js';
 import { EmpresaService } from '../application/empresas/EmpresaService.js';
 import { ContactoService } from '../application/contactos/ContactoService.js';
@@ -110,6 +112,7 @@ import type { IConfiguracionRepository } from '../core/ports/repositories/IConfi
 import type { ITicketPublicoRepository } from '../core/ports/repositories/ITicketPublicoRepository.js';
 import type { IWebhookPublisher } from '../core/ports/services/IWebhookPublisher.js';
 import type { ICaptchaVerifier } from '../core/ports/services/ICaptchaVerifier.js';
+import type { IIntegracionesGateway } from '../core/ports/services/IIntegracionesGateway.js';
 import type { IEmpresaRepository } from '../core/ports/repositories/IEmpresaRepository.js';
 import type { IContactoRepository } from '../core/ports/repositories/IContactoRepository.js';
 import type { IBitacoraRepository } from '../core/ports/repositories/IBitacoraRepository.js';
@@ -152,6 +155,7 @@ export interface Cradle {
   configuracionRepo: IConfiguracionRepository;
   ticketPublicoRepo: ITicketPublicoRepository;
   webhookPublisher: IWebhookPublisher;
+  integracionesGateway: IIntegracionesGateway;
   captchaVerifier: ICaptchaVerifier;
   empresaRepo: IEmpresaRepository;
   contactoRepo: IContactoRepository;
@@ -189,6 +193,7 @@ export interface Cradle {
   crearTicketPublicoService: CrearTicketPublicoService;
   gestionTicketPublicoService: GestionTicketPublicoService;
   configuracionTicketsService: ConfiguracionTicketsService;
+  configuracionIntegracionesService: ConfiguracionIntegracionesService;
   bitacoraService: BitacoraService;
   empresaService: EmpresaService;
   avisarEmpresasService: AvisarEmpresasService;
@@ -349,13 +354,15 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
       ({ firestoreDb }: Cradle): ITicketPublicoRepository =>
         new FirestoreTicketPublicoRepository(requireFirestore(firestoreDb)),
     ).singleton(),
-    webhookPublisher: asFunction(({ config: c, logger: l }: Cradle): IWebhookPublisher =>
-      c.n8n.ticketsWebhook || c.n8n.cotizacionesWebhook
-        ? new N8nWebhookPublisher(
-            { tickets: c.n8n.ticketsWebhook, cotizaciones: c.n8n.cotizacionesWebhook },
-            l,
-          )
-        : new NullWebhookPublisher(),
+    integracionesGateway: asFunction((): IIntegracionesGateway => new HttpIntegracionesGateway()).singleton(),
+    webhookPublisher: asFunction(
+      ({ config: c, configuracionRepo, integracionesGateway, logger: l }: Cradle): IWebhookPublisher =>
+        new N8nWebhookPublisher(
+          integracionesGateway,
+          configuracionRepo,
+          { tickets: c.n8n.ticketsWebhook, cotizaciones: c.n8n.cotizacionesWebhook },
+          l,
+        ),
     ).singleton(),
     captchaVerifier: asFunction(({ config: c, logger: l }: Cradle): ICaptchaVerifier =>
       c.turnstile.secret ? new TurnstileVerifier(c.turnstile.secret, l) : new NullCaptchaVerifier(),
@@ -548,6 +555,10 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
     configuracionTicketsService: asFunction(
       (c: Cradle) => new ConfiguracionTicketsService(c.configuracionRepo, c.logger),
     ).singleton(),
+    configuracionIntegracionesService: asFunction(
+      (c: Cradle) =>
+        new ConfiguracionIntegracionesService(c.configuracionRepo, c.integracionesGateway, c.logger),
+    ).singleton(),
     bitacoraService: asFunction(
       (c: Cradle) => new BitacoraService(c.bitacoraRepo, c.idGenerator, c.clock, c.logger),
     ).singleton(),
@@ -585,6 +596,7 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
           c.idGenerator,
           c.clock,
           c.bitacoraService,
+          c.webhookPublisher,
         ),
     ).singleton(),
     calculadoraCompacService: asFunction(
@@ -689,7 +701,8 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
         ),
     ).singleton(),
     configuracionController: asFunction(
-      (c: Cradle) => new ConfiguracionController(c.configuracionTicketsService, c.backupService),
+      (c: Cradle) =>
+        new ConfiguracionController(c.configuracionTicketsService, c.configuracionIntegracionesService, c.backupService),
     ).singleton(),
     ticketPublicoController: asFunction(
       (c: Cradle) =>

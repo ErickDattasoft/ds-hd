@@ -1,7 +1,13 @@
 {% extends "layouts/backoffice.njk" %}
 {% block title %}Configuración de tickets{% endblock %}
 {% block content %}
-  <h1>Configuración de tickets</h1>
+  <div class="page-head">
+    <h1>Configuración de tickets</h1>
+    <div class="page-head__actions">
+      <a class="btn btn--ghost btn--sm" href="/app/configuracion/integraciones">Integraciones</a>
+      <a class="btn btn--ghost btn--sm" href="/app/configuracion/backup">Backup</a>
+    </div>
+  </div>
   {% if guardado %}<p class="alert alert--ok">Configuración guardada.</p>{% endif %}
   {% if errores.general %}<p class="alert alert--error">{{ errores.general }}</p>{% endif %}
 

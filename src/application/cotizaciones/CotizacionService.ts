@@ -3,6 +3,7 @@ import type { IContadorRepository } from '../../core/ports/repositories/IContado
 import type { IEmpresaRepository } from '../../core/ports/repositories/IEmpresaRepository.js';
 import type { IClock } from '../../core/ports/services/IClock.js';
 import type { IIdGenerator } from '../../core/ports/services/IIdGenerator.js';
+import type { IWebhookPublisher } from '../../core/ports/services/IWebhookPublisher.js';
 import { Cotizacion, type ConceptoCotizacion, type EstadoCotizacion } from '../../core/entities/Cotizacion.js';
 import { ForbiddenError, NotFoundError, ValidationError } from '../../core/errors/DomainError.js';
 import type { BitacoraService } from '../shared/BitacoraService.js';
@@ -28,6 +29,7 @@ export class CotizacionService {
     private readonly ids: IIdGenerator,
     private readonly clock: IClock,
     private readonly bitacora: BitacoraService,
+    private readonly webhooks: IWebhookPublisher,
   ) {}
 
   listar(filtro?: ListarCotizacionesFiltro): Promise<Cotizacion[]> {
@@ -79,6 +81,11 @@ export class CotizacionService {
       entidadTipo: 'Cotizacion',
       entidadId: cotizacion.id,
       resumen: `${folio} para ${empresa.nombre} — ${this.fmt(cotizacion.total, cotizacion.moneda)}`,
+    });
+    await this.webhooks.publicar({
+      evento: 'cotizacion.creada',
+      canal: 'cotizaciones',
+      payload: { id: cotizacion.id, folio, empresaId: empresa.id, empresaNombre: empresa.nombre, total: cotizacion.total },
     });
     return cotizacion;
   }

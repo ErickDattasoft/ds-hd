@@ -140,6 +140,60 @@
     reader.readAsText(file);
   });
 
+  // ── Configuración → Integraciones: "probar conexión" (webhook n8n / WhatsApp) ──
+  document.addEventListener('click', function (e) {
+    var btnWebhook = e.target.closest('[data-probar-webhook]');
+    if (btnWebhook) {
+      var canal = btnWebhook.getAttribute('data-probar-webhook');
+      var input = document.querySelector('[data-n8n-url="' + canal + '"]');
+      var salida = document.querySelector('[data-resultado-webhook="' + canal + '"]');
+      if (!input || !salida) return;
+      if (!input.value) {
+        salida.textContent = 'Escribe una URL primero.';
+        return;
+      }
+      salida.textContent = 'Probando…';
+      fetch('/app/configuracion/integraciones/probar-webhook', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'x-csrf-token': cookie('x-csrf-token') },
+        body: JSON.stringify({ url: input.value }),
+      })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          salida.textContent = (data.ok ? '✅ ' : '❌ ') + data.detalle;
+        })
+        .catch(function () {
+          salida.textContent = '❌ No se pudo probar. Revisa tu conexión.';
+        });
+      return;
+    }
+
+    var btnWhatsapp = e.target.closest('[data-probar-whatsapp]');
+    if (btnWhatsapp) {
+      var tel = document.querySelector('[data-whatsapp-tel]');
+      var key = document.querySelector('[data-whatsapp-key]');
+      var salidaWa = document.querySelector('[data-resultado-whatsapp]');
+      if (!tel || !key || !salidaWa) return;
+      if (!tel.value || !key.value) {
+        salidaWa.textContent = 'Completa teléfono y API key primero.';
+        return;
+      }
+      salidaWa.textContent = 'Probando…';
+      fetch('/app/configuracion/integraciones/probar-whatsapp', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'x-csrf-token': cookie('x-csrf-token') },
+        body: JSON.stringify({ telefono: tel.value, apiKey: key.value }),
+      })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          salidaWa.textContent = (data.ok ? '✅ ' : '❌ ') + data.detalle;
+        })
+        .catch(function () {
+          salidaWa.textContent = '❌ No se pudo probar. Revisa tu conexión.';
+        });
+    }
+  });
+
   // ── Doble clic en una fila de tabla → abrir el primer enlace de la fila ──
   document.addEventListener('dblclick', function (e) {
     if (e.target.closest('a, button, input, select, textarea, label')) return;

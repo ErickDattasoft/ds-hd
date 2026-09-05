@@ -172,6 +172,22 @@ export function backofficeRoutes(container: Container): Router {
   r.post('/configuracion/tickets', requirePermission('configuracion:catalogos'), (req, res) =>
     configuracion().ticketsPost(req, res),
   );
+  r.get('/configuracion/integraciones', requirePermission('configuracion:integraciones'), (req, res) =>
+    configuracion().integracionesView(req, res),
+  );
+  r.post('/configuracion/integraciones', requirePermission('configuracion:integraciones'), (req, res) =>
+    configuracion().integracionesPost(req, res),
+  );
+  r.post(
+    '/configuracion/integraciones/probar-webhook',
+    requirePermission('configuracion:integraciones'),
+    (req, res) => configuracion().probarWebhookPost(req, res),
+  );
+  r.post(
+    '/configuracion/integraciones/probar-whatsapp',
+    requirePermission('configuracion:integraciones'),
+    (req, res) => configuracion().probarWhatsappPost(req, res),
+  );
   r.get('/configuracion/backup', requirePermission('configuracion:integraciones'), (req, res) =>
     configuracion().backupView(req, res),
   );

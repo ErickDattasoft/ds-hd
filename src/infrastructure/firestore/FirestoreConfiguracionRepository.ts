@@ -13,6 +13,11 @@ import {
   type ConfiguracionAvisos,
   type ContactoSoporte,
 } from '../../core/entities/ConfiguracionAvisos.js';
+import {
+  CONFIG_INTEGRACIONES_POR_DEFECTO,
+  sanearReglas,
+  type ConfiguracionIntegraciones,
+} from '../../core/entities/ConfiguracionIntegraciones.js';
 
 const COL = 'configuracion';
 
@@ -71,6 +76,24 @@ export class FirestoreConfiguracionRepository implements IConfiguracionRepositor
 
   async guardarAvisos(config: ConfiguracionAvisos): Promise<void> {
     await this.db.collection(COL).doc('avisos').set(config, { merge: true });
+  }
+
+  async obtenerIntegraciones(): Promise<ConfiguracionIntegraciones> {
+    const snap = await this.db.collection(COL).doc('integraciones').get();
+    if (!snap.exists) return { ...CONFIG_INTEGRACIONES_POR_DEFECTO };
+    const d = snap.data()!;
+    return {
+      n8nWebhookTickets: String(d.n8nWebhookTickets ?? ''),
+      n8nWebhookCotizaciones: String(d.n8nWebhookCotizaciones ?? ''),
+      whatsappHabilitado: Boolean(d.whatsappHabilitado),
+      whatsappTelefono: String(d.whatsappTelefono ?? ''),
+      whatsappApiKey: String(d.whatsappApiKey ?? ''),
+      reglas: sanearReglas(d.reglas),
+    };
+  }
+
+  async guardarIntegraciones(config: ConfiguracionIntegraciones): Promise<void> {
+    await this.db.collection(COL).doc('integraciones').set(config, { merge: true });
   }
 }
 

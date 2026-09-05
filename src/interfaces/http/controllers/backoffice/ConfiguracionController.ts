@@ -1,14 +1,17 @@
 import type { Request, Response } from 'express';
 import type { ConfiguracionTicketsService } from '../../../../application/configuracion/ConfiguracionTicketsService.js';
+import { ConfiguracionIntegracionesService } from '../../../../application/configuracion/ConfiguracionIntegracionesService.js';
 import type { BackupService } from '../../../../application/configuracion/BackupService.js';
+import { ETIQUETAS_EVENTOS } from '../../../../core/entities/ConfiguracionIntegraciones.js';
 import { camposDeError } from '../../support/errores.js';
 
 const str = (v: unknown): string => (typeof v === 'string' ? v : '');
 
-/** Configuración → Tickets (catálogos, SLA, notificaciones del portal) y backup. */
+/** Configuración → Tickets (catálogos, SLA, notificaciones del portal), integraciones y backup. */
 export class ConfiguracionController {
   constructor(
     private readonly configTickets: ConfiguracionTicketsService,
+    private readonly configIntegraciones: ConfiguracionIntegracionesService,
     private readonly backup: BackupService,
   ) {}
 
@@ -78,6 +81,71 @@ export class ConfiguracionController {
         errores: camposDeError(err),
         guardado: false,
       });
+    }
+  };
+
+  integracionesView = async (_req: Request, res: Response): Promise<void> => {
+    const config = await this.configIntegraciones.obtener();
+    res.render('pages/backoffice/configuracion/integraciones', {
+      titulo: 'Integraciones',
+      config,
+      eventosEtiquetas: ETIQUETAS_EVENTOS,
+      errores: {},
+      guardado: false,
+    });
+  };
+
+  integracionesPost = async (req: Request, res: Response): Promise<void> => {
+    const b = req.body ?? {};
+    try {
+      await this.configIntegraciones.actualizar({
+        actor: req.user!,
+        n8nWebhookTickets: str(b.n8nWebhookTickets),
+        n8nWebhookCotizaciones: str(b.n8nWebhookCotizaciones),
+        whatsappHabilitado: b.whatsappHabilitado === 'on' || b.whatsappHabilitado === 'true',
+        whatsappTelefono: str(b.whatsappTelefono),
+        whatsappApiKey: str(b.whatsappApiKey),
+        reglas: ConfiguracionIntegracionesService.reglasDeForm(b),
+      });
+      const config = await this.configIntegraciones.obtener();
+      res.render('pages/backoffice/configuracion/integraciones', {
+        titulo: 'Integraciones',
+        config,
+        eventosEtiquetas: ETIQUETAS_EVENTOS,
+        errores: {},
+        guardado: true,
+      });
+    } catch (err) {
+      const config = await this.configIntegraciones.obtener();
+      res.status(422).render('pages/backoffice/configuracion/integraciones', {
+        titulo: 'Integraciones',
+        config,
+        eventosEtiquetas: ETIQUETAS_EVENTOS,
+        errores: camposDeError(err),
+        guardado: false,
+      });
+    }
+  };
+
+  probarWebhookPost = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const resultado = await this.configIntegraciones.probarWebhook(req.user!, str(req.body?.url));
+      res.json(resultado);
+    } catch (err) {
+      res.status(422).json({ ok: false, detalle: err instanceof Error ? err.message : 'No se pudo probar' });
+    }
+  };
+
+  probarWhatsappPost = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const resultado = await this.configIntegraciones.probarWhatsApp(
+        req.user!,
+        str(req.body?.telefono),
+        str(req.body?.apiKey),
+      );
+      res.json(resultado);
+    } catch (err) {
+      res.status(422).json({ ok: false, detalle: err instanceof Error ? err.message : 'No se pudo probar' });
     }
   };
 }
