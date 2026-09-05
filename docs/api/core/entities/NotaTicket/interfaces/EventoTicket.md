@@ -19,7 +19,7 @@ visible en el detalle.
 
 ### tipo
 
-> **tipo**: `"correo"` \| `"creacion"` \| `"cambio_estado"` \| `"asignacion"` \| `"nota"` \| `"sla_incumplido"` \| `"facturacion"`
+> **tipo**: `"correo"` \| `"creacion"` \| `"cambio_estado"` \| `"asignacion"` \| `"nota"` \| `"sla_incumplido"` \| `"facturacion"` \| `"agenda"`
 
 ***
 

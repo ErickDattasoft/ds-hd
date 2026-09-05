@@ -54,6 +54,24 @@
       </div>
     </details>
 
+    <details class="disclosure"{{ ' open' if valores.agendaFecha or errores.agendaFecha or errores.agendaHora }}>
+      <summary class="disclosure__summary">📅 Programar atención <span class="disclosure__hint">— fecha, hora y recordatorio (opcional)</span></summary>
+      <div class="disclosure__body form">
+        <label class="field"><span>Fecha programada</span>
+          <input type="date" name="agendaFecha" value="{{ valores.agendaFecha }}" />
+          {% if errores.agendaFecha %}<em class="field__error">{{ errores.agendaFecha }}</em>{% endif %}
+        </label>
+        <label class="field"><span>Hora programada</span>
+          <input type="time" name="agendaHora" value="{{ valores.agendaHora or '09:00' }}" />
+          {% if errores.agendaHora %}<em class="field__error">{{ errores.agendaHora }}</em>{% endif %}
+        </label>
+        <label class="field--check">
+          <input type="checkbox" name="agendaRecordatorio" {{ 'checked' if valores.agendaRecordatorio == 'on' }} />
+          <span>Enviar recordatorio por WhatsApp 30 min antes (vía n8n)</span>
+        </label>
+      </div>
+    </details>
+
     <div class="page-head__actions">
       <button class="btn" type="submit">Crear ticket</button>
       <a class="btn btn--ghost" href="/app/tickets">Cancelar</a>

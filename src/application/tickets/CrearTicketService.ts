@@ -58,6 +58,7 @@ export class CrearTicketService {
       origenPublicoId: input.origenPublicoId ?? null,
       requiereFacturacion: cfg.tiposFacturables.includes(input.tipo),
       estadoFacturacion: input.estadoFacturacion,
+      agenda: input.agenda ?? null,
       horasSla: horasSlaDe(cfg, prioridad),
       ahora,
     });
@@ -79,6 +80,23 @@ export class CrearTicketService {
       canal: 'tickets',
       payload: { id: ticket.id, numero, asunto: ticket.asunto, prioridad, canal: ticket.canal },
     });
+
+    if (ticket.agenda?.recordatorioWhatsapp) {
+      await this.webhooks.publicar({
+        evento: 'ticket.programado',
+        canal: 'tickets',
+        payload: {
+          id: ticket.id,
+          numero,
+          asunto: ticket.asunto,
+          accion: 'programar',
+          fecha: ticket.agenda.fecha,
+          hora: ticket.agenda.hora,
+          fechaHoraIso: ticket.fechaHoraProgramada?.toISOString() ?? null,
+          agenteAsignadoUid: ticket.agenteAsignadoUid,
+        },
+      });
+    }
 
     this.logger.info('Ticket creado', { numero, canal: ticket.canal, por: input.actor.uid });
     return ticket;

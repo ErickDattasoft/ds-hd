@@ -6,6 +6,6 @@
 
 # Variable: EVENTOS\_NOTIFICABLES
 
-> `const` **EVENTOS\_NOTIFICABLES**: readonly \[`"ticket.creado"`, `"ticket.asignado"`, `"ticket.resuelto"`, `"ticket.cerrado"`, `"ticket.facturado"`, `"cotizacion.creada"`\]
+> `const` **EVENTOS\_NOTIFICABLES**: readonly \[`"ticket.creado"`, `"ticket.asignado"`, `"ticket.resuelto"`, `"ticket.cerrado"`, `"ticket.facturado"`, `"ticket.programado"`, `"cotizacion.creada"`\]
 
 Eventos de dominio que pueden disparar una notificación externa.

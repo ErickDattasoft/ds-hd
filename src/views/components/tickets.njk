@@ -5,10 +5,14 @@
   {% else %}<span class="badge badge--ok">{{ vm.slaTexto }}</span>{% endif %}
 {% endmacro %}
 
+{% macro agendaBadge(vm) %}
+  {% if vm.agenda %}<span class="badge {{ 'badge--danger' if vm.agenda.vencida else 'badge--ok' }}" title="Atención programada">📅 {{ vm.agenda.texto }}</span>{% endif %}
+{% endmacro %}
+
 {% macro filaTicket(vm) %}
   <tr>
     <td><a href="/app/tickets/{{ vm.id }}">#{{ vm.numero }}</a></td>
-    <td>{{ vm.asunto }}</td>
+    <td>{{ vm.asunto }}{% if vm.agenda %}<br>{{ agendaBadge(vm) }}{% endif %}</td>
     <td><span class="badge badge--estado">{{ vm.estado }}</span></td>
     <td>{{ vm.prioridad }}</td>
     <td>{{ vm.empresaNombre or '—' }}</td>

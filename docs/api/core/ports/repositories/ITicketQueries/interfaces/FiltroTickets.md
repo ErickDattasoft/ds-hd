@@ -68,6 +68,14 @@ Excluye estados finales (resuelto/cerrado).
 
 ***
 
+### soloProgramados?
+
+> `optional` **soloProgramados?**: `boolean`
+
+`true` = solo tickets con atención programada (agenda), ordenados por fecha/hora asc.
+
+***
+
 ### texto?
 
 > `optional` **texto?**: `string`

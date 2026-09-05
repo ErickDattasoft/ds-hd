@@ -84,6 +84,7 @@ export class InMemoryTicketQueries implements ITicketQueries {
     if (f.solicitanteUid && t.solicitanteUid !== f.solicitanteUid) return false;
     if (f.canal && t.canal !== f.canal) return false;
     if (f.soloAbiertos && esEstadoFinal(t.estado)) return false;
+    if (f.soloProgramados && t.fechaHoraProgramada === null) return false;
     if (f.archivado !== undefined && t.archivado !== f.archivado) return false;
     if (f.texto) {
       const q = f.texto.toLowerCase();
@@ -101,7 +102,11 @@ export class InMemoryTicketQueries implements ITicketQueries {
   async listar(filtro: FiltroTickets): Promise<Ticket[]> {
     const out = [...this.store.tickets.values()]
       .filter((t) => this.match(t, filtro))
-      .sort((a, b) => b.abiertoEn.getTime() - a.abiertoEn.getTime());
+      .sort((a, b) =>
+        filtro.soloProgramados
+          ? a.fechaHoraProgramada!.getTime() - b.fechaHoraProgramada!.getTime()
+          : b.abiertoEn.getTime() - a.abiertoEn.getTime(),
+      );
     return filtro.limite ? out.slice(0, filtro.limite) : out;
   }
   async contar(filtro: FiltroTickets): Promise<number> {

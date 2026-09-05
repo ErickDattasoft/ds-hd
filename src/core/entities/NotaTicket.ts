@@ -14,7 +14,7 @@ export interface NotaTicket {
  */
 export interface EventoTicket {
   id: string;
-  tipo: 'creacion' | 'cambio_estado' | 'asignacion' | 'nota' | 'sla_incumplido' | 'correo' | 'facturacion';
+  tipo: 'creacion' | 'cambio_estado' | 'asignacion' | 'nota' | 'sla_incumplido' | 'correo' | 'facturacion' | 'agenda';
   resumen: string;
   actorUid: string | null;
   actorNombre: string | null;

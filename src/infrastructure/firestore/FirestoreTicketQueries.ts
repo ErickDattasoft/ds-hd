@@ -46,6 +46,12 @@ export class FirestoreTicketQueries implements ITicketQueries {
           (x.empresaNombre ?? '').toLowerCase().includes(t),
       );
     }
+    if (filtro.soloProgramados) {
+      // Campo nuevo — filtrar en memoria por el mismo motivo que `archivado`.
+      return out
+        .filter((x) => x.fechaHoraProgramada !== null)
+        .sort((a, b) => a.fechaHoraProgramada!.getTime() - b.fechaHoraProgramada!.getTime());
+    }
     return out.sort((a, b) => b.abiertoEn.getTime() - a.abiertoEn.getTime());
   }
 
@@ -58,7 +64,7 @@ export class FirestoreTicketQueries implements ITicketQueries {
 
   async contar(filtro: FiltroTickets): Promise<number> {
     // Con soloAbiertos ya es una query indexable; texto/archivado se filtran en memoria.
-    if (!filtro.texto && filtro.archivado === undefined) {
+    if (!filtro.texto && filtro.archivado === undefined && !filtro.soloProgramados) {
       const agg = await this.aplicar(filtro).count().get();
       return agg.data().count;
     }

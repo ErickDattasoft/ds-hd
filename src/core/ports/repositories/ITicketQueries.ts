@@ -13,6 +13,8 @@ export interface FiltroTickets {
   canal?: string;
   /** Excluye estados finales (resuelto/cerrado). */
   soloAbiertos?: boolean;
+  /** `true` = solo tickets con atención programada (agenda), ordenados por fecha/hora asc. */
+  soloProgramados?: boolean;
   texto?: string;
   limite?: number;
   /** `false` (por defecto en las vistas normales) excluye tickets en la papelera. */

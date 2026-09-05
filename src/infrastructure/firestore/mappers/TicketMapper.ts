@@ -50,6 +50,8 @@ export const TicketMapper = {
         facturado: d.facturacion?.facturado,
         notificadaEn: fecha(d.facturacion?.notificadaEn) ?? null,
       },
+      // `sanearAgenda` (constructor de Ticket) descarta un objeto malformado o ausente.
+      agenda: d.agenda ?? null,
       abiertoEn: fecha(d.abiertoEn) ?? new Date(),
       ultimoCambioEstadoEn: fecha(d.ultimoCambioEstadoEn) ?? fecha(d.abiertoEn) ?? new Date(),
       primeraRespuestaEn: fecha(d.primeraRespuestaEn) ?? null,
@@ -97,6 +99,7 @@ export const TicketMapper = {
         facturado: esFacturacionCompletada(t.facturacion.estado),
         notificadaEn: ts(t.facturacion.notificadaEn),
       },
+      agenda: t.agenda,
       abiertoEn: Timestamp.fromDate(t.abiertoEn),
       ultimoCambioEstadoEn: Timestamp.fromDate(t.ultimoCambioEstadoEn),
       primeraRespuestaEn: ts(t.primeraRespuestaEn),

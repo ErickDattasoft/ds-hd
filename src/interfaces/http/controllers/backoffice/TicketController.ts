@@ -4,6 +4,7 @@ import type { ActualizarEstadoTicketService } from '../../../../application/tick
 import type { AsignarAgenteService } from '../../../../application/tickets/AsignarAgenteService.js';
 import type { RegistrarNotaService } from '../../../../application/tickets/RegistrarNotaService.js';
 import type { MarcarFacturacionService } from '../../../../application/tickets/MarcarFacturacionService.js';
+import type { ProgramarAtencionService } from '../../../../application/tickets/ProgramarAtencionService.js';
 import type { ArchivarTicketService } from '../../../../application/tickets/ArchivarTicketService.js';
 import type { ListarTicketsService } from '../../../../application/tickets/ListarTicketsService.js';
 import type { VerTicketService } from '../../../../application/tickets/VerTicketService.js';
@@ -22,6 +23,7 @@ import {
   esEstadoFacturacion,
   parseEstadoFacturacion,
 } from '../../../../core/entities/value-objects/EstadoFacturacion.js';
+import { parseAgenda } from '../../../../core/entities/value-objects/AgendaTicket.js';
 import { ticketVM } from '../../presenters/TicketPresenter.js';
 import { camposDeError } from '../../support/errores.js';
 
@@ -38,6 +40,7 @@ export class TicketController {
     private readonly asignar: AsignarAgenteService,
     private readonly registrarNota: RegistrarNotaService,
     private readonly facturar: MarcarFacturacionService,
+    private readonly programarAtencion: ProgramarAtencionService,
     private readonly archivar: ArchivarTicketService,
     private readonly listar: ListarTicketsService,
     private readonly ver: VerTicketService,
@@ -59,6 +62,7 @@ export class TicketController {
       ...(q.sinAsignar === '1' ? { sinAsignar: true } : {}),
       ...(str(q.texto) ? { texto: str(q.texto) } : {}),
       ...(q.abiertos !== '0' ? { soloAbiertos: true } : {}),
+      ...(q.agenda === '1' ? { soloProgramados: true } : {}),
       archivado: false,
     };
   }
@@ -139,6 +143,9 @@ export class TicketController {
         contactoCorreo: str(b.contactoCorreo) || null,
         asignarAlActor: b.asignarAMi === 'on',
         estadoFacturacion: esEstadoFacturacion(b.estadoFacturacion) ? b.estadoFacturacion : undefined,
+        agenda: str(b.agendaFecha)
+          ? parseAgenda({ fecha: b.agendaFecha, hora: b.agendaHora, recordatorioWhatsapp: b.agendaRecordatorio === 'on' })
+          : null,
       });
       res.redirect(`/app/tickets/${ticket.id}`);
     } catch (err) {
@@ -214,6 +221,17 @@ export class TicketController {
       actor: req.user!,
       ticketId: str(req.params.id),
       estado: parseEstadoFacturacion(req.body?.estado),
+    });
+    res.redirect(`/app/tickets/${str(req.params.id)}`);
+  };
+
+  agendaPost = async (req: Request, res: Response): Promise<void> => {
+    await this.programarAtencion.ejecutar({
+      actor: req.user!,
+      ticketId: str(req.params.id),
+      fecha: str(req.body?.agendaFecha),
+      hora: str(req.body?.agendaHora),
+      recordatorioWhatsapp: req.body?.agendaRecordatorio === 'on' || req.body?.agendaRecordatorio === 'true',
     });
     res.redirect(`/app/tickets/${str(req.params.id)}`);
   };

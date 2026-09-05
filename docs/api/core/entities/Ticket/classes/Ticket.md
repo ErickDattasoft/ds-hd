@@ -159,6 +159,12 @@ de tiempo trabajado y el reloj de SLA con pausa. No conoce Firestore ni HTTP.
 
 ***
 
+### agenda
+
+> **agenda**: [`AgendaTicket`](../../value-objects/AgendaTicket/interfaces/AgendaTicket.md) \| `null`
+
+***
+
 ### tiempoTrabajadoMs
 
 > **tiempoTrabajadoMs**: `number`
@@ -228,6 +234,20 @@ de tiempo trabajado y el reloj de SLA con pausa. No conoce Firestore ni HTTP.
 ##### Returns
 
 `boolean`
+
+***
+
+### fechaHoraProgramada
+
+#### Get Signature
+
+> **get** **fechaHoraProgramada**(): `Date` \| `null`
+
+La fecha/hora programada, o `null` si el ticket no tiene agenda.
+
+##### Returns
+
+`Date` \| `null`
 
 ***
 
@@ -345,6 +365,10 @@ de tiempo trabajado y el reloj de SLA con pausa. No conoce Firestore ni HTTP.
 
 Si se omite, se infiere de `requiereFacturacion` (no_facturado si requiere, si no no_aplica).
 
+###### agenda?
+
+[`AgendaTicket`](../../value-objects/AgendaTicket/interfaces/AgendaTicket.md) \| `null`
+
 ###### horasSla?
 
 `number`
@@ -456,6 +480,60 @@ readonly `string`[]
 #### Returns
 
 `void`
+
+***
+
+### programarAtencion()
+
+> **programarAtencion**(`agenda`, `ahora`): `void`
+
+#### Parameters
+
+##### agenda
+
+[`AgendaTicket`](../../value-objects/AgendaTicket/interfaces/AgendaTicket.md)
+
+##### ahora
+
+`Date`
+
+#### Returns
+
+`void`
+
+***
+
+### cancelarAgenda()
+
+> **cancelarAgenda**(`ahora`): `void`
+
+#### Parameters
+
+##### ahora
+
+`Date`
+
+#### Returns
+
+`void`
+
+***
+
+### agendaVencida()
+
+> **agendaVencida**(`ahora`): `boolean`
+
+`true` si tiene una fecha programada que ya pasó y el ticket sigue abierto.
+
+#### Parameters
+
+##### ahora
+
+`Date`
+
+#### Returns
+
+`boolean`
 
 ***
 

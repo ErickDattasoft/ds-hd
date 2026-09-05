@@ -93,6 +93,9 @@ export function backofficeRoutes(container: Container): Router {
     tickets().asignarPost(req, res),
   );
   r.post('/tickets/:id/nota', requirePermission('tickets:editar'), (req, res) => tickets().notaPost(req, res));
+  r.post('/tickets/:id/agenda', requirePermission('tickets:editar'), (req, res) =>
+    tickets().agendaPost(req, res),
+  );
   r.post('/tickets/:id/facturar', requirePermission('tickets:editar'), (req, res) =>
     tickets().facturarPost(req, res),
   );

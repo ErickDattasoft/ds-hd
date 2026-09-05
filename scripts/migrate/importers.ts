@@ -208,6 +208,11 @@ async function importarListaTickets(
         facturacion: {
           estado: estadoFacturacionDe(facturadoTexto),
         },
+        // `fechaProgramada`/`horaProgramada` del CRM viejo → agenda del ticket (sin
+        // recordatorio: los destinatarios del viejo no se migran, se re-configuran a mano).
+        agenda: /^\d{4}-\d{2}-\d{2}$/.test(s(d.fechaProgramada))
+          ? { fecha: s(d.fechaProgramada), hora: s(d.horaProgramada) || '09:00', recordatorioWhatsapp: false }
+          : null,
         abiertoEn: fecha(d.fechaCreacion),
         createdAt: fecha(d.fechaCreacion),
         updatedAt: fecha(d.fechaActualizacion ?? d.fechaCreacion),

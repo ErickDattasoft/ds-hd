@@ -113,3 +113,11 @@ El agente que crea se autoasigna.
 > `optional` **estadoFacturacion?**: `"no_facturado"` \| `"facturado"` \| `"no_aplica"` \| `"factura_mensual"` \| `"consulta_sin_costo"`
 
 Si se omite, se infiere del tipo (`tiposFacturables`) — solo el alta desde el back-office lo captura.
+
+***
+
+### agenda?
+
+> `optional` **agenda?**: [`AgendaTicket`](../../../../core/entities/value-objects/AgendaTicket/interfaces/AgendaTicket.md) \| `null`
+
+Programación de atención opcional, solo desde el alta del back-office.

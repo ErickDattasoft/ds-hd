@@ -9,6 +9,7 @@
 ## Interfaces
 
 - [CrearTicketInput](interfaces/CrearTicketInput.md)
+- [ProgramarAtencionInput](interfaces/ProgramarAtencionInput.md)
 - [CambiarEstadoInput](interfaces/CambiarEstadoInput.md)
 - [AsignarAgenteInput](interfaces/AsignarAgenteInput.md)
 - [RegistrarNotaInput](interfaces/RegistrarNotaInput.md)

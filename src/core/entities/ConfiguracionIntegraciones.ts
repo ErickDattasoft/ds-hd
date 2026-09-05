@@ -5,6 +5,7 @@ export const EVENTOS_NOTIFICABLES = [
   'ticket.resuelto',
   'ticket.cerrado',
   'ticket.facturado',
+  'ticket.programado',
   'cotizacion.creada',
 ] as const;
 
@@ -24,6 +25,7 @@ export const ETIQUETAS_EVENTOS: Record<EventoNotificable, string> = {
   'ticket.resuelto': 'Ticket resuelto',
   'ticket.cerrado': 'Ticket cerrado',
   'ticket.facturado': 'Ticket facturado',
+  'ticket.programado': 'Recordatorio de ticket programado',
   'cotizacion.creada': 'Cotización creada',
 };
 

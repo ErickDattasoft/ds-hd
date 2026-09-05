@@ -3,15 +3,18 @@
 {% block title %}Tickets{% endblock %}
 {% block content %}
   <div class="page-head">
-    <h1>Tickets <span class="muted">({{ total }})</span></h1>
+    <h1>{{ 'Agenda de tickets' if filtro.agenda == '1' else 'Tickets' }} <span class="muted">({{ total }})</span></h1>
     <div class="page-head__actions">
       <a class="btn btn--sm" href="/app/tickets/nuevo">Nuevo ticket</a>
+      <a class="btn btn--sm {{ 'btn--secondary' if filtro.agenda != '1' }}" href="/app/tickets{{ '' if filtro.agenda == '1' else '?agenda=1' }}">📅 Agenda</a>
       <a class="btn btn--sm btn--secondary" href="/app/tickets/tablero">Tablero</a>
       <a class="btn btn--sm btn--secondary" href="/app/tickets/mis-asignados">Mis asignados</a>
     </div>
   </div>
+  {% if filtro.agenda == '1' %}<p class="muted">Solo tickets con atención programada, del más próximo al más lejano.</p>{% endif %}
 
   <form method="get" class="filterbar">
+    {% if filtro.agenda == '1' %}<input type="hidden" name="agenda" value="1" />{% endif %}
     <input type="search" name="texto" value="{{ filtro.texto }}" placeholder="Buscar por asunto, # o empresa…" autocomplete="off" spellcheck="false" />
     <select name="estado">
       <option value="">Todos los estados</option>

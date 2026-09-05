@@ -35,6 +35,15 @@ export interface TicketVM {
     /** Clase de badge para colorear el total facturable — `null` = sin marcar (no aplica). */
     clase: 'ok' | 'warning' | null;
   };
+  /** Programación de atención, o `null` si el ticket no tiene agenda. */
+  agenda: {
+    fecha: string;
+    hora: string;
+    recordatorioWhatsapp: boolean;
+    texto: string;
+    /** `true` si la fecha ya pasó y el ticket sigue abierto (badge en rojo). */
+    vencida: boolean;
+  } | null;
 }
 
 /** Convierte un Ticket de dominio en un view model para las plantillas (vistas "tontas"). */
@@ -83,5 +92,14 @@ export function ticketVM(t: Ticket, ahora: Date): TicketVM {
           ? 'warning'
           : null,
     },
+    agenda: t.agenda
+      ? {
+          fecha: t.agenda.fecha,
+          hora: t.agenda.hora,
+          recordatorioWhatsapp: t.agenda.recordatorioWhatsapp,
+          texto: `${t.agenda.fecha} ${t.agenda.hora}`,
+          vencida: t.agendaVencida(ahora),
+        }
+      : null,
   };
 }

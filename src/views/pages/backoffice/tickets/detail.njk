@@ -61,6 +61,12 @@
         <p><strong>Agente:</strong> {{ ticket.agenteAsignadoNombre or 'Sin asignar' }}</p>
         <p><strong>Empresa:</strong> {{ ticket.empresaNombre or '—' }}</p>
         <p><strong>Canal:</strong> {{ ticket.canal }}</p>
+        {% if vm.agenda %}
+          <p><strong>📅 Programado:</strong>
+            <span class="badge badge--{{ 'danger' if vm.agenda.vencida else 'ok' }}">{{ vm.agenda.texto }}</span>
+            {% if vm.agenda.recordatorioWhatsapp %}<span class="badge" title="Recordatorio WhatsApp 30 min antes">🔔 WhatsApp</span>{% endif %}
+          </p>
+        {% endif %}
       </div>
 
       {% if permisos.cambiarEstado %}
@@ -104,6 +110,33 @@
             </label>
             <button class="btn btn--sm" type="submit">Guardar</button>
           </form>
+        </details>
+      {% endif %}
+
+      {% if permisos.editar %}
+        <details class="disclosure"{{ ' open' if vm.agenda.vencida }}>
+          <summary class="disclosure__summary">📅 Programar atención <span class="disclosure__hint">— {{ vm.agenda.texto if vm.agenda else 'sin programar' }}</span></summary>
+          <form method="post" action="/app/tickets/{{ ticket.id }}/agenda" class="form">
+            <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+            <label class="field"><span>Fecha</span>
+              <input type="date" name="agendaFecha" value="{{ vm.agenda.fecha }}" required />
+            </label>
+            <label class="field"><span>Hora</span>
+              <input type="time" name="agendaHora" value="{{ vm.agenda.hora or '09:00' }}" />
+            </label>
+            <label class="field--check">
+              <input type="checkbox" name="agendaRecordatorio" {{ 'checked' if vm.agenda.recordatorioWhatsapp }} />
+              <span>Recordatorio WhatsApp 30 min antes (vía n8n)</span>
+            </label>
+            <button class="btn btn--sm" type="submit">Guardar</button>
+          </form>
+          {% if vm.agenda %}
+            <form method="post" action="/app/tickets/{{ ticket.id }}/agenda" class="disclosure__body">
+              <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+              <input type="hidden" name="agendaFecha" value="" />
+              <button class="btn btn--sm btn--ghost" type="submit">Quitar programación</button>
+            </form>
+          {% endif %}
         </details>
       {% endif %}
 

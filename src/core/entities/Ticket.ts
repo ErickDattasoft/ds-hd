@@ -10,6 +10,7 @@ import {
   validarTransicion,
 } from './value-objects/EstadoTicket.js';
 import { sanearEstadoFacturacion, type EstadoFacturacion } from './value-objects/EstadoFacturacion.js';
+import { fechaHoraAgenda, sanearAgenda, type AgendaTicket } from './value-objects/AgendaTicket.js';
 
 export type CanalTicket = 'interno' | 'publico' | 'portal' | 'correo';
 
@@ -67,6 +68,8 @@ export interface TicketProps {
   sla?: Partial<SlaState>;
   /** `facturado` (booleano) es el esquema viejo, solo para respaldo al leer datos guardados. */
   facturacion?: Partial<FacturacionState> & { facturado?: boolean };
+  /** Programación de atención ("📅 Programar atención"); `null`/ausente = sin programar. */
+  agenda?: AgendaTicket | null;
   tiempoTrabajadoMs?: number;
 
   abiertoEn?: Date;
@@ -119,6 +122,7 @@ export class Ticket {
 
   sla: SlaState;
   facturacion: FacturacionState;
+  agenda: AgendaTicket | null;
   tiempoTrabajadoMs: number;
 
   readonly abiertoEn: Date;
@@ -178,6 +182,7 @@ export class Ticket {
       estado: sanearEstadoFacturacion(props.facturacion?.estado, props.facturacion?.facturado),
       notificadaEn: props.facturacion?.notificadaEn ?? null,
     };
+    this.agenda = sanearAgenda(props.agenda);
     this.archivado = props.archivado ?? false;
   }
 
@@ -204,6 +209,7 @@ export class Ticket {
     requiereFacturacion?: boolean;
     /** Si se omite, se infiere de `requiereFacturacion` (no_facturado si requiere, si no no_aplica). */
     estadoFacturacion?: EstadoFacturacion;
+    agenda?: AgendaTicket | null;
     horasSla?: number;
     ahora: Date;
   }): Ticket {
@@ -303,6 +309,28 @@ export class Ticket {
   cambiarEstadoFacturacion(estado: EstadoFacturacion, ahora: Date): void {
     this.facturacion.estado = estado;
     this.updatedAt = ahora;
+  }
+
+  // ── Agenda ("📅 Programar atención") ───────────────────────────────────────
+  programarAtencion(agenda: AgendaTicket, ahora: Date): void {
+    this.agenda = agenda;
+    this.updatedAt = ahora;
+  }
+
+  cancelarAgenda(ahora: Date): void {
+    this.agenda = null;
+    this.updatedAt = ahora;
+  }
+
+  /** La fecha/hora programada, o `null` si el ticket no tiene agenda. */
+  get fechaHoraProgramada(): Date | null {
+    return this.agenda ? fechaHoraAgenda(this.agenda) : null;
+  }
+
+  /** `true` si tiene una fecha programada que ya pasó y el ticket sigue abierto. */
+  agendaVencida(ahora: Date): boolean {
+    const cuando = this.fechaHoraProgramada;
+    return cuando !== null && this.estaAbierto && cuando.getTime() < ahora.getTime();
   }
 
   archivar(ahora: Date): void {

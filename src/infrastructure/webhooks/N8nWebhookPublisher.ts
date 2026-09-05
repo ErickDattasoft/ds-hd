@@ -17,6 +17,8 @@ function mensajeWhatsApp(evento: EventoWebhook): string {
       return `🎫 Ticket #${p.numero} cerrado`;
     case 'ticket.facturado':
       return `🎫 Ticket #${p.numero} marcado como facturado`;
+    case 'ticket.programado':
+      return `📅 Ticket #${p.numero} programado para ${p.fecha ?? ''} ${p.hora ?? ''}`.trim();
     case 'cotizacion.creada':
       return `📄 Nueva cotización ${p.folio ?? ''}`;
     default:

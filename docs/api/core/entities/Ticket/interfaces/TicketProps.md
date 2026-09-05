@@ -150,6 +150,14 @@ Props para construir un [Ticket](../classes/Ticket.md).
 
 ***
 
+### agenda?
+
+> `optional` **agenda?**: [`AgendaTicket`](../../value-objects/AgendaTicket/interfaces/AgendaTicket.md) \| `null`
+
+Programación de atención ("📅 Programar atención"); `null`/ausente = sin programar.
+
+***
+
 ### tiempoTrabajadoMs?
 
 > `optional` **tiempoTrabajadoMs?**: `number`
