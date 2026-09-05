@@ -162,6 +162,17 @@ export default { existsSync, readFileSync, readdirSync, statSync, realpathSync, 
 }
 `,
   },
+  // `exceljs` (import/export de Excel) depende de `readable-stream`, que hace
+  // `util.inherits(Readable, Stream)` al cargar — en workerd esa base no tiene `.prototype`
+  // real y el Worker completo falla al arrancar (no solo las rutas de Excel). Se sustituye
+  // por `FflateExcelIO` (zip vía `fflate`, sin dependencias de Node), que implementa el mismo
+  // puerto `IExcelIO` y puede leer los archivos que escribe `ExceljsExcelIO` y viceversa.
+  ExceljsExcelIO: {
+    match: (a) => /(^|\/)ExceljsExcelIO(\.js)?$/.test(a.path),
+    code: `export { FflateExcelIO as ExceljsExcelIO } from ${JSON.stringify(
+      join(root, 'src', 'infrastructure', 'excel', 'FflateExcelIO.ts'),
+    )};\n`,
+  },
 };
 
 for (const [name, { code }] of Object.entries(stubs)) {
@@ -172,7 +183,7 @@ const stubPlugin = {
   name: 'stub-node-only',
   setup(b) {
     const filtro =
-      /(^|\/)(firebase(\.js)?|compression|pino(-http)?|send|(node:)?tty|(node:)?fs|events|safe-buffer|safer-buffer|fast-glob|nodemailer)$/;
+      /(^|\/)(firebase(\.js)?|compression|pino(-http)?|send|(node:)?tty|(node:)?fs|events|safe-buffer|safer-buffer|fast-glob|nodemailer|ExceljsExcelIO(\.js)?)$/;
     b.onResolve({ filter: filtro }, (args) => {
       for (const [name, { match }] of Object.entries(stubs)) {
         if (match(args)) return { path: join(outDir, 'stubs', `${name.replace(/\W+/g, '_')}.js`) };

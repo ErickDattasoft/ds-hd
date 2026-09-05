@@ -6,7 +6,7 @@
     "moduleResolution": "NodeNext",
     "rootDir": ".",
     "outDir": "dist",
-    "types": ["node", "multer"],
+    "types": ["node"],
 
     "strict": true,
     "noUncheckedIndexedAccess": true,

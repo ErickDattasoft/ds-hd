@@ -1,4 +1,5 @@
 import type { SessionUser } from '../../application/shared/SessionUser.js';
+import type { ArchivoSubido } from './middlewares/uploadSingleFile.js';
 
 declare global {
   namespace Express {
@@ -7,6 +8,8 @@ declare global {
       user?: SessionUser;
       /** Token CSRF válido para renderizar en formularios. */
       csrfToken?: () => string;
+      /** Archivo subido vía `multipart/form-data`, si la ruta usa `uploadSingleFile`. */
+      file?: ArchivoSubido;
     }
     interface Locals {
       user?: SessionUser;
