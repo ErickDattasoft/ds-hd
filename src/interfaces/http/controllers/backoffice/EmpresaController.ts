@@ -1,6 +1,7 @@
 import type { Request, Response } from 'express';
 import type { EmpresaService } from '../../../../application/empresas/EmpresaService.js';
 import type { AvisarEmpresasService } from '../../../../application/empresas/AvisarEmpresasService.js';
+import type { EmpresaExcelService } from '../../../../application/empresas/EmpresaExcelService.js';
 import type { ContactoService } from '../../../../application/contactos/ContactoService.js';
 import type { SeguimientoService } from '../../../../application/seguimiento/SeguimientoService.js';
 import type { VersionService } from '../../../../application/versiones/VersionService.js';
@@ -35,6 +36,7 @@ export class EmpresaController {
     private readonly seguimiento: SeguimientoService,
     private readonly versiones: VersionService,
     private readonly avisar: AvisarEmpresasService,
+    private readonly excel: EmpresaExcelService,
   ) {}
 
   listar = async (req: Request, res: Response): Promise<void> => {
@@ -165,6 +167,37 @@ export class EmpresaController {
   archivarPost = async (req: Request, res: Response): Promise<void> => {
     await this.empresas.archivar(req.user!, str(req.params.id), req.body?.archivar !== 'false');
     res.redirect('/app/empresas');
+  };
+
+  exportarExcel = async (req: Request, res: Response): Promise<void> => {
+    const texto = str(req.query.q);
+    const buffer = await this.excel.exportar({
+      ...(texto ? { texto } : {}),
+      ...(req.query.archivadas === '1' ? {} : { activa: true }),
+    });
+    const fecha = new Date().toISOString().slice(0, 10);
+    res.setHeader('Content-Disposition', `attachment; filename="empresas-${fecha}.xlsx"`);
+    res.type('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet').send(buffer);
+  };
+
+  importarView = (_req: Request, res: Response): void => {
+    res.render('pages/backoffice/empresas/importar', { titulo: 'Importar empresas' });
+  };
+
+  /** El archivo llega por `fetch` con `FormData` (CSRF vía cabecera `x-csrf-token`, no campo de
+   * formulario — el body multipart aún no está parseado cuando corre el chequeo global de CSRF). */
+  importarPost = async (req: Request, res: Response): Promise<void> => {
+    const archivo = req.file;
+    if (!archivo) {
+      res.status(422).json({ ok: false, error: 'Selecciona un archivo .xlsx' });
+      return;
+    }
+    try {
+      const resultado = await this.excel.importar(req.user!, archivo.buffer);
+      res.json({ ok: true, resultado });
+    } catch (err) {
+      res.status(422).json({ ok: false, error: err instanceof Error ? err.message : 'No se pudo importar el archivo' });
+    }
   };
 
   /** Versión oficial vigente por sistema (última si hay varias del mismo sistema). */

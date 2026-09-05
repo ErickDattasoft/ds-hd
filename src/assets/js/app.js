@@ -140,6 +140,49 @@
     reader.readAsText(file);
   });
 
+  // ── Importar Excel (empresas/contactos): sube el archivo por FormData ──
+  document.addEventListener('submit', function (e) {
+    var form = e.target.closest('[data-importar-excel]');
+    if (!form) return;
+    e.preventDefault();
+    var input = form.querySelector('input[type="file"]');
+    var file = input && input.files[0];
+    var salida = document.getElementById('resultado-importar-excel');
+    if (!file || !salida) return;
+    salida.innerHTML = '<p class="muted">Importando…</p>';
+    var fd = new FormData();
+    fd.append('archivo', file);
+    fetch(form.getAttribute('action'), {
+      method: 'POST',
+      headers: { 'x-csrf-token': cookie('x-csrf-token') },
+      body: fd,
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (data.ok) {
+          var r = data.resultado;
+          var html =
+            '<p class="alert alert--ok">' + r.total + ' filas leídas: ' +
+            r.creadas + ' creadas, ' + r.actualizadas + ' actualizadas.</p>';
+          if (r.errores.length) {
+            html += '<p class="alert alert--warning">' + r.errores.length + ' fila(s) con error:</p><ul>';
+            r.errores.forEach(function (msg) {
+              var li = document.createElement('li');
+              li.textContent = msg;
+              html += li.outerHTML;
+            });
+            html += '</ul>';
+          }
+          salida.innerHTML = html;
+        } else {
+          salida.innerHTML = '<p class="alert alert--error">' + data.error + '</p>';
+        }
+      })
+      .catch(function () {
+        salida.innerHTML = '<p class="alert alert--error">No se pudo importar. Revisa tu conexión e inténtalo de nuevo.</p>';
+      });
+  });
+
   // ── Configuración → Integraciones: "probar conexión" (webhook n8n / WhatsApp) ──
   document.addEventListener('click', function (e) {
     var btnWebhook = e.target.closest('[data-probar-webhook]');

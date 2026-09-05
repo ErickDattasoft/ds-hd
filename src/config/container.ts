@@ -36,6 +36,7 @@ import {
 } from '../infrastructure/firestore/FirestoreEventoRepository.js';
 import { N8nWebhookPublisher } from '../infrastructure/webhooks/N8nWebhookPublisher.js';
 import { HttpIntegracionesGateway } from '../infrastructure/integraciones/HttpIntegracionesGateway.js';
+import { ExceljsExcelIO } from '../infrastructure/excel/ExceljsExcelIO.js';
 import { TurnstileVerifier, NullCaptchaVerifier } from '../infrastructure/captcha/TurnstileVerifier.js';
 import { LoginService } from '../application/auth/LoginService.js';
 import { SolicitarAccesoService } from '../application/auth/SolicitarAccesoService.js';
@@ -63,7 +64,10 @@ import { ConfiguracionTicketsService } from '../application/configuracion/Config
 import { ConfiguracionIntegracionesService } from '../application/configuracion/ConfiguracionIntegracionesService.js';
 import { BitacoraService } from '../application/shared/BitacoraService.js';
 import { EmpresaService } from '../application/empresas/EmpresaService.js';
+import { EmpresaExcelService } from '../application/empresas/EmpresaExcelService.js';
 import { ContactoService } from '../application/contactos/ContactoService.js';
+import { ContactoExcelService } from '../application/contactos/ContactoExcelService.js';
+import { TicketExcelService } from '../application/tickets/TicketExcelService.js';
 import { VersionService } from '../application/versiones/VersionService.js';
 import { KnowledgeService } from '../application/knowledge/KnowledgeService.js';
 import { CotizacionService } from '../application/cotizaciones/CotizacionService.js';
@@ -113,6 +117,7 @@ import type { ITicketPublicoRepository } from '../core/ports/repositories/ITicke
 import type { IWebhookPublisher } from '../core/ports/services/IWebhookPublisher.js';
 import type { ICaptchaVerifier } from '../core/ports/services/ICaptchaVerifier.js';
 import type { IIntegracionesGateway } from '../core/ports/services/IIntegracionesGateway.js';
+import type { IExcelIO } from '../core/ports/services/IExcelIO.js';
 import type { IEmpresaRepository } from '../core/ports/repositories/IEmpresaRepository.js';
 import type { IContactoRepository } from '../core/ports/repositories/IContactoRepository.js';
 import type { IBitacoraRepository } from '../core/ports/repositories/IBitacoraRepository.js';
@@ -156,6 +161,7 @@ export interface Cradle {
   ticketPublicoRepo: ITicketPublicoRepository;
   webhookPublisher: IWebhookPublisher;
   integracionesGateway: IIntegracionesGateway;
+  excelIO: IExcelIO;
   captchaVerifier: ICaptchaVerifier;
   empresaRepo: IEmpresaRepository;
   contactoRepo: IContactoRepository;
@@ -197,7 +203,10 @@ export interface Cradle {
   bitacoraService: BitacoraService;
   empresaService: EmpresaService;
   avisarEmpresasService: AvisarEmpresasService;
+  empresaExcelService: EmpresaExcelService;
   contactoService: ContactoService;
+  contactoExcelService: ContactoExcelService;
+  ticketExcelService: TicketExcelService;
   versionService: VersionService;
   knowledgeService: KnowledgeService;
   cotizacionService: CotizacionService;
@@ -355,6 +364,7 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
         new FirestoreTicketPublicoRepository(requireFirestore(firestoreDb)),
     ).singleton(),
     integracionesGateway: asFunction((): IIntegracionesGateway => new HttpIntegracionesGateway()).singleton(),
+    excelIO: asFunction((): IExcelIO => new ExceljsExcelIO()).singleton(),
     webhookPublisher: asFunction(
       ({ config: c, configuracionRepo, integracionesGateway, logger: l }: Cradle): IWebhookPublisher =>
         new N8nWebhookPublisher(
@@ -577,9 +587,18 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
           c.clock,
         ),
     ).singleton(),
+    empresaExcelService: asFunction(
+      (c: Cradle) => new EmpresaExcelService(c.empresaService, c.excelIO),
+    ).singleton(),
     contactoService: asFunction(
       (c: Cradle) =>
         new ContactoService(c.contactoRepo, c.empresaRepo, c.idGenerator, c.clock, c.bitacoraService),
+    ).singleton(),
+    contactoExcelService: asFunction(
+      (c: Cradle) => new ContactoExcelService(c.contactoService, c.empresaService, c.excelIO),
+    ).singleton(),
+    ticketExcelService: asFunction(
+      (c: Cradle) => new TicketExcelService(c.ticketQueries, c.excelIO),
     ).singleton(),
     versionService: asFunction(
       (c: Cradle) => new VersionService(c.versionRepo, c.idGenerator, c.clock, c.bitacoraService),
@@ -682,6 +701,7 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
           c.ticketPublicoRepo,
           c.usuarioRepo,
           c.clock,
+          c.ticketExcelService,
         ),
     ).singleton(),
     backupService: asFunction(
@@ -724,10 +744,11 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
           c.seguimientoService,
           c.versionService,
           c.avisarEmpresasService,
+          c.empresaExcelService,
         ),
     ).singleton(),
     contactoController: asFunction(
-      (c: Cradle) => new ContactoController(c.contactoService, c.empresaService),
+      (c: Cradle) => new ContactoController(c.contactoService, c.empresaService, c.contactoExcelService),
     ).singleton(),
     bitacoraController: asFunction(
       (c: Cradle) => new BitacoraController(c.bitacoraService),

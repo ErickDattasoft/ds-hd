@@ -1,7 +1,11 @@
 import { Router } from 'express';
+import multer from 'multer';
 import type { Container } from '../../../config/container.js';
 import { requireAuth, requireStaff, requirePermission } from '../middlewares/authz.js';
 import { construirNavSecciones, contadoresNecesarios, conContadores, type ContadoresNav } from '../view-helpers/nav.js';
+
+/** Excel `.xlsx` de import (empresas/contactos) en memoria — nunca toca disco. */
+const uploadExcel = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
 
 /** Rutas del back-office (`/app`). Requiere sesión de staff. */
 export function backofficeRoutes(container: Container): Router {
@@ -74,6 +78,7 @@ export function backofficeRoutes(container: Container): Router {
   );
   r.get('/tickets/nuevo', requirePermission('tickets:crear'), (req, res) => tickets().nuevoForm(req, res));
   r.post('/tickets', requirePermission('tickets:crear'), (req, res) => tickets().crearPost(req, res));
+  r.get('/tickets/exportar', leerTickets, (req, res) => tickets().exportarExcel(req, res));
   r.get('/tickets/:id', leerTickets, (req, res) => tickets().detalleView(req, res));
   r.post('/tickets/:id/estado', requirePermission('tickets:cambiar_estado'), (req, res) =>
     tickets().cambiarEstadoPost(req, res),
@@ -94,6 +99,11 @@ export function backofficeRoutes(container: Container): Router {
   r.get('/empresas/nueva', requirePermission('empresas:crear'), (req, res) => empresas().nuevo(req, res));
   r.post('/empresas', requirePermission('empresas:crear'), (req, res) => empresas().crearPost(req, res));
   r.post('/empresas/avisar', requirePermission('empresas:editar'), (req, res) => empresas().avisarPost(req, res));
+  r.get('/empresas/exportar', requirePermission('empresas:leer'), (req, res) => empresas().exportarExcel(req, res));
+  r.get('/empresas/importar', requirePermission('empresas:crear'), (req, res) => empresas().importarView(req, res));
+  r.post('/empresas/importar', requirePermission('empresas:crear'), uploadExcel.single('archivo'), (req, res) =>
+    empresas().importarPost(req, res),
+  );
   r.get('/empresas/:id', requirePermission('empresas:leer'), (req, res) => empresas().ver(req, res));
   r.get('/empresas/:id/editar', requirePermission('empresas:editar'), (req, res) => empresas().editar(req, res));
   r.post('/empresas/:id', requirePermission('empresas:editar'), (req, res) => empresas().actualizarPost(req, res));
@@ -103,6 +113,11 @@ export function backofficeRoutes(container: Container): Router {
   r.get('/contactos', requirePermission('contactos:leer'), (req, res) => contactos().listar(req, res));
   r.get('/contactos/nuevo', requirePermission('contactos:crear'), (req, res) => contactos().nuevo(req, res));
   r.post('/contactos', requirePermission('contactos:crear'), (req, res) => contactos().crearPost(req, res));
+  r.get('/contactos/exportar', requirePermission('contactos:leer'), (req, res) => contactos().exportarExcel(req, res));
+  r.get('/contactos/importar', requirePermission('contactos:crear'), (req, res) => contactos().importarView(req, res));
+  r.post('/contactos/importar', requirePermission('contactos:crear'), uploadExcel.single('archivo'), (req, res) =>
+    contactos().importarPost(req, res),
+  );
   r.get('/contactos/:id/editar', requirePermission('contactos:editar'), (req, res) => contactos().editar(req, res));
   r.post('/contactos/:id', requirePermission('contactos:editar'), (req, res) => contactos().actualizarPost(req, res));
   r.post('/contactos/:id/archivar', requirePermission('contactos:eliminar'), (req, res) => contactos().archivarPost(req, res));

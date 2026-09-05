@@ -12,7 +12,7 @@ Gestión de cotizaciones: folio consecutivo, conceptos, ciclo de estado.
 
 ### Constructor
 
-> **new CotizacionService**(`repo`, `contadores`, `empresas`, `ids`, `clock`, `bitacora`): `CotizacionService`
+> **new CotizacionService**(`repo`, `contadores`, `empresas`, `ids`, `clock`, `bitacora`, `webhooks`): `CotizacionService`
 
 #### Parameters
 
@@ -39,6 +39,10 @@ Gestión de cotizaciones: folio consecutivo, conceptos, ciclo de estado.
 ##### bitacora
 
 [`BitacoraService`](../../../shared/BitacoraService/classes/BitacoraService.md)
+
+##### webhooks
+
+[`IWebhookPublisher`](../../../../core/ports/services/IWebhookPublisher/interfaces/IWebhookPublisher.md)
 
 #### Returns
 

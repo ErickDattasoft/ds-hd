@@ -9,6 +9,7 @@ import type { ListarTicketsService } from '../../../../application/tickets/Lista
 import type { VerTicketService } from '../../../../application/tickets/VerTicketService.js';
 import type { PanelCargaAgentesService } from '../../../../application/tickets/PanelCargaAgentesService.js';
 import type { GestionTicketPublicoService } from '../../../../application/tickets/GestionTicketPublicoService.js';
+import type { TicketExcelService } from '../../../../application/tickets/TicketExcelService.js';
 import type { ITicketPublicoRepository } from '../../../../core/ports/repositories/ITicketPublicoRepository.js';
 import type { IUsuarioRepository } from '../../../../core/ports/repositories/IUsuarioRepository.js';
 import type { IClock } from '../../../../core/ports/services/IClock.js';
@@ -36,6 +37,7 @@ export class TicketController {
     private readonly buzon: ITicketPublicoRepository,
     private readonly usuarios: IUsuarioRepository,
     private readonly clock: IClock,
+    private readonly excel: TicketExcelService,
   ) {}
 
   private filtroDeQuery(req: Request): FiltroTickets {
@@ -63,6 +65,13 @@ export class TicketController {
       config,
       filtro: req.query,
     });
+  };
+
+  exportarExcel = async (req: Request, res: Response): Promise<void> => {
+    const buffer = await this.excel.exportar(this.filtroDeQuery(req));
+    const fecha = new Date().toISOString().slice(0, 10);
+    res.setHeader('Content-Disposition', `attachment; filename="tickets-${fecha}.xlsx"`);
+    res.type('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet').send(buffer);
   };
 
   tableroView = async (req: Request, res: Response): Promise<void> => {

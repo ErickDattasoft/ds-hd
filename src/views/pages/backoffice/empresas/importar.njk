@@ -1,0 +1,23 @@
+{% extends "layouts/backoffice.njk" %}
+{% block title %}Importar empresas{% endblock %}
+{% block content %}
+  <div class="page-head">
+    <h1>Importar empresas</h1>
+    <a class="btn btn--ghost btn--sm" href="/app/empresas">Volver a empresas</a>
+  </div>
+
+  <p class="muted">
+    Sube un <code>.xlsx</code> con las columnas Nombre, RFC, Razón social, Dirección, Teléfono,
+    Correo, Sistemas contratados (separados por coma) y Activa (Sí/No). Usa
+    <a href="/app/empresas/exportar">Exportar Excel</a> para obtener una plantilla con los datos
+    actuales. Una empresa cuyo <strong>Nombre</strong> ya exista se actualiza; si no, se crea.
+  </p>
+
+  <form data-importar-excel action="/app/empresas/importar" class="form">
+    <label class="field"><span>Archivo (.xlsx)</span>
+      <input type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" required />
+    </label>
+    <button class="btn" type="submit">Importar</button>
+  </form>
+  <div id="resultado-importar-excel"></div>
+{% endblock %}

@@ -1,5 +1,6 @@
 import type { Request, Response } from 'express';
 import type { ContactoService } from '../../../../application/contactos/ContactoService.js';
+import type { ContactoExcelService } from '../../../../application/contactos/ContactoExcelService.js';
 import type { EmpresaService } from '../../../../application/empresas/EmpresaService.js';
 import { camposDeError } from '../../support/errores.js';
 
@@ -10,6 +11,7 @@ export class ContactoController {
   constructor(
     private readonly contactos: ContactoService,
     private readonly empresas: EmpresaService,
+    private readonly excel: ContactoExcelService,
   ) {}
 
   listar = async (req: Request, res: Response): Promise<void> => {
@@ -94,6 +96,39 @@ export class ContactoController {
   archivarPost = async (req: Request, res: Response): Promise<void> => {
     await this.contactos.archivar(req.user!, str(req.params.id), req.body?.archivar !== 'false');
     res.redirect('/app/contactos');
+  };
+
+  exportarExcel = async (req: Request, res: Response): Promise<void> => {
+    const texto = str(req.query.q);
+    const empresaId = str(req.query.empresa);
+    const buffer = await this.excel.exportar({
+      activo: true,
+      ...(texto ? { texto } : {}),
+      ...(empresaId ? { empresaId } : {}),
+    });
+    const fecha = new Date().toISOString().slice(0, 10);
+    res.setHeader('Content-Disposition', `attachment; filename="contactos-${fecha}.xlsx"`);
+    res.type('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet').send(buffer);
+  };
+
+  importarView = (_req: Request, res: Response): void => {
+    res.render('pages/backoffice/contactos/importar', { titulo: 'Importar contactos' });
+  };
+
+  /** El archivo llega por `fetch` con `FormData` (CSRF vía cabecera `x-csrf-token`, no campo de
+   * formulario — el body multipart aún no está parseado cuando corre el chequeo global de CSRF). */
+  importarPost = async (req: Request, res: Response): Promise<void> => {
+    const archivo = req.file;
+    if (!archivo) {
+      res.status(422).json({ ok: false, error: 'Selecciona un archivo .xlsx' });
+      return;
+    }
+    try {
+      const resultado = await this.excel.importar(req.user!, archivo.buffer);
+      res.json({ ok: true, resultado });
+    } catch (err) {
+      res.status(422).json({ ok: false, error: err instanceof Error ? err.message : 'No se pudo importar el archivo' });
+    }
   };
 
   private datos(b: Record<string, unknown>) {

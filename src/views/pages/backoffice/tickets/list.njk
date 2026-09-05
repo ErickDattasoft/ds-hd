@@ -23,6 +23,7 @@
     </select>
     <label class="field--check"><input type="checkbox" name="abiertos" value="0" {{ 'checked' if filtro.abiertos == '0' }} /> incluir cerrados</label>
     <button class="btn btn--sm" type="submit">Filtrar</button>
+    <button class="btn btn--sm btn--ghost" type="submit" formaction="/app/tickets/exportar">Exportar Excel</button>
   </form>
 
   {{ tk.tablaTickets(tickets) }}

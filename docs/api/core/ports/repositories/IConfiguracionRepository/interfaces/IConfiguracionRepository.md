@@ -85,3 +85,29 @@ Documentos singleton de configuración (`configuracion/{seccion}`).
 #### Returns
 
 `Promise`\<`void`\>
+
+***
+
+### obtenerIntegraciones()
+
+> **obtenerIntegraciones**(): `Promise`\<[`ConfiguracionIntegraciones`](../../../../entities/ConfiguracionIntegraciones/interfaces/ConfiguracionIntegraciones.md)\>
+
+#### Returns
+
+`Promise`\<[`ConfiguracionIntegraciones`](../../../../entities/ConfiguracionIntegraciones/interfaces/ConfiguracionIntegraciones.md)\>
+
+***
+
+### guardarIntegraciones()
+
+> **guardarIntegraciones**(`config`): `Promise`\<`void`\>
+
+#### Parameters
+
+##### config
+
+[`ConfiguracionIntegraciones`](../../../../entities/ConfiguracionIntegraciones/interfaces/ConfiguracionIntegraciones.md)
+
+#### Returns
+
+`Promise`\<`void`\>

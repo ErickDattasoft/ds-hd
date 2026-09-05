@@ -1,0 +1,23 @@
+{% extends "layouts/backoffice.njk" %}
+{% block title %}Importar contactos{% endblock %}
+{% block content %}
+  <div class="page-head">
+    <h1>Importar contactos</h1>
+    <a class="btn btn--ghost btn--sm" href="/app/contactos">Volver a contactos</a>
+  </div>
+
+  <p class="muted">
+    Sube un <code>.xlsx</code> con las columnas Nombre, Empresa (nombre exacto de una empresa ya
+    existente), Puesto, Correo, Teléfono y Celular. Usa
+    <a href="/app/contactos/exportar">Exportar Excel</a> para obtener una plantilla con los datos
+    actuales. Si el correo coincide con un contacto existente, se actualiza; si no, se crea.
+  </p>
+
+  <form data-importar-excel action="/app/contactos/importar" class="form">
+    <label class="field"><span>Archivo (.xlsx)</span>
+      <input type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" required />
+    </label>
+    <button class="btn" type="submit">Importar</button>
+  </form>
+  <div id="resultado-importar-excel"></div>
+{% endblock %}

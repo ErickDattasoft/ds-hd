@@ -3,7 +3,11 @@
 {% block content %}
   <div class="page-head">
     <h1>Empresas</h1>
-    {% if can('empresas:crear') %}<a class="btn btn--sm" href="/app/empresas/nueva">Nueva empresa</a>{% endif %}
+    <div class="page-head__actions">
+      {% if can('empresas:leer') %}<a class="btn btn--ghost btn--sm" href="/app/empresas/exportar{{ '?q=' + q if q }}">Exportar Excel</a>{% endif %}
+      {% if can('empresas:crear') %}<a class="btn btn--ghost btn--sm" href="/app/empresas/importar">Importar Excel</a>{% endif %}
+      {% if can('empresas:crear') %}<a class="btn btn--sm" href="/app/empresas/nueva">Nueva empresa</a>{% endif %}
+    </div>
   </div>
   <form method="get" class="filterbar">
     <input type="search" name="q" value="{{ q }}" placeholder="Buscar por nombre o RFC…" autocomplete="off" spellcheck="false" />
