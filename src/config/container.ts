@@ -55,6 +55,7 @@ import { AsignarAgenteService } from '../application/tickets/AsignarAgenteServic
 import { RegistrarNotaService } from '../application/tickets/RegistrarNotaService.js';
 import { MarcarFacturacionService } from '../application/tickets/MarcarFacturacionService.js';
 import { ProgramarAtencionService } from '../application/tickets/ProgramarAtencionService.js';
+import { AjustarTiempoService } from '../application/tickets/AjustarTiempoService.js';
 import { ArchivarTicketService } from '../application/tickets/ArchivarTicketService.js';
 import { ListarTicketsService } from '../application/tickets/ListarTicketsService.js';
 import { VerTicketService } from '../application/tickets/VerTicketService.js';
@@ -195,6 +196,7 @@ export interface Cradle {
   registrarNotaService: RegistrarNotaService;
   marcarFacturacionService: MarcarFacturacionService;
   programarAtencionService: ProgramarAtencionService;
+  ajustarTiempoService: AjustarTiempoService;
   archivarTicketService: ArchivarTicketService;
   listarTicketsService: ListarTicketsService;
   verTicketService: VerTicketService;
@@ -543,6 +545,9 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
       (c: Cradle) =>
         new ProgramarAtencionService(c.ticketRepo, c.idGenerator, c.clock, c.webhookPublisher),
     ).singleton(),
+    ajustarTiempoService: asFunction(
+      (c: Cradle) => new AjustarTiempoService(c.ticketRepo, c.idGenerator, c.clock),
+    ).singleton(),
     archivarTicketService: asFunction(
       (c: Cradle) => new ArchivarTicketService(c.ticketRepo, c.idGenerator, c.clock),
     ).singleton(),
@@ -705,6 +710,7 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
           c.registrarNotaService,
           c.marcarFacturacionService,
           c.programarAtencionService,
+          c.ajustarTiempoService,
           c.archivarTicketService,
           c.listarTicketsService,
           c.verTicketService,

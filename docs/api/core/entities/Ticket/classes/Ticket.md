@@ -171,6 +171,12 @@ de tiempo trabajado y el reloj de SLA con pausa. No conoce Firestore ni HTTP.
 
 ***
 
+### tiempoTrabajadoManualMs
+
+> **tiempoTrabajadoManualMs**: `number` \| `null`
+
+***
+
 ### abiertoEn
 
 > `readonly` **abiertoEn**: `Date`
@@ -534,6 +540,82 @@ readonly `string`[]
 #### Returns
 
 `boolean`
+
+***
+
+### lineaDeTiempo()
+
+> **lineaDeTiempo**(`ahora`): [`TramoEstado`](../interfaces/TramoEstado.md)[]
+
+Los tramos de la línea de tiempo: un tramo por cambio de estado, con su duración.
+
+#### Parameters
+
+##### ahora
+
+`Date`
+
+#### Returns
+
+[`TramoEstado`](../interfaces/TramoEstado.md)[]
+
+***
+
+### tiempoTrabajadoCalculadoMs()
+
+> **tiempoTrabajadoCalculadoMs**(`ahora`): `number`
+
+Suma de los tramos que cuentan (tiempo trabajado según la línea de tiempo).
+
+#### Parameters
+
+##### ahora
+
+`Date`
+
+#### Returns
+
+`number`
+
+***
+
+### tiempoTrabajadoEfectivoMs()
+
+> **tiempoTrabajadoEfectivoMs**(`ahora`): `number`
+
+El tiempo trabajado que se muestra/factura: el ajuste manual si existe, si no el calculado.
+
+#### Parameters
+
+##### ahora
+
+`Date`
+
+#### Returns
+
+`number`
+
+***
+
+### ajustarTiempoManual()
+
+> **ajustarTiempoManual**(`ms`, `ahora`): `void`
+
+Fija (o quita, con `null`) el ajuste manual del tiempo trabajado.
+
+#### Parameters
+
+##### ms
+
+`number` \| `null`
+
+##### ahora
+
+`Date`
+
+#### Returns
+
+`void`
 
 ***
 

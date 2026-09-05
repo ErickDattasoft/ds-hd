@@ -425,6 +425,32 @@ fieldset.field {
 .timeline li { padding: var(--space-2) 0; border-bottom: 1px solid var(--color-border); }
 .timeline li:last-child { border-bottom: none; }
 
+/* Línea de tiempo visual del ticket (tramos por estado). */
+.tl { list-style: none; padding: 0; margin: 0; font-size: var(--text-sm); }
+.tl__item {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: var(--space-1) var(--space-2);
+  align-items: baseline;
+  padding: var(--space-2) 0 var(--space-2) var(--space-3);
+  border-left: 2px solid var(--color-border);
+  position: relative;
+}
+.tl__dot {
+  position: absolute;
+  left: -5px;
+  top: var(--space-2);
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--color-border);
+}
+.tl__item--cuenta .tl__dot { background: var(--success); }
+.tl__estado { font-weight: 650; }
+.tl__meta { grid-column: 2; font-size: var(--text-xs); }
+.tl__dur { grid-column: 3; grid-row: 1 / span 2; white-space: nowrap; }
+.tl__item--espera .tl__dur { color: var(--color-text-muted, var(--gray-600)); }
+.tl__total { margin-top: var(--space-3); padding-top: var(--space-2); border-top: 1px solid var(--color-border); }
+
 /* ── Base de conocimiento ─────────────────────────────────────────────── */
 .kb-list { list-style: none; padding: 0; }
 .kb-list li { padding: var(--space-3) 0; border-bottom: 1px solid var(--color-border); display: flex; gap: var(--space-2); align-items: center; flex-wrap: wrap; }

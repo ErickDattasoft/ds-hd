@@ -20,6 +20,16 @@ export interface CambioEstado {
   at: Date;
 }
 
+/** Un tramo de la línea de tiempo del ticket: cuánto estuvo en un estado y si ese tiempo cuenta. */
+export interface TramoEstado {
+  estado: string;
+  desde: Date;
+  hasta: Date;
+  ms: number;
+  /** `false` para tramos en espera (Abierto/Pendiente) o finales — no suman al tiempo trabajado. */
+  cuenta: boolean;
+}
+
 /** Estado del "reloj" de SLA de un ticket, con soporte de pausa. */
 export interface SlaState {
   /** Horas objetivo de resolución (según prioridad al crear; no se recalcula sola). */
@@ -71,6 +81,8 @@ export interface TicketProps {
   /** Programación de atención ("📅 Programar atención"); `null`/ausente = sin programar. */
   agenda?: AgendaTicket | null;
   tiempoTrabajadoMs?: number;
+  /** Ajuste manual del tiempo trabajado; `null` = usar el cálculo automático. */
+  tiempoTrabajadoManualMs?: number | null;
 
   abiertoEn?: Date;
   ultimoCambioEstadoEn?: Date;
@@ -124,6 +136,7 @@ export class Ticket {
   facturacion: FacturacionState;
   agenda: AgendaTicket | null;
   tiempoTrabajadoMs: number;
+  tiempoTrabajadoManualMs: number | null;
 
   readonly abiertoEn: Date;
   ultimoCambioEstadoEn: Date;
@@ -171,6 +184,10 @@ export class Ticket {
     this.historialEstados = props.historialEstados ?? [{ estado: props.estado, at: abierto }];
 
     this.tiempoTrabajadoMs = props.tiempoTrabajadoMs ?? 0;
+    this.tiempoTrabajadoManualMs =
+      typeof props.tiempoTrabajadoManualMs === 'number' && props.tiempoTrabajadoManualMs >= 0
+        ? props.tiempoTrabajadoManualMs
+        : null;
     this.sla = {
       horasResolucion: props.sla?.horasResolucion ?? SLA_HORAS_POR_DEFECTO[this.prioridad],
       pausadoDesde: props.sla?.pausadoDesde ?? (esEstadoPausaSla(props.estado) ? abierto : null),
@@ -331,6 +348,39 @@ export class Ticket {
   agendaVencida(ahora: Date): boolean {
     const cuando = this.fechaHoraProgramada;
     return cuando !== null && this.estaAbierto && cuando.getTime() < ahora.getTime();
+  }
+
+  // ── Línea de tiempo / tiempo trabajado ────────────────────────────────────
+  /** Los tramos de la línea de tiempo: un tramo por cambio de estado, con su duración. */
+  lineaDeTiempo(ahora: Date): TramoEstado[] {
+    const finAbierto = esEstadoFinal(this.estado) ? this.ultimoCambioEstadoEn : ahora;
+    return this.historialEstados.map((h, i) => {
+      const siguiente = this.historialEstados[i + 1];
+      const hasta = siguiente ? siguiente.at : finAbierto;
+      return {
+        estado: h.estado,
+        desde: h.at,
+        hasta,
+        ms: Math.max(0, hasta.getTime() - h.at.getTime()),
+        cuenta: !esEstadoEspera(h.estado) && !esEstadoFinal(h.estado),
+      };
+    });
+  }
+
+  /** Suma de los tramos que cuentan (tiempo trabajado según la línea de tiempo). */
+  tiempoTrabajadoCalculadoMs(ahora: Date): number {
+    return this.lineaDeTiempo(ahora).reduce((acc, t) => acc + (t.cuenta ? t.ms : 0), 0);
+  }
+
+  /** El tiempo trabajado que se muestra/factura: el ajuste manual si existe, si no el calculado. */
+  tiempoTrabajadoEfectivoMs(ahora: Date): number {
+    return this.tiempoTrabajadoManualMs ?? this.tiempoTrabajadoCalculadoMs(ahora);
+  }
+
+  /** Fija (o quita, con `null`) el ajuste manual del tiempo trabajado. */
+  ajustarTiempoManual(ms: number | null, ahora: Date): void {
+    this.tiempoTrabajadoManualMs = typeof ms === 'number' && ms >= 0 ? Math.round(ms) : null;
+    this.updatedAt = ahora;
   }
 
   archivar(ahora: Date): void {

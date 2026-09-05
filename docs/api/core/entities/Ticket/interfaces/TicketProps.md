@@ -164,6 +164,14 @@ Programación de atención ("📅 Programar atención"); `null`/ausente = sin pr
 
 ***
 
+### tiempoTrabajadoManualMs?
+
+> `optional` **tiempoTrabajadoManualMs?**: `number` \| `null`
+
+Ajuste manual del tiempo trabajado; `null` = usar el cálculo automático.
+
+***
+
 ### abiertoEn?
 
 > `optional` **abiertoEn?**: `Date`

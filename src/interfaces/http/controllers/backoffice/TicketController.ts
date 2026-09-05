@@ -5,6 +5,7 @@ import type { AsignarAgenteService } from '../../../../application/tickets/Asign
 import type { RegistrarNotaService } from '../../../../application/tickets/RegistrarNotaService.js';
 import type { MarcarFacturacionService } from '../../../../application/tickets/MarcarFacturacionService.js';
 import type { ProgramarAtencionService } from '../../../../application/tickets/ProgramarAtencionService.js';
+import type { AjustarTiempoService } from '../../../../application/tickets/AjustarTiempoService.js';
 import type { ArchivarTicketService } from '../../../../application/tickets/ArchivarTicketService.js';
 import type { ListarTicketsService } from '../../../../application/tickets/ListarTicketsService.js';
 import type { VerTicketService } from '../../../../application/tickets/VerTicketService.js';
@@ -41,6 +42,7 @@ export class TicketController {
     private readonly registrarNota: RegistrarNotaService,
     private readonly facturar: MarcarFacturacionService,
     private readonly programarAtencion: ProgramarAtencionService,
+    private readonly ajustarTiempo: AjustarTiempoService,
     private readonly archivar: ArchivarTicketService,
     private readonly listar: ListarTicketsService,
     private readonly ver: VerTicketService,
@@ -232,6 +234,18 @@ export class TicketController {
       fecha: str(req.body?.agendaFecha),
       hora: str(req.body?.agendaHora),
       recordatorioWhatsapp: req.body?.agendaRecordatorio === 'on' || req.body?.agendaRecordatorio === 'true',
+    });
+    res.redirect(`/app/tickets/${str(req.params.id)}`);
+  };
+
+  tiempoPost = async (req: Request, res: Response): Promise<void> => {
+    const b = req.body ?? {};
+    await this.ajustarTiempo.ejecutar({
+      actor: req.user!,
+      ticketId: str(req.params.id),
+      quitar: b.quitar === 'true' || b.quitar === 'on',
+      horas: Number(b.horas ?? 0),
+      minutos: Number(b.minutos ?? 0),
     });
     res.redirect(`/app/tickets/${str(req.params.id)}`);
   };

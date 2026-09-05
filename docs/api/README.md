@@ -32,6 +32,7 @@
 - [application/shared/BusquedaGlobalService](application/shared/BusquedaGlobalService/README.md)
 - [application/shared/SessionUser](application/shared/SessionUser/README.md)
 - [application/tickets/ActualizarEstadoTicketService](application/tickets/ActualizarEstadoTicketService/README.md)
+- [application/tickets/AjustarTiempoService](application/tickets/AjustarTiempoService/README.md)
 - [application/tickets/ArchivarTicketService](application/tickets/ArchivarTicketService/README.md)
 - [application/tickets/AsignarAgenteService](application/tickets/AsignarAgenteService/README.md)
 - [application/tickets/CrearTicketPublicoService](application/tickets/CrearTicketPublicoService/README.md)

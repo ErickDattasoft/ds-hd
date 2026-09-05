@@ -39,6 +39,29 @@
         {% endif %}
       </div>
 
+      <div class="card">
+        <p><strong>Línea de tiempo</strong> <span class="muted">— duración por estado</span></p>
+        <ul class="tl">
+          {% for tr in vm.lineaDeTiempo %}
+            <li class="tl__item {{ 'tl__item--cuenta' if tr.cuenta else 'tl__item--espera' }}">
+              <span class="tl__dot" aria-hidden="true"></span>
+              <span class="tl__estado">{{ tr.estado }}</span>
+              <span class="tl__meta muted">{{ tr.desdeIso | fechahora }}</span>
+              <span class="tl__dur">{{ '✅' if tr.cuenta else '⏳' }} {{ tr.duracion }}</span>
+            </li>
+          {% endfor %}
+        </ul>
+        {% if vm.totalFacturable.visible %}
+          <p class="tl__total">
+            <strong>Total facturable:</strong>
+            <span class="badge badge--{{ 'ok' if vm.totalFacturable.clase == 'consultoria' else 'warning' }}">
+              {{ '💼' if vm.totalFacturable.clase == 'consultoria' else 'ℹ️' }} {{ vm.totalFacturable.texto }}
+            </span>
+            {% if vm.totalFacturable.clase == 'referencia' %}<span class="muted">(referencia, no se factura por hora)</span>{% endif %}
+          </p>
+        {% endif %}
+      </div>
+
       <details class="disclosure">
         <summary class="disclosure__summary">Historial de actividad</summary>
         <div class="disclosure__body">
@@ -54,7 +77,9 @@
         <p><strong>Estado:</strong> <span class="badge badge--estado">{{ ticket.estado }}</span></p>
         <p><strong>Prioridad:</strong> {{ ticket.prioridad }}</p>
         <p><strong>SLA:</strong> {{ tk.slaBadge(vm) }}</p>
-        <p><strong>Tiempo trabajado:</strong> {{ vm.tiempoTrabajado }}</p>
+        <p><strong>Tiempo trabajado:</strong> {{ vm.tiempoTrabajado }}
+          {% if vm.tiempoEsManual %}<span class="badge" title="Ajustado a mano">✏️</span> <span class="muted">(auto: {{ vm.tiempoTrabajadoAuto }})</span>{% endif %}
+        </p>
         <p><strong>Facturación:</strong>
           {% if vm.facturacion.clase %}<span class="badge badge--{{ vm.facturacion.clase }}">{{ vm.facturacion.etiqueta }}</span>{% else %}{{ vm.facturacion.etiqueta }}{% endif %}
         </p>
@@ -99,6 +124,26 @@
       {% endif %}
 
       {% if permisos.editar %}
+        <details class="disclosure">
+          <summary class="disclosure__summary">⏱️ Tiempo trabajado <span class="disclosure__hint">— {{ vm.tiempoTrabajado }}{{ ' (manual)' if vm.tiempoEsManual }}</span></summary>
+          <form method="post" action="/app/tickets/{{ ticket.id }}/tiempo" class="form">
+            <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+            <p class="muted">Automático: {{ vm.tiempoTrabajadoAuto }}. Ajusta a mano si no refleja el trabajo real.</p>
+            <div class="page-head__actions">
+              <label class="field"><span>Horas</span><input type="number" name="horas" min="0" value="0" /></label>
+              <label class="field"><span>Minutos</span><input type="number" name="minutos" min="0" max="59" value="0" /></label>
+            </div>
+            <button class="btn btn--sm" type="submit">Guardar ajuste</button>
+          </form>
+          {% if vm.tiempoEsManual %}
+            <form method="post" action="/app/tickets/{{ ticket.id }}/tiempo" class="disclosure__body">
+              <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+              <input type="hidden" name="quitar" value="true" />
+              <button class="btn btn--sm btn--ghost" type="submit">Quitar ajuste (volver al automático)</button>
+            </form>
+          {% endif %}
+        </details>
+
         <details class="disclosure">
           <summary class="disclosure__summary">Facturación <span class="disclosure__hint">— {{ vm.facturacion.etiqueta }}</span></summary>
           <form method="post" action="/app/tickets/{{ ticket.id }}/facturar" class="form">

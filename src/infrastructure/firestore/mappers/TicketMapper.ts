@@ -37,6 +37,8 @@ export const TicketMapper = {
       solicitanteUid: d.solicitanteUid ?? null,
       creadoPorUid: d.creadoPorUid ?? null,
       tiempoTrabajadoMs: Number(d.tiempoTrabajadoMs ?? 0),
+      tiempoTrabajadoManualMs:
+        typeof d.tiempoTrabajadoManualMs === 'number' ? d.tiempoTrabajadoManualMs : null,
       sla: {
         horasResolucion: Number(d.sla?.horasResolucion ?? 24),
         pausadoDesde: fecha(d.sla?.pausadoDesde) ?? null,
@@ -87,6 +89,7 @@ export const TicketMapper = {
       solicitanteUid: t.solicitanteUid,
       creadoPorUid: t.creadoPorUid,
       tiempoTrabajadoMs: t.tiempoTrabajadoMs,
+      tiempoTrabajadoManualMs: t.tiempoTrabajadoManualMs,
       sla: {
         horasResolucion: t.sla.horasResolucion,
         pausadoDesde: ts(t.sla.pausadoDesde),

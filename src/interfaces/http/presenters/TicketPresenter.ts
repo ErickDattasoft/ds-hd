@@ -27,7 +27,15 @@ export interface TicketVM {
   abierto: boolean;
   slaEstado: 'ok' | 'por-vencer' | 'vencido' | 'na';
   slaTexto: string;
+  /** Tiempo trabajado efectivo (ajuste manual si existe, si no el calculado). */
   tiempoTrabajado: string;
+  /** El cálculo automático, para mostrar entre paréntesis cuando hay ajuste manual. */
+  tiempoTrabajadoAuto: string;
+  tiempoEsManual: boolean;
+  /** Línea de tiempo visual: un tramo por cambio de estado. */
+  lineaDeTiempo: { estado: string; desdeIso: string; duracion: string; cuenta: boolean }[];
+  /** Total facturable — visible cuando el ticket está resuelto/cerrado. */
+  totalFacturable: { texto: string; clase: 'consultoria' | 'referencia'; visible: boolean };
   abiertoEnIso: string;
   facturacion: {
     estado: string;
@@ -81,7 +89,20 @@ export function ticketVM(t: Ticket, ahora: Date): TicketVM {
     abierto: !final,
     slaEstado,
     slaTexto,
-    tiempoTrabajado: duracion(t.tiempoTrabajadoMs),
+    tiempoTrabajado: duracion(t.tiempoTrabajadoEfectivoMs(ahora)),
+    tiempoTrabajadoAuto: duracion(t.tiempoTrabajadoCalculadoMs(ahora)),
+    tiempoEsManual: t.tiempoTrabajadoManualMs !== null,
+    lineaDeTiempo: t.lineaDeTiempo(ahora).map((tr) => ({
+      estado: tr.estado,
+      desdeIso: tr.desde.toISOString(),
+      duracion: duracion(tr.ms),
+      cuenta: tr.cuenta,
+    })),
+    totalFacturable: {
+      texto: duracion(t.tiempoTrabajadoEfectivoMs(ahora)),
+      clase: t.facturacion.requiere ? 'consultoria' : 'referencia',
+      visible: final,
+    },
     abiertoEnIso: t.abiertoEn.toISOString(),
     facturacion: {
       estado: t.facturacion.estado,

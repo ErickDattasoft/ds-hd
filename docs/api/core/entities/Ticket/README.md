@@ -13,6 +13,7 @@
 ## Interfaces
 
 - [CambioEstado](interfaces/CambioEstado.md)
+- [TramoEstado](interfaces/TramoEstado.md)
 - [SlaState](interfaces/SlaState.md)
 - [FacturacionState](interfaces/FacturacionState.md)
 - [TicketProps](interfaces/TicketProps.md)
