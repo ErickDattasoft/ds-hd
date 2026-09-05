@@ -16,10 +16,19 @@ import type { IClock } from '../../../../core/ports/services/IClock.js';
 import type { FiltroTickets } from '../../../../core/ports/repositories/ITicketQueries.js';
 import { parsePrioridad } from '../../../../core/entities/value-objects/Prioridad.js';
 import { ROLES_TECNICOS } from '../../../../core/entities/value-objects/Rol.js';
+import {
+  ESTADOS_FACTURACION,
+  ETIQUETAS_FACTURACION,
+  esEstadoFacturacion,
+  parseEstadoFacturacion,
+} from '../../../../core/entities/value-objects/EstadoFacturacion.js';
 import { ticketVM } from '../../presenters/TicketPresenter.js';
 import { camposDeError } from '../../support/errores.js';
 
 const str = (v: unknown): string => (typeof v === 'string' ? v : '');
+
+const catalogoFacturacion = (): { valor: string; etiqueta: string }[] =>
+  ESTADOS_FACTURACION.map((valor) => ({ valor, etiqueta: ETIQUETAS_FACTURACION[valor] }));
 
 /** Módulo de tickets del back-office. */
 export class TicketController {
@@ -108,7 +117,8 @@ export class TicketController {
     res.render('pages/backoffice/tickets/form', {
       titulo: 'Nuevo ticket',
       config,
-      valores: { prioridad: 'Media' },
+      estadosFacturacion: catalogoFacturacion(),
+      valores: { prioridad: 'Media', estadoFacturacion: 'no_facturado' },
       errores: {},
     });
   };
@@ -128,6 +138,7 @@ export class TicketController {
         contactoNombre: str(b.contactoNombre) || null,
         contactoCorreo: str(b.contactoCorreo) || null,
         asignarAlActor: b.asignarAMi === 'on',
+        estadoFacturacion: esEstadoFacturacion(b.estadoFacturacion) ? b.estadoFacturacion : undefined,
       });
       res.redirect(`/app/tickets/${ticket.id}`);
     } catch (err) {
@@ -135,6 +146,7 @@ export class TicketController {
       res.status(422).render('pages/backoffice/tickets/form', {
         titulo: 'Nuevo ticket',
         config,
+        estadosFacturacion: catalogoFacturacion(),
         valores: b,
         errores: camposDeError(err),
       });
@@ -154,6 +166,7 @@ export class TicketController {
       notas: d.notas,
       eventos: d.eventos,
       config: d.config,
+      estadosFacturacion: catalogoFacturacion(),
       permisos: {
         editar: d.puedeEditar,
         asignar: d.puedeAsignar,
@@ -200,7 +213,7 @@ export class TicketController {
     await this.facturar.ejecutar({
       actor: req.user!,
       ticketId: str(req.params.id),
-      facturado: req.body?.facturado === 'on' || req.body?.facturado === 'true',
+      estado: parseEstadoFacturacion(req.body?.estado),
     });
     res.redirect(`/app/tickets/${str(req.params.id)}`);
   };

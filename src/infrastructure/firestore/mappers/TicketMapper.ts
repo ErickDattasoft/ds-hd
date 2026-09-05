@@ -3,6 +3,7 @@ import { Timestamp } from '../../../core/entities/value-objects/Timestamp.js';
 import { Ticket, type CanalTicket, type CambioEstado } from '../../../core/entities/Ticket.js';
 import { parsePrioridad } from '../../../core/entities/value-objects/Prioridad.js';
 import type { EventoTicket, NotaTicket } from '../../../core/entities/NotaTicket.js';
+import { esFacturacionCompletada } from '../../../core/entities/value-objects/EstadoFacturacion.js';
 
 const fecha = (v: unknown): Date | undefined =>
   v instanceof Timestamp ? v.toDate() : v instanceof Date ? v : undefined;
@@ -43,7 +44,10 @@ export const TicketMapper = {
       },
       facturacion: {
         requiere: Boolean(d.facturacion?.requiere),
-        facturado: Boolean(d.facturacion?.facturado),
+        // `sanearEstadoFacturacion` (constructor de Ticket) resuelve el respaldo al esquema
+        // viejo (`facturacion.facturado: boolean`) si `estado` no viene en el documento.
+        estado: d.facturacion?.estado,
+        facturado: d.facturacion?.facturado,
         notificadaEn: fecha(d.facturacion?.notificadaEn) ?? null,
       },
       abiertoEn: fecha(d.abiertoEn) ?? new Date(),
@@ -88,7 +92,9 @@ export const TicketMapper = {
       },
       facturacion: {
         requiere: t.facturacion.requiere,
-        facturado: t.facturacion.facturado,
+        estado: t.facturacion.estado,
+        // Se sigue escribiendo el booleano viejo por si algún lector sin actualizar lo espera.
+        facturado: esFacturacionCompletada(t.facturacion.estado),
         notificadaEn: ts(t.facturacion.notificadaEn),
       },
       abiertoEn: Timestamp.fromDate(t.abiertoEn),

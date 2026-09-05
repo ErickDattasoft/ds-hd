@@ -70,6 +70,7 @@
 - [core/entities/Usuario](core/entities/Usuario/README.md)
 - [core/entities/VersionSistema](core/entities/VersionSistema/README.md)
 - [core/entities/value-objects/Email](core/entities/value-objects/Email/README.md)
+- [core/entities/value-objects/EstadoFacturacion](core/entities/value-objects/EstadoFacturacion/README.md)
 - [core/entities/value-objects/EstadoTicket](core/entities/value-objects/EstadoTicket/README.md)
 - [core/entities/value-objects/Prioridad](core/entities/value-objects/Prioridad/README.md)
 - [core/entities/value-objects/Rol](core/entities/value-objects/Rol/README.md)

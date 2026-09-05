@@ -9,6 +9,7 @@ import {
   slugEstado,
   validarTransicion,
 } from './value-objects/EstadoTicket.js';
+import { sanearEstadoFacturacion, type EstadoFacturacion } from './value-objects/EstadoFacturacion.js';
 
 export type CanalTicket = 'interno' | 'publico' | 'portal' | 'correo';
 
@@ -32,7 +33,8 @@ export interface SlaState {
 export interface FacturacionState {
   /** Si el tipo de ticket amerita facturación (p. ej. consultorías). */
   requiere: boolean;
-  facturado: boolean;
+  /** Catálogo fijo: no_facturado/facturado/no_aplica/factura_mensual/consulta_sin_costo. */
+  estado: EstadoFacturacion;
   notificadaEn: Date | null;
 }
 
@@ -63,7 +65,8 @@ export interface TicketProps {
   creadoPorUid?: string | null;
 
   sla?: Partial<SlaState>;
-  facturacion?: Partial<FacturacionState>;
+  /** `facturado` (booleano) es el esquema viejo, solo para respaldo al leer datos guardados. */
+  facturacion?: Partial<FacturacionState> & { facturado?: boolean };
   tiempoTrabajadoMs?: number;
 
   abiertoEn?: Date;
@@ -171,7 +174,8 @@ export class Ticket {
     };
     this.facturacion = {
       requiere: props.facturacion?.requiere ?? false,
-      facturado: props.facturacion?.facturado ?? false,
+      // Respaldo al esquema viejo (`facturacion.facturado: boolean`) para tickets ya guardados.
+      estado: sanearEstadoFacturacion(props.facturacion?.estado, props.facturacion?.facturado),
       notificadaEn: props.facturacion?.notificadaEn ?? null,
     };
     this.archivado = props.archivado ?? false;
@@ -198,6 +202,8 @@ export class Ticket {
     creadoPorUid?: string | null;
     origenPublicoId?: string | null;
     requiereFacturacion?: boolean;
+    /** Si se omite, se infiere de `requiereFacturacion` (no_facturado si requiere, si no no_aplica). */
+    estadoFacturacion?: EstadoFacturacion;
     horasSla?: number;
     ahora: Date;
   }): Ticket {
@@ -213,7 +219,10 @@ export class Ticket {
       abiertoEn: input.ahora,
       ultimoCambioEstadoEn: input.ahora,
       sla: { horasResolucion: input.horasSla ?? SLA_HORAS_POR_DEFECTO[input.prioridad] },
-      facturacion: { requiere: input.requiereFacturacion ?? false },
+      facturacion: {
+        requiere: input.requiereFacturacion ?? false,
+        estado: input.estadoFacturacion ?? (input.requiereFacturacion ? 'no_facturado' : 'no_aplica'),
+      },
       historialEstados: [{ estado: input.estadoInicial, at: input.ahora }],
     });
   }
@@ -291,8 +300,8 @@ export class Ticket {
     this.updatedAt = ahora;
   }
 
-  marcarFacturado(facturado: boolean, ahora: Date): void {
-    this.facturacion.facturado = facturado;
+  cambiarEstadoFacturacion(estado: EstadoFacturacion, ahora: Date): void {
+    this.facturacion.estado = estado;
     this.updatedAt = ahora;
   }
 

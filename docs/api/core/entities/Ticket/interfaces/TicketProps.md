@@ -138,7 +138,15 @@ Props para construir un [Ticket](../classes/Ticket.md).
 
 ### facturacion?
 
-> `optional` **facturacion?**: `Partial`\<[`FacturacionState`](FacturacionState.md)\>
+> `optional` **facturacion?**: `Partial`\<[`FacturacionState`](FacturacionState.md)\> & `object`
+
+`facturado` (booleano) es el esquema viejo, solo para respaldo al leer datos guardados.
+
+#### Type Declaration
+
+##### facturado?
+
+> `optional` **facturado?**: `boolean`
 
 ***
 

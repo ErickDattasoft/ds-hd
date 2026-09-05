@@ -55,6 +55,9 @@
         <p><strong>Prioridad:</strong> {{ ticket.prioridad }}</p>
         <p><strong>SLA:</strong> {{ tk.slaBadge(vm) }}</p>
         <p><strong>Tiempo trabajado:</strong> {{ vm.tiempoTrabajado }}</p>
+        <p><strong>Facturación:</strong>
+          {% if vm.facturacion.clase %}<span class="badge badge--{{ vm.facturacion.clase }}">{{ vm.facturacion.etiqueta }}</span>{% else %}{{ vm.facturacion.etiqueta }}{% endif %}
+        </p>
         <p><strong>Agente:</strong> {{ ticket.agenteAsignadoNombre or 'Sin asignar' }}</p>
         <p><strong>Empresa:</strong> {{ ticket.empresaNombre or '—' }}</p>
         <p><strong>Canal:</strong> {{ ticket.canal }}</p>
@@ -91,12 +94,13 @@
 
       {% if permisos.editar %}
         <details class="disclosure">
-          <summary class="disclosure__summary">Facturación <span class="disclosure__hint">— {{ 'facturado' if ticket.facturacion.facturado else 'pendiente' }}</span></summary>
+          <summary class="disclosure__summary">Facturación <span class="disclosure__hint">— {{ vm.facturacion.etiqueta }}</span></summary>
           <form method="post" action="/app/tickets/{{ ticket.id }}/facturar" class="form">
             <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
-            <label class="field--check">
-              <input type="checkbox" name="facturado" {{ 'checked' if ticket.facturacion.facturado }} />
-              <span>Marcar como facturado</span>
+            <label class="field"><span>Estado</span>
+              <select name="estado">
+                {% for ef in estadosFacturacion %}<option value="{{ ef.valor }}" {{ 'selected' if ticket.facturacion.estado == ef.valor }}>{{ ef.etiqueta }}</option>{% endfor %}
+              </select>
             </label>
             <button class="btn btn--sm" type="submit">Guardar</button>
           </form>

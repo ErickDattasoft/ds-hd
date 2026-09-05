@@ -44,8 +44,10 @@ tsx scripts/migrate/99-verify-migration.ts
   estructurados) — se importa igual, con `modulo: 'migracion'` y el texto completo en el
   resumen, para consulta histórica.
 - **Facturación de tickets**: el viejo tenía un catálogo multi-estado (`NO FACTURADO`,
-  `FACTURADO`, `GARANTIA`, `EN PROCESO`, `NO APLICA FACTURACION`, `FACTURA MENSUAL`); ds-hd
-  hoy solo tiene un booleano. El texto original se preserva como nota interna del ticket para
-  no perder el detalle (pendiente: catálogo real, ver `docs/auditoria-paridad.md` fase P3).
+  `FACTURADO`, `GARANTIA`, `EN PROCESO`, `NO APLICA FACTURACION`, `FACTURA MENSUAL`). ds-hd ya
+  tiene su propio catálogo fijo (`no_facturado`, `facturado`, `no_aplica`, `factura_mensual`,
+  `consulta_sin_costo`) y el importador mapea el texto viejo a ese catálogo
+  (`GARANTIA`/`NO APLICA` → `no_aplica`, `EN PROCESO` → `no_facturado`, etc.). El texto
+  original igual se preserva como nota interna del ticket cuando el mapeo pudo perder matiz.
 - **Adjuntos y Storage**: no se migran — ds-hd no tiene adjuntos implementados todavía (ver
   fase P5 de `docs/auditoria-paridad.md`, requiere Firebase Storage).

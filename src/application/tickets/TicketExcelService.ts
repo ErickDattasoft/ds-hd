@@ -1,5 +1,6 @@
 import type { FiltroTickets, ITicketQueries } from '../../core/ports/repositories/ITicketQueries.js';
 import type { ColumnaExcel, IExcelIO } from '../../core/ports/services/IExcelIO.js';
+import { ETIQUETAS_FACTURACION } from '../../core/entities/value-objects/EstadoFacturacion.js';
 
 const COLUMNAS: ColumnaExcel[] = [
   { header: 'Número', key: 'numero' },
@@ -12,7 +13,7 @@ const COLUMNAS: ColumnaExcel[] = [
   { header: 'Prioridad', key: 'prioridad' },
   { header: 'Canal', key: 'canal' },
   { header: 'Agente asignado', key: 'agente', width: 22 },
-  { header: 'Facturado', key: 'facturado' },
+  { header: 'Facturación', key: 'facturado', width: 16 },
   { header: 'Creado', key: 'creado', width: 14 },
 ];
 
@@ -36,7 +37,7 @@ export class TicketExcelService {
       prioridad: t.prioridad,
       canal: t.canal,
       agente: t.agenteAsignadoNombre ?? '',
-      facturado: t.facturacion.facturado ? 'Sí' : 'No',
+      facturado: ETIQUETAS_FACTURACION[t.facturacion.estado],
       creado: t.createdAt.toISOString().slice(0, 10),
     }));
     return this.excel.escribir('Tickets', COLUMNAS, filas);

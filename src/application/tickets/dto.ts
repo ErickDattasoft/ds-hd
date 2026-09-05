@@ -1,5 +1,6 @@
 import type { CanalTicket } from '../../core/entities/Ticket.js';
 import type { Prioridad } from '../../core/entities/value-objects/Prioridad.js';
+import type { EstadoFacturacion } from '../../core/entities/value-objects/EstadoFacturacion.js';
 import type { SessionUser } from '../shared/SessionUser.js';
 
 /** Datos para crear un ticket desde cualquier canal (staff, portal o público). */
@@ -21,6 +22,8 @@ export interface CrearTicketInput {
   origenPublicoId?: string | null;
   /** El agente que crea se autoasigna. */
   asignarAlActor?: boolean;
+  /** Si se omite, se infiere del tipo (`tiposFacturables`) — solo el alta desde el back-office lo captura. */
+  estadoFacturacion?: EstadoFacturacion;
 }
 
 /** Datos para transicionar el estado de un ticket, con nota opcional del cambio. */

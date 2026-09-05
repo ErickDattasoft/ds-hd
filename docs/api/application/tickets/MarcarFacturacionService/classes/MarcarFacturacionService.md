@@ -6,7 +6,7 @@
 
 # Class: MarcarFacturacionService
 
-Caso de uso: marcar/desmarcar un ticket como facturado.
+Caso de uso: cambiar el estado de facturación de un ticket (catálogo fijo).
 
 ## Constructors
 
@@ -54,9 +54,9 @@ Caso de uso: marcar/desmarcar un ticket como facturado.
 
 `string`
 
-###### facturado
+###### estado
 
-`boolean`
+`"no_facturado"` \| `"facturado"` \| `"no_aplica"` \| `"factura_mensual"` \| `"consulta_sin_costo"`
 
 #### Returns
 

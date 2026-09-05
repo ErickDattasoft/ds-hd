@@ -1,5 +1,6 @@
 import type { Ticket } from '../../../core/entities/Ticket.js';
 import { esEstadoFinal } from '../../../core/entities/value-objects/EstadoTicket.js';
+import { ETIQUETAS_FACTURACION, esFacturacionCompletada } from '../../../core/entities/value-objects/EstadoFacturacion.js';
 
 function duracion(ms: number): string {
   const seg = Math.max(0, Math.round(ms / 1000));
@@ -28,6 +29,12 @@ export interface TicketVM {
   slaTexto: string;
   tiempoTrabajado: string;
   abiertoEnIso: string;
+  facturacion: {
+    estado: string;
+    etiqueta: string;
+    /** Clase de badge para colorear el total facturable — `null` = sin marcar (no aplica). */
+    clase: 'ok' | 'warning' | null;
+  };
 }
 
 /** Convierte un Ticket de dominio en un view model para las plantillas (vistas "tontas"). */
@@ -67,5 +74,14 @@ export function ticketVM(t: Ticket, ahora: Date): TicketVM {
     slaTexto,
     tiempoTrabajado: duracion(t.tiempoTrabajadoMs),
     abiertoEnIso: t.abiertoEn.toISOString(),
+    facturacion: {
+      estado: t.facturacion.estado,
+      etiqueta: ETIQUETAS_FACTURACION[t.facturacion.estado],
+      clase: esFacturacionCompletada(t.facturacion.estado)
+        ? 'ok'
+        : t.facturacion.estado === 'no_facturado' && t.facturacion.requiere
+          ? 'warning'
+          : null,
+    },
   };
 }

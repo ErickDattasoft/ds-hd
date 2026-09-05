@@ -15,6 +15,7 @@ import { VersionSistema } from '../../src/core/entities/VersionSistema.js';
 import { ArticuloKB } from '../../src/core/entities/ArticuloKB.js';
 import type { EntradaBitacora } from '../../src/core/entities/EntradaBitacora.js';
 import { PRIORIDADES, type Prioridad } from '../../src/core/entities/value-objects/Prioridad.js';
+import type { EstadoFacturacion } from '../../src/core/entities/value-objects/EstadoFacturacion.js';
 import { CONFIG_TICKETS_POR_DEFECTO, type ConfiguracionTickets } from '../../src/core/entities/ConfiguracionTickets.js';
 import { CONFIG_AVISOS_POR_DEFECTO, type ConfiguracionAvisos, type ContactoSoporte } from '../../src/core/entities/ConfiguracionAvisos.js';
 import { CONTADOR_TICKETS } from '../../src/application/tickets/constantes.js';
@@ -152,7 +153,26 @@ function prioridadDe(v: unknown): Prioridad {
   return (PRIORIDADES as readonly string[]).includes(t) ? (t as Prioridad) : 'Media';
 }
 
-const FACTURADO_VERDADERO = new Set(['facturado', 'garantia', 'en proceso', 'factura mensual']);
+/** Mapea el catálogo textual multi-estado del CRM viejo al catálogo fijo de ds-hd. */
+function estadoFacturacionDe(texto: string): EstadoFacturacion {
+  switch (texto.trim().toLowerCase()) {
+    case 'facturado':
+      return 'facturado';
+    case 'factura mensual':
+      return 'factura_mensual';
+    case 'consulta sin costo':
+      return 'consulta_sin_costo';
+    case 'garantia':
+    case 'garantía':
+    case 'no aplica':
+    case 'no aplica facturacion':
+    case 'no aplica facturación':
+      return 'no_aplica';
+    default:
+      // 'no facturado', 'en proceso', vacío o desconocido → pendiente de facturar.
+      return 'no_facturado';
+  }
+}
 
 async function importarListaTickets(
   c: Container,
@@ -185,7 +205,7 @@ async function importarListaTickets(
         contactoCorreo: s(d.contactoCorreo) || null,
         agenteAsignadoNombre: s(d.agente) || null,
         facturacion: {
-          facturado: FACTURADO_VERDADERO.has(facturadoTexto.toLowerCase()),
+          estado: estadoFacturacionDe(facturadoTexto),
         },
         abiertoEn: fecha(d.fechaCreacion),
         createdAt: fecha(d.fechaCreacion),
@@ -195,7 +215,8 @@ async function importarListaTickets(
       if (!DRY_RUN) {
         await repo.save(ticket);
         // Nota interna con el texto libre que el viejo guardaba aparte + el estado de
-        // facturación textual original (el nuevo solo tiene un booleano).
+        // facturación textual original (por si el mapeo al catálogo fijo perdió matiz,
+        // p. ej. "en proceso" o "garantía").
         const notaInterna = [
           s(d.notasInternas),
           facturadoTexto && facturadoTexto.toLowerCase() !== 'no facturado'

@@ -30,6 +30,11 @@
         <label class="field"><span>Grupo</span>
           <select name="grupo"><option value="">—</option>{% for g in config.grupos %}<option {{ 'selected' if valores.grupo == g }}>{{ g }}</option>{% endfor %}</select>
         </label>
+        <label class="field"><span>Estado de facturación</span>
+          <select name="estadoFacturacion">
+            {% for ef in estadosFacturacion %}<option value="{{ ef.valor }}" {{ 'selected' if valores.estadoFacturacion == ef.valor }}>{{ ef.etiqueta }}</option>{% endfor %}
+          </select>
+        </label>
       </div>
     </details>
 

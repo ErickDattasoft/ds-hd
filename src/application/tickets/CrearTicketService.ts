@@ -57,6 +57,7 @@ export class CrearTicketService {
       creadoPorUid: input.actor.uid,
       origenPublicoId: input.origenPublicoId ?? null,
       requiereFacturacion: cfg.tiposFacturables.includes(input.tipo),
+      estadoFacturacion: input.estadoFacturacion,
       horasSla: horasSlaDe(cfg, prioridad),
       ahora,
     });

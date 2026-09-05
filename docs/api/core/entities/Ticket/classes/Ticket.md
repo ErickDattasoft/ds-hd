@@ -339,6 +339,12 @@ de tiempo trabajado y el reloj de SLA con pausa. No conoce Firestore ni HTTP.
 
 `boolean`
 
+###### estadoFacturacion?
+
+`"no_facturado"` \| `"facturado"` \| `"no_aplica"` \| `"factura_mensual"` \| `"consulta_sin_costo"`
+
+Si se omite, se infiere de `requiereFacturacion` (no_facturado si requiere, si no no_aplica).
+
 ###### horasSla?
 
 `number`
@@ -433,15 +439,15 @@ readonly `string`[]
 
 ***
 
-### marcarFacturado()
+### cambiarEstadoFacturacion()
 
-> **marcarFacturado**(`facturado`, `ahora`): `void`
+> **cambiarEstadoFacturacion**(`estado`, `ahora`): `void`
 
 #### Parameters
 
-##### facturado
+##### estado
 
-`boolean`
+`"no_facturado"` \| `"facturado"` \| `"no_aplica"` \| `"factura_mensual"` \| `"consulta_sin_costo"`
 
 ##### ahora
 

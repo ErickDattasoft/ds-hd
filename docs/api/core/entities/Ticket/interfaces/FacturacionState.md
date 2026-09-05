@@ -18,9 +18,11 @@ Si el tipo de ticket amerita facturación (p. ej. consultorías).
 
 ***
 
-### facturado
+### estado
 
-> **facturado**: `boolean`
+> **estado**: `"no_facturado"` \| `"facturado"` \| `"no_aplica"` \| `"factura_mensual"` \| `"consulta_sin_costo"`
+
+Catálogo fijo: no_facturado/facturado/no_aplica/factura_mensual/consulta_sin_costo.
 
 ***
 

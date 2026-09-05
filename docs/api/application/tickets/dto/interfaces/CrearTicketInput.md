@@ -105,3 +105,11 @@ Datos para crear un ticket desde cualquier canal (staff, portal o público).
 > `optional` **asignarAlActor?**: `boolean`
 
 El agente que crea se autoasigna.
+
+***
+
+### estadoFacturacion?
+
+> `optional` **estadoFacturacion?**: `"no_facturado"` \| `"facturado"` \| `"no_aplica"` \| `"factura_mensual"` \| `"consulta_sin_costo"`
+
+Si se omite, se infiere del tipo (`tiposFacturables`) — solo el alta desde el back-office lo captura.
