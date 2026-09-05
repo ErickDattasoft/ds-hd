@@ -244,7 +244,12 @@ console.log(`build-worker: bundle ${(bytes / 1024).toFixed(0)} KiB → worker-di
 
 // ── 4. Assets estáticos (servidos en /static/* por el binding de CF) ──────────
 if (existsSync(join(root, 'public'))) {
-  await cp(join(root, 'public'), assetsStaticDir, { recursive: true });
+  await cp(join(root, 'public'), assetsStaticDir, {
+    recursive: true,
+    // Copias viejas que quedan sueltas cuando `public/build` se renombra por venir con dueño
+    // root de un `docker compose` — no son assets reales, no deben subir al deploy.
+    filter: (src) => !/[/\\]build-old-[^/\\]*/.test(src),
+  });
   console.log('build-worker: public/ → worker-dist/assets/static/');
 }
 
