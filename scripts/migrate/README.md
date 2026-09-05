@@ -49,5 +49,7 @@ tsx scripts/migrate/99-verify-migration.ts
   `consulta_sin_costo`) y el importador mapea el texto viejo a ese catálogo
   (`GARANTIA`/`NO APLICA` → `no_aplica`, `EN PROCESO` → `no_facturado`, etc.). El texto
   original igual se preserva como nota interna del ticket cuando el mapeo pudo perder matiz.
+- **"Acerca de"**: el respaldo trae `acercaDe: { version, fecha, notas }` — se importa a
+  `configuracion/acercaDe` (el campo `fecha` del viejo pasa a `ultimaActualizacion`).
 - **Adjuntos y Storage**: no se migran — ds-hd no tiene adjuntos implementados todavía (ver
   fase P5 de `docs/auditoria-paridad.md`, requiere Firebase Storage).

@@ -16,6 +16,7 @@ import { ArticuloKB } from '../../src/core/entities/ArticuloKB.js';
 import type { EntradaBitacora } from '../../src/core/entities/EntradaBitacora.js';
 import { PRIORIDADES, type Prioridad } from '../../src/core/entities/value-objects/Prioridad.js';
 import type { EstadoFacturacion } from '../../src/core/entities/value-objects/EstadoFacturacion.js';
+import { sanearAcercaDe } from '../../src/core/entities/AcercaDe.js';
 import { CONFIG_TICKETS_POR_DEFECTO, type ConfiguracionTickets } from '../../src/core/entities/ConfiguracionTickets.js';
 import { CONFIG_AVISOS_POR_DEFECTO, type ConfiguracionAvisos, type ContactoSoporte } from '../../src/core/entities/ConfiguracionAvisos.js';
 import { CONTADOR_TICKETS } from '../../src/application/tickets/constantes.js';
@@ -474,6 +475,24 @@ export async function importarConfiguracionAvisos(c: Container, datos: Dato): Pr
   };
   if (!DRY_RUN) await c.resolve('configuracionRepo').guardarAvisos(nueva);
   log('configAvisos', 'plantillas y contactos de soporte reales importados');
+  return true;
+}
+
+// ── "Acerca de" (`acercaDe: { version, fecha, notas }` en el respaldo del CRM viejo) ────────
+export async function importarAcercaDe(c: Container, datos: Dato): Promise<boolean> {
+  const raw = datos.acercaDe as Dato | undefined;
+  if (!raw || typeof raw !== 'object') {
+    log('acercaDe', 'el respaldo no trae "Acerca de", se deja el valor por defecto');
+    return false;
+  }
+  const nueva = sanearAcercaDe({
+    version: s(raw.version),
+    // El viejo guardaba el texto de fecha en `fecha`; el nuevo lo llama `ultimaActualizacion`.
+    ultimaActualizacion: s(raw.ultimaActualizacion ?? raw.fecha),
+    notas: s(raw.notas),
+  });
+  if (!DRY_RUN) await c.resolve('configuracionRepo').guardarAcercaDe(nueva);
+  log('acercaDe', 'contenido de "Acerca de" importado');
   return true;
 }
 

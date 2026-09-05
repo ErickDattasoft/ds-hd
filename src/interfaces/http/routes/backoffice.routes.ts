@@ -50,6 +50,12 @@ export function backofficeRoutes(container: Container): Router {
 
   r.get('/buscar', (req, res) => container.resolve('busquedaController').buscar(req, res));
 
+  // Acerca de — visible para cualquier staff; editar requiere configuracion:catalogos.
+  r.get('/acerca-de', (req, res) => configuracion().acercaDeView(req, res));
+  r.post('/acerca-de', requirePermission('configuracion:catalogos'), (req, res) =>
+    configuracion().acercaDePost(req, res),
+  );
+
   // ── Usuarios ───────────────────────────────────────────────────────────────
   r.get('/mi-perfil', (req, res) => usuarios().miPerfilView(req, res));
   r.post('/mi-perfil', (req, res) => usuarios().miPerfilPost(req, res));

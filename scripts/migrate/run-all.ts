@@ -20,6 +20,7 @@ import {
   importarBitacora,
   importarConfiguracionTickets,
   importarConfiguracionAvisos,
+  importarAcercaDe,
   importarUsuarios,
 } from './importers.js';
 
@@ -36,6 +37,7 @@ await importarKB(c, datos);
 await importarBitacora(c, datos);
 await importarConfiguracionTickets(c, datos);
 await importarConfiguracionAvisos(c, datos);
+await importarAcercaDe(c, datos);
 await importarTickets(c, datos);
 
 if (contactos.sinEmpresa.length) {

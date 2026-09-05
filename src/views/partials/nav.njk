@@ -23,4 +23,13 @@
       {% endfor %}
     </ul>
   {% endfor %}
+  {% if area == 'backoffice' %}
+    <ul class="sidebar__list sidebar__list--footer">
+      <li>
+        <a class="sidebar__link {{ 'is-active' if currentPath == '/app/acerca-de' }}" href="/app/acerca-de">
+          <span class="sidebar__icon" aria-hidden="true">ℹ️</span>Acerca de
+        </a>
+      </li>
+    </ul>
+  {% endif %}
 </nav>

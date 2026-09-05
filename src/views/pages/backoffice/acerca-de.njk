@@ -1,0 +1,57 @@
+{% extends "layouts/backoffice.njk" %}
+{% block title %}Acerca de{% endblock %}
+{% block content %}
+  <h1>Acerca de</h1>
+  {% if guardado %}<p class="alert alert--ok">Cambios guardados.</p>{% endif %}
+
+  <div class="card">
+    <h2 style="margin-top:0">{{ info.nombre }}</h2>
+    <p class="muted">{{ info.descripcion }}</p>
+    <table class="data-table">
+      <tbody>
+        <tr><th>Versión</th><td>{{ config.version or APP_VERSION }}</td></tr>
+        <tr><th>Última actualización</th><td>{{ config.ultimaActualizacion or '—' }}</td></tr>
+        <tr><th>Desarrollado por</th><td>{{ info.desarrolladoPor }}</td></tr>
+        <tr><th>Empresa</th><td>{{ info.empresa }}</td></tr>
+        <tr><th>Stack</th><td>{{ info.stack }}</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  {% if config.notas %}
+    <div class="card">
+      <h2 style="margin-top:0">Notas</h2>
+      <p style="white-space:pre-wrap">{{ config.notas }}</p>
+    </div>
+  {% endif %}
+
+  {% if puedeEditar %}
+    <div class="card">
+      <h2 style="margin-top:0">Enlaces</h2>
+      <ul class="kb-list">
+        {% for e in info.enlaces %}
+          <li><a href="{{ e.url }}" target="_blank" rel="noopener noreferrer">{{ e.icono }} {{ e.etiqueta }}</a></li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    <details class="disclosure">
+      <summary class="disclosure__summary">Editar «Acerca de»</summary>
+      <div class="disclosure__body">
+        <form method="post" action="/app/acerca-de" class="form form--wide">
+          <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+          <label class="field"><span>Versión <span class="muted">(vacío = usar la de package.json: {{ APP_VERSION }})</span></span>
+            <input type="text" name="version" value="{{ config.version }}" placeholder="{{ APP_VERSION }}" />
+          </label>
+          <label class="field"><span>Última actualización</span>
+            <input type="text" name="ultimaActualizacion" value="{{ config.ultimaActualizacion }}" placeholder="Ej. Septiembre 2026" />
+          </label>
+          <label class="field"><span>Notas / bitácora de cambios</span>
+            <textarea name="notas" rows="6" placeholder="Cambios recientes, notas internas, información adicional…">{{ config.notas }}</textarea>
+          </label>
+          <button class="btn" type="submit">Guardar</button>
+        </form>
+      </div>
+    </details>
+  {% endif %}
+{% endblock %}

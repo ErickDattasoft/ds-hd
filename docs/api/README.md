@@ -8,6 +8,7 @@
 
 - [application/auth/LoginService](application/auth/LoginService/README.md)
 - [application/auth/SolicitarAccesoService](application/auth/SolicitarAccesoService/README.md)
+- [application/configuracion/AcercaDeService](application/configuracion/AcercaDeService/README.md)
 - [application/configuracion/BackupService](application/configuracion/BackupService/README.md)
 - [application/configuracion/ConfiguracionIntegracionesService](application/configuracion/ConfiguracionIntegracionesService/README.md)
 - [application/configuracion/ConfiguracionTicketsService](application/configuracion/ConfiguracionTicketsService/README.md)
@@ -51,6 +52,7 @@
 - [application/usuarios/CrearUsuarioService](application/usuarios/CrearUsuarioService/README.md)
 - [application/usuarios/InvitarClienteService](application/usuarios/InvitarClienteService/README.md)
 - [application/versiones/VersionService](application/versiones/VersionService/README.md)
+- [core/entities/AcercaDe](core/entities/AcercaDe/README.md)
 - [core/entities/ArticuloKB](core/entities/ArticuloKB/README.md)
 - [core/entities/CalculadoraCompac](core/entities/CalculadoraCompac/README.md)
 - [core/entities/ConfiguracionAvisos](core/entities/ConfiguracionAvisos/README.md)

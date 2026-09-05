@@ -16,6 +16,7 @@ import { Cotizacion, type CotizacionProps } from '../../core/entities/Cotizacion
 import { VersionSistema, type VersionSistemaProps } from '../../core/entities/VersionSistema.js';
 import { ArticuloKB, type ArticuloKBProps } from '../../core/entities/ArticuloKB.js';
 import { Usuario, type UsuarioProps } from '../../core/entities/Usuario.js';
+import { sanearAcercaDe } from '../../core/entities/AcercaDe.js';
 import { CONTADOR_TICKETS } from '../tickets/constantes.js';
 import { ForbiddenError } from '../../core/errors/DomainError.js';
 import type { SessionUser } from '../shared/SessionUser.js';
@@ -80,7 +81,7 @@ export class BackupService {
 
   /** Vuelca todas las colecciones principales a un solo objeto serializable a JSON. */
   async exportar(): Promise<Record<string, unknown>> {
-    const [empresas, contactos, tickets, cotizaciones, versiones, kb, usuarios, tickets_cfg, calculadora, avisos] =
+    const [empresas, contactos, tickets, cotizaciones, versiones, kb, usuarios, tickets_cfg, calculadora, avisos, acercaDe] =
       await Promise.all([
         this.empresas.list({}),
         this.contactos.list({}),
@@ -92,6 +93,7 @@ export class BackupService {
         this.configuracion.obtenerTickets(),
         this.configuracion.obtenerCalculadora(),
         this.configuracion.obtenerAvisos(),
+        this.configuracion.obtenerAcercaDe(),
       ]);
 
     return {
@@ -106,7 +108,7 @@ export class BackupService {
       // Las cuentas se listan sin nada sensible de Auth (no hay contraseñas que respaldar
       // aquí — eso vive en Firebase Auth, fuera de Firestore).
       usuarios: usuarios.map((u) => ({ ...u, email: u.email.value })),
-      configuracion: { tickets: tickets_cfg, calculadora, avisos },
+      configuracion: { tickets: tickets_cfg, calculadora, avisos, acercaDe },
     };
   }
 
@@ -192,6 +194,7 @@ export class BackupService {
     if (cfg.tickets) await this.configuracion.guardarTickets(cfg.tickets as never);
     if (cfg.calculadora) await this.configuracion.guardarCalculadora(cfg.calculadora as never);
     if (cfg.avisos) await this.configuracion.guardarAvisos(cfg.avisos as never);
+    if (cfg.acercaDe) await this.configuracion.guardarAcercaDe(sanearAcercaDe(cfg.acercaDe));
 
     return resumen;
   }

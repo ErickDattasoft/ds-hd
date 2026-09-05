@@ -111,3 +111,29 @@ Documentos singleton de configuración (`configuracion/{seccion}`).
 #### Returns
 
 `Promise`\<`void`\>
+
+***
+
+### obtenerAcercaDe()
+
+> **obtenerAcercaDe**(): `Promise`\<[`AcercaDe`](../../../../entities/AcercaDe/interfaces/AcercaDe.md)\>
+
+#### Returns
+
+`Promise`\<[`AcercaDe`](../../../../entities/AcercaDe/interfaces/AcercaDe.md)\>
+
+***
+
+### guardarAcercaDe()
+
+> **guardarAcercaDe**(`config`): `Promise`\<`void`\>
+
+#### Parameters
+
+##### config
+
+[`AcercaDe`](../../../../entities/AcercaDe/interfaces/AcercaDe.md)
+
+#### Returns
+
+`Promise`\<`void`\>

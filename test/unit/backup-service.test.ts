@@ -35,6 +35,7 @@ describe('BackupService', () => {
   let ticketStore: InMemoryTicketStore;
   let ticketRepo: InMemoryTicketRepository;
   let ticketQueries: InMemoryTicketQueries;
+  let config: InMemoryConfiguracionRepository;
   let service: BackupService;
 
   beforeEach(() => {
@@ -42,6 +43,7 @@ describe('BackupService', () => {
     ticketStore = new InMemoryTicketStore();
     ticketRepo = new InMemoryTicketRepository(ticketStore);
     ticketQueries = new InMemoryTicketQueries(ticketStore);
+    config = new InMemoryConfiguracionRepository();
     service = new BackupService(
       empresas,
       new InMemoryContactoRepository(),
@@ -51,7 +53,7 @@ describe('BackupService', () => {
       new InMemoryVersionRepository(),
       new InMemoryKnowledgeRepository(),
       new InMemoryUsuarioRepository(),
-      new InMemoryConfiguracionRepository(),
+      config,
       new InMemoryContadorRepository(),
       new FixedClock(new Date('2026-09-01T12:00:00Z')),
     );
@@ -77,6 +79,7 @@ describe('BackupService', () => {
       ahora: new Date('2026-03-01T00:00:00Z'),
     });
     await ticketRepo.save(ticketOriginal);
+    await config.guardarAcercaDe({ version: 'v9.9.9', ultimaActualizacion: 'Enero 2026', notas: 'nota' });
 
     const exportado = await service.exportar();
     // Simula el viaje por JSON real (las fechas se serializan a string, como en un archivo).
@@ -86,6 +89,7 @@ describe('BackupService', () => {
     const empresas2 = new InMemoryEmpresaRepository();
     const store2 = new InMemoryTicketStore();
     const ticketRepo2 = new InMemoryTicketRepository(store2);
+    const config2 = new InMemoryConfiguracionRepository();
     const service2 = new BackupService(
       empresas2,
       new InMemoryContactoRepository(),
@@ -95,7 +99,7 @@ describe('BackupService', () => {
       new InMemoryVersionRepository(),
       new InMemoryKnowledgeRepository(),
       new InMemoryUsuarioRepository(),
-      new InMemoryConfiguracionRepository(),
+      config2,
       new InMemoryContadorRepository(),
       new FixedClock(new Date('2026-09-01T12:00:00Z')),
     );
@@ -103,6 +107,11 @@ describe('BackupService', () => {
     const resumen = await service2.restaurar(actor(), comoArchivo);
 
     expect(resumen).toMatchObject({ empresas: 1, tickets: 1, errores: [] });
+    expect(await config2.obtenerAcercaDe()).toEqual({
+      version: 'v9.9.9',
+      ultimaActualizacion: 'Enero 2026',
+      notas: 'nota',
+    });
     const empresaRestaurada = await empresas2.findById('e1');
     expect(empresaRestaurada?.nombre).toBe('Empresa Backup');
     expect(empresaRestaurada?.createdAt).toEqual(new Date('2026-01-01T00:00:00Z'));

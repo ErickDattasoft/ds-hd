@@ -61,6 +61,7 @@ import { PanelCargaAgentesService } from '../application/tickets/PanelCargaAgent
 import { CrearTicketPublicoService } from '../application/tickets/CrearTicketPublicoService.js';
 import { GestionTicketPublicoService } from '../application/tickets/GestionTicketPublicoService.js';
 import { ConfiguracionTicketsService } from '../application/configuracion/ConfiguracionTicketsService.js';
+import { AcercaDeService } from '../application/configuracion/AcercaDeService.js';
 import { ConfiguracionIntegracionesService } from '../application/configuracion/ConfiguracionIntegracionesService.js';
 import { BitacoraService } from '../application/shared/BitacoraService.js';
 import { EmpresaService } from '../application/empresas/EmpresaService.js';
@@ -200,6 +201,7 @@ export interface Cradle {
   gestionTicketPublicoService: GestionTicketPublicoService;
   configuracionTicketsService: ConfiguracionTicketsService;
   configuracionIntegracionesService: ConfiguracionIntegracionesService;
+  acercaDeService: AcercaDeService;
   bitacoraService: BitacoraService;
   empresaService: EmpresaService;
   avisarEmpresasService: AvisarEmpresasService;
@@ -569,6 +571,9 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
       (c: Cradle) =>
         new ConfiguracionIntegracionesService(c.configuracionRepo, c.integracionesGateway, c.logger),
     ).singleton(),
+    acercaDeService: asFunction(
+      (c: Cradle) => new AcercaDeService(c.configuracionRepo, c.logger),
+    ).singleton(),
     bitacoraService: asFunction(
       (c: Cradle) => new BitacoraService(c.bitacoraRepo, c.idGenerator, c.clock, c.logger),
     ).singleton(),
@@ -722,7 +727,12 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
     ).singleton(),
     configuracionController: asFunction(
       (c: Cradle) =>
-        new ConfiguracionController(c.configuracionTicketsService, c.configuracionIntegracionesService, c.backupService),
+        new ConfiguracionController(
+          c.configuracionTicketsService,
+          c.configuracionIntegracionesService,
+          c.backupService,
+          c.acercaDeService,
+        ),
     ).singleton(),
     ticketPublicoController: asFunction(
       (c: Cradle) =>

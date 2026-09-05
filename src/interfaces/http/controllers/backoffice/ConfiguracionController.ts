@@ -2,7 +2,9 @@ import type { Request, Response } from 'express';
 import type { ConfiguracionTicketsService } from '../../../../application/configuracion/ConfiguracionTicketsService.js';
 import { ConfiguracionIntegracionesService } from '../../../../application/configuracion/ConfiguracionIntegracionesService.js';
 import type { BackupService } from '../../../../application/configuracion/BackupService.js';
+import type { AcercaDeService } from '../../../../application/configuracion/AcercaDeService.js';
 import { ETIQUETAS_EVENTOS } from '../../../../core/entities/ConfiguracionIntegraciones.js';
+import { INFO_APP } from '../../../../core/entities/AcercaDe.js';
 import { camposDeError } from '../../support/errores.js';
 
 const str = (v: unknown): string => (typeof v === 'string' ? v : '');
@@ -13,7 +15,49 @@ export class ConfiguracionController {
     private readonly configTickets: ConfiguracionTicketsService,
     private readonly configIntegraciones: ConfiguracionIntegracionesService,
     private readonly backup: BackupService,
+    private readonly acercaDe: AcercaDeService,
   ) {}
+
+  acercaDeView = async (req: Request, res: Response): Promise<void> => {
+    const config = await this.acercaDe.obtener();
+    res.render('pages/backoffice/acerca-de', {
+      titulo: 'Acerca de',
+      info: INFO_APP,
+      config,
+      puedeEditar: req.user!.permisos.includes('configuracion:catalogos'),
+      errores: {},
+      guardado: false,
+    });
+  };
+
+  acercaDePost = async (req: Request, res: Response): Promise<void> => {
+    const b = req.body ?? {};
+    try {
+      await this.acercaDe.actualizar({
+        actor: req.user!,
+        version: str(b.version),
+        ultimaActualizacion: str(b.ultimaActualizacion),
+        notas: str(b.notas),
+      });
+      res.render('pages/backoffice/acerca-de', {
+        titulo: 'Acerca de',
+        info: INFO_APP,
+        config: await this.acercaDe.obtener(),
+        puedeEditar: true,
+        errores: {},
+        guardado: true,
+      });
+    } catch (err) {
+      res.status(422).render('pages/backoffice/acerca-de', {
+        titulo: 'Acerca de',
+        info: INFO_APP,
+        config: await this.acercaDe.obtener(),
+        puedeEditar: req.user!.permisos.includes('configuracion:catalogos'),
+        errores: camposDeError(err),
+        guardado: false,
+      });
+    }
+  };
 
   backupView = (_req: Request, res: Response): void => {
     res.render('pages/backoffice/configuracion/backup', { titulo: 'Backup' });

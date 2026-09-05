@@ -29,6 +29,7 @@ import {
   CONFIG_INTEGRACIONES_POR_DEFECTO,
   type ConfiguracionIntegraciones,
 } from '../../src/core/entities/ConfiguracionIntegraciones.js';
+import { ACERCA_DE_POR_DEFECTO, type AcercaDe } from '../../src/core/entities/AcercaDe.js';
 import { esEstadoFinal, slugEstado } from '../../src/core/entities/value-objects/EstadoTicket.js';
 
 /** Almacén compartido por el repo y las queries en memoria. */
@@ -176,6 +177,13 @@ export class InMemoryConfiguracionRepository implements IConfiguracionRepository
   }
   async guardarIntegraciones(config: ConfiguracionIntegraciones): Promise<void> {
     this.integraciones = config;
+  }
+  acercaDe: AcercaDe = { ...ACERCA_DE_POR_DEFECTO };
+  async obtenerAcercaDe(): Promise<AcercaDe> {
+    return this.acercaDe;
+  }
+  async guardarAcercaDe(config: AcercaDe): Promise<void> {
+    this.acercaDe = config;
   }
 }
 
