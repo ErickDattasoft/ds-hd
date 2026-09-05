@@ -46,6 +46,12 @@ Datos editables de un evento (alta o edición, uso staff).
 
 ***
 
+### limiteRegistrosPorIp?
+
+> `optional` **limiteRegistrosPorIp?**: `number` \| `null`
+
+***
+
 ### estado?
 
 > `optional` **estado?**: [`EstadoEvento`](../../../../core/entities/Evento/type-aliases/EstadoEvento.md)

@@ -23,6 +23,7 @@ const eventoToDomain = (id: string, d: DocumentData): Evento =>
     estado: (d.estado ?? 'borrador') as EstadoEvento,
     urlWebinar: d.urlWebinar ?? null,
     horasRecordatorio: Number(d.horasRecordatorio ?? 24),
+    limiteRegistrosPorIp: typeof d.limiteRegistrosPorIp === 'number' ? d.limiteRegistrosPorIp : null,
     creadoPorUid: d.creadoPorUid ?? null,
     createdAt: fecha(d.createdAt),
     updatedAt: fecha(d.updatedAt),
@@ -65,6 +66,7 @@ export class FirestoreEventoRepository implements IEventoRepository {
         estado: e.estado,
         urlWebinar: e.urlWebinar,
         horasRecordatorio: e.horasRecordatorio,
+        limiteRegistrosPorIp: e.limiteRegistrosPorIp,
         creadoPorUid: e.creadoPorUid,
         createdAt: Timestamp.fromDate(e.createdAt),
         updatedAt: Timestamp.fromDate(e.updatedAt),
@@ -85,6 +87,8 @@ const inscripcionToDomain = (eventoId: string, id: string, d: DocumentData): Ins
   origen: d.origen === 'staff' ? 'staff' : 'publico',
   correoEstado: d.correoEstado ?? null,
   recordatoriosEnviados: Array.isArray(d.recordatoriosEnviados) ? d.recordatoriosEnviados.map(String) : [],
+  ip: d.ip ?? null,
+  correoSospechoso: d.correoSospechoso === true,
   createdAt: fecha(d.createdAt),
 });
 
@@ -110,10 +114,17 @@ export class FirestoreInscripcionRepository implements IInscripcionRepository {
         origen: i.origen,
         correoEstado: i.correoEstado,
         recordatoriosEnviados: i.recordatoriosEnviados,
+        ip: i.ip,
+        correoSospechoso: i.correoSospechoso,
         createdAt: Timestamp.fromDate(i.createdAt),
       },
       { merge: true },
     );
+  }
+
+  async contarPorIp(eventoId: string, ip: string): Promise<number> {
+    const agg = await this.col(eventoId).where('ip', '==', ip).count().get();
+    return agg.data().count;
   }
 
   async findByEmail(eventoId: string, email: string): Promise<Inscripcion | null> {

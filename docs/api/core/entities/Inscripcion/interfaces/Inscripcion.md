@@ -72,6 +72,22 @@ Estado del último correo enviado, actualizado por el webhook de Brevo.
 
 ***
 
+### ip
+
+> **ip**: `string` \| `null`
+
+IP desde la que se registró (forense + límite por IP); `null` para altas de staff.
+
+***
+
+### correoSospechoso
+
+> **correoSospechoso**: `boolean`
+
+`true` si el dominio del correo es de un servicio desechable conocido — solo se marca 🚩.
+
+***
+
 ### createdAt
 
 > **createdAt**: `Date`

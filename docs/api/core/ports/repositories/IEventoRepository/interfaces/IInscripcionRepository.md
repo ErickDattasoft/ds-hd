@@ -96,6 +96,28 @@ Busca una inscripción por id en cualquier evento (collection-group). Para el we
 
 ***
 
+### contarPorIp()
+
+> **contarPorIp**(`eventoId`, `ip`): `Promise`\<`number`\>
+
+Cuántas inscripciones a este evento vienen de una IP dada (para el límite antiabuso).
+
+#### Parameters
+
+##### eventoId
+
+`string`
+
+##### ip
+
+`string`
+
+#### Returns
+
+`Promise`\<`number`\>
+
+***
+
 ### save()
 
 > **save**(`inscripcion`): `Promise`\<`void`\>

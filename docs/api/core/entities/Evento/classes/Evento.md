@@ -74,6 +74,12 @@ Evento / webinar con registro público.
 
 ***
 
+### limiteRegistrosPorIp
+
+> **limiteRegistrosPorIp**: `number` \| `null`
+
+***
+
 ### creadoPorUid
 
 > `readonly` **creadoPorUid**: `string` \| `null`
@@ -113,3 +119,17 @@ Evento / webinar con registro público.
 ##### Returns
 
 `boolean`
+
+***
+
+### limiteIpEfectivo
+
+#### Get Signature
+
+> **get** **limiteIpEfectivo**(): `number`
+
+El tope de inscripciones por IP que aplica de verdad (el propio o el de por defecto).
+
+##### Returns
+
+`number`

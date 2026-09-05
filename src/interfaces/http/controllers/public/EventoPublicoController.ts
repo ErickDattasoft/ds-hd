@@ -4,6 +4,12 @@ import { camposDeError } from '../../support/errores.js';
 
 const str = (v: unknown): string => (typeof v === 'string' ? v : '');
 
+/** IP del cliente: `CF-Connecting-IP` en Cloudflare, si no lo que resuelva Express (`X-Forwarded-For`/socket). */
+const clientIp = (req: Request): string => {
+  const cf = req.headers['cf-connecting-ip'];
+  return (typeof cf === 'string' && cf) || req.ip || '';
+};
+
 /** Landing pública de eventos y formulario de registro. */
 export class EventoPublicoController {
   constructor(
@@ -39,7 +45,7 @@ export class EventoPublicoController {
         telefono: str(b.telefono),
         empresa: str(b.empresa),
         captchaToken: str(b['cf-turnstile-response']),
-        ip: req.ip,
+        ip: clientIp(req),
       });
       const evento = await this.eventos.obtener(id);
       res.render('pages/public/evento', {

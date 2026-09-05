@@ -13,6 +13,10 @@ export interface Inscripcion {
   /** Estado del último correo enviado, actualizado por el webhook de Brevo. */
   correoEstado: 'pendiente' | 'entregado' | 'rebotado' | null;
   recordatoriosEnviados: string[];
+  /** IP desde la que se registró (forense + límite por IP); `null` para altas de staff. */
+  ip: string | null;
+  /** `true` si el dominio del correo es de un servicio desechable conocido — solo se marca 🚩. */
+  correoSospechoso: boolean;
   createdAt: Date;
 }
 

@@ -60,6 +60,14 @@ Horas antes del evento para enviar el recordatorio.
 
 ***
 
+### limiteRegistrosPorIp?
+
+> `optional` **limiteRegistrosPorIp?**: `number` \| `null`
+
+Máximo de inscripciones desde una misma IP; `null` = usar [LIMITE\_REGISTROS\_POR\_IP\_DEFECTO](../variables/LIMITE_REGISTROS_POR_IP_DEFECTO.md).
+
+***
+
 ### creadoPorUid?
 
 > `optional` **creadoPorUid?**: `string` \| `null`

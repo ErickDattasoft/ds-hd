@@ -44,6 +44,7 @@ export class EventoController {
           cupo: n(b.cupo),
           urlWebinar: str(b.urlWebinar),
           horasRecordatorio: n(b.horasRecordatorio) || 24,
+          limiteRegistrosPorIp: str(b.limiteRegistrosPorIp) ? Math.max(1, n(b.limiteRegistrosPorIp)) : null,
           estado: (str(b.estado) || 'borrador') as EstadoEvento,
         },
         id,

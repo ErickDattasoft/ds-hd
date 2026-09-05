@@ -18,6 +18,8 @@ export interface IInscripcionRepository {
   findGlobal(inscripcionId: string): Promise<Inscripcion | null>;
   listPorEvento(eventoId: string): Promise<Inscripcion[]>;
   contar(eventoId: string): Promise<number>;
+  /** Cuántas inscripciones a este evento vienen de una IP dada (para el límite antiabuso). */
+  contarPorIp(eventoId: string, ip: string): Promise<number>;
   save(inscripcion: Inscripcion): Promise<void>;
 }
 

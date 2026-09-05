@@ -17,3 +17,7 @@
 ## Type Aliases
 
 - [EstadoEvento](type-aliases/EstadoEvento.md)
+
+## Variables
+
+- [LIMITE\_REGISTROS\_POR\_IP\_DEFECTO](variables/LIMITE_REGISTROS_POR_IP_DEFECTO.md)

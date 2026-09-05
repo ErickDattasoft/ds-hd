@@ -8,19 +8,20 @@
       <a class="btn btn--sm btn--secondary" href="/eventos/{{ evento.id }}">Ver página pública</a>
     </div>
   </div>
-  <p class="muted">{{ evento.fechaHora }} · {{ inscritos | length }} inscritos{% if evento.cupo %} / {{ evento.cupo }}{% endif %}</p>
+  <p class="muted">{{ evento.fechaHora }} · {{ inscritos | length }} inscritos{% if evento.cupo %} / {{ evento.cupo }}{% endif %} · límite {{ evento.limiteIpEfectivo }}/IP</p>
 
   <h2>Inscritos</h2>
   <table class="data-table">
-    <thead><tr><th>Nombre</th><th>Correo</th><th>Empresa</th><th>Estado</th><th>Correo</th><th></th></tr></thead>
+    <thead><tr><th>Nombre</th><th>Correo</th><th>Empresa</th><th>Estado</th><th>Correo</th><th>IP</th><th></th></tr></thead>
     <tbody>
       {% for i in inscritos %}
         <tr>
           <td>{{ i.nombre }}</td>
-          <td>{{ i.email }}</td>
+          <td>{{ i.email }}{% if i.correoSospechoso %} <span title="Dominio de correo temporal/desechable conocido — probablemente no es un prospecto real">🚩</span>{% endif %}</td>
           <td>{{ i.empresa or '—' }}</td>
           <td>{{ i.estado }}</td>
           <td>{{ i.correoEstado or '—' }}</td>
+          <td class="muted">{{ i.ip or '—' }}</td>
           <td>
             {% if can('eventos:gestionar') %}
             <form method="post" action="/app/eventos/{{ evento.id }}/inscritos/{{ i.id }}/marcar" class="inline">
@@ -37,7 +38,7 @@
             {% endif %}
           </td>
         </tr>
-      {% else %}<tr><td colspan="6" class="muted">Sin inscritos.</td></tr>{% endfor %}
+      {% else %}<tr><td colspan="7" class="muted">Sin inscritos.</td></tr>{% endfor %}
     </tbody>
   </table>
 

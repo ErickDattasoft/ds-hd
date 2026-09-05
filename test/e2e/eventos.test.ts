@@ -67,7 +67,7 @@ describe('eventos / webinars', () => {
     );
     await t.inscripcionRepo.create({
       id: 'i1', eventoId: 'ev1', nombre: 'A', email: 'a@a.com', telefono: null, empresa: null,
-      estado: 'registrado', origen: 'publico', correoEstado: null, recordatoriosEnviados: [], createdAt: new Date(),
+      estado: 'registrado', origen: 'publico', correoEstado: null, recordatoriosEnviados: [], ip: null, correoSospechoso: false, createdAt: new Date(),
     });
 
     const sinAuth = await request(t.app).post('/jobs/recordatorios-eventos');
@@ -86,7 +86,7 @@ describe('eventos / webinars', () => {
     t.eventoRepo.items.set('ev1', new Evento({ id: 'ev1', titulo: 'Evento webhook', fechaHora: enUnaSemana(), estado: 'publicado' }));
     await t.inscripcionRepo.create({
       id: 'i1', eventoId: 'ev1', nombre: 'A', email: 'a@a.com', telefono: null, empresa: null,
-      estado: 'registrado', origen: 'publico', correoEstado: 'pendiente', recordatoriosEnviados: [], createdAt: new Date(),
+      estado: 'registrado', origen: 'publico', correoEstado: 'pendiente', recordatoriosEnviados: [], ip: null, correoSospechoso: false, createdAt: new Date(),
     });
 
     const noAuth = await request(t.app).post('/webhooks/brevo').send({ event: 'delivered', tag: 'insc_i1' });

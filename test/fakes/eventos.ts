@@ -53,6 +53,9 @@ export class InMemoryInscripcionRepository implements IInscripcionRepository {
   async contar(eventoId: string): Promise<number> {
     return this.items.filter((i) => i.eventoId === eventoId).length;
   }
+  async contarPorIp(eventoId: string, ip: string): Promise<number> {
+    return this.items.filter((i) => i.eventoId === eventoId && i.ip === ip).length;
+  }
 }
 
 export class InMemoryListaNegraRepository implements IListaNegraRepository {

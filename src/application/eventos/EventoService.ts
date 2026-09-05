@@ -11,6 +11,7 @@ import type { ICaptchaVerifier } from '../../core/ports/services/ICaptchaVerifie
 import { Evento, type EstadoEvento } from '../../core/entities/Evento.js';
 import type { EntradaListaNegra, EstadoInscripcion, Inscripcion } from '../../core/entities/Inscripcion.js';
 import { Email } from '../../core/entities/value-objects/Email.js';
+import { esCorreoDesechable } from '../../core/entities/value-objects/dominiosDesechables.js';
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '../../core/errors/DomainError.js';
 import type { BitacoraService } from '../shared/BitacoraService.js';
 import type { SessionUser } from '../shared/SessionUser.js';
@@ -23,6 +24,7 @@ export interface DatosEvento {
   cupo?: number;
   urlWebinar?: string;
   horasRecordatorio?: number;
+  limiteRegistrosPorIp?: number | null;
   estado?: EstadoEvento;
 }
 
@@ -84,6 +86,10 @@ export class EventoService {
       estado: datos.estado ?? previo?.estado ?? 'borrador',
       urlWebinar: datos.urlWebinar ?? previo?.urlWebinar ?? null,
       horasRecordatorio: datos.horasRecordatorio ?? previo?.horasRecordatorio ?? 24,
+      limiteRegistrosPorIp:
+        datos.limiteRegistrosPorIp !== undefined
+          ? datos.limiteRegistrosPorIp
+          : (previo?.limiteRegistrosPorIp ?? null),
       creadoPorUid: previo?.creadoPorUid ?? actor.uid,
       createdAt: previo?.createdAt ?? this.clock.now(),
       updatedAt: this.clock.now(),
@@ -174,6 +180,14 @@ export class EventoService {
       throw new ValidationError('El evento ya alcanzó su cupo máximo');
     }
 
+    const ip = input.ip?.trim() || null;
+    if (ip && (await this.inscripciones.contarPorIp(evento.id, ip)) >= evento.limiteIpEfectivo) {
+      this.logger.info('Registro bloqueado por límite de IP', { evento: evento.id, ip });
+      throw new ValidationError(
+        'Se alcanzó el límite de registros permitidos desde esta conexión para este evento. Si necesitas inscribir a varias personas, contáctanos directamente.',
+      );
+    }
+
     const inscripcion: Inscripcion = {
       id: this.ids.newId(),
       eventoId: evento.id,
@@ -185,6 +199,8 @@ export class EventoService {
       origen: 'publico',
       correoEstado: 'pendiente',
       recordatoriosEnviados: [],
+      ip,
+      correoSospechoso: esCorreoDesechable(correo.value),
       createdAt: this.clock.now(),
     };
     await this.inscripciones.create(inscripcion);
