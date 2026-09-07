@@ -41,6 +41,8 @@ export interface EmpresaProps {
   contactoPrincipalId?: string | null;
   notas?: string | null;
   activa?: boolean;
+  /** Marcada como favorita (⭐) por el equipo — atajo para la lista. */
+  favorita?: boolean;
   creadoPorUid?: string | null;
   createdAt?: Date;
   updatedAt?: Date;
@@ -64,6 +66,7 @@ export class Empresa {
   contactoPrincipalId: string | null;
   notas: string | null;
   activa: boolean;
+  favorita: boolean;
   readonly creadoPorUid: string | null;
   readonly createdAt: Date;
   updatedAt: Date;
@@ -87,6 +90,7 @@ export class Empresa {
     this.contactoPrincipalId = props.contactoPrincipalId ?? null;
     this.notas = props.notas?.trim() || null;
     this.activa = props.activa ?? true;
+    this.favorita = props.favorita ?? false;
     this.creadoPorUid = props.creadoPorUid ?? null;
     this.createdAt = props.createdAt ?? new Date();
     this.updatedAt = props.updatedAt ?? this.createdAt;
@@ -100,6 +104,11 @@ export class Empresa {
   }
   restaurar(ahora: Date): void {
     this.activa = true;
+    this.updatedAt = ahora;
+  }
+
+  marcarFavorita(favorita: boolean, ahora: Date): void {
+    this.favorita = favorita;
     this.updatedAt = ahora;
   }
 

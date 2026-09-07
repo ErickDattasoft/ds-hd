@@ -20,6 +20,8 @@ export class InMemoryEmpresaRepository implements IEmpresaRepository {
       const t = f.texto.toLowerCase();
       out = out.filter((e) => e.nombre.toLowerCase().includes(t) || (e.rfc ?? '').toLowerCase().includes(t));
     }
+    if (f.favorita) out = out.filter((e) => e.favorita);
+    if (f.sistema) out = out.filter((e) => e.sistemasContratados.includes(f.sistema!));
     return out.sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
   }
   async save(e: Empresa): Promise<void> {

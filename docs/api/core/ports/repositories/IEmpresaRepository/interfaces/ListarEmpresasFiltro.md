@@ -19,3 +19,19 @@ Filtros para listar empresas.
 ### texto?
 
 > `optional` **texto?**: `string`
+
+***
+
+### favorita?
+
+> `optional` **favorita?**: `boolean`
+
+Solo empresas marcadas como favoritas.
+
+***
+
+### sistema?
+
+> `optional` **sistema?**: `string`
+
+Solo empresas con este sistema contratado.

@@ -1,6 +1,7 @@
 {% extends "layouts/backoffice.njk" %}
 {% block title %}Empresas{% endblock %}
 {% block content %}
+  {% set qs %}?q={{ q }}&sistema={{ sistema }}{{ '&favoritas=1' if soloFavoritas }}{{ '&pendientes=1' if soloPendientes }}{{ '&archivadas=1' if incluirArchivadas }}{% endset %}
   <div class="page-head">
     <h1>Empresas</h1>
     <div class="page-head__actions">
@@ -11,49 +12,68 @@
   </div>
   <form method="get" class="filterbar">
     <input type="search" name="q" value="{{ q }}" placeholder="Buscar por nombre o RFC…" autocomplete="off" spellcheck="false" />
+    <select name="sistema" aria-label="Sistema">
+      <option value="">Cualquier sistema</option>
+      {% for s in sistemasDisponibles %}<option value="{{ s }}" {{ 'selected' if sistema == s }}>{{ s }}</option>{% endfor %}
+    </select>
+    <label class="field--check"><input type="checkbox" name="favoritas" value="1" {{ 'checked' if soloFavoritas }} /> ⭐ solo favoritas</label>
     <label class="field--check"><input type="checkbox" name="archivadas" value="1" {{ 'checked' if incluirArchivadas }} /> incluir archivadas</label>
     <label class="field--check"><input type="checkbox" name="pendientes" value="1" {{ 'checked' if soloPendientes }} /> solo con pendientes (licencia o versión)</label>
     <button class="btn btn--sm" type="submit">Buscar</button>
   </form>
 
-  <form method="post" action="/app/empresas/avisar" data-confirm="¿Enviar el aviso por correo a las empresas seleccionadas?">
-    <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
-    <table class="data-table">
-      <thead>
+  <table class="data-table">
+    <thead>
+      <tr>
+        {% if can('empresas:editar') %}<th></th><th aria-label="Favorita"></th>{% endif %}
+        <th>Nombre</th><th>RFC</th><th>Teléfono</th><th>Sistemas</th><th>Licencias</th><th>Versiones</th><th>Estado</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for fila in filas %}
+        {% set e = fila.empresa %}
         <tr>
-          {% if can('empresas:editar') %}<th></th>{% endif %}
-          <th>Nombre</th><th>RFC</th><th>Teléfono</th><th>Sistemas</th><th>Licencias</th><th>Versiones</th><th>Estado</th>
+          {% if can('empresas:editar') %}
+            <td><input type="checkbox" form="avisar-form" name="empresaIds" value="{{ e.id }}" aria-label="Seleccionar {{ e.nombre }}" /></td>
+            <td>
+              <button type="submit" form="fav-{{ e.id }}" class="star-btn" title="{{ 'Quitar de favoritas' if e.favorita else 'Marcar como favorita' }}"
+                      aria-pressed="{{ 'true' if e.favorita else 'false' }}">{{ '⭐' if e.favorita else '☆' }}</button>
+            </td>
+          {% endif %}
+          <td><a href="/app/empresas/{{ e.id }}">{{ e.nombre }}</a></td>
+          <td>{{ e.rfc or '—' }}</td>
+          <td>{{ e.telefono or '—' }}</td>
+          <td>{{ e.sistemasContratados | length }}</td>
+          <td>
+            {% if fila.vencidas %}<span class="badge badge--danger">{{ fila.vencidas }} vencida{{ 's' if fila.vencidas != 1 }}</span>{% endif %}
+            {% if fila.porVencer %}<span class="badge badge--warning">{{ fila.porVencer }} por vencer</span>{% endif %}
+            {% if not fila.vencidas and not fila.porVencer %}<span class="muted">—</span>{% endif %}
+          </td>
+          <td>
+            {% if fila.desactualizadas %}<span class="badge badge--warning">{{ fila.desactualizadas }} desactualizada{{ 's' if fila.desactualizadas != 1 }}</span>{% else %}<span class="muted">—</span>{% endif %}
+          </td>
+          <td>{{ 'Activa' if e.activa else 'Archivada' }}</td>
         </tr>
-      </thead>
-      <tbody>
-        {% for fila in filas %}
-          {% set e = fila.empresa %}
-          <tr>
-            {% if can('empresas:editar') %}
-              <td><input type="checkbox" name="empresaIds" value="{{ e.id }}" aria-label="Seleccionar {{ e.nombre }}" /></td>
-            {% endif %}
-            <td><a href="/app/empresas/{{ e.id }}">{{ e.nombre }}</a></td>
-            <td>{{ e.rfc or '—' }}</td>
-            <td>{{ e.telefono or '—' }}</td>
-            <td>{{ e.sistemasContratados | length }}</td>
-            <td>
-              {% if fila.vencidas %}<span class="badge badge--danger">{{ fila.vencidas }} vencida{{ 's' if fila.vencidas != 1 }}</span>{% endif %}
-              {% if fila.porVencer %}<span class="badge badge--warning">{{ fila.porVencer }} por vencer</span>{% endif %}
-              {% if not fila.vencidas and not fila.porVencer %}<span class="muted">—</span>{% endif %}
-            </td>
-            <td>
-              {% if fila.desactualizadas %}<span class="badge badge--warning">{{ fila.desactualizadas }} desactualizada{{ 's' if fila.desactualizadas != 1 }}</span>{% else %}<span class="muted">—</span>{% endif %}
-            </td>
-            <td>{{ 'Activa' if e.activa else 'Archivada' }}</td>
-          </tr>
-        {% else %}<tr><td colspan="8" class="muted">Sin empresas.</td></tr>{% endfor %}
-      </tbody>
-    </table>
-    {% if can('empresas:editar') and filas | length %}
-      <div class="page-head__actions" style="margin-top: var(--space-3)">
-        <button class="btn btn--sm btn--secondary" type="submit" name="tipo" value="versiones">Avisar versiones a seleccionadas</button>
-        <button class="btn btn--sm btn--secondary" type="submit" name="tipo" value="licencias">Avisar licencias a seleccionadas</button>
-      </div>
-    {% endif %}
-  </form>
+      {% else %}<tr><td colspan="9" class="muted">Sin empresas.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+
+  {% if can('empresas:editar') %}
+    <form id="avisar-form" method="post" action="/app/empresas/avisar" data-confirm="¿Enviar el aviso por correo a las empresas seleccionadas?">
+      <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+      {% if filas | length %}
+        <div class="page-head__actions">
+          <button class="btn btn--sm btn--secondary" type="submit" name="tipo" value="versiones">Avisar versiones a seleccionadas</button>
+          <button class="btn btn--sm btn--secondary" type="submit" name="tipo" value="licencias">Avisar licencias a seleccionadas</button>
+        </div>
+      {% endif %}
+    </form>
+    {% for fila in filas %}
+      <form id="fav-{{ fila.empresa.id }}" method="post" action="/app/empresas/{{ fila.empresa.id }}/favorita" hidden>
+        <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+        <input type="hidden" name="favorita" value="{{ 'false' if fila.empresa.favorita else 'true' }}" />
+        <input type="hidden" name="volver" value="/app/empresas{{ qs }}" />
+      </form>
+    {% endfor %}
+  {% endif %}
 {% endblock %}

@@ -43,14 +43,24 @@ export class EmpresaController {
     const texto = str(req.query.q);
     const incluirArchivadas = req.query.archivadas === '1';
     const soloPendientes = req.query.pendientes === '1';
+    const soloFavoritas = req.query.favoritas === '1';
+    const sistema = str(req.query.sistema);
     const [empresas, versiones] = await Promise.all([
       this.empresas.listar({
         ...(texto ? { texto } : {}),
         ...(incluirArchivadas ? {} : { activa: true }),
+        ...(soloFavoritas ? { favorita: true } : {}),
+        ...(sistema ? { sistema } : {}),
       }),
       this.versiones.listar(),
     ]);
     const oficial = this.mapaOficial(versiones);
+    const sistemasDisponibles = [
+      ...new Set([
+        ...versiones.map((v) => v.sistema),
+        ...empresas.flatMap((e) => e.sistemasContratados),
+      ]),
+    ].sort((a, b) => a.localeCompare(b, 'es'));
     const hoy = new Date();
     let filas = empresas.map((empresa) => {
       const riesgo = empresa.licenciasEnRiesgo(hoy);
@@ -72,7 +82,17 @@ export class EmpresaController {
       q: texto,
       incluirArchivadas,
       soloPendientes,
+      soloFavoritas,
+      sistema,
+      sistemasDisponibles,
     });
+  };
+
+  favoritaPost = async (req: Request, res: Response): Promise<void> => {
+    const id = str(req.params.id);
+    await this.empresas.alternarFavorita(req.user!, id, req.body?.favorita === 'true');
+    const volver = str(req.body?.volver);
+    res.redirect(volver.startsWith('/app/') ? volver : `/app/empresas/${id}`);
   };
 
   avisarPost = async (req: Request, res: Response): Promise<void> => {

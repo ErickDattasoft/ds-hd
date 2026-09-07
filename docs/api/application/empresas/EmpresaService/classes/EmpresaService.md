@@ -114,6 +114,30 @@ Gestión de empresas (CRUD + archivar).
 
 ***
 
+### alternarFavorita()
+
+> **alternarFavorita**(`actor`, `id`, `favorita`): `Promise`\<`void`\>
+
+#### Parameters
+
+##### actor
+
+[`SessionUser`](../../../shared/SessionUser/interfaces/SessionUser.md)
+
+##### id
+
+`string`
+
+##### favorita
+
+`boolean`
+
+#### Returns
+
+`Promise`\<`void`\>
+
+***
+
 ### archivar()
 
 > **archivar**(`actor`, `id`, `archivar`): `Promise`\<`void`\>

@@ -51,4 +51,15 @@ describe('Empresa — vigencias de licencia', () => {
     e.vigencias = Empresa.sanearVigencias(e.vigencias, e.sistemasContratados);
     expect(e.vigencias).toEqual({ Contabilidad: '2026-12-01' });
   });
+
+  it('marcarFavorita alterna el flag y toca updatedAt', () => {
+    const e = new Empresa({ id: 'e1', nombre: 'ACME' });
+    expect(e.favorita).toBe(false);
+    const t1 = new Date('2026-09-07T10:00:00Z');
+    e.marcarFavorita(true, t1);
+    expect(e.favorita).toBe(true);
+    expect(e.updatedAt).toEqual(t1);
+    e.marcarFavorita(false, new Date('2026-09-07T11:00:00Z'));
+    expect(e.favorita).toBe(false);
+  });
 });

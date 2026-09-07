@@ -22,6 +22,7 @@ function toDomain(id: string, d: DocumentData): Empresa {
     contactoPrincipalId: d.contactoPrincipalId ?? null,
     notas: d.notas ?? null,
     activa: d.activa !== false,
+    favorita: d.favorita === true,
     creadoPorUid: d.creadoPorUid ?? null,
     createdAt: fecha(d.createdAt) ?? new Date(),
     updatedAt: fecha(d.updatedAt) ?? new Date(),
@@ -49,6 +50,8 @@ export class FirestoreEmpresaRepository implements IEmpresaRepository {
         (e) => e.nombre.toLowerCase().includes(t) || (e.rfc ?? '').toLowerCase().includes(t),
       );
     }
+    if (filtro.favorita) empresas = empresas.filter((e) => e.favorita);
+    if (filtro.sistema) empresas = empresas.filter((e) => e.sistemasContratados.includes(filtro.sistema!));
     return empresas.sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
   }
 
@@ -68,6 +71,7 @@ export class FirestoreEmpresaRepository implements IEmpresaRepository {
         contactoPrincipalId: empresa.contactoPrincipalId,
         notas: empresa.notas,
         activa: empresa.activa,
+        favorita: empresa.favorita,
         creadoPorUid: empresa.creadoPorUid,
         createdAt: Timestamp.fromDate(empresa.createdAt),
         updatedAt: Timestamp.fromDate(empresa.updatedAt),

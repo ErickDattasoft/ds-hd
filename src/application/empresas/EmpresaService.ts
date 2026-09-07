@@ -100,6 +100,23 @@ export class EmpresaService {
     return empresa;
   }
 
+  async alternarFavorita(actor: SessionUser, id: string, favorita: boolean): Promise<void> {
+    if (!actor.permisos.includes('empresas:editar')) {
+      throw new ForbiddenError('No puedes marcar empresas como favoritas');
+    }
+    const empresa = await this.obtener(id);
+    empresa.marcarFavorita(favorita, this.clock.now());
+    await this.repo.save(empresa);
+    await this.bitacora.registrar({
+      actor,
+      accion: favorita ? 'favorita' : 'quitar_favorita',
+      modulo: 'empresas',
+      entidadTipo: 'Empresa',
+      entidadId: id,
+      resumen: `${favorita ? '⭐ Marcada' : 'Quitada de'} favoritas: ${empresa.nombre}`,
+    });
+  }
+
   async archivar(actor: SessionUser, id: string, archivar: boolean): Promise<void> {
     if (!actor.permisos.includes('empresas:eliminar')) throw new ForbiddenError('No puedes archivar empresas');
     const empresa = await this.obtener(id);

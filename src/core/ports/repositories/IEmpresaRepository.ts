@@ -4,6 +4,10 @@ import type { Empresa } from '../../entities/Empresa.js';
 export interface ListarEmpresasFiltro {
   activa?: boolean;
   texto?: string;
+  /** Solo empresas marcadas como favoritas. */
+  favorita?: boolean;
+  /** Solo empresas con este sistema contratado. */
+  sistema?: string;
 }
 
 /** Persistencia de empresas (`empresas/{id}`). */

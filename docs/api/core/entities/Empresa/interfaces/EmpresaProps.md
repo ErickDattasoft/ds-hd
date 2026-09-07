@@ -92,6 +92,14 @@ Versión instalada por sistema (texto libre, p. ej. `16.3.1 SP2`).
 
 ***
 
+### favorita?
+
+> `optional` **favorita?**: `boolean`
+
+Marcada como favorita (⭐) por el equipo — atajo para la lista.
+
+***
+
 ### creadoPorUid?
 
 > `optional` **creadoPorUid?**: `string` \| `null`

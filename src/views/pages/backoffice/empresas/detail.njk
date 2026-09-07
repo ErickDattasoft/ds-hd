@@ -2,12 +2,25 @@
 {% block title %}{{ empresa.nombre }}{% endblock %}
 {% block content %}
   <div class="page-head">
-    <h1>{{ empresa.nombre }} {% if not empresa.activa %}<span class="badge">archivada</span>{% endif %}</h1>
+    <h1>
+      {% if can('empresas:editar') %}
+        <button type="submit" form="fav-empresa" class="star-btn" title="{{ 'Quitar de favoritas' if empresa.favorita else 'Marcar como favorita' }}"
+                aria-pressed="{{ 'true' if empresa.favorita else 'false' }}">{{ '⭐' if empresa.favorita else '☆' }}</button>
+      {% elif empresa.favorita %}⭐{% endif %}
+      {{ empresa.nombre }} {% if not empresa.activa %}<span class="badge">archivada</span>{% endif %}
+    </h1>
     <div class="page-head__actions">
       {% if can('empresas:editar') %}<a class="btn btn--sm" href="/app/empresas/{{ empresa.id }}/editar">Editar</a>{% endif %}
       {% if can('contactos:crear') %}<a class="btn btn--sm btn--secondary" href="/app/contactos/nuevo?empresa={{ empresa.id }}">Agregar contacto</a>{% endif %}
     </div>
   </div>
+  {% if can('empresas:editar') %}
+    <form id="fav-empresa" method="post" action="/app/empresas/{{ empresa.id }}/favorita" hidden>
+      <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+      <input type="hidden" name="favorita" value="{{ 'false' if empresa.favorita else 'true' }}" />
+      <input type="hidden" name="volver" value="/app/empresas/{{ empresa.id }}" />
+    </form>
+  {% endif %}
 
   <div class="card">
     <p><strong>RFC:</strong> {{ empresa.rfc or '—' }} · <strong>Tel:</strong> {{ empresa.telefono or '—' }} · <strong>Correo:</strong> {{ empresa.email or '—' }}</p>

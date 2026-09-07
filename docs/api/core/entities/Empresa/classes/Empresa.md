@@ -104,6 +104,12 @@ Empresa/cliente del CRM.
 
 ***
 
+### favorita
+
+> **favorita**: `boolean`
+
+***
+
 ### creadoPorUid
 
 > `readonly` **creadoPorUid**: `string` \| `null`
@@ -155,6 +161,26 @@ Empresa/cliente del CRM.
 > **restaurar**(`ahora`): `void`
 
 #### Parameters
+
+##### ahora
+
+`Date`
+
+#### Returns
+
+`void`
+
+***
+
+### marcarFavorita()
+
+> **marcarFavorita**(`favorita`, `ahora`): `void`
+
+#### Parameters
+
+##### favorita
+
+`boolean`
 
 ##### ahora
 

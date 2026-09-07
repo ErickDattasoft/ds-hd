@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import request from 'supertest';
 import { makeTestApp, cookieValor } from '../helpers/app.js';
 import { VersionSistema } from '../../src/core/entities/VersionSistema.js';
+import { Empresa } from '../../src/core/entities/Empresa.js';
 
 const ADMIN = { uid: 'u-a', email: 'admin@dattasoft.mx', password: 'admin12345', nombre: 'Admin', rol: 'admin' as const };
 const AGENTE = { uid: 'u-g', email: 'ag@dattasoft.mx', password: 'agente12345', nombre: 'Agente', rol: 'agente' as const };
@@ -110,5 +111,35 @@ describe('empresas y contactos', () => {
     const t = makeTestApp({ usuarios: [AGENTE] });
     const { agent } = await login(t.app, AGENTE.email, AGENTE.password);
     expect((await agent.get('/app/bitacora')).status).toBe(403);
+  });
+
+  it('marca una empresa como favorita y la filtra', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    t.empresaRepo.items.set('e1', new Empresa({ id: 'e1', nombre: 'Favorita SA' }));
+    t.empresaRepo.items.set('e2', new Empresa({ id: 'e2', nombre: 'Normal SA' }));
+    const { agent, csrf } = await login(t.app, ADMIN.email, ADMIN.password);
+
+    const r = await agent
+      .post('/app/empresas/e1/favorita')
+      .type('form')
+      .send({ _csrf: csrf, favorita: 'true', volver: '/app/empresas?favoritas=1' });
+    expect(r.status).toBe(302);
+    expect(r.headers.location).toBe('/app/empresas?favoritas=1');
+    expect(t.empresaRepo.items.get('e1')?.favorita).toBe(true);
+
+    const lista = await agent.get('/app/empresas?favoritas=1');
+    expect(lista.text).toContain('Favorita SA');
+    expect(lista.text).not.toContain('Normal SA');
+  });
+
+  it('filtra empresas por sistema contratado', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    t.empresaRepo.items.set('e1', new Empresa({ id: 'e1', nombre: 'Con Contpaqi', sistemasContratados: ['Contpaqi'] }));
+    t.empresaRepo.items.set('e2', new Empresa({ id: 'e2', nombre: 'Con Compac', sistemasContratados: ['Compac'] }));
+    const { agent } = await login(t.app, ADMIN.email, ADMIN.password);
+
+    const lista = await agent.get('/app/empresas?sistema=Contpaqi');
+    expect(lista.text).toContain('Con Contpaqi');
+    expect(lista.text).not.toContain('Con Compac');
   });
 });
