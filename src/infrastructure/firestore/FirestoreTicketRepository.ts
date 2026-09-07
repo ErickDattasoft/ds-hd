@@ -25,6 +25,15 @@ export class FirestoreTicketRepository implements ITicketRepository {
     await this.db.collection(COL).doc(ticket.id).set(TicketMapper.toDocument(ticket), { merge: true });
   }
 
+  async eliminar(id: string): Promise<void> {
+    const ref = this.db.collection(COL).doc(id);
+    for (const sub of ['notas', 'eventos']) {
+      const hijos = await ref.collection(sub).get();
+      await Promise.all(hijos.docs.map((h) => h.ref.delete()));
+    }
+    await ref.delete();
+  }
+
   async agregarNota(ticketId: string, nota: NotaTicket): Promise<void> {
     await this.db
       .collection(COL)

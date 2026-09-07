@@ -53,4 +53,48 @@ describe('papelera', () => {
     await agent.post('/app/empresas/e1/archivar').type('form').send({ _csrf: csrf, archivar: 'false' });
     expect(t.empresaRepo.items.get('e1')?.activa).toBe(true);
   });
+
+  it('restaura varias empresas a la vez', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    t.empresaRepo.items.set('e1', new Empresa({ id: 'e1', nombre: 'Una SA', activa: false }));
+    t.empresaRepo.items.set('e2', new Empresa({ id: 'e2', nombre: 'Dos SA', activa: false }));
+    const { agent, csrf } = await login(t.app, ADMIN.email, ADMIN.password);
+
+    const r = await agent
+      .post('/app/papelera/restaurar')
+      .type('form')
+      .send({ _csrf: csrf, tipo: 'empresas', ids: ['e1', 'e2'] });
+    expect(r.status).toBe(302);
+    expect(t.empresaRepo.items.get('e1')?.activa).toBe(true);
+    expect(t.empresaRepo.items.get('e2')?.activa).toBe(true);
+  });
+
+  it('elimina definitivamente y vacía la papelera', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    t.empresaRepo.items.set('e1', new Empresa({ id: 'e1', nombre: 'Borrar SA', activa: false }));
+    t.empresaRepo.items.set('e2', new Empresa({ id: 'e2', nombre: 'Borrar 2 SA', activa: false }));
+    const { agent, csrf } = await login(t.app, ADMIN.email, ADMIN.password);
+
+    await agent
+      .post('/app/papelera/eliminar')
+      .type('form')
+      .send({ _csrf: csrf, tipo: 'empresas', ids: ['e1'] });
+    expect(t.empresaRepo.items.has('e1')).toBe(false);
+    expect(t.empresaRepo.items.has('e2')).toBe(true);
+
+    await agent.post('/app/papelera/vaciar').type('form').send({ _csrf: csrf, tipo: 'empresas' });
+    expect(t.empresaRepo.items.size).toBe(0);
+  });
+
+  it('no borra una empresa que no está archivada', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    t.empresaRepo.items.set('e1', new Empresa({ id: 'e1', nombre: 'Activa SA', activa: true }));
+    const { agent, csrf } = await login(t.app, ADMIN.email, ADMIN.password);
+
+    await agent
+      .post('/app/papelera/eliminar')
+      .type('form')
+      .send({ _csrf: csrf, tipo: 'empresas', ids: ['e1'] });
+    expect(t.empresaRepo.items.has('e1')).toBe(true);
+  });
 });

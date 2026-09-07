@@ -12,6 +12,8 @@ export interface ITicketRepository {
   findById(id: string): Promise<Ticket | null>;
   findByNumero(numero: number): Promise<Ticket | null>;
   save(ticket: Ticket): Promise<void>;
+  /** Borrado permanente, incluidas notas y eventos (solo desde la papelera). */
+  eliminar(id: string): Promise<void>;
 
   agregarNota(ticketId: string, nota: NotaTicket): Promise<void>;
   listarNotas(ticketId: string): Promise<NotaTicket[]>;

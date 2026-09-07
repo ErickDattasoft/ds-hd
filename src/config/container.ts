@@ -99,6 +99,7 @@ import { BusquedaController } from '../interfaces/http/controllers/backoffice/Bu
 import { CotizacionController } from '../interfaces/http/controllers/backoffice/CotizacionController.js';
 import { SeguimientoController } from '../interfaces/http/controllers/backoffice/SeguimientoController.js';
 import { PapeleraController } from '../interfaces/http/controllers/backoffice/PapeleraController.js';
+import { PapeleraService } from '../application/papelera/PapeleraService.js';
 import { EventoController } from '../interfaces/http/controllers/backoffice/EventoController.js';
 import { EventoPublicoController } from '../interfaces/http/controllers/public/EventoPublicoController.js';
 import { JobsController } from '../interfaces/http/controllers/webhooks/JobsController.js';
@@ -243,6 +244,7 @@ export interface Cradle {
   busquedaController: BusquedaController;
   cotizacionController: CotizacionController;
   seguimientoController: SeguimientoController;
+  papeleraService: PapeleraService;
   papeleraController: PapeleraController;
   eventoController: EventoController;
   eventoPublicoController: EventoPublicoController;
@@ -815,8 +817,28 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
     seguimientoController: asFunction(
       (c: Cradle) => new SeguimientoController(c.seguimientoService, c.usuarioRepo),
     ).singleton(),
+    papeleraService: asFunction(
+      (c: Cradle) =>
+        new PapeleraService(
+          c.empresaService,
+          c.contactoService,
+          c.archivarTicketService,
+          c.empresaRepo,
+          c.contactoRepo,
+          c.ticketRepo,
+          c.ticketQueries,
+          c.bitacoraService,
+          c.logger,
+        ),
+    ).singleton(),
     papeleraController: asFunction(
-      (c: Cradle) => new PapeleraController(c.empresaService, c.contactoService, c.ticketQueries),
+      (c: Cradle) =>
+        new PapeleraController(
+          c.empresaService,
+          c.contactoService,
+          c.ticketQueries,
+          c.papeleraService,
+        ),
     ).singleton(),
     eventoController: asFunction((c: Cradle) => new EventoController(c.eventoService)).singleton(),
     dashboardController: asFunction(

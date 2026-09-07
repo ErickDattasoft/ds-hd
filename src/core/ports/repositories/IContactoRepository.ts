@@ -15,5 +15,7 @@ export interface IContactoRepository {
   findByEmail(email: string): Promise<Contacto | null>;
   list(filtro?: ListarContactosFiltro): Promise<Contacto[]>;
   save(contacto: Contacto): Promise<void>;
+  /** Borrado permanente (solo desde la papelera). */
+  eliminar(id: string): Promise<void>;
   contarPorEmpresa(empresaId: string): Promise<number>;
 }

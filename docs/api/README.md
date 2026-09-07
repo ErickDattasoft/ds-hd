@@ -23,6 +23,7 @@
 - [application/empresas/avisos](application/empresas/avisos/README.md)
 - [application/eventos/EventoService](application/eventos/EventoService/README.md)
 - [application/knowledge/KnowledgeService](application/knowledge/KnowledgeService/README.md)
+- [application/papelera/PapeleraService](application/papelera/PapeleraService/README.md)
 - [application/portal/ActualizarMiPerfilService](application/portal/ActualizarMiPerfilService/README.md)
 - [application/portal/CrearTicketPortalService](application/portal/CrearTicketPortalService/README.md)
 - [application/portal/MisTicketsService](application/portal/MisTicketsService/README.md)

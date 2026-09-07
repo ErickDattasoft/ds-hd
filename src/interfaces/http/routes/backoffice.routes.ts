@@ -185,6 +185,15 @@ export function backofficeRoutes(container: Container): Router {
 
   // ── Papelera ───────────────────────────────────────────────────────────────
   r.get('/papelera', requirePermission('papelera:gestionar'), (req, res) => papelera().ver(req, res));
+  r.post('/papelera/restaurar', requirePermission('papelera:gestionar'), (req, res) =>
+    papelera().restaurarPost(req, res),
+  );
+  r.post('/papelera/eliminar', requirePermission('papelera:gestionar'), (req, res) =>
+    papelera().eliminarPost(req, res),
+  );
+  r.post('/papelera/vaciar', requirePermission('papelera:gestionar'), (req, res) =>
+    papelera().vaciarPost(req, res),
+  );
 
   // ── Bitácora ───────────────────────────────────────────────────────────────
   r.get('/bitacora', requirePermission('bitacora:leer'), (req, res) => bitacora().listar(req, res));

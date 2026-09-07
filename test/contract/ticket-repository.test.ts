@@ -53,6 +53,17 @@ function contrato(nombre: string, crear: () => Promise<{ repo: ITicketRepository
       await repo.registrarEvento('t1', { id: 'e1', tipo: 'creacion', resumen: 'creado', actorUid: null, actorNombre: null, at: new Date('2026-09-01T09:00:00Z') });
       expect(await repo.listarEventos('t1')).toHaveLength(1);
     });
+
+    it('eliminar borra el ticket con sus notas y eventos', async () => {
+      await repo.save(nuevo('t1', 1));
+      await repo.agregarNota('t1', { id: 'n1', tipo: 'publica', cuerpo: 'x', autorUid: 'u', autorNombre: 'U', createdAt: new Date('2026-09-01T10:00:00Z') });
+      await repo.registrarEvento('t1', { id: 'e1', tipo: 'creacion', resumen: 'creado', actorUid: null, actorNombre: null, at: new Date('2026-09-01T09:00:00Z') });
+
+      await repo.eliminar('t1');
+      expect(await repo.findById('t1')).toBeNull();
+      expect(await repo.listarNotas('t1')).toEqual([]);
+      expect(await repo.listarEventos('t1')).toEqual([]);
+    });
   });
 }
 

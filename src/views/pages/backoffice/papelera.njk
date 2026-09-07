@@ -1,64 +1,67 @@
 {% extends "layouts/backoffice.njk" %}
 {% block title %}Papelera{% endblock %}
+
+{% macro seccion(tipo, titulo, filas, cols) %}
+  <section class="card">
+    <div class="page-head">
+      <h2>{{ titulo }} ({{ filas | length }})</h2>
+      {% if filas | length %}
+        <form method="post" action="/app/papelera/vaciar" class="inline"
+              data-confirm="¿Vaciar la papelera de {{ tipo }}? Se borran definitivamente {{ filas | length }} elemento(s). No se puede deshacer.">
+          <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+          <input type="hidden" name="tipo" value="{{ tipo }}" />
+          <button class="btn btn--sm btn--danger" type="submit">Vaciar</button>
+        </form>
+      {% endif %}
+    </div>
+
+    {% if filas | length %}
+      <form method="post" data-confirm="¿Aplicar la acción a los elementos seleccionados?">
+        <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+        <input type="hidden" name="tipo" value="{{ tipo }}" />
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th></th>
+              {% for c in cols %}<th>{{ c }}</th>{% endfor %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for f in filas %}
+              <tr>
+                <td><input type="checkbox" name="ids" value="{{ f.id }}" /></td>
+                {{ caller(f) }}
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        <div class="page-head__actions">
+          <button class="btn btn--sm btn--secondary" type="submit" formaction="/app/papelera/restaurar">Restaurar seleccionados</button>
+          <button class="btn btn--sm btn--danger" type="submit" formaction="/app/papelera/eliminar"
+                  data-confirm="¿Borrar definitivamente los elementos seleccionados? No se puede deshacer.">Eliminar definitivo</button>
+        </div>
+      </form>
+    {% else %}
+      <p class="muted">Nada archivado.</p>
+    {% endif %}
+  </section>
+{% endmacro %}
+
 {% block content %}
   <h1>Papelera de reciclaje</h1>
-  <p class="muted">Elementos archivados. Restáuralos si los necesitas de vuelta.</p>
+  <p class="muted">Elementos archivados. Restáuralos, bórralos definitivamente o vacía la papelera.</p>
 
-  <h2>Empresas archivadas ({{ empresas | length }})</h2>
-  <table class="data-table">
-    <thead><tr><th>Nombre</th><th></th></tr></thead>
-    <tbody>
-      {% for e in empresas %}
-        <tr>
-          <td>{{ e.nombre }}</td>
-          <td>
-            <form method="post" action="/app/empresas/{{ e.id }}/archivar" class="inline">
-              <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
-              <input type="hidden" name="archivar" value="false" />
-              <button class="btn btn--sm btn--ghost" type="submit">Restaurar</button>
-            </form>
-          </td>
-        </tr>
-      {% else %}<tr><td colspan="2" class="muted">Nada archivado.</td></tr>{% endfor %}
-    </tbody>
-  </table>
+  {% if aviso %}<div class="alert alert--ok" role="status">{{ aviso }}</div>{% endif %}
 
-  <h2>Contactos archivados ({{ contactos | length }})</h2>
-  <table class="data-table">
-    <thead><tr><th>Nombre</th><th></th></tr></thead>
-    <tbody>
-      {% for c in contactos %}
-        <tr>
-          <td>{{ c.nombre }}</td>
-          <td>
-            <form method="post" action="/app/contactos/{{ c.id }}/archivar" class="inline">
-              <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
-              <input type="hidden" name="archivar" value="false" />
-              <button class="btn btn--sm btn--ghost" type="submit">Restaurar</button>
-            </form>
-          </td>
-        </tr>
-      {% else %}<tr><td colspan="2" class="muted">Nada archivado.</td></tr>{% endfor %}
-    </tbody>
-  </table>
+  {% call(e) seccion('empresas', 'Empresas archivadas', empresas, ['Nombre', 'RFC']) %}
+    <td>{{ e.nombre }}</td><td class="muted">{{ e.rfc or '—' }}</td>
+  {% endcall %}
 
-  <h2>Tickets archivados ({{ tickets | length }})</h2>
-  <table class="data-table">
-    <thead><tr><th>#</th><th>Asunto</th><th></th></tr></thead>
-    <tbody>
-      {% for t in tickets %}
-        <tr>
-          <td><a href="/app/tickets/{{ t.id }}">#{{ t.numero }}</a></td>
-          <td>{{ t.asunto }}</td>
-          <td>
-            <form method="post" action="/app/tickets/{{ t.id }}/archivar" class="inline">
-              <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
-              <input type="hidden" name="archivar" value="false" />
-              <button class="btn btn--sm btn--ghost" type="submit">Restaurar</button>
-            </form>
-          </td>
-        </tr>
-      {% else %}<tr><td colspan="3" class="muted">Nada archivado.</td></tr>{% endfor %}
-    </tbody>
-  </table>
+  {% call(c) seccion('contactos', 'Contactos archivados', contactos, ['Nombre', 'Correo']) %}
+    <td>{{ c.nombre }}</td><td class="muted">{{ c.email or '—' }}</td>
+  {% endcall %}
+
+  {% call(t) seccion('tickets', 'Tickets archivados', tickets, ['#', 'Asunto']) %}
+    <td><a href="/app/tickets/{{ t.id }}">#{{ t.numero }}</a></td><td>{{ t.asunto }}</td>
+  {% endcall %}
 {% endblock %}

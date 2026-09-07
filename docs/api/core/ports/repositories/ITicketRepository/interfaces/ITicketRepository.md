@@ -62,6 +62,24 @@ existe; `save` hace upsert por `id`.
 
 ***
 
+### eliminar()
+
+> **eliminar**(`id`): `Promise`\<`void`\>
+
+Borrado permanente, incluidas notas y eventos (solo desde la papelera).
+
+#### Parameters
+
+##### id
+
+`string`
+
+#### Returns
+
+`Promise`\<`void`\>
+
+***
+
 ### agregarNota()
 
 > **agregarNota**(`ticketId`, `nota`): `Promise`\<`void`\>

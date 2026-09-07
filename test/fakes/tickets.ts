@@ -51,6 +51,11 @@ export class InMemoryTicketRepository implements ITicketRepository {
   async save(ticket: Ticket): Promise<void> {
     this.store.tickets.set(ticket.id, ticket);
   }
+  async eliminar(id: string): Promise<void> {
+    this.store.tickets.delete(id);
+    this.store.notas.delete(id);
+    this.store.eventos.delete(id);
+  }
   async agregarNota(ticketId: string, nota: NotaTicket): Promise<void> {
     const lista = this.store.notas.get(ticketId) ?? [];
     lista.push(nota);

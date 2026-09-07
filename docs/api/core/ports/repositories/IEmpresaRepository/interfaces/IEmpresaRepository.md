@@ -58,6 +58,24 @@ Persistencia de empresas (`empresas/{id}`).
 
 ***
 
+### eliminar()
+
+> **eliminar**(`id`): `Promise`\<`void`\>
+
+Borrado permanente (solo desde la papelera).
+
+#### Parameters
+
+##### id
+
+`string`
+
+#### Returns
+
+`Promise`\<`void`\>
+
+***
+
 ### existePorNombre()
 
 > **existePorNombre**(`nombre`, `exceptoId?`): `Promise`\<`boolean`\>

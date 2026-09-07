@@ -80,6 +80,10 @@ export class FirestoreContactoRepository implements IContactoRepository {
     );
   }
 
+  async eliminar(id: string): Promise<void> {
+    await this.db.collection(COL).doc(id).delete();
+  }
+
   async contarPorEmpresa(empresaId: string): Promise<number> {
     const agg = await this.db.collection(COL).where('empresaId', '==', empresaId).count().get();
     return agg.data().count;

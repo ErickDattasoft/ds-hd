@@ -78,6 +78,10 @@ export class FirestoreEmpresaRepository implements IEmpresaRepository {
     );
   }
 
+  async eliminar(id: string): Promise<void> {
+    await this.db.collection(COL).doc(id).delete();
+  }
+
   async existePorNombre(nombre: string, exceptoId?: string): Promise<boolean> {
     const q = await this.db
       .collection(COL)

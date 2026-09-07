@@ -25,6 +25,9 @@ export class InMemoryEmpresaRepository implements IEmpresaRepository {
   async save(e: Empresa): Promise<void> {
     this.items.set(e.id, e);
   }
+  async eliminar(id: string): Promise<void> {
+    this.items.delete(id);
+  }
   async existePorNombre(nombre: string, exceptoId?: string): Promise<boolean> {
     return [...this.items.values()].some(
       (e) => e.nombre.toLowerCase() === nombre.trim().toLowerCase() && e.id !== exceptoId,
@@ -56,6 +59,9 @@ export class InMemoryContactoRepository implements IContactoRepository {
   }
   async save(c: Contacto): Promise<void> {
     this.items.set(c.id, c);
+  }
+  async eliminar(id: string): Promise<void> {
+    this.items.delete(id);
   }
   async contarPorEmpresa(empresaId: string): Promise<number> {
     return [...this.items.values()].filter((c) => c.empresaId === empresaId).length;
