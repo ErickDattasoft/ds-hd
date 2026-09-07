@@ -12,4 +12,5 @@
 
 ## Interfaces
 
+- [MetricasLicencias](interfaces/MetricasLicencias.md)
 - [Metricas](interfaces/Metricas.md)

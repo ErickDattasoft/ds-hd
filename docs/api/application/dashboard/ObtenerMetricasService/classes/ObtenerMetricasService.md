@@ -12,7 +12,7 @@ Caso de uso: métricas del dashboard, acotadas al alcance del actor.
 
 ### Constructor
 
-> **new ObtenerMetricasService**(`ticketQueries`, `cotizaciones`, `eventos`, `tareas`, `bitacora`, `clock`): `ObtenerMetricasService`
+> **new ObtenerMetricasService**(`ticketQueries`, `cotizaciones`, `eventos`, `tareas`, `bitacora`, `clock`, `empresas`, `versiones`): `ObtenerMetricasService`
 
 #### Parameters
 
@@ -39,6 +39,14 @@ Caso de uso: métricas del dashboard, acotadas al alcance del actor.
 ##### clock
 
 [`IClock`](../../../../core/ports/services/IClock/interfaces/IClock.md)
+
+##### empresas
+
+[`IEmpresaRepository`](../../../../core/ports/repositories/IEmpresaRepository/interfaces/IEmpresaRepository.md)
+
+##### versiones
+
+[`IVersionRepository`](../../../../core/ports/repositories/IVersionRepository/interfaces/IVersionRepository.md)
 
 #### Returns
 

@@ -683,6 +683,8 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
           c.tareaRepo,
           c.bitacoraRepo,
           c.clock,
+          c.empresaRepo,
+          c.versionRepo,
         ),
     ).singleton(),
 

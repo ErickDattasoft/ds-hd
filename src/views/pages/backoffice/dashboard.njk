@@ -15,15 +15,42 @@
   <h1>Hola, {{ user.nombre }}</h1>
 
   {% if m %}
+  {% if m.licencias and m.licencias.banner | length %}
+  <div class="alert alert--warn" role="alert">
+    <p><strong>Licencias por vencer</strong> — {{ m.licencias.empresasEnRiesgo }}
+    empresa{{ 's' if m.licencias.empresasEnRiesgo != 1 }} con
+    {{ m.licencias.vencidas }} vencida{{ 's' if m.licencias.vencidas != 1 }} y
+    {{ m.licencias.porVencer }} por vencer.</p>
+    <ul class="alert__list">
+      {% for e in m.licencias.banner %}
+        <li>
+          <a href="/app/empresas/{{ e.empresaId }}">{{ e.nombre }}</a>
+          {% if e.vencidas %}<span class="badge badge--danger">{{ e.vencidas }} vencida{{ 's' if e.vencidas != 1 }}</span>{% endif %}
+          {% if e.porVencer %}<span class="badge badge--warning">{{ e.porVencer }} por vencer</span>{% endif %}
+          {% if e.diasMin >= 0 %}<span class="muted">en {{ e.diasMin }} d</span>{% else %}<span class="muted">hace {{ 0 - e.diasMin }} d</span>{% endif %}
+        </li>
+      {% endfor %}
+    </ul>
+    <a class="btn btn--secondary btn--sm" href="/app/empresas?pendientes=1">Ver todas y avisar</a>
+  </div>
+  {% endif %}
+
   <div class="stat-row">
     <a class="stat" href="/app/tickets"><span class="stat__num">{{ m.tickets.abiertos }}</span><span class="stat__lbl">Tickets abiertos</span></a>
     <a class="stat stat--danger" href="/app/tickets?prioridad="><span class="stat__num">{{ m.tickets.vencidos }}</span><span class="stat__lbl">SLA vencido</span></a>
     <a class="stat" href="/app/tickets?sinAsignar=1"><span class="stat__num">{{ m.tickets.sinAsignar }}</span><span class="stat__lbl">Sin asignar</span></a>
     <a class="stat" href="/app/tareas"><span class="stat__num">{{ m.misTareasPendientes }}</span><span class="stat__lbl">Mis tareas</span></a>
     <div class="stat"><span class="stat__num">{{ m.cotizaciones.totalAbiertas }}</span><span class="stat__lbl">Cotizaciones abiertas</span></div>
+    {% if m.licencias %}
+    <a class="stat{{ ' stat--danger' if m.licencias.avisosPendientes }}" href="/app/empresas?pendientes=1"><span class="stat__num">{{ m.licencias.avisosPendientes }}</span><span class="stat__lbl">Avisos pendientes</span></a>
+    {% endif %}
   </div>
 
   <div class="dash-grid">
+    <div class="card">
+      <h2>Tickets por mes</h2>
+      {{ barras(m.tickets.porMes, (m.tickets.porMes | sort(true, false, 'valor') | first).valor) }}
+    </div>
     <div class="card">
       <h2>Tickets abiertos por estado</h2>
       {{ barras(m.tickets.porEstado, m.tickets.abiertos) }}

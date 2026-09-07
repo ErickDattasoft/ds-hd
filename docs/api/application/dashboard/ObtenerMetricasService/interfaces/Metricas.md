@@ -38,6 +38,10 @@ Snapshot de métricas del dashboard, ya acotado al alcance de permisos del actor
 
 > **porPrioridad**: `object`[]
 
+#### porMes
+
+> **porMes**: `object`[]
+
 ***
 
 ### cotizaciones
@@ -97,3 +101,11 @@ Snapshot de métricas del dashboard, ya acotado al alcance de permisos del actor
 #### modulo
 
 > **modulo**: `string`
+
+***
+
+### licencias
+
+> **licencias**: [`MetricasLicencias`](MetricasLicencias.md) \| `null`
+
+`null` si el actor no puede leer empresas.
