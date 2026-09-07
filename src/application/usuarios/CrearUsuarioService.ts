@@ -7,7 +7,7 @@ import type { IClock } from '../../core/ports/services/IClock.js';
 import type { ILogger } from '../../core/ports/services/ILogger.js';
 import { Usuario, type PerfilAgente } from '../../core/entities/Usuario.js';
 import { Email } from '../../core/entities/value-objects/Email.js';
-import { esRolStaff, parseRol, type Rol } from '../../core/entities/value-objects/Rol.js';
+import { esRolStaff, parseRoles, type Rol } from '../../core/entities/value-objects/Rol.js';
 import { ConflictError, ValidationError } from '../../core/errors/DomainError.js';
 import type { SessionUser } from '../shared/SessionUser.js';
 
@@ -16,7 +16,8 @@ export interface CrearUsuarioInput {
   actor: SessionUser;
   email: string;
   nombre: string;
-  rol: Rol;
+  /** Uno o varios roles de staff. */
+  roles: Rol[];
   agente?: Partial<PerfilAgente>;
 }
 
@@ -42,10 +43,10 @@ export class CrearUsuarioService {
   ) {}
 
   async ejecutar(input: CrearUsuarioInput): Promise<CrearUsuarioResultado> {
-    const rol = parseRol(input.rol);
-    if (!esRolStaff(rol)) {
+    const roles = parseRoles(input.roles);
+    if (!roles.every(esRolStaff)) {
       throw new ValidationError('Para clientes usa la invitación al portal', {
-        rol: 'Este flujo es solo para staff',
+        roles: 'Este flujo es solo para personal',
       });
     }
     const correo = Email.create(input.email);
@@ -62,13 +63,13 @@ export class CrearUsuarioService {
       password: passwordTemporal,
       nombre,
     });
-    await this.auth.setRoleClaim(uid, rol);
+    await this.auth.setRolesClaim(uid, roles);
 
     const usuario = new Usuario({
       uid,
       email: correo.value,
       nombre,
-      rol,
+      roles,
       ...(input.agente ? { agente: input.agente } : {}),
       createdAt: this.clock.now(),
     });
@@ -84,7 +85,7 @@ export class CrearUsuarioService {
       tags: ['invitacion-staff'],
     });
 
-    this.logger.info('Usuario staff creado', { uid, rol, por: input.actor.uid });
+    this.logger.info('Usuario staff creado', { uid, roles, por: input.actor.uid });
     return { usuario, urlInvitacion };
   }
 

@@ -14,13 +14,15 @@ Filtros para listar usuarios.
 
 > `optional` **rol?**: `"admin"` \| `"supervisor"` \| `"soporte"` \| `"ventas"` \| `"agente"` \| `"lectura"` \| `"cliente"`
 
+Un usuario coincide si tiene este rol entre los suyos. Se resuelve en memoria.
+
 ***
 
 ### roles?
 
 > `optional` **roles?**: readonly (`"admin"` \| `"supervisor"` \| `"soporte"` \| `"ventas"` \| `"agente"` \| `"lectura"` \| `"cliente"`)[]
 
-Varios roles a la vez (OR). Se combina con `activo`/`empresaId`; ignora `rol` si viene.
+Varios roles a la vez (OR): coincide si tiene alguno. Se resuelve en memoria; ignora `rol`.
 
 ***
 

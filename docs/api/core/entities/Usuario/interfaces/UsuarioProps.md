@@ -28,9 +28,21 @@ Props para construir un [Usuario](../classes/Usuario.md).
 
 ***
 
-### rol
+### roles?
 
-> **rol**: `"admin"` \| `"supervisor"` \| `"soporte"` \| `"ventas"` \| `"agente"` \| `"lectura"` \| `"cliente"`
+> `optional` **roles?**: `"admin"` \| `"supervisor"` \| `"soporte"` \| `"ventas"` \| `"agente"` \| `"lectura"` \| `"cliente"` \| (`"admin"` \| `"supervisor"` \| `"soporte"` \| `"ventas"` \| `"agente"` \| `"lectura"` \| `"cliente"`)[]
+
+Roles asignados; los permisos efectivos son la unión de todos. No puede quedar vacío.
+
+***
+
+### ~~rol?~~
+
+> `optional` **rol?**: `"admin"` \| `"supervisor"` \| `"soporte"` \| `"ventas"` \| `"agente"` \| `"lectura"` \| `"cliente"`
+
+#### Deprecated
+
+Forma legacy de un solo rol. Se acepta al leer documentos viejos.
 
 ***
 

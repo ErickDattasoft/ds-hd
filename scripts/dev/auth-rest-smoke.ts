@@ -50,8 +50,8 @@ await auth.setPassword(uid, 'nueva-99');
 if ((await auth.verifyPassword(email, 'nueva-99')).uid !== uid) throw new Error('setPassword no aplicó');
 ok('setPassword');
 
-await auth.setRoleClaim(uid, 'agente');
-ok('setRoleClaim');
+await auth.setRolesClaim(uid, ['agente', 'ventas']);
+ok('setRolesClaim');
 
 await auth.revokeSessions(uid);
 ok('revokeSessions (validSince)');

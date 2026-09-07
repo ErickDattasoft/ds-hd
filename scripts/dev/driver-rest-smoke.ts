@@ -19,11 +19,13 @@ const actor: SessionUser = {
   uid: 'smoke-admin',
   nombre: 'Smoke Admin',
   email: 'smoke-admin@ds-hd.test',
+  roles: ['admin'],
   rol: 'admin',
   empresaId: null,
   activo: true,
   esStaff: true,
   esCliente: false,
+  esTecnico: false,
   permisos: [
     'tickets:crear', 'tickets:leer', 'tickets:leer_todos', 'tickets:editar', 'tickets:asignar',
     'tickets:cambiar_estado', 'tickets:ver_notas_internas', 'empresas:crear', 'kb:escribir',
@@ -34,7 +36,7 @@ const actor: SessionUser = {
 // usuarioRepo: save + findByUid + list({roles})
 const usuarios = c.resolve('usuarioRepo');
 const uid = `smoke-${Date.now()}`;
-await usuarios.save(new Usuario({ uid, email: `${uid}@ds-hd.test`, nombre: 'Sop', rol: 'soporte', agente: { grupo: 'Soporte', capacidadMax: 3, disponibleAsignacion: true } }));
+await usuarios.save(new Usuario({ uid, email: `${uid}@ds-hd.test`, nombre: 'Sop', roles: ['soporte'], agente: { grupo: 'Soporte', capacidadMax: 3, disponibleAsignacion: true } }));
 if ((await usuarios.findByUid(uid))?.nombre !== 'Sop') throw new Error('usuarioRepo findByUid');
 if (!(await usuarios.list({ roles: ['agente', 'soporte'] })).some((u) => u.uid === uid)) throw new Error('usuarioRepo list roles');
 ok('usuarioRepo: save / findByUid / list({roles}) / listAgentesAsignables');

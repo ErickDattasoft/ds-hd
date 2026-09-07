@@ -60,13 +60,13 @@ export class InvitarClienteService {
       password: this.ids.newToken(),
       nombre,
     });
-    await this.auth.setRoleClaim(uid, 'cliente');
+    await this.auth.setRolesClaim(uid, ['cliente']);
 
     const usuario = new Usuario({
       uid,
       email: correo.value,
       nombre,
-      rol: 'cliente',
+      roles: ['cliente'],
       empresaId: input.empresaId,
       createdAt: this.clock.now(),
     });

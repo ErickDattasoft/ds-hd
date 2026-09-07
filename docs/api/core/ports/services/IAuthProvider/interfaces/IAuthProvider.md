@@ -98,11 +98,13 @@ Habilita/inhabilita la cuenta a nivel de identidad (bloquea el login).
 
 ***
 
-### setRoleClaim()
+### setRolesClaim()
 
-> **setRoleClaim**(`uid`, `rol`): `Promise`\<`void`\>
+> **setRolesClaim**(`uid`, `roles`): `Promise`\<`void`\>
 
-Fija el custom claim de rol (para reglas/servicios que lo lean del token).
+Fija los custom claims de rol en el token: `roles` (arreglo) y `role` (el principal, para
+compatibilidad con lectores de un solo rol). No es frontera de seguridad —
+`firestore.rules` es deny-all— pero lo consumen servicios que leen el token.
 
 #### Parameters
 
@@ -110,9 +112,9 @@ Fija el custom claim de rol (para reglas/servicios que lo lean del token).
 
 `string`
 
-##### rol
+##### roles
 
-`string`
+`string`[]
 
 #### Returns
 

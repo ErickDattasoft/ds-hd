@@ -3,7 +3,7 @@ import type {
   IUsuarioRepository,
   ListarUsuariosFiltro,
 } from '../../core/ports/repositories/IUsuarioRepository.js';
-import { ROLES_TECNICOS, type Rol } from '../../core/entities/value-objects/Rol.js';
+import { rolesIncluyenTecnico, type Rol } from '../../core/entities/value-objects/Rol.js';
 import type { Usuario } from '../../core/entities/Usuario.js';
 import { UsuarioMapper } from './mappers/UsuarioMapper.js';
 
@@ -30,13 +30,16 @@ export class FirestoreUsuarioRepository implements IUsuarioRepository {
 
   async list(filtro: ListarUsuariosFiltro = {}): Promise<Usuario[]> {
     let q: Query = this.db.collection(COL);
-    if (filtro.roles?.length) q = q.where('rol', 'in', [...filtro.roles]);
-    else if (filtro.rol) q = q.where('rol', '==', filtro.rol);
     if (filtro.activo !== undefined) q = q.where('activo', '==', filtro.activo);
     if (filtro.empresaId) q = q.where('empresaId', '==', filtro.empresaId);
 
     const snap = await q.get();
     let usuarios = snap.docs.map((d) => UsuarioMapper.toDomain(d.id, d.data()));
+
+    // El filtro por rol se resuelve en memoria: con multi-rol (`roles: string[]`) un
+    // `array-contains-any` exigiría índice y no está en el cliente REST; son ~5-9 usuarios de staff.
+    const roles = filtro.roles?.length ? [...filtro.roles] : filtro.rol ? [filtro.rol] : null;
+    if (roles) usuarios = usuarios.filter((u) => u.roles.some((r) => roles.includes(r)));
 
     if (filtro.texto) {
       const t = filtro.texto.toLowerCase();
@@ -48,14 +51,10 @@ export class FirestoreUsuarioRepository implements IUsuarioRepository {
   }
 
   async listAgentesAsignables(): Promise<Usuario[]> {
-    const snap = await this.db
-      .collection(COL)
-      .where('rol', 'in', [...ROLES_TECNICOS])
-      .where('activo', '==', true)
-      .get();
+    const snap = await this.db.collection(COL).where('activo', '==', true).get();
     return snap.docs
       .map((d) => UsuarioMapper.toDomain(d.id, d.data()))
-      .filter((u) => u.agente.disponibleAsignacion)
+      .filter((u) => rolesIncluyenTecnico(u.roles) && u.agente.disponibleAsignacion)
       .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
   }
 
@@ -64,8 +63,10 @@ export class FirestoreUsuarioRepository implements IUsuarioRepository {
   }
 
   async countByRol(rol: Rol): Promise<number> {
-    const agg = await this.db.collection(COL).where('rol', '==', rol).where('activo', '==', true).count().get();
-    return agg.data().count;
+    const snap = await this.db.collection(COL).where('activo', '==', true).get();
+    return snap.docs
+      .map((d) => UsuarioMapper.toDomain(d.id, d.data()))
+      .filter((u) => u.roles.includes(rol)).length;
   }
 
   async delete(uid: string): Promise<void> {

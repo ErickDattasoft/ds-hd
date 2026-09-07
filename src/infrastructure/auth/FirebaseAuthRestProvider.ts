@@ -87,10 +87,10 @@ export class FirebaseAuthRestProvider implements IAuthProvider {
     await this.admin('/accounts:update', { localId: uid, disableUser: disabled });
   }
 
-  async setRoleClaim(uid: string, rol: string): Promise<void> {
+  async setRolesClaim(uid: string, roles: string[]): Promise<void> {
     await this.admin('/accounts:update', {
       localId: uid,
-      customAttributes: JSON.stringify({ role: rol }),
+      customAttributes: JSON.stringify({ roles, role: roles[0] }),
     });
   }
 

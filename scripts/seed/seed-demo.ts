@@ -26,11 +26,13 @@ const actorSistema: SessionUser = {
   uid: 'seed',
   nombre: 'Seed',
   email: 'seed@dattasoft.mx',
+  roles: ['admin'],
   rol: 'admin',
   empresaId: null,
   activo: true,
   esStaff: true,
   esCliente: false,
+  esTecnico: false,
   permisos: ['tickets:crear', 'empresas:crear', 'contactos:crear'],
 };
 
@@ -43,13 +45,13 @@ async function staff(
 ) {
   if (await usuarios.findByEmail(email)) return;
   const { uid } = await auth.createAccount({ email, password, nombre });
-  await auth.setRoleClaim(uid, rol);
+  await auth.setRolesClaim(uid, [rol]);
   await usuarios.save(
     new Usuario({
       uid,
       email,
       nombre,
-      rol,
+      roles: [rol],
       ...(grupo
         ? { agente: { grupo, capacidadMax: 5, disponibleAsignacion: true } }
         : {}),
@@ -83,13 +85,13 @@ if (!(await usuarios.findByEmail(EMAIL_CLIENTE))) {
     password: 'cliente12345',
     nombre: 'Cliente Demo',
   });
-  await auth.setRoleClaim(uid, 'cliente');
+  await auth.setRolesClaim(uid, ['cliente']);
   await usuarios.save(
     new Usuario({
       uid,
       email: EMAIL_CLIENTE,
       nombre: 'Cliente Demo',
-      rol: 'cliente',
+      roles: ['cliente'],
       empresaId: empresaDemo.id,
     }),
   );

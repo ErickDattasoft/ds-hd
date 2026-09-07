@@ -3,8 +3,9 @@ import type { Rol } from '../../entities/value-objects/Rol.js';
 
 /** Filtros para listar usuarios. */
 export interface ListarUsuariosFiltro {
+  /** Un usuario coincide si tiene este rol entre los suyos. Se resuelve en memoria. */
   rol?: Rol;
-  /** Varios roles a la vez (OR). Se combina con `activo`/`empresaId`; ignora `rol` si viene. */
+  /** Varios roles a la vez (OR): coincide si tiene alguno. Se resuelve en memoria; ignora `rol`. */
   roles?: readonly Rol[];
   activo?: boolean;
   empresaId?: string;

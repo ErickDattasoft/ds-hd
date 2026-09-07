@@ -72,10 +72,10 @@ function contrato(nombre: string, crear: () => Promise<{ auth: IAuthProvider; li
       expect(await auth.getUidByEmail(`nadie${Date.now()}@ds-hd.test`)).toBeNull();
     });
 
-    it('setRoleClaim y revokeSessions no rompen la cuenta', async () => {
+    it('setRolesClaim y revokeSessions no rompen la cuenta', async () => {
       const c = nueva();
       const { uid } = await auth.createAccount(c);
-      await auth.setRoleClaim(uid, 'agente');
+      await auth.setRolesClaim(uid, ['agente', 'ventas']);
       await auth.revokeSessions(uid);
       expect((await auth.verifyPassword(c.email, c.password)).uid).toBe(uid);
     });

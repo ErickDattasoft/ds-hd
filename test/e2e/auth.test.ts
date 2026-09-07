@@ -92,14 +92,46 @@ describe('gestión de usuarios (admin)', () => {
     const res = await agent
       .post('/app/usuarios')
       .type('form')
-      .send({ _csrf: csrf, nombre: 'Nuevo Agente', email: 'agente@dattasoft.mx', rol: 'agente' });
+      .send({ _csrf: csrf, nombre: 'Nuevo Agente', email: 'agente@dattasoft.mx', roles: 'agente' });
 
     expect(res.status).toBe(200);
     expect(res.text).toContain('invitación');
     expect(t.emailSender.enviados).toHaveLength(1);
     const creado = await t.usuarioRepo.findByEmail('agente@dattasoft.mx');
-    expect(creado?.rol).toBe('agente');
+    expect(creado?.roles).toEqual(['agente']);
     expect(creado?.activo).toBe(true);
+  });
+
+  it('crea un usuario con dos roles y suma sus permisos', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    const { agent, csrf } = await login(t.app, ADMIN.email, ADMIN.password);
+
+    const res = await agent
+      .post('/app/usuarios')
+      .type('form')
+      .send({ _csrf: csrf, nombre: 'Mixto', email: 'mixto@dattasoft.mx', roles: ['soporte', 'ventas'] });
+
+    expect(res.status).toBe(200);
+    const creado = await t.usuarioRepo.findByEmail('mixto@dattasoft.mx');
+    expect(creado?.roles.sort()).toEqual(['soporte', 'ventas']);
+  });
+
+  it('rechaza combinar cliente con roles de personal al editar', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    const { agent, csrf } = await login(t.app, ADMIN.email, ADMIN.password);
+    await agent
+      .post('/app/usuarios')
+      .type('form')
+      .send({ _csrf: csrf, nombre: 'Edi', email: 'edi@dattasoft.mx', roles: 'soporte' });
+    const creado = await t.usuarioRepo.findByEmail('edi@dattasoft.mx');
+
+    const res = await agent
+      .post(`/app/usuarios/${creado!.uid}`)
+      .type('form')
+      .send({ _csrf: csrf, nombre: 'Edi', roles: ['soporte', 'cliente'] });
+
+    expect(res.status).toBe(422);
+    expect((await t.usuarioRepo.findByUid(creado!.uid))?.roles).toEqual(['soporte']);
   });
 
   it('acepta la invitación y permite iniciar sesión', async () => {
@@ -108,7 +140,7 @@ describe('gestión de usuarios (admin)', () => {
     await agent
       .post('/app/usuarios')
       .type('form')
-      .send({ _csrf: csrf, nombre: 'Beto', email: 'beto@dattasoft.mx', rol: 'agente' });
+      .send({ _csrf: csrf, nombre: 'Beto', email: 'beto@dattasoft.mx', roles: 'agente' });
 
     const [token] = [...t.invitacionRepo.porToken.keys()];
     const anon = request.agent(t.app);

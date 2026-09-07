@@ -7,11 +7,10 @@ import type { InvitarClienteService } from '../../../../application/usuarios/Inv
 import type { IEmpresaRepository } from '../../../../core/ports/repositories/IEmpresaRepository.js';
 import { DomainError, NotFoundError } from '../../../../core/errors/DomainError.js';
 import {
-  ROLES,
   ROLES_STAFF,
   ROL_ETIQUETA,
   ROL_GRUPOS,
-  parseRol,
+  parseRoles,
 } from '../../../../core/entities/value-objects/Rol.js';
 import { permisosPorModulo } from '../../rbac/permissions.js';
 import { invalidarCacheUsuario } from '../../middlewares/sessionAuth.js';
@@ -54,22 +53,24 @@ export class UsuarioController {
     res.render('pages/backoffice/usuarios/form', {
       titulo: 'Nuevo usuario',
       modo: 'crear',
-      rolesDisponibles: ROLES_STAFF,
+      rolesStaff: ROLES_STAFF,
       ROL_ETIQUETA,
       ROL_GRUPOS,
-      valores: { rol: 'soporte' },
+      valores: { roles: ['soporte'], esCliente: false },
       errores: {},
     });
   };
 
   crearPost = async (req: Request, res: Response): Promise<void> => {
-    const { email = '', nombre = '', rol = 'soporte' } = req.body ?? {};
+    const body = req.body ?? {};
+    const { email = '', nombre = '' } = body;
+    const roles = aArreglo(body.roles) ?? [];
     try {
       const { urlInvitacion } = await this.crear.ejecutar({
         actor: req.user!,
         email,
         nombre,
-        rol: parseRol(rol),
+        roles: parseRoles(roles),
       });
       res.render('pages/backoffice/usuarios/creado', {
         titulo: 'Usuario creado',
@@ -78,7 +79,7 @@ export class UsuarioController {
         urlInvitacion,
       });
     } catch (err) {
-      this.renderErrorForm(res, 'crear', { email, nombre, rol }, err);
+      this.renderErrorForm(res, 'crear', { email, nombre, roles, esCliente: false }, err);
     }
   };
 
@@ -90,11 +91,11 @@ export class UsuarioController {
       titulo: `Editar ${usuario.nombre}`,
       modo: 'editar',
       usuario,
-      rolesDisponibles: ROLES,
+      rolesStaff: ROLES_STAFF,
       ROL_ETIQUETA,
       ROL_GRUPOS,
       permisosModulo: permisosPorModulo(),
-      valores: usuario,
+      valores: { ...usuario, roles: [...usuario.roles], esCliente: usuario.esCliente },
       errores: {},
     });
   };
@@ -102,12 +103,14 @@ export class UsuarioController {
   actualizarPost = async (req: Request, res: Response): Promise<void> => {
     const uid = String(req.params.uid ?? '');
     const body = req.body ?? {};
+    const esCliente = body.esCliente === 'on' || body.esCliente === 'true';
+    const roles = esCliente ? ['cliente'] : (aArreglo(body.roles) ?? []);
     try {
       await this.actualizar.ejecutar({
         actor: req.user!,
         uid,
         nombre: body.nombre,
-        rol: body.rol ? parseRol(body.rol) : undefined,
+        roles: parseRoles(roles),
         activo: body.activo === undefined ? undefined : body.activo === 'on' || body.activo === 'true',
         empresaId: body.empresaId ?? undefined,
         permisosExtra: aArreglo(body.permisosExtra),
@@ -130,11 +133,11 @@ export class UsuarioController {
         titulo: 'Editar usuario',
         modo: 'editar',
         usuario,
-        rolesDisponibles: ROLES,
+        rolesStaff: ROLES_STAFF,
         ROL_ETIQUETA,
         ROL_GRUPOS,
         permisosModulo: permisosPorModulo(),
-        valores: { ...usuario, ...body },
+        valores: { ...usuario, ...body, roles, esCliente },
         errores,
       });
     }
@@ -191,7 +194,7 @@ export class UsuarioController {
     res.status(422).render('pages/backoffice/usuarios/form', {
       titulo: modo === 'crear' ? 'Nuevo usuario' : 'Editar usuario',
       modo,
-      rolesDisponibles: modo === 'crear' ? ROLES_STAFF : ROLES,
+      rolesStaff: ROLES_STAFF,
       ROL_ETIQUETA,
       ROL_GRUPOS,
       permisosModulo: permisosPorModulo(),

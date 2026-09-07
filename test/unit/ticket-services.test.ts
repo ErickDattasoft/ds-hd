@@ -21,18 +21,23 @@ import { FixedClock, silentLogger } from '../fakes/support.js';
 let seq = 0;
 const ids = { newId: () => `id-${++seq}`, newToken: () => `tok-${++seq}` };
 
-const actor = (over: Partial<SessionUser> = {}): SessionUser => ({
-  uid: 'sup',
-  nombre: 'Supervisor',
-  email: 's@d.com',
-  rol: 'supervisor',
-  empresaId: null,
-  activo: true,
-  esStaff: true,
-  esCliente: false,
-  permisos: ['tickets:crear', 'tickets:asignar', 'tickets:cambiar_estado', 'tickets:leer_todos', 'tickets:editar'],
-  ...over,
-});
+const actor = (over: Partial<SessionUser> = {}): SessionUser => {
+  const rol = over.rol ?? 'supervisor';
+  return {
+    uid: 'sup',
+    nombre: 'Supervisor',
+    email: 's@d.com',
+    roles: [rol],
+    rol,
+    empresaId: null,
+    activo: true,
+    esStaff: rol !== 'cliente',
+    esCliente: rol === 'cliente',
+    esTecnico: rol === 'agente' || rol === 'soporte',
+    permisos: ['tickets:crear', 'tickets:asignar', 'tickets:cambiar_estado', 'tickets:leer_todos', 'tickets:editar'],
+    ...over,
+  };
+};
 
 describe('CrearTicketService', () => {
   let store: InMemoryTicketStore;

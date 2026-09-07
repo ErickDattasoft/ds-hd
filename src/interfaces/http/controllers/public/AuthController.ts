@@ -45,7 +45,7 @@ export class AuthController {
         maxAge: SESSION_COOKIE_MAX_AGE_MS,
         path: '/',
       });
-      const url = esRutaInterna(destino) ? destino : usuario.rol === 'cliente' ? '/portal' : '/app';
+      const url = esRutaInterna(destino) ? destino : usuario.esCliente ? '/portal' : '/app';
       res.redirect(url);
     } catch (err) {
       const mensaje = err instanceof DomainError ? err.message : 'No se pudo iniciar sesión';
@@ -136,7 +136,7 @@ export class AuthController {
   };
 
   private redirigirAArea(req: Request, res: Response): void {
-    res.redirect(req.user?.rol === 'cliente' ? '/portal' : '/app');
+    res.redirect(req.user?.esCliente ? '/portal' : '/app');
   }
 }
 

@@ -31,13 +31,13 @@ const usuarios = container.resolve('usuarioRepo');
 
 const existente = await usuarios.findByEmail(email);
 if (existente) {
-  console.log(`Ya existe un usuario con ${email} (rol ${existente.rol}). Nada que hacer.`);
+  console.log(`Ya existe un usuario con ${email} (roles ${existente.roles.join(', ')}). Nada que hacer.`);
   process.exit(0);
 }
 
 const { uid } = await auth.createAccount({ email, password, nombre });
-await auth.setRoleClaim(uid, 'admin');
-await usuarios.save(new Usuario({ uid, email, nombre, rol: 'admin' }));
+await auth.setRolesClaim(uid, ['admin']);
+await usuarios.save(new Usuario({ uid, email, nombre, roles: ['admin'] }));
 
 console.log(`Admin creado: ${email} / contraseña: ${password} (uid ${uid})`);
 process.exit(0);

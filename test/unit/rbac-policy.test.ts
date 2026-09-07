@@ -10,11 +10,13 @@ const sessionUser = (rol: SessionUser['rol'], permisos: string[], extra: Partial
   uid: 'u1',
   nombre: 'Test',
   email: 't@t.com',
+  roles: [rol],
   rol,
   empresaId: null,
   activo: true,
   esStaff: rol !== 'cliente',
   esCliente: rol === 'cliente',
+  esTecnico: rol === 'agente' || rol === 'soporte',
   permisos,
   ...extra,
 });
@@ -74,6 +76,19 @@ describe('permisosEfectivos', () => {
     expect(efectivos).toContain('bitacora:leer');
     expect(efectivos).not.toContain('kb:escribir');
     expect(efectivos).toContain('tickets:leer');
+  });
+
+  it('con varios roles, une los permisos de todos', () => {
+    const u = new Usuario({
+      uid: 'x',
+      email: 'a@b.com',
+      nombre: 'Multi',
+      roles: ['soporte', 'ventas'],
+    });
+    const efectivos = new Set(permisosEfectivos(u));
+    expect(efectivos.has('tickets:asignar')).toBe(true); // de soporte
+    expect(efectivos.has('cotizaciones:crear')).toBe(true); // de ventas
+    expect(u.rolPrincipal).toBe('soporte'); // mayor alcance según ROLES
   });
 
   it('ignora cadenas fuera del catálogo en permisosExtra', () => {

@@ -8,7 +8,6 @@ import type { IWebhookPublisher } from '../../core/ports/services/IWebhookPublis
 import { Ticket } from '../../core/entities/Ticket.js';
 import { horasSlaDe } from '../../core/entities/ConfiguracionTickets.js';
 import { parsePrioridad } from '../../core/entities/value-objects/Prioridad.js';
-import { esRolTecnico } from '../../core/entities/value-objects/Rol.js';
 import { ValidationError } from '../../core/errors/DomainError.js';
 import { CONTADOR_TICKETS } from './constantes.js';
 import { registrarEvento } from './efectos.js';
@@ -63,7 +62,7 @@ export class CrearTicketService {
       ahora,
     });
 
-    if (input.asignarAlActor && esRolTecnico(input.actor.rol)) {
+    if (input.asignarAlActor && input.actor.esTecnico) {
       ticket.asignar(input.actor.uid, input.actor.nombre, ahora);
     }
 

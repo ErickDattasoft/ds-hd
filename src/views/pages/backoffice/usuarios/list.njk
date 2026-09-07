@@ -23,7 +23,9 @@
         <tr>
           <td>{{ u.nombre }}</td>
           <td>{{ u.email.value }}</td>
-          <td><span class="badge badge--rol">{{ ROL_ETIQUETA[u.rol] }}</span></td>
+          <td>
+            {% for r in u.roles %}<span class="badge badge--rol">{{ ROL_ETIQUETA[r] }}</span>{% endfor %}
+          </td>
           <td>{{ 'Activo' if u.activo else 'Inactivo' }}</td>
           <td><a href="/app/usuarios/{{ u.uid }}">Editar</a></td>
         </tr>

@@ -52,6 +52,47 @@ export function parseRol(value: unknown): Rol {
   return value;
 }
 
+/**
+ * Valida y normaliza un conjunto de roles (de un formulario o de la BD). Acepta un string
+ * suelto (legacy: `usuarios/{uid}.rol`) o un arreglo. Deduplica y respeta el orden de `ROLES`.
+ * Lanza si queda vacío o si algún valor no es un rol conocido.
+ */
+export function parseRoles(value: unknown): Rol[] {
+  const crudos = Array.isArray(value) ? value : value == null ? [] : [value];
+  const roles = crudos.map(parseRol);
+  const unicos = [...new Set(roles)];
+  if (unicos.length === 0) {
+    throw new ValidationError('Asigna al menos un rol', { roles: 'Requerido' });
+  }
+  return ROLES.filter((r) => unicos.includes(r));
+}
+
+/** El rol de mayor alcance del conjunto (el primero según el orden de `ROLES`). */
+export function rolPrincipal(roles: readonly Rol[]): Rol {
+  const principal = ROLES.find((r) => roles.includes(r));
+  if (!principal) throw new ValidationError('El usuario no tiene ningún rol', { roles: 'Requerido' });
+  return principal;
+}
+
+/** ¿Alguno de los roles puede tomar tickets como técnico? */
+export function rolesIncluyenTecnico(roles: readonly Rol[]): boolean {
+  return roles.some((r) => ROLES_TECNICOS.includes(r));
+}
+
+/**
+ * Regla de coherencia del conjunto de roles: `cliente` es exclusivo (nunca junto a roles de
+ * staff) y el conjunto no puede quedar vacío.
+ */
+export function sonRolesCoherentes(roles: readonly Rol[]): { ok: boolean; error?: string } {
+  if (roles.length === 0) return { ok: false, error: 'Asigna al menos un rol' };
+  const tieneCliente = roles.includes('cliente');
+  const tieneStaff = roles.some((r) => ROLES_STAFF.includes(r));
+  if (tieneCliente && tieneStaff) {
+    return { ok: false, error: 'El rol «Cliente» no se puede combinar con roles de personal' };
+  }
+  return { ok: true };
+}
+
 /** Etiqueta legible para la UI. */
 export const ROL_ETIQUETA: Record<Rol, string> = {
   admin: 'Administrador',

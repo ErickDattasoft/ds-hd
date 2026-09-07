@@ -25,21 +25,33 @@
       <p class="muted">Correo: {{ usuario.email.value }}</p>
     {% endif %}
 
-    <label class="field">
-      <span>Rol</span>
-      <select name="rol">
-        {% for g in ROL_GRUPOS %}
-          <optgroup label="{{ g.etiqueta }}">
-            {% for r in g.roles %}
-              {% if r in rolesDisponibles %}
-                <option value="{{ r }}" {{ 'selected' if valores.rol == r }}>{{ ROL_ETIQUETA[r] }}</option>
-              {% endif %}
-            {% endfor %}
-          </optgroup>
-        {% endfor %}
-      </select>
-      {% if errores.rol %}<em class="field__error">{{ errores.rol }}</em>{% endif %}
-    </label>
+    <fieldset class="field">
+      <legend>Roles de personal</legend>
+      <p class="muted">Los permisos son la suma de todos los roles marcados.</p>
+      {% for g in ROL_GRUPOS %}
+        <div class="perm-group">
+          <strong>{{ g.etiqueta }}</strong>
+          {% for r in g.roles %}
+            {% if r in rolesStaff %}
+              <label class="field--check">
+                <input type="checkbox" name="roles" value="{{ r }}"
+                       {{ 'checked' if r in valores.roles }}
+                       {{ 'disabled' if valores.esCliente }} />
+                <span>{{ ROL_ETIQUETA[r] }}</span>
+              </label>
+            {% endif %}
+          {% endfor %}
+        </div>
+      {% endfor %}
+      {% if errores.roles %}<em class="field__error">{{ errores.roles }}</em>{% endif %}
+    </fieldset>
+
+    {% if modo == 'editar' %}
+      <label class="field field--check">
+        <input type="checkbox" name="esCliente" data-cliente-toggle {{ 'checked' if valores.esCliente }} />
+        <span>Cliente del portal <span class="muted">— excluye los roles de personal</span></span>
+      </label>
+    {% endif %}
 
     {% if modo == 'editar' %}
       <label class="field field--check">

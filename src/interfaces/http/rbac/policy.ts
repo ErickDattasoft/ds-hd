@@ -5,11 +5,14 @@ import { permisosDeRol } from './roles.js';
 
 /**
  * Conjunto EFECTIVO de permisos de un usuario:
- *   (permisos del rol ∪ permisosExtra) − permisosRevocados
+ *   (⋃ permisos de cada rol ∪ permisosExtra) − permisosRevocados
  * Solo se consideran cadenas que estén en el catálogo (`permissions.ts`).
  */
 export function permisosEfectivos(usuario: Usuario): Permiso[] {
-  const set = permisosDeRol(usuario.rol);
+  const set = new Set<Permiso>();
+  for (const rol of usuario.roles) {
+    for (const p of permisosDeRol(rol)) set.add(p);
+  }
   for (const p of usuario.permisosExtra) {
     if (esPermiso(p)) set.add(p);
   }

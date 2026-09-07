@@ -67,8 +67,8 @@ export class FirebaseAuthProvider implements IAuthProvider {
     await this.auth.updateUser(uid, { disabled });
   }
 
-  async setRoleClaim(uid: string, rol: string): Promise<void> {
-    await this.auth.setCustomUserClaims(uid, { role: rol });
+  async setRolesClaim(uid: string, roles: string[]): Promise<void> {
+    await this.auth.setCustomUserClaims(uid, { roles, role: roles[0] });
   }
 
   async revokeSessions(uid: string): Promise<void> {

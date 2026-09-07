@@ -16,7 +16,7 @@
       {% else %}
         <span class="topbar__name">{{ user.nombre }}</span>
       {% endif %}
-      <span class="badge badge--rol">{{ user.rol }}</span>
+      {% for r in user.roles %}<span class="badge badge--rol">{{ r }}</span>{% endfor %}
       <form method="post" action="/logout" class="inline">
         <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
         <button type="submit" class="btn btn--ghost btn--sm">Salir</button>

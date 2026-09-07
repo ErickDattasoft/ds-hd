@@ -1,6 +1,5 @@
 import type { RequestHandler } from 'express';
 import { ForbiddenError, UnauthorizedError } from '../../../core/errors/DomainError.js';
-import { esRolStaff, type Rol } from '../../../core/entities/value-objects/Rol.js';
 import type { Permiso } from '../rbac/permissions.js';
 
 /** Exige sesión. Redirige al login si es una navegación HTML; 401 si es API/htmx. */
@@ -12,17 +11,6 @@ export const requireAuth: RequestHandler = (req, res, next) => {
   }
   next(new UnauthorizedError());
 };
-
-/** Exige uno de los roles indicados. */
-export function requireRole(...roles: Rol[]): RequestHandler {
-  return (req, _res, next) => {
-    if (!req.user) return next(new UnauthorizedError());
-    if (!roles.includes(req.user.rol)) {
-      return next(new ForbiddenError());
-    }
-    next();
-  };
-}
 
 /** Exige un permiso del catálogo (sin chequeo por recurso; eso va en el controller). */
 export function requirePermission(permiso: Permiso): RequestHandler {
@@ -38,13 +26,13 @@ export function requirePermission(permiso: Permiso): RequestHandler {
 /** Área back-office: cualquier rol de staff. */
 export const requireStaff: RequestHandler = (req, _res, next) => {
   if (!req.user) return next(new UnauthorizedError());
-  if (!esRolStaff(req.user.rol)) return next(new ForbiddenError('Área exclusiva del personal'));
+  if (!req.user.esStaff) return next(new ForbiddenError('Área exclusiva del personal'));
   next();
 };
 
 /** Área portal: solo clientes. */
 export const requireCliente: RequestHandler = (req, _res, next) => {
   if (!req.user) return next(new UnauthorizedError());
-  if (req.user.rol !== 'cliente') return next(new ForbiddenError('Área exclusiva de clientes'));
+  if (!req.user.esCliente) return next(new ForbiddenError('Área exclusiva de clientes'));
   next();
 };

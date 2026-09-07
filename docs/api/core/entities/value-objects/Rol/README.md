@@ -24,3 +24,7 @@
 - [esRol](functions/esRol.md)
 - [esRolStaff](functions/esRolStaff.md)
 - [parseRol](functions/parseRol.md)
+- [parseRoles](functions/parseRoles.md)
+- [rolPrincipal](functions/rolPrincipal.md)
+- [rolesIncluyenTecnico](functions/rolesIncluyenTecnico.md)
+- [sonRolesCoherentes](functions/sonRolesCoherentes.md)

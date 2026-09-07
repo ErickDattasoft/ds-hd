@@ -1,7 +1,7 @@
 import { type DocumentData } from 'firebase-admin/firestore';
 import { Timestamp } from '../../../core/entities/value-objects/Timestamp.js';
 import { Usuario } from '../../../core/entities/Usuario.js';
-import { parseRol } from '../../../core/entities/value-objects/Rol.js';
+import { parseRoles } from '../../../core/entities/value-objects/Rol.js';
 
 const fecha = (v: unknown): Date | undefined =>
   v instanceof Timestamp ? v.toDate() : v instanceof Date ? v : undefined;
@@ -13,7 +13,8 @@ export const UsuarioMapper = {
       uid,
       email: String(data.email ?? ''),
       nombre: String(data.nombre ?? ''),
-      rol: parseRol(data.rol),
+      // Documentos nuevos traen `roles: string[]`; los viejos solo `rol: string`.
+      roles: parseRoles(Array.isArray(data.roles) ? data.roles.map(String) : data.rol),
       permisosExtra: Array.isArray(data.permisosExtra) ? data.permisosExtra.map(String) : [],
       permisosRevocados: Array.isArray(data.permisosRevocados)
         ? data.permisosRevocados.map(String)
@@ -36,7 +37,10 @@ export const UsuarioMapper = {
     return {
       email: u.email.value,
       nombre: u.nombre,
-      rol: u.rol,
+      roles: u.roles,
+      // Doble escritura durante la transición a multi-rol: `rol` = rol principal, para poder
+      // volver al código de un solo rol sin migrar datos. Se retira en un commit posterior.
+      rol: u.rolPrincipal,
       permisosExtra: u.permisosExtra,
       permisosRevocados: u.permisosRevocados,
       activo: u.activo,

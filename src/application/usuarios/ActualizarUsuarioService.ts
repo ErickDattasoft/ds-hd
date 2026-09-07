@@ -3,7 +3,7 @@ import type { IAuthProvider } from '../../core/ports/services/IAuthProvider.js';
 import type { IClock } from '../../core/ports/services/IClock.js';
 import type { ILogger } from '../../core/ports/services/ILogger.js';
 import type { PerfilAgente } from '../../core/entities/Usuario.js';
-import { parseRol, type Rol } from '../../core/entities/value-objects/Rol.js';
+import { parseRoles, type Rol } from '../../core/entities/value-objects/Rol.js';
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '../../core/errors/DomainError.js';
 import type { SessionUser } from '../shared/SessionUser.js';
 
@@ -12,7 +12,8 @@ export interface ActualizarUsuarioInput {
   actor: SessionUser;
   uid: string;
   nombre?: string;
-  rol?: Rol;
+  /** Conjunto completo de roles a asignar (reemplaza los actuales). */
+  roles?: Rol[];
   activo?: boolean;
   empresaId?: string | null;
   permisosExtra?: string[];
@@ -33,10 +34,11 @@ export class ActualizarUsuarioService {
     const usuario = await this.usuarios.findByUid(input.uid);
     if (!usuario) throw new NotFoundError('Usuario', input.uid);
 
-    const rolAnterior = usuario.rol;
-    const dejaDeSerAdmin =
-      rolAnterior === 'admin' && input.rol !== undefined && parseRol(input.rol) !== 'admin';
-    const seDesactivaAdmin = rolAnterior === 'admin' && input.activo === false;
+    const rolesAnteriores = [...usuario.roles];
+    const rolesNuevos = input.roles !== undefined ? parseRoles(input.roles) : null;
+    const eraAdmin = usuario.tieneRol('admin');
+    const dejaDeSerAdmin = eraAdmin && rolesNuevos !== null && !rolesNuevos.includes('admin');
+    const seDesactivaAdmin = eraAdmin && input.activo === false;
     if (dejaDeSerAdmin || seDesactivaAdmin) {
       const admins = await this.usuarios.countByRol('admin');
       if (admins <= 1) {
@@ -52,7 +54,7 @@ export class ActualizarUsuarioService {
       if (n.length < 2) throw new ValidationError('Nombre inválido', { nombre: 'Requerido' });
       usuario.nombre = n;
     }
-    if (input.rol !== undefined) usuario.rol = parseRol(input.rol);
+    if (rolesNuevos !== null) usuario.cambiarRoles(rolesNuevos, this.clock.now());
     if (input.empresaId !== undefined) usuario.empresaId = input.empresaId || null;
     if (input.permisosExtra !== undefined) usuario.permisosExtra = [...new Set(input.permisosExtra)];
     if (input.permisosRevocados !== undefined) {
@@ -60,7 +62,7 @@ export class ActualizarUsuarioService {
     }
     if (input.agente !== undefined) usuario.agente = { ...usuario.agente, ...input.agente };
 
-    if (usuario.rol === 'cliente' && !usuario.empresaId) {
+    if (usuario.esCliente && !usuario.empresaId) {
       throw new ValidationError('Un cliente debe tener empresa asociada', {
         empresaId: 'Requerido para rol cliente',
       });
@@ -75,8 +77,11 @@ export class ActualizarUsuarioService {
     usuario.updatedAt = this.clock.now();
     await this.usuarios.save(usuario);
 
-    if (usuario.rol !== rolAnterior) {
-      await this.auth.setRoleClaim(usuario.uid, usuario.rol);
+    const rolesCambiaron =
+      rolesAnteriores.length !== usuario.roles.length ||
+      !rolesAnteriores.every((r) => usuario.roles.includes(r));
+    if (rolesCambiaron) {
+      await this.auth.setRolesClaim(usuario.uid, usuario.roles);
     }
     // Cualquier cambio de rol/permisos/estado corta las sesiones activas: el usuario
     // vuelve a autenticarse y recalcula permisos.
@@ -85,7 +90,7 @@ export class ActualizarUsuarioService {
     this.logger.info('Usuario actualizado', {
       uid: usuario.uid,
       por: input.actor.uid,
-      rol: usuario.rol,
+      roles: usuario.roles,
       activo: usuario.activo,
     });
   }

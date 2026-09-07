@@ -31,8 +31,12 @@ export interface IAuthProvider {
   /** Habilita/inhabilita la cuenta a nivel de identidad (bloquea el login). */
   setDisabled(uid: string, disabled: boolean): Promise<void>;
 
-  /** Fija el custom claim de rol (para reglas/servicios que lo lean del token). */
-  setRoleClaim(uid: string, rol: string): Promise<void>;
+  /**
+   * Fija los custom claims de rol en el token: `roles` (arreglo) y `role` (el principal, para
+   * compatibilidad con lectores de un solo rol). No es frontera de seguridad —
+   * `firestore.rules` es deny-all— pero lo consumen servicios que leen el token.
+   */
+  setRolesClaim(uid: string, roles: string[]): Promise<void>;
 
   /** Invalida los tokens/sesiones activas del usuario (tras cambiar rol o desactivarlo). */
   revokeSessions(uid: string): Promise<void>;

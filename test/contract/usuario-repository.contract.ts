@@ -86,5 +86,23 @@ export function contratoUsuarioRepository(
       const tecnicos = await repo.list({ roles: ['agente', 'soporte'] });
       expect(tecnicos.map((u) => u.uid).sort()).toEqual(['g1', 'g2']);
     });
+
+    it('guarda y recupera un conjunto de varios roles', async () => {
+      await repo.save(nuevoUsuario({ uid: 'm1', email: 'm1@x.com', roles: ['soporte', 'ventas'] }));
+      const u = await repo.findByUid('m1');
+      expect(u?.roles.sort()).toEqual(['soporte', 'ventas']);
+      expect(u?.rolPrincipal).toBe('soporte');
+    });
+
+    it('countByRol y listAgentesAsignables ven un rol dentro de un conjunto', async () => {
+      await repo.save(nuevoUsuario({ uid: 'm1', email: 'm1@x.com', roles: ['ventas', 'agente'] }));
+      expect(await repo.countByRol('agente')).toBe(1);
+      expect((await repo.listAgentesAsignables()).map((u) => u.uid)).toEqual(['m1']);
+    });
+
+    it('list({ roles }) empareja si el usuario tiene alguno de esos roles', async () => {
+      await repo.save(nuevoUsuario({ uid: 'm1', email: 'm1@x.com', roles: ['ventas', 'soporte'] }));
+      expect((await repo.list({ roles: ['agente', 'soporte'] })).map((u) => u.uid)).toEqual(['m1']);
+    });
   });
 }

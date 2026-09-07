@@ -28,9 +28,11 @@ Campos editables de un usuario; todos opcionales salvo `uid` (solo se aplica lo 
 
 ***
 
-### rol?
+### roles?
 
-> `optional` **rol?**: `"admin"` \| `"supervisor"` \| `"soporte"` \| `"ventas"` \| `"agente"` \| `"lectura"` \| `"cliente"`
+> `optional` **roles?**: (`"admin"` \| `"supervisor"` \| `"soporte"` \| `"ventas"` \| `"agente"` \| `"lectura"` \| `"cliente"`)[]
+
+Conjunto completo de roles a asignar (reemplaza los actuales).
 
 ***
 

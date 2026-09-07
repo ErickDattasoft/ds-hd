@@ -30,9 +30,19 @@ calculado en la capa de entrega para que `application/` no dependa del catálogo
 
 ***
 
+### roles
+
+> `readonly` **roles**: readonly (`"admin"` \| `"supervisor"` \| `"soporte"` \| `"ventas"` \| `"agente"` \| `"lectura"` \| `"cliente"`)[]
+
+Todos los roles asignados. Los permisos efectivos son la unión.
+
+***
+
 ### rol
 
 > `readonly` **rol**: `"admin"` \| `"supervisor"` \| `"soporte"` \| `"ventas"` \| `"agente"` \| `"lectura"` \| `"cliente"`
+
+Rol de mayor alcance (para badges y `data-role`). Equivale a `roles[0]`.
 
 ***
 
@@ -57,6 +67,14 @@ calculado en la capa de entrega para que `application/` no dependa del catálogo
 ### esCliente
 
 > `readonly` **esCliente**: `boolean`
+
+***
+
+### esTecnico
+
+> `readonly` **esTecnico**: `boolean`
+
+¿Puede tomar tickets como técnico? (tiene `agente` o `soporte` entre sus roles).
 
 ***
 

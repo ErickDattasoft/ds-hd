@@ -6,6 +6,7 @@ node_modules/
 /worker-dist/
 .wrangler/
 public/build/
+public/build-old-*/
 public/vendor/
 
 # Entorno / secretos

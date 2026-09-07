@@ -10,7 +10,7 @@ interface Cuenta {
   email: string;
   password: string;
   disabled: boolean;
-  role?: string;
+  roles?: string[];
 }
 
 /** Fake de {@link IAuthProvider}: cuentas en memoria. */
@@ -53,8 +53,8 @@ export class FakeAuthProvider implements IAuthProvider {
     for (const c of this.porEmail.values()) if (c.uid === uid) c.disabled = disabled;
   }
 
-  async setRoleClaim(uid: string, rol: string): Promise<void> {
-    for (const c of this.porEmail.values()) if (c.uid === uid) c.role = rol;
+  async setRolesClaim(uid: string, roles: string[]): Promise<void> {
+    for (const c of this.porEmail.values()) if (c.uid === uid) c.roles = [...roles];
   }
 
   async revokeSessions(uid: string): Promise<void> {

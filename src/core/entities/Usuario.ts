@@ -1,5 +1,13 @@
-import { parseRol, type Rol } from './value-objects/Rol.js';
+import {
+  esRolStaff,
+  parseRoles,
+  rolPrincipal,
+  rolesIncluyenTecnico,
+  sonRolesCoherentes,
+  type Rol,
+} from './value-objects/Rol.js';
 import { Email } from './value-objects/Email.js';
+import { ValidationError } from '../errors/DomainError.js';
 
 /** Datos de perfil de agente técnico (solo relevantes cuando `rol === 'agente'`). */
 export interface PerfilAgente {
@@ -16,7 +24,10 @@ export interface UsuarioProps {
   uid: string;
   email: string;
   nombre: string;
-  rol: Rol;
+  /** Roles asignados; los permisos efectivos son la unión de todos. No puede quedar vacío. */
+  roles?: Rol[] | Rol;
+  /** @deprecated Forma legacy de un solo rol. Se acepta al leer documentos viejos. */
+  rol?: Rol;
   /** Permisos concedidos por encima de los de su rol. */
   permisosExtra?: string[];
   /** Permisos retirados respecto a los de su rol. */
@@ -47,7 +58,8 @@ export class Usuario {
   readonly uid: string;
   readonly email: Email;
   nombre: string;
-  rol: Rol;
+  /** Roles asignados (fuente de verdad). Ver getters `rol`/`rolPrincipal`. */
+  roles: Rol[];
   permisosExtra: string[];
   permisosRevocados: string[];
   activo: boolean;
@@ -62,7 +74,11 @@ export class Usuario {
     this.uid = props.uid;
     this.email = Email.create(props.email);
     this.nombre = props.nombre.trim();
-    this.rol = parseRol(props.rol);
+    this.roles = parseRoles(props.roles ?? props.rol);
+    const coherencia = sonRolesCoherentes(this.roles);
+    if (!coherencia.ok) {
+      throw new ValidationError(coherencia.error!, { roles: coherencia.error! });
+    }
     this.permisosExtra = [...new Set(props.permisosExtra ?? [])];
     this.permisosRevocados = [...new Set(props.permisosRevocados ?? [])];
     this.activo = props.activo ?? true;
@@ -74,12 +90,41 @@ export class Usuario {
     this.lastLoginAt = props.lastLoginAt ?? null;
   }
 
+  /** El rol de mayor alcance. Se usa donde antes se leía un solo `rol` (badges, `data-role`…). */
+  get rol(): Rol {
+    return rolPrincipal(this.roles);
+  }
+
+  get rolPrincipal(): Rol {
+    return rolPrincipal(this.roles);
+  }
+
   get esStaff(): boolean {
-    return this.rol !== 'cliente';
+    return this.roles.some((r) => esRolStaff(r));
   }
 
   get esCliente(): boolean {
-    return this.rol === 'cliente';
+    return this.roles.includes('cliente');
+  }
+
+  /** ¿Puede tomar tickets como técnico (aparece en dropdowns de asignación)? */
+  get esTecnico(): boolean {
+    return rolesIncluyenTecnico(this.roles);
+  }
+
+  tieneRol(rol: Rol): boolean {
+    return this.roles.includes(rol);
+  }
+
+  /** Reemplaza el conjunto de roles validando coherencia (`cliente` es exclusivo). */
+  cambiarRoles(roles: Rol[], ahora: Date): void {
+    const normalizados = parseRoles(roles);
+    const coherencia = sonRolesCoherentes(normalizados);
+    if (!coherencia.ok) {
+      throw new ValidationError(coherencia.error!, { roles: coherencia.error! });
+    }
+    this.roles = normalizados;
+    this.updatedAt = ahora;
   }
 
   registrarAcceso(ahora: Date): void {

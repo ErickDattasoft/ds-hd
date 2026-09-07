@@ -9,11 +9,16 @@ export interface SessionUser {
   readonly uid: string;
   readonly nombre: string;
   readonly email: string;
+  /** Todos los roles asignados. Los permisos efectivos son la unión. */
+  readonly roles: readonly Rol[];
+  /** Rol de mayor alcance (para badges y `data-role`). Equivale a `roles[0]`. */
   readonly rol: Rol;
   readonly empresaId: string | null;
   readonly activo: boolean;
   readonly esStaff: boolean;
   readonly esCliente: boolean;
+  /** ¿Puede tomar tickets como técnico? (tiene `agente` o `soporte` entre sus roles). */
+  readonly esTecnico: boolean;
   /** Permisos efectivos (`modulo:accion`). */
   readonly permisos: readonly string[];
   /** Firma que se agrega a las respuestas públicas de tickets, si la tiene configurada. */

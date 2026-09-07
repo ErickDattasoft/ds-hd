@@ -28,9 +28,11 @@ Datos para dar de alta una cuenta de staff.
 
 ***
 
-### rol
+### roles
 
-> **rol**: `"admin"` \| `"supervisor"` \| `"soporte"` \| `"ventas"` \| `"agente"` \| `"lectura"` \| `"cliente"`
+> **roles**: (`"admin"` \| `"supervisor"` \| `"soporte"` \| `"ventas"` \| `"agente"` \| `"lectura"` \| `"cliente"`)[]
+
+Uno o varios roles de staff.
 
 ***
 
