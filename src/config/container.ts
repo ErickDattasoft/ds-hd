@@ -686,6 +686,7 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
           c.eventoRepo,
           c.inscripcionRepo,
           c.listaNegraRepo,
+          c.empresaRepo,
           c.captchaVerifier,
           c.emailSender,
           c.idGenerator,

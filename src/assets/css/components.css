@@ -382,6 +382,14 @@ fieldset.field {
   background: var(--color-surface);
 }
 
+/* Formulario de una fila (edición en línea dentro de tablas) */
+.inline-form {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  align-items: center;
+}
+
 /* ── Botón de favorita (⭐) ───────────────────────────────────────────── */
 .star-btn {
   border: none;

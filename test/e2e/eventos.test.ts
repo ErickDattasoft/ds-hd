@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import request from 'supertest';
 import { makeTestApp, cookieValor } from '../helpers/app.js';
 import { Evento } from '../../src/core/entities/Evento.js';
+import { Empresa } from '../../src/core/entities/Empresa.js';
 
 const ADMIN = { uid: 'u-a', email: 'admin@dattasoft.mx', password: 'admin12345', nombre: 'Admin', rol: 'admin' as const };
 
@@ -108,5 +109,63 @@ describe('eventos / webinars', () => {
     });
     expect(res.status).toBe(302);
     expect([...t.eventoRepo.items.values()][0]?.titulo).toBe('Nuevo Webinar');
+  });
+
+  it('invitación dirigida: agrega una empresa, marca su respuesta y la muestra en el detalle', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    t.eventoRepo.items.set('ev1', new Evento({ id: 'ev1', titulo: 'Webinar dirigido', fechaHora: enUnaSemana(), estado: 'publicado' }));
+    await t.empresaRepo.save(
+      new Empresa({ id: 'e1', nombre: 'INFOXPERT', sistemasContratados: ['CONTPAQi Contabilidad'] }),
+    );
+    const { agent, csrf } = await login(t.app, ADMIN.email, ADMIN.password);
+
+    const add = await agent.post('/app/eventos/ev1/empresas').type('form')
+      .send({ _csrf: csrf, empresaNombre: 'INFOXPERT', invitadoPor: 'Erick' });
+    expect(add.status).toBe(302);
+    let ev = await t.eventoRepo.findById('ev1');
+    expect(ev!.invitaciones).toHaveLength(1);
+    expect(ev!.invitaciones[0]!.empresaId).toBe('e1');
+    expect(ev!.invitaciones[0]!.sistemas).toEqual(['CONTPAQi Contabilidad']);
+
+    const invId = ev!.invitaciones[0]!.id;
+    const upd = await agent.post(`/app/eventos/ev1/empresas/${invId}`).type('form')
+      .send({ _csrf: csrf, invitadoPor: 'Erick', contactado: 'on', respuesta: 'asistira', notas: 'confirmó por teléfono' });
+    expect(upd.status).toBe(302);
+    ev = await t.eventoRepo.findById('ev1');
+    expect(ev!.invitaciones[0]!.contactado).toBe(true);
+    expect(ev!.invitaciones[0]!.respuesta).toBe('asistira');
+    expect(ev!.resumenInvitaciones.asistiran).toBe(1);
+
+    const detalle = await agent.get('/app/eventos/ev1');
+    expect(detalle.text).toContain('INFOXPERT');
+    expect(detalle.text).toContain('Invitación dirigida');
+
+    const del = await agent.post(`/app/eventos/ev1/empresas/${invId}/quitar`).type('form').send({ _csrf: csrf });
+    expect(del.status).toBe(302);
+    expect((await t.eventoRepo.findById('ev1'))!.invitaciones).toHaveLength(0);
+  });
+
+  it('rechaza invitar dos veces a la misma empresa', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    t.eventoRepo.items.set('ev1', new Evento({ id: 'ev1', titulo: 'Dup', fechaHora: enUnaSemana(), estado: 'publicado' }));
+    const { agent, csrf } = await login(t.app, ADMIN.email, ADMIN.password);
+    await agent.post('/app/eventos/ev1/empresas').type('form').send({ _csrf: csrf, empresaNombre: 'ACME SA' });
+    const dup = await agent.post('/app/eventos/ev1/empresas').type('form').send({ _csrf: csrf, empresaNombre: 'acme sa' });
+    expect(dup.status).toBe(409);
+    expect((await t.eventoRepo.findById('ev1'))!.invitaciones).toHaveLength(1);
+  });
+
+  it('invitados externos: agregar y editar', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    t.eventoRepo.items.set('ev1', new Evento({ id: 'ev1', titulo: 'Ext', fechaHora: enUnaSemana(), estado: 'publicado' }));
+    const { agent, csrf } = await login(t.app, ADMIN.email, ADMIN.password);
+    await agent.post('/app/eventos/ev1/externos').type('form').send({ _csrf: csrf, nombre: 'Juan de LinkedIn', fuente: 'Redes sociales' });
+    const ev = await t.eventoRepo.findById('ev1');
+    expect(ev!.invitadosExternos).toHaveLength(1);
+    const extId = ev!.invitadosExternos[0]!.id;
+    const upd = await agent.post(`/app/eventos/ev1/externos/${extId}`).type('form')
+      .send({ _csrf: csrf, nombre: 'Juan Pérez', fuente: 'Referido', contactado: 'on', respuesta: 'no_asistira' });
+    expect(upd.status).toBe(302);
+    expect((await t.eventoRepo.findById('ev1'))!.invitadosExternos[0]!.nombre).toBe('Juan Pérez');
   });
 });

@@ -8,7 +8,7 @@ import {
   InMemoryInscripcionRepository,
   InMemoryListaNegraRepository,
 } from '../fakes/eventos.js';
-import { InMemoryBitacoraRepository } from '../fakes/crm.js';
+import { InMemoryBitacoraRepository, InMemoryEmpresaRepository } from '../fakes/crm.js';
 import { FakeCaptchaVerifier } from '../fakes/tickets.js';
 import { FakeEmailSender } from '../fakes/FakeEmailSender.js';
 import { FixedClock, silentLogger } from '../fakes/support.js';
@@ -44,6 +44,7 @@ describe('EventoService — antiabuso de registro público', () => {
       eventos,
       inscripciones,
       new InMemoryListaNegraRepository(),
+      new InMemoryEmpresaRepository(),
       new FakeCaptchaVerifier(),
       new FakeEmailSender(),
       ids,

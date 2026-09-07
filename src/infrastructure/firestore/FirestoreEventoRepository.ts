@@ -6,7 +6,12 @@ import type {
   IInscripcionRepository,
   IListaNegraRepository,
 } from '../../core/ports/repositories/IEventoRepository.js';
-import { Evento, type EstadoEvento } from '../../core/entities/Evento.js';
+import {
+  Evento,
+  type EstadoEvento,
+  type InvitacionEmpresa,
+  type InvitadoExterno,
+} from '../../core/entities/Evento.js';
 import type { EntradaListaNegra, EstadoInscripcion, Inscripcion } from '../../core/entities/Inscripcion.js';
 
 const fecha = (v: unknown): Date => (v instanceof Timestamp ? v.toDate() : new Date());
@@ -24,6 +29,8 @@ const eventoToDomain = (id: string, d: DocumentData): Evento =>
     urlWebinar: d.urlWebinar ?? null,
     horasRecordatorio: Number(d.horasRecordatorio ?? 24),
     limiteRegistrosPorIp: typeof d.limiteRegistrosPorIp === 'number' ? d.limiteRegistrosPorIp : null,
+    invitaciones: Array.isArray(d.invitaciones) ? (d.invitaciones as InvitacionEmpresa[]) : [],
+    invitadosExternos: Array.isArray(d.invitadosExternos) ? (d.invitadosExternos as InvitadoExterno[]) : [],
     creadoPorUid: d.creadoPorUid ?? null,
     createdAt: fecha(d.createdAt),
     updatedAt: fecha(d.updatedAt),
@@ -67,6 +74,8 @@ export class FirestoreEventoRepository implements IEventoRepository {
         urlWebinar: e.urlWebinar,
         horasRecordatorio: e.horasRecordatorio,
         limiteRegistrosPorIp: e.limiteRegistrosPorIp,
+        invitaciones: e.invitaciones,
+        invitadosExternos: e.invitadosExternos,
         creadoPorUid: e.creadoPorUid,
         createdAt: Timestamp.fromDate(e.createdAt),
         updatedAt: Timestamp.fromDate(e.updatedAt),

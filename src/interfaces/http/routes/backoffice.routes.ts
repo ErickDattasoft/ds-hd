@@ -186,6 +186,12 @@ export function backofficeRoutes(container: Container): Router {
   r.post('/eventos/:id/inscritos/:insId/reenviar', requirePermission('eventos:gestionar'), (req, res) => eventos().reenviarPost(req, res));
   r.post('/eventos/:id/lista-negra', requirePermission('eventos:gestionar'), (req, res) => eventos().listaNegraAgregarPost(req, res));
   r.post('/eventos/:id/lista-negra/quitar', requirePermission('eventos:gestionar'), (req, res) => eventos().listaNegraQuitarPost(req, res));
+  r.post('/eventos/:id/empresas', requirePermission('eventos:gestionar'), (req, res) => eventos().empresaAgregarPost(req, res));
+  r.post('/eventos/:id/empresas/:invId', requirePermission('eventos:gestionar'), (req, res) => eventos().empresaActualizarPost(req, res));
+  r.post('/eventos/:id/empresas/:invId/quitar', requirePermission('eventos:gestionar'), (req, res) => eventos().empresaQuitarPost(req, res));
+  r.post('/eventos/:id/externos', requirePermission('eventos:gestionar'), (req, res) => eventos().externoAgregarPost(req, res));
+  r.post('/eventos/:id/externos/:extId', requirePermission('eventos:gestionar'), (req, res) => eventos().externoActualizarPost(req, res));
+  r.post('/eventos/:id/externos/:extId/quitar', requirePermission('eventos:gestionar'), (req, res) => eventos().externoQuitarPost(req, res));
 
   // ── Papelera ───────────────────────────────────────────────────────────────
   r.get('/papelera', requirePermission('papelera:gestionar'), (req, res) => papelera().ver(req, res));

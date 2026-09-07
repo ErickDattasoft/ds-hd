@@ -12,7 +12,7 @@ Eventos/webinars: gestión (staff), registro público, lista negra.
 
 ### Constructor
 
-> **new EventoService**(`eventos`, `inscripciones`, `listaNegra`, `captcha`, `email`, `ids`, `clock`, `logger`, `bitacora`, `baseUrl`): `EventoService`
+> **new EventoService**(`eventos`, `inscripciones`, `listaNegra`, `empresas`, `captcha`, `email`, `ids`, `clock`, `logger`, `bitacora`, `baseUrl`): `EventoService`
 
 #### Parameters
 
@@ -27,6 +27,10 @@ Eventos/webinars: gestión (staff), registro público, lista negra.
 ##### listaNegra
 
 [`IListaNegraRepository`](../../../../core/ports/repositories/IEventoRepository/interfaces/IListaNegraRepository.md)
+
+##### empresas
+
+[`IEmpresaRepository`](../../../../core/ports/repositories/IEmpresaRepository/interfaces/IEmpresaRepository.md)
 
 ##### captcha
 
@@ -177,6 +181,201 @@ Eventos/webinars: gestión (staff), registro público, lista negra.
 `string`
 
 ##### inscripcionId
+
+`string`
+
+#### Returns
+
+`Promise`\<`void`\>
+
+***
+
+### empresasParaInvitar()
+
+> **empresasParaInvitar**(): `Promise`\<`object`[]\>
+
+Nombres de empresas activas de la cartera, para el autocompletado del panel.
+
+#### Returns
+
+`Promise`\<`object`[]\>
+
+***
+
+### historialEmpresas()
+
+> **historialEmpresas**(`eventoId`): `Promise`\<`Record`\<`string`, \{ `eventos`: `number`; `asistio`: `number`; \}\>\>
+
+Historial cruzado: por cada empresa invitada al evento dado, en cuántos OTROS eventos
+participó y a cuántos asistió (respuesta `asistira`). Sirve para no reinvitar de más.
+
+#### Parameters
+
+##### eventoId
+
+`string`
+
+#### Returns
+
+`Promise`\<`Record`\<`string`, \{ `eventos`: `number`; `asistio`: `number`; \}\>\>
+
+***
+
+### agregarEmpresaInvitada()
+
+> **agregarEmpresaInvitada**(`actor`, `eventoId`, `datos`): `Promise`\<[`InvitacionEmpresa`](../../../../core/entities/Evento/interfaces/InvitacionEmpresa.md)\>
+
+#### Parameters
+
+##### actor
+
+[`SessionUser`](../../../shared/SessionUser/interfaces/SessionUser.md)
+
+##### eventoId
+
+`string`
+
+##### datos
+
+###### empresaNombre
+
+`string`
+
+###### invitadoPor?
+
+`string`
+
+#### Returns
+
+`Promise`\<[`InvitacionEmpresa`](../../../../core/entities/Evento/interfaces/InvitacionEmpresa.md)\>
+
+***
+
+### actualizarEmpresaInvitada()
+
+> **actualizarEmpresaInvitada**(`actor`, `eventoId`, `invId`, `cambios`): `Promise`\<`void`\>
+
+#### Parameters
+
+##### actor
+
+[`SessionUser`](../../../shared/SessionUser/interfaces/SessionUser.md)
+
+##### eventoId
+
+`string`
+
+##### invId
+
+`string`
+
+##### cambios
+
+`Partial`\<`Pick`\<[`InvitacionEmpresa`](../../../../core/entities/Evento/interfaces/InvitacionEmpresa.md), `"invitadoPor"` \| `"contactado"` \| `"respuesta"` \| `"notas"`\>\>
+
+#### Returns
+
+`Promise`\<`void`\>
+
+***
+
+### quitarEmpresaInvitada()
+
+> **quitarEmpresaInvitada**(`actor`, `eventoId`, `invId`): `Promise`\<`void`\>
+
+#### Parameters
+
+##### actor
+
+[`SessionUser`](../../../shared/SessionUser/interfaces/SessionUser.md)
+
+##### eventoId
+
+`string`
+
+##### invId
+
+`string`
+
+#### Returns
+
+`Promise`\<`void`\>
+
+***
+
+### agregarInvitadoExterno()
+
+> **agregarInvitadoExterno**(`actor`, `eventoId`, `datos`): `Promise`\<[`InvitadoExterno`](../../../../core/entities/Evento/interfaces/InvitadoExterno.md)\>
+
+#### Parameters
+
+##### actor
+
+[`SessionUser`](../../../shared/SessionUser/interfaces/SessionUser.md)
+
+##### eventoId
+
+`string`
+
+##### datos
+
+###### nombre?
+
+`string`
+
+###### fuente?
+
+`string`
+
+#### Returns
+
+`Promise`\<[`InvitadoExterno`](../../../../core/entities/Evento/interfaces/InvitadoExterno.md)\>
+
+***
+
+### actualizarInvitadoExterno()
+
+> **actualizarInvitadoExterno**(`actor`, `eventoId`, `extId`, `cambios`): `Promise`\<`void`\>
+
+#### Parameters
+
+##### actor
+
+[`SessionUser`](../../../shared/SessionUser/interfaces/SessionUser.md)
+
+##### eventoId
+
+`string`
+
+##### extId
+
+`string`
+
+##### cambios
+
+`Partial`\<`Pick`\<[`InvitadoExterno`](../../../../core/entities/Evento/interfaces/InvitadoExterno.md), `"nombre"` \| `"fuente"` \| `"contactado"` \| `"respuesta"` \| `"notas"`\>\>
+
+#### Returns
+
+`Promise`\<`void`\>
+
+***
+
+### quitarInvitadoExterno()
+
+> **quitarInvitadoExterno**(`actor`, `eventoId`, `extId`): `Promise`\<`void`\>
+
+#### Parameters
+
+##### actor
+
+[`SessionUser`](../../../shared/SessionUser/interfaces/SessionUser.md)
+
+##### eventoId
+
+`string`
+
+##### extId
 
 `string`
 

@@ -3,12 +3,18 @@ import type {
   IInscripcionRepository,
   IListaNegraRepository,
 } from '../../core/ports/repositories/IEventoRepository.js';
+import type { IEmpresaRepository } from '../../core/ports/repositories/IEmpresaRepository.js';
 import type { IClock } from '../../core/ports/services/IClock.js';
 import type { IIdGenerator } from '../../core/ports/services/IIdGenerator.js';
 import type { ILogger } from '../../core/ports/services/ILogger.js';
 import type { IEmailSender } from '../../core/ports/services/IEmailSender.js';
 import type { ICaptchaVerifier } from '../../core/ports/services/ICaptchaVerifier.js';
-import { Evento, type EstadoEvento } from '../../core/entities/Evento.js';
+import {
+  Evento,
+  type EstadoEvento,
+  type InvitacionEmpresa,
+  type InvitadoExterno,
+} from '../../core/entities/Evento.js';
 import type { EntradaListaNegra, EstadoInscripcion, Inscripcion } from '../../core/entities/Inscripcion.js';
 import { Email } from '../../core/entities/value-objects/Email.js';
 import { esCorreoDesechable } from '../../core/entities/value-objects/dominiosDesechables.js';
@@ -45,6 +51,7 @@ export class EventoService {
     private readonly eventos: IEventoRepository,
     private readonly inscripciones: IInscripcionRepository,
     private readonly listaNegra: IListaNegraRepository,
+    private readonly empresas: IEmpresaRepository,
     private readonly captcha: ICaptchaVerifier,
     private readonly email: IEmailSender,
     private readonly ids: IIdGenerator,
@@ -129,6 +136,122 @@ export class EventoService {
     const inscripcion = inscritos.find((i) => i.id === inscripcionId);
     if (!inscripcion) throw new NotFoundError('Inscripción', inscripcionId);
     await this.enviarConfirmacion(evento, inscripcion);
+  }
+
+  // ── Invitación dirigida a empresas ─────────────────────────────────────
+  /** Nombres de empresas activas de la cartera, para el autocompletado del panel. */
+  async empresasParaInvitar(): Promise<{ nombre: string; sistemas: string[] }[]> {
+    const empresas = await this.empresas.list({ activa: true });
+    return empresas
+      .map((e) => ({ nombre: e.nombre, sistemas: e.sistemasContratados }))
+      .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
+  }
+
+  /**
+   * Historial cruzado: por cada empresa invitada al evento dado, en cuántos OTROS eventos
+   * participó y a cuántos asistió (respuesta `asistira`). Sirve para no reinvitar de más.
+   */
+  async historialEmpresas(eventoId: string): Promise<Record<string, { eventos: number; asistio: number }>> {
+    const [evento, todos] = await Promise.all([this.obtener(eventoId), this.eventos.list()]);
+    const objetivo = new Set(evento.invitaciones.map((i) => i.empresaNombre.toLowerCase()));
+    const acc: Record<string, { eventos: number; asistio: number }> = {};
+    for (const otro of todos) {
+      if (otro.id === eventoId) continue;
+      for (const inv of otro.invitaciones) {
+        const clave = inv.empresaNombre.toLowerCase();
+        if (!objetivo.has(clave)) continue;
+        acc[clave] ??= { eventos: 0, asistio: 0 };
+        acc[clave].eventos++;
+        if (inv.respuesta === 'asistira') acc[clave].asistio++;
+      }
+    }
+    return acc;
+  }
+
+  async agregarEmpresaInvitada(
+    actor: SessionUser,
+    eventoId: string,
+    datos: { empresaNombre: string; invitadoPor?: string },
+  ): Promise<InvitacionEmpresa> {
+    const evento = await this.paraGestion(actor, eventoId);
+    const nombre = datos.empresaNombre.trim();
+    const enCartera = (await this.empresas.list({ activa: true })).find(
+      (e) => e.nombre.toLowerCase() === nombre.toLowerCase(),
+    );
+    const inv = evento.agregarEmpresaInvitada({
+      id: this.ids.newId(),
+      empresaId: enCartera?.id ?? null,
+      empresaNombre: enCartera?.nombre ?? nombre,
+      sistemas: enCartera?.sistemasContratados ?? [],
+      invitadoPor: datos.invitadoPor?.trim() || actor.nombre,
+    });
+    await this.persistirPanel(actor, evento, `Invitó a «${inv.empresaNombre}»`);
+    return inv;
+  }
+
+  async actualizarEmpresaInvitada(
+    actor: SessionUser,
+    eventoId: string,
+    invId: string,
+    cambios: Partial<Pick<InvitacionEmpresa, 'invitadoPor' | 'contactado' | 'respuesta' | 'notas'>>,
+  ): Promise<void> {
+    const evento = await this.paraGestion(actor, eventoId);
+    evento.actualizarEmpresaInvitada(invId, cambios);
+    await this.persistirPanel(actor, evento);
+  }
+
+  async quitarEmpresaInvitada(actor: SessionUser, eventoId: string, invId: string): Promise<void> {
+    const evento = await this.paraGestion(actor, eventoId);
+    evento.quitarEmpresaInvitada(invId);
+    await this.persistirPanel(actor, evento);
+  }
+
+  async agregarInvitadoExterno(
+    actor: SessionUser,
+    eventoId: string,
+    datos: { nombre?: string; fuente?: string },
+  ): Promise<InvitadoExterno> {
+    const evento = await this.paraGestion(actor, eventoId);
+    const ext = evento.agregarInvitadoExterno({ id: this.ids.newId(), nombre: datos.nombre, fuente: datos.fuente });
+    await this.persistirPanel(actor, evento);
+    return ext;
+  }
+
+  async actualizarInvitadoExterno(
+    actor: SessionUser,
+    eventoId: string,
+    extId: string,
+    cambios: Partial<Pick<InvitadoExterno, 'nombre' | 'fuente' | 'contactado' | 'respuesta' | 'notas'>>,
+  ): Promise<void> {
+    const evento = await this.paraGestion(actor, eventoId);
+    evento.actualizarInvitadoExterno(extId, cambios);
+    await this.persistirPanel(actor, evento);
+  }
+
+  async quitarInvitadoExterno(actor: SessionUser, eventoId: string, extId: string): Promise<void> {
+    const evento = await this.paraGestion(actor, eventoId);
+    evento.quitarInvitadoExterno(extId);
+    await this.persistirPanel(actor, evento);
+  }
+
+  private async paraGestion(actor: SessionUser, eventoId: string): Promise<Evento> {
+    if (!actor.permisos.includes('eventos:gestionar')) throw new ForbiddenError('No puedes gestionar eventos');
+    return this.obtener(eventoId);
+  }
+
+  private async persistirPanel(actor: SessionUser, evento: Evento, resumen?: string): Promise<void> {
+    evento.updatedAt = this.clock.now();
+    await this.eventos.save(evento);
+    if (resumen) {
+      await this.bitacora.registrar({
+        actor,
+        accion: 'editar',
+        modulo: 'eventos',
+        entidadTipo: 'Evento',
+        entidadId: evento.id,
+        resumen: `${evento.titulo}: ${resumen}`,
+      });
+    }
   }
 
   // ── Lista negra ─────────────────────────────────────────────────────────

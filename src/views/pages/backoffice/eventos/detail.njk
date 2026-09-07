@@ -10,7 +10,120 @@
   </div>
   <p class="muted">{{ evento.fechaHora }} · {{ inscritos | length }} inscritos{% if evento.cupo %} / {{ evento.cupo }}{% endif %} · límite {{ evento.limiteIpEfectivo }}/IP</p>
 
-  <h2>Inscritos</h2>
+  {% set puedeGestionar = can('eventos:gestionar') %}
+  {% macro respuestaSelect(nombre, valor) %}
+    <select name="{{ nombre }}">
+      {% for r in RESPUESTAS_INVITACION %}
+        <option value="{{ r }}" {{ 'selected' if valor == r }}>{{ RESPUESTA_INVITACION_ETIQUETA[r] }}</option>
+      {% endfor %}
+    </select>
+  {% endmacro %}
+
+  <h2 id="invitaciones">Invitación dirigida</h2>
+  <p class="muted">
+    {{ resumen.invitados }} invitados · {{ resumen.contactados }} contactados ·
+    ✅ {{ resumen.asistiran }} · ❌ {{ resumen.noAsistiran }} ·
+    📵 {{ resumen.noLocalizados }} · pendientes {{ resumen.pendientes }}
+  </p>
+
+  <h3>🏢 Empresas invitadas</h3>
+  {% if puedeGestionar %}
+    <form method="post" action="/app/eventos/{{ evento.id }}/empresas" class="filterbar">
+      <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+      <input name="empresaNombre" list="empresas-cartera" placeholder="Empresa (de la cartera o nombre nuevo)" required autocomplete="off" />
+      <datalist id="empresas-cartera">
+        {% for e in empresasCartera %}<option value="{{ e.nombre }}">{% endfor %}
+      </datalist>
+      <input name="invitadoPor" placeholder="Invitado por (opcional)" />
+      <button class="btn btn--sm" type="submit">Agregar</button>
+    </form>
+  {% endif %}
+  <table class="data-table">
+    <thead><tr><th>Empresa</th><th>Sistemas</th><th>Invitado por</th><th>Contactado</th><th>Respuesta</th><th>Notas</th><th></th></tr></thead>
+    <tbody>
+      {% for inv in evento.invitaciones %}
+        {% set hist = historialEmpresas[inv.empresaNombre | lower] %}
+        <tr>
+          <td>
+            {{ inv.empresaNombre }}
+            {% if hist %}<span class="muted" title="Participó en {{ hist.eventos }} evento(s) anteriores{% if hist.asistio %}, asistió a {{ hist.asistio }}{% endif %}">🔁 {{ hist.eventos }}{% if hist.asistio %}·✅{{ hist.asistio }}{% endif %}</span>{% endif %}
+          </td>
+          <td class="muted">{{ inv.sistemas | join(', ') or '—' }}</td>
+          {% if puedeGestionar %}
+            <td colspan="4">
+              <form method="post" action="/app/eventos/{{ evento.id }}/empresas/{{ inv.id }}" class="inline-form">
+                <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+                <input name="invitadoPor" value="{{ inv.invitadoPor or '' }}" placeholder="Invitado por" size="12" />
+                <label class="field--check"><input type="checkbox" name="contactado" {{ 'checked' if inv.contactado }} /> contactado</label>
+                {{ respuestaSelect('respuesta', inv.respuesta) }}
+                <input name="notas" value="{{ inv.notas or '' }}" placeholder="Notas" size="16" />
+                <button class="btn btn--sm" type="submit">Guardar</button>
+              </form>
+            </td>
+            <td>
+              <form method="post" action="/app/eventos/{{ evento.id }}/empresas/{{ inv.id }}/quitar" class="inline" data-confirm="¿Quitar «{{ inv.empresaNombre }}» del evento?">
+                <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+                <button class="btn btn--sm btn--ghost" type="submit">Quitar</button>
+              </form>
+            </td>
+          {% else %}
+            <td>{{ inv.invitadoPor or '—' }}</td>
+            <td>{{ 'Sí' if inv.contactado else 'No' }}</td>
+            <td>{{ RESPUESTA_INVITACION_ETIQUETA[inv.respuesta] }}</td>
+            <td class="muted">{{ inv.notas or '—' }}</td>
+            <td></td>
+          {% endif %}
+        </tr>
+      {% else %}<tr><td colspan="7" class="muted">Ninguna empresa invitada todavía.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+
+  <h3>🌐 Invitados externos <span class="muted">(redes sociales, referidos)</span></h3>
+  {% if puedeGestionar %}
+    <form method="post" action="/app/eventos/{{ evento.id }}/externos" class="filterbar">
+      <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+      <input name="nombre" placeholder="Nombre" />
+      <input name="fuente" placeholder="Fuente (Redes sociales, referido…)" />
+      <button class="btn btn--sm" type="submit">Agregar</button>
+    </form>
+  {% endif %}
+  <table class="data-table">
+    <thead><tr><th>Nombre</th><th>Fuente</th><th>Contactado</th><th>Respuesta</th><th>Notas</th><th></th></tr></thead>
+    <tbody>
+      {% for ext in evento.invitadosExternos %}
+        <tr>
+          {% if puedeGestionar %}
+            <td colspan="5">
+              <form method="post" action="/app/eventos/{{ evento.id }}/externos/{{ ext.id }}" class="inline-form">
+                <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+                <input name="nombre" value="{{ ext.nombre }}" placeholder="Nombre" size="14" />
+                <input name="fuente" value="{{ ext.fuente or '' }}" placeholder="Fuente" size="12" />
+                <label class="field--check"><input type="checkbox" name="contactado" {{ 'checked' if ext.contactado }} /> contactado</label>
+                {{ respuestaSelect('respuesta', ext.respuesta) }}
+                <input name="notas" value="{{ ext.notas or '' }}" placeholder="Notas" size="14" />
+                <button class="btn btn--sm" type="submit">Guardar</button>
+              </form>
+            </td>
+            <td>
+              <form method="post" action="/app/eventos/{{ evento.id }}/externos/{{ ext.id }}/quitar" class="inline">
+                <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+                <button class="btn btn--sm btn--ghost" type="submit">Quitar</button>
+              </form>
+            </td>
+          {% else %}
+            <td>{{ ext.nombre or '—' }}</td>
+            <td>{{ ext.fuente or '—' }}</td>
+            <td>{{ 'Sí' if ext.contactado else 'No' }}</td>
+            <td>{{ RESPUESTA_INVITACION_ETIQUETA[ext.respuesta] }}</td>
+            <td class="muted">{{ ext.notas or '—' }}</td>
+            <td></td>
+          {% endif %}
+        </tr>
+      {% else %}<tr><td colspan="6" class="muted">Sin invitados externos.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+
+  <h2>Inscritos <span class="muted">(registro público)</span></h2>
   <table class="data-table">
     <thead><tr><th>Nombre</th><th>Correo</th><th>Empresa</th><th>Estado</th><th>Correo</th><th>IP</th><th></th></tr></thead>
     <tbody>

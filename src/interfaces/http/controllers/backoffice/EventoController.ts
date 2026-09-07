@@ -1,11 +1,19 @@
 import type { Request, Response } from 'express';
 import type { EventoService } from '../../../../application/eventos/EventoService.js';
 import type { EstadoInscripcion } from '../../../../core/entities/Inscripcion.js';
-import type { EstadoEvento } from '../../../../core/entities/Evento.js';
+import {
+  RESPUESTAS_INVITACION,
+  RESPUESTA_INVITACION_ETIQUETA,
+  type EstadoEvento,
+  type RespuestaInvitacion,
+} from '../../../../core/entities/Evento.js';
 import { camposDeError } from '../../support/errores.js';
 
 const str = (v: unknown): string => (typeof v === 'string' ? v : '');
 const n = (v: unknown): number => (Number.isFinite(Number(v)) ? Number(v) : 0);
+const bool = (v: unknown): boolean => v === 'on' || v === 'true' || v === true;
+const respuesta = (v: unknown): RespuestaInvitacion | undefined =>
+  RESPUESTAS_INVITACION.includes(v as RespuestaInvitacion) ? (v as RespuestaInvitacion) : undefined;
 
 /** Gestión de eventos/webinars (staff). */
 export class EventoController {
@@ -63,11 +71,79 @@ export class EventoController {
 
   ver = async (req: Request, res: Response): Promise<void> => {
     const id = str(req.params.id);
-    const [{ evento, inscritos }, listaNegra] = await Promise.all([
+    const [{ evento, inscritos }, listaNegra, empresasCartera, historialEmpresas] = await Promise.all([
       this.eventos.detalleConInscritos(id),
       this.eventos.listaNegraTodos(),
+      this.eventos.empresasParaInvitar(),
+      this.eventos.historialEmpresas(id),
     ]);
-    res.render('pages/backoffice/eventos/detail', { titulo: evento.titulo, evento, inscritos, listaNegra });
+    res.render('pages/backoffice/eventos/detail', {
+      titulo: evento.titulo,
+      evento,
+      inscritos,
+      listaNegra,
+      empresasCartera,
+      historialEmpresas,
+      resumen: evento.resumenInvitaciones,
+      RESPUESTAS_INVITACION,
+      RESPUESTA_INVITACION_ETIQUETA,
+    });
+  };
+
+  // ── Invitación dirigida a empresas ─────────────────────────────────────
+  empresaAgregarPost = async (req: Request, res: Response): Promise<void> => {
+    const id = str(req.params.id);
+    await this.eventos.agregarEmpresaInvitada(req.user!, id, {
+      empresaNombre: str(req.body?.empresaNombre),
+      invitadoPor: str(req.body?.invitadoPor) || undefined,
+    });
+    res.redirect(`/app/eventos/${id}#invitaciones`);
+  };
+
+  empresaActualizarPost = async (req: Request, res: Response): Promise<void> => {
+    const id = str(req.params.id);
+    const b = req.body ?? {};
+    await this.eventos.actualizarEmpresaInvitada(req.user!, id, str(req.params.invId), {
+      contactado: bool(b.contactado),
+      respuesta: respuesta(b.respuesta),
+      invitadoPor: b.invitadoPor !== undefined ? str(b.invitadoPor) : undefined,
+      notas: b.notas !== undefined ? str(b.notas) : undefined,
+    });
+    res.redirect(`/app/eventos/${id}#invitaciones`);
+  };
+
+  empresaQuitarPost = async (req: Request, res: Response): Promise<void> => {
+    const id = str(req.params.id);
+    await this.eventos.quitarEmpresaInvitada(req.user!, id, str(req.params.invId));
+    res.redirect(`/app/eventos/${id}#invitaciones`);
+  };
+
+  externoAgregarPost = async (req: Request, res: Response): Promise<void> => {
+    const id = str(req.params.id);
+    await this.eventos.agregarInvitadoExterno(req.user!, id, {
+      nombre: str(req.body?.nombre) || undefined,
+      fuente: str(req.body?.fuente) || undefined,
+    });
+    res.redirect(`/app/eventos/${id}#invitaciones`);
+  };
+
+  externoActualizarPost = async (req: Request, res: Response): Promise<void> => {
+    const id = str(req.params.id);
+    const b = req.body ?? {};
+    await this.eventos.actualizarInvitadoExterno(req.user!, id, str(req.params.extId), {
+      nombre: b.nombre !== undefined ? str(b.nombre) : undefined,
+      fuente: b.fuente !== undefined ? str(b.fuente) : undefined,
+      contactado: bool(b.contactado),
+      respuesta: respuesta(b.respuesta),
+      notas: b.notas !== undefined ? str(b.notas) : undefined,
+    });
+    res.redirect(`/app/eventos/${id}#invitaciones`);
+  };
+
+  externoQuitarPost = async (req: Request, res: Response): Promise<void> => {
+    const id = str(req.params.id);
+    await this.eventos.quitarInvitadoExterno(req.user!, id, str(req.params.extId));
+    res.redirect(`/app/eventos/${id}#invitaciones`);
   };
 
   marcarInscripcionPost = async (req: Request, res: Response): Promise<void> => {

@@ -68,6 +68,22 @@ Máximo de inscripciones desde una misma IP; `null` = usar [LIMITE\_REGISTROS\_P
 
 ***
 
+### invitaciones?
+
+> `optional` **invitaciones?**: [`InvitacionEmpresa`](InvitacionEmpresa.md)[]
+
+Empresas de la cartera invitadas de forma dirigida.
+
+***
+
+### invitadosExternos?
+
+> `optional` **invitadosExternos?**: [`InvitadoExterno`](InvitadoExterno.md)[]
+
+Invitados externos (redes sociales, referidos).
+
+***
+
 ### creadoPorUid?
 
 > `optional` **creadoPorUid?**: `string` \| `null`
