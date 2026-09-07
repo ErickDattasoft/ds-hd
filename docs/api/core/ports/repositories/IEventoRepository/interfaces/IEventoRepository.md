@@ -77,3 +77,21 @@ Eventos publicados cuya fecha cae dentro de la ventana [desde, hasta].
 #### Returns
 
 `Promise`\<`void`\>
+
+***
+
+### eliminar()
+
+> **eliminar**(`id`): `Promise`\<`void`\>
+
+Borrado permanente del evento (sus inscripciones se borran aparte).
+
+#### Parameters
+
+##### id
+
+`string`
+
+#### Returns
+
+`Promise`\<`void`\>

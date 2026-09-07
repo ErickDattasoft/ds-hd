@@ -27,6 +27,9 @@ export class InMemoryEventoRepository implements IEventoRepository {
   async save(e: Evento): Promise<void> {
     this.items.set(e.id, e);
   }
+  async eliminar(id: string): Promise<void> {
+    this.items.delete(id);
+  }
 }
 
 export class InMemoryInscripcionRepository implements IInscripcionRepository {
@@ -55,6 +58,11 @@ export class InMemoryInscripcionRepository implements IInscripcionRepository {
   }
   async contarPorIp(eventoId: string, ip: string): Promise<number> {
     return this.items.filter((i) => i.eventoId === eventoId && i.ip === ip).length;
+  }
+  async eliminarPorEvento(eventoId: string): Promise<void> {
+    for (let i = this.items.length - 1; i >= 0; i--) {
+      if (this.items[i]!.eventoId === eventoId) this.items.splice(i, 1);
+    }
   }
 }
 

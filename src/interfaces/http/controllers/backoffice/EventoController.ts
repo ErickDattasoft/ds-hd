@@ -146,6 +146,11 @@ export class EventoController {
     res.redirect(`/app/eventos/${id}#invitaciones`);
   };
 
+  eliminarPost = async (req: Request, res: Response): Promise<void> => {
+    await this.eventos.eliminar(req.user!, str(req.params.id));
+    res.redirect('/app/eventos');
+  };
+
   marcarInscripcionPost = async (req: Request, res: Response): Promise<void> => {
     await this.eventos.marcarInscripcion(
       req.user!,

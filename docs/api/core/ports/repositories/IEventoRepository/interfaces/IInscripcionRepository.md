@@ -131,3 +131,21 @@ Cuántas inscripciones a este evento vienen de una IP dada (para el límite anti
 #### Returns
 
 `Promise`\<`void`\>
+
+***
+
+### eliminarPorEvento()
+
+> **eliminarPorEvento**(`eventoId`): `Promise`\<`void`\>
+
+Borra todas las inscripciones de un evento (al eliminar el evento).
+
+#### Parameters
+
+##### eventoId
+
+`string`
+
+#### Returns
+
+`Promise`\<`void`\>

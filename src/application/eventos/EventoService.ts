@@ -116,6 +116,22 @@ export class EventoService {
     return evento;
   }
 
+  /** Borra el evento y todas sus inscripciones. Permanente. */
+  async eliminar(actor: SessionUser, id: string): Promise<void> {
+    const evento = await this.paraGestion(actor, id);
+    await this.inscripciones.eliminarPorEvento(id);
+    await this.eventos.eliminar(id);
+    await this.bitacora.registrar({
+      actor,
+      accion: 'eliminar',
+      modulo: 'eventos',
+      entidadTipo: 'Evento',
+      entidadId: id,
+      resumen: `Evento eliminado: ${evento.titulo}`,
+    });
+    this.logger.info('Evento eliminado', { id, por: actor.uid });
+  }
+
   async marcarInscripcion(
     actor: SessionUser,
     eventoId: string,

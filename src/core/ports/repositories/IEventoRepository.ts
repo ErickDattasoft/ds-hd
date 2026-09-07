@@ -8,6 +8,8 @@ export interface IEventoRepository {
   /** Eventos publicados cuya fecha cae dentro de la ventana [desde, hasta]. */
   proximos(desde: Date, hasta: Date): Promise<Evento[]>;
   save(evento: Evento): Promise<void>;
+  /** Borrado permanente del evento (sus inscripciones se borran aparte). */
+  eliminar(id: string): Promise<void>;
 }
 
 /** Persistencia de inscripciones a eventos (subcolección de cada evento). */
@@ -21,6 +23,8 @@ export interface IInscripcionRepository {
   /** Cuántas inscripciones a este evento vienen de una IP dada (para el límite antiabuso). */
   contarPorIp(eventoId: string, ip: string): Promise<number>;
   save(inscripcion: Inscripcion): Promise<void>;
+  /** Borra todas las inscripciones de un evento (al eliminar el evento). */
+  eliminarPorEvento(eventoId: string): Promise<void>;
 }
 
 /** Persistencia de la lista negra de correos bloqueados para registro a eventos. */

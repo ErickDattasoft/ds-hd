@@ -138,6 +138,28 @@ Eventos/webinars: gestión (staff), registro público, lista negra.
 
 ***
 
+### eliminar()
+
+> **eliminar**(`actor`, `id`): `Promise`\<`void`\>
+
+Borra el evento y todas sus inscripciones. Permanente.
+
+#### Parameters
+
+##### actor
+
+[`SessionUser`](../../../shared/SessionUser/interfaces/SessionUser.md)
+
+##### id
+
+`string`
+
+#### Returns
+
+`Promise`\<`void`\>
+
+***
+
 ### marcarInscripcion()
 
 > **marcarInscripcion**(`actor`, `eventoId`, `inscripcionId`, `estado`): `Promise`\<`void`\>

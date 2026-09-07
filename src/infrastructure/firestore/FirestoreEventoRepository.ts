@@ -63,6 +63,10 @@ export class FirestoreEventoRepository implements IEventoRepository {
     return snap.docs.map((d) => eventoToDomain(d.id, d.data()));
   }
 
+  async eliminar(id: string): Promise<void> {
+    await this.db.collection('eventos').doc(id).delete();
+  }
+
   async save(e: Evento): Promise<void> {
     await this.db.collection('eventos').doc(e.id).set(
       {
@@ -160,6 +164,11 @@ export class FirestoreInscripcionRepository implements IInscripcionRepository {
   async contar(eventoId: string): Promise<number> {
     const agg = await this.col(eventoId).count().get();
     return agg.data().count;
+  }
+
+  async eliminarPorEvento(eventoId: string): Promise<void> {
+    const snap = await this.col(eventoId).get();
+    await Promise.all(snap.docs.map((d) => d.ref.delete()));
   }
 }
 

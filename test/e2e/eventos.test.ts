@@ -172,6 +172,32 @@ describe('eventos / webinars', () => {
     expect(ev!.invitadosExternos).toHaveLength(1);
   });
 
+  it('eliminar un evento lo borra junto con sus inscritos', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    t.eventoRepo.items.set('ev1', new Evento({ id: 'ev1', titulo: 'A borrar', fechaHora: enUnaSemana(), estado: 'publicado' }));
+    await t.inscripcionRepo.create({
+      id: 'i1', eventoId: 'ev1', nombre: 'A', email: 'a@a.com', telefono: null, empresa: null,
+      estado: 'registrado', origen: 'publico', correoEstado: null, recordatoriosEnviados: [], ip: null, correoSospechoso: false, createdAt: new Date(),
+    });
+    const { agent, csrf } = await login(t.app, ADMIN.email, ADMIN.password);
+
+    const res = await agent.post('/app/eventos/ev1/eliminar').type('form').send({ _csrf: csrf });
+    expect(res.status).toBe(302);
+    expect(res.headers.location).toBe('/app/eventos');
+    expect(await t.eventoRepo.findById('ev1')).toBeNull();
+    expect(t.inscripcionRepo.items).toHaveLength(0);
+  });
+
+  it('un rol sin eventos:gestionar no puede eliminar', async () => {
+    const LECTURA = { uid: 'u-l', email: 'lec@dattasoft.mx', password: 'lectura12345', nombre: 'Lec', rol: 'lectura' as const };
+    const t = makeTestApp({ usuarios: [LECTURA] });
+    t.eventoRepo.items.set('ev1', new Evento({ id: 'ev1', titulo: 'Evento X', fechaHora: enUnaSemana(), estado: 'publicado' }));
+    const { agent, csrf } = await login(t.app, LECTURA.email, LECTURA.password);
+    const res = await agent.post('/app/eventos/ev1/eliminar').type('form').send({ _csrf: csrf });
+    expect(res.status).toBe(403);
+    expect(await t.eventoRepo.findById('ev1')).not.toBeNull();
+  });
+
   it('invitados externos: agregar y editar', async () => {
     const t = makeTestApp({ usuarios: [ADMIN] });
     t.eventoRepo.items.set('ev1', new Evento({ id: 'ev1', titulo: 'Ext', fechaHora: enUnaSemana(), estado: 'publicado' }));
