@@ -25,6 +25,7 @@ import {
   InMemoryContactoRepository,
   InMemoryBitacoraRepository,
 } from '../fakes/crm.js';
+import { InMemoryIntentosLoginRepository } from '../fakes/InMemoryIntentosLoginRepository.js';
 import { InMemoryVersionRepository, InMemoryKnowledgeRepository } from '../fakes/kb.js';
 import { InMemoryCotizacionRepository } from '../fakes/cotizaciones.js';
 import { InMemoryInteraccionRepository, InMemoryTareaRepository } from '../fakes/seguimiento.js';
@@ -101,7 +102,12 @@ export function makeTestApp(opts: { usuarios?: { uid: string; email: string; pas
     emailSender,
     invitacionRepo,
     solicitudAccesoRepo: new InMemorySolicitudAccesoRepository(),
-    sessionManager: new SignedCookieSessionManager('test-secret-1234567890', 1000 * 60 * 60),
+    sessionManager: new SignedCookieSessionManager(
+      'test-secret-1234567890',
+      1000 * 60 * 60,
+      1000 * 60 * 60,
+    ),
+    intentosLoginRepo: new InMemoryIntentosLoginRepository(),
     ticketRepo: new InMemoryTicketRepository(ticketStore),
     ticketQueries: new InMemoryTicketQueries(ticketStore),
     contadorRepo: new InMemoryContadorRepository(),

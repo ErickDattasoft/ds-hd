@@ -20,7 +20,7 @@ export function buildRouter(container: Container): Router {
   router.get('/healthz', health.handle);
 
   // Sesión + CSRF para todo lo demás.
-  router.use(sessionAuth(container, logger));
+  router.use(sessionAuth(container, logger, { cookieSecure: config.isProduction }));
   router.use(csrf({ secure: config.isProduction, exentas: /^\/(webhooks|jobs)\// }));
 
   // Landing: redirige según el rol si hay sesión.

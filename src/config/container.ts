@@ -17,6 +17,7 @@ import { SmtpEmailSender } from '../infrastructure/email/SmtpEmailSender.js';
 import { FirestoreTicketRepository } from '../infrastructure/firestore/FirestoreTicketRepository.js';
 import { FirestoreTicketQueries } from '../infrastructure/firestore/FirestoreTicketQueries.js';
 import { FirestoreContadorRepository } from '../infrastructure/firestore/FirestoreContadorRepository.js';
+import { FirestoreIntentosLoginRepository } from '../infrastructure/firestore/FirestoreIntentosLoginRepository.js';
 import { FirestoreConfiguracionRepository } from '../infrastructure/firestore/FirestoreConfiguracionRepository.js';
 import { FirestoreTicketPublicoRepository } from '../infrastructure/firestore/FirestoreTicketPublicoRepository.js';
 import { FirestoreEmpresaRepository } from '../infrastructure/firestore/FirestoreEmpresaRepository.js';
@@ -102,7 +103,7 @@ import { EventoController } from '../interfaces/http/controllers/backoffice/Even
 import { EventoPublicoController } from '../interfaces/http/controllers/public/EventoPublicoController.js';
 import { JobsController } from '../interfaces/http/controllers/webhooks/JobsController.js';
 import { DashboardController } from '../interfaces/http/controllers/backoffice/DashboardController.js';
-import { SESSION_COOKIE_MAX_AGE_MS } from './constants.js';
+import { SESSION_COOKIE_MAX_AGE_MS, SESSION_IDLE_MAX_AGE_MS } from './constants.js';
 import type { ILogger } from '../core/ports/services/ILogger.js';
 import type { IClock } from '../core/ports/services/IClock.js';
 import type { IIdGenerator } from '../core/ports/services/IIdGenerator.js';
@@ -115,6 +116,7 @@ import type { IInvitacionRepository } from '../core/ports/repositories/IInvitaci
 import type { ITicketRepository } from '../core/ports/repositories/ITicketRepository.js';
 import type { ITicketQueries } from '../core/ports/repositories/ITicketQueries.js';
 import type { IContadorRepository } from '../core/ports/repositories/IContadorRepository.js';
+import type { IIntentosLoginRepository } from '../core/ports/repositories/IIntentosLoginRepository.js';
 import type { IConfiguracionRepository } from '../core/ports/repositories/IConfiguracionRepository.js';
 import type { ITicketPublicoRepository } from '../core/ports/repositories/ITicketPublicoRepository.js';
 import type { IWebhookPublisher } from '../core/ports/services/IWebhookPublisher.js';
@@ -160,6 +162,7 @@ export interface Cradle {
   ticketRepo: ITicketRepository;
   ticketQueries: ITicketQueries;
   contadorRepo: IContadorRepository;
+  intentosLoginRepo: IIntentosLoginRepository;
   configuracionRepo: IConfiguracionRepository;
   ticketPublicoRepo: ITicketPublicoRepository;
   webhookPublisher: IWebhookPublisher;
@@ -310,7 +313,11 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
 
     sessionManager: asFunction(
       ({ config: c }: Cradle): ISessionManager =>
-        new SignedCookieSessionManager(c.session.secret, SESSION_COOKIE_MAX_AGE_MS),
+        new SignedCookieSessionManager(
+          c.session.secret,
+          SESSION_COOKIE_MAX_AGE_MS,
+          SESSION_IDLE_MAX_AGE_MS,
+        ),
     ).singleton(),
 
     emailSender: asFunction(({ config: c, logger: l }: Cradle): IEmailSender => {
@@ -360,6 +367,10 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
     contadorRepo: asFunction(
       ({ firestoreDb }: Cradle): IContadorRepository =>
         new FirestoreContadorRepository(requireFirestore(firestoreDb)),
+    ).singleton(),
+    intentosLoginRepo: asFunction(
+      ({ firestoreDb }: Cradle): IIntentosLoginRepository =>
+        new FirestoreIntentosLoginRepository(requireFirestore(firestoreDb)),
     ).singleton(),
     configuracionRepo: asFunction(
       ({ firestoreDb }: Cradle): IConfiguracionRepository =>
@@ -430,7 +441,14 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
 
     loginService: asFunction(
       (c: Cradle) =>
-        new LoginService(c.usuarioRepo, c.authProvider, c.sessionManager, c.clock, c.logger),
+        new LoginService(
+          c.usuarioRepo,
+          c.authProvider,
+          c.sessionManager,
+          c.clock,
+          c.logger,
+          c.intentosLoginRepo,
+        ),
     ).singleton(),
     solicitarAccesoService: asFunction(
       (c: Cradle) =>

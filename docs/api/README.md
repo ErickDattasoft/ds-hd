@@ -90,6 +90,7 @@
 - [core/ports/repositories/ICotizacionRepository](core/ports/repositories/ICotizacionRepository/README.md)
 - [core/ports/repositories/IEmpresaRepository](core/ports/repositories/IEmpresaRepository/README.md)
 - [core/ports/repositories/IEventoRepository](core/ports/repositories/IEventoRepository/README.md)
+- [core/ports/repositories/IIntentosLoginRepository](core/ports/repositories/IIntentosLoginRepository/README.md)
 - [core/ports/repositories/IInvitacionRepository](core/ports/repositories/IInvitacionRepository/README.md)
 - [core/ports/repositories/IKnowledgeRepository](core/ports/repositories/IKnowledgeRepository/README.md)
 - [core/ports/repositories/ISeguimientoRepository](core/ports/repositories/ISeguimientoRepository/README.md)

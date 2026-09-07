@@ -12,7 +12,7 @@ Caso de uso: iniciar sesión con correo y contraseña.
 
 ### Constructor
 
-> **new LoginService**(`usuarios`, `auth`, `sesiones`, `clock`, `logger`): `LoginService`
+> **new LoginService**(`usuarios`, `auth`, `sesiones`, `clock`, `logger`, `intentos`): `LoginService`
 
 #### Parameters
 
@@ -35,6 +35,10 @@ Caso de uso: iniciar sesión con correo y contraseña.
 ##### logger
 
 [`ILogger`](../../../../core/ports/services/ILogger/interfaces/ILogger.md)
+
+##### intentos
+
+[`IIntentosLoginRepository`](../../../../core/ports/repositories/IIntentosLoginRepository/interfaces/IIntentosLoginRepository.md)
 
 #### Returns
 

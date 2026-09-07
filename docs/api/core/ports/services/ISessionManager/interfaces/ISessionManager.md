@@ -22,7 +22,7 @@ Implementación de Fase 1: token propio firmado con `SESSION_COOKIE_SECRET`
 
 ##### claims
 
-`Omit`\<[`SessionClaims`](SessionClaims.md), `"issuedAt"`\>
+`Omit`\<[`SessionClaims`](SessionClaims.md), `"issuedAt"` \| `"lastSeenAt"`\>
 
 #### Returns
 
@@ -43,3 +43,21 @@ Implementación de Fase 1: token propio firmado con `SESSION_COOKIE_SECRET`
 #### Returns
 
 `Promise`\<[`SessionClaims`](SessionClaims.md) \| `null`\>
+
+***
+
+### touch()
+
+> **touch**(`claims`): `Promise`\<`string`\>
+
+Re-emite el token conservando `issuedAt` y refrescando `lastSeenAt` a ahora.
+
+#### Parameters
+
+##### claims
+
+[`SessionClaims`](SessionClaims.md)
+
+#### Returns
+
+`Promise`\<`string`\>

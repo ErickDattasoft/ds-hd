@@ -5,7 +5,12 @@ import type { ILogger } from '../../../core/ports/services/ILogger.js';
 import type { Usuario } from '../../../core/entities/Usuario.js';
 import type { Container } from '../../../config/container.js';
 import type { SessionUser } from '../../../application/shared/SessionUser.js';
-import { SESSION_COOKIE_NAME, USER_CACHE_TTL_MS } from '../../../config/constants.js';
+import {
+  SESSION_COOKIE_MAX_AGE_MS,
+  SESSION_COOKIE_NAME,
+  SESSION_TOUCH_INTERVAL_MS,
+  USER_CACHE_TTL_MS,
+} from '../../../config/constants.js';
 import { permisosEfectivos } from '../rbac/policy.js';
 
 const cache = new Map<string, { usuario: Usuario; exp: number }>();
@@ -34,7 +39,11 @@ export function invalidarCacheUsuario(uid: string): void {
  * Lee la cookie de sesión, resuelve el usuario y lo cuelga en `req.user` / `res.locals.user`.
  * No exige sesión — de eso se encargan `requireAuth` y compañía.
  */
-export function sessionAuth(container: Container, logger: ILogger): RequestHandler {
+export function sessionAuth(
+  container: Container,
+  logger: ILogger,
+  opts: { cookieSecure: boolean },
+): RequestHandler {
   return async (req, res, next) => {
     const token = req.cookies?.[SESSION_COOKIE_NAME] as string | undefined;
     if (!token) return next();
@@ -60,6 +69,18 @@ export function sessionAuth(container: Container, logger: ILogger): RequestHandl
       if (usuario && usuario.activo) {
         req.user = aSessionUser(usuario);
         res.locals.user = req.user;
+
+        // Cierre por inactividad: refresca `lastSeenAt` cada cierto rato (no en cada request).
+        if (ahora - claims.lastSeenAt > SESSION_TOUCH_INTERVAL_MS) {
+          const fresco = await sesiones.touch(claims);
+          res.cookie(SESSION_COOKIE_NAME, fresco, {
+            httpOnly: true,
+            secure: opts.cookieSecure,
+            sameSite: 'lax',
+            maxAge: SESSION_COOKIE_MAX_AGE_MS,
+            path: '/',
+          });
+        }
       } else {
         res.clearCookie(SESSION_COOKIE_NAME);
       }

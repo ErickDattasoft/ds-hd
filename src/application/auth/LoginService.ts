@@ -1,10 +1,16 @@
 import type { IUsuarioRepository } from '../../core/ports/repositories/IUsuarioRepository.js';
+import type { IIntentosLoginRepository } from '../../core/ports/repositories/IIntentosLoginRepository.js';
 import type { IAuthProvider } from '../../core/ports/services/IAuthProvider.js';
 import type { ISessionManager } from '../../core/ports/services/ISessionManager.js';
 import type { IClock } from '../../core/ports/services/IClock.js';
 import type { ILogger } from '../../core/ports/services/ILogger.js';
 import type { Usuario } from '../../core/entities/Usuario.js';
 import { UnauthorizedError } from '../../core/errors/DomainError.js';
+
+/** Minutos que faltan (redondeado hacia arriba, mínimo 1) para que expire un bloqueo. */
+function minutosRestantes(hasta: Date, ahora: Date): number {
+  return Math.max(1, Math.ceil((hasta.getTime() - ahora.getTime()) / 60000));
+}
 
 /** Credenciales enviadas desde el formulario de login. */
 export interface LoginInput {
@@ -27,18 +33,34 @@ export class LoginService {
     private readonly sesiones: ISessionManager,
     private readonly clock: IClock,
     private readonly logger: ILogger,
+    private readonly intentos: IIntentosLoginRepository,
   ) {}
 
   async ejecutar(input: LoginInput): Promise<LoginResultado> {
     const email = input.email.trim().toLowerCase();
+    const ahora = this.clock.now();
 
     // Mensaje genérico para no revelar si el correo existe.
     const credencialesInvalidas = new UnauthorizedError('Correo o contraseña incorrectos');
+
+    const previo = await this.intentos.consultar(email, ahora);
+    if (previo.bloqueadoHasta) {
+      throw new UnauthorizedError(
+        `Demasiados intentos fallidos. Vuelve a intentar en ${minutosRestantes(previo.bloqueadoHasta, ahora)} min.`,
+      );
+    }
 
     let verificado;
     try {
       verificado = await this.auth.verifyPassword(email, input.password);
     } catch {
+      const estado = await this.intentos.registrarFallo(email, ahora);
+      if (estado.bloqueadoHasta) {
+        this.logger.warn('Login: correo bloqueado por intentos fallidos', { email });
+        throw new UnauthorizedError(
+          `Demasiados intentos fallidos. Vuelve a intentar en ${minutosRestantes(estado.bloqueadoHasta, ahora)} min.`,
+        );
+      }
       throw credencialesInvalidas;
     }
 
@@ -51,7 +73,8 @@ export class LoginService {
       throw new UnauthorizedError('Tu cuenta está desactivada. Contacta a un administrador.');
     }
 
-    usuario.registrarAcceso(this.clock.now());
+    await this.intentos.limpiar(email);
+    usuario.registrarAcceso(ahora);
     await this.usuarios.save(usuario);
 
     const token = await this.sesiones.issue({ uid: usuario.uid });
