@@ -155,6 +155,23 @@ describe('eventos / webinars', () => {
     expect((await t.eventoRepo.findById('ev1'))!.invitaciones).toHaveLength(1);
   });
 
+  it('editar los datos del evento no borra la invitación dirigida', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    t.eventoRepo.items.set('ev1', new Evento({ id: 'ev1', titulo: 'Antes', fechaHora: enUnaSemana(), estado: 'borrador' }));
+    const { agent, csrf } = await login(t.app, ADMIN.email, ADMIN.password);
+    await agent.post('/app/eventos/ev1/empresas').type('form').send({ _csrf: csrf, empresaNombre: 'ACME SA' });
+    await agent.post('/app/eventos/ev1/externos').type('form').send({ _csrf: csrf, nombre: 'Juan' });
+
+    const res = await agent.post('/app/eventos/ev1').type('form')
+      .send({ _csrf: csrf, titulo: 'Después', fechaHora: '2026-12-05T10:00', estado: 'publicado' });
+    expect(res.status).toBe(302);
+
+    const ev = await t.eventoRepo.findById('ev1');
+    expect(ev!.titulo).toBe('Después');
+    expect(ev!.invitaciones).toHaveLength(1);
+    expect(ev!.invitadosExternos).toHaveLength(1);
+  });
+
   it('invitados externos: agregar y editar', async () => {
     const t = makeTestApp({ usuarios: [ADMIN] });
     t.eventoRepo.items.set('ev1', new Evento({ id: 'ev1', titulo: 'Ext', fechaHora: enUnaSemana(), estado: 'publicado' }));

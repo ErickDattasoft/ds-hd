@@ -97,6 +97,9 @@ export class EventoService {
         datos.limiteRegistrosPorIp !== undefined
           ? datos.limiteRegistrosPorIp
           : (previo?.limiteRegistrosPorIp ?? null),
+      // La edición del evento (título/fecha/…) no toca la invitación dirigida: se conserva.
+      invitaciones: previo?.invitaciones ?? [],
+      invitadosExternos: previo?.invitadosExternos ?? [],
       creadoPorUid: previo?.creadoPorUid ?? actor.uid,
       createdAt: previo?.createdAt ?? this.clock.now(),
       updatedAt: this.clock.now(),
