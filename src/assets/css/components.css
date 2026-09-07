@@ -395,6 +395,23 @@ fieldset.field {
 }
 .star-btn:hover { background: var(--color-surface-2); }
 .star-btn[aria-pressed='true'] { color: var(--warning); }
+
+/* ── Chips de filtros guardados ──────────────────────────────────────── */
+.chips { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; margin-bottom: var(--space-3); }
+.chip {
+  display: inline-flex; align-items: center; gap: 0.35rem;
+  padding: 0.2rem 0.3rem 0.2rem 0.6rem;
+  border: 1px solid var(--color-border); border-radius: var(--radius-full);
+  background: var(--color-surface-2); font-size: var(--text-xs);
+}
+.chip a { font-weight: 600; }
+.chip__x {
+  border: none; background: none; cursor: pointer; color: var(--color-text-muted);
+  font-size: 1rem; line-height: 1; padding: 0 0.2rem; border-radius: var(--radius-full);
+}
+.chip__x:hover { background: var(--color-border); color: var(--danger); }
+.chips__save { display: inline-flex; gap: var(--space-2); align-items: center; }
+.chips__save input { padding: 0.3rem 0.5rem; border: 1px solid var(--color-border-strong); border-radius: var(--radius-sm); background: var(--color-surface); font-size: var(--text-xs); }
 .code-block {
   display: block;
   padding: var(--space-2) var(--space-3);

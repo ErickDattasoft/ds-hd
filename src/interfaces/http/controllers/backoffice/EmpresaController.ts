@@ -2,6 +2,7 @@ import type { Request, Response } from 'express';
 import type { EmpresaService } from '../../../../application/empresas/EmpresaService.js';
 import type { AvisarEmpresasService } from '../../../../application/empresas/AvisarEmpresasService.js';
 import type { EmpresaExcelService } from '../../../../application/empresas/EmpresaExcelService.js';
+import type { FiltrosGuardadosService } from '../../../../application/shared/FiltrosGuardadosService.js';
 import type { ContactoService } from '../../../../application/contactos/ContactoService.js';
 import type { SeguimientoService } from '../../../../application/seguimiento/SeguimientoService.js';
 import type { VersionService } from '../../../../application/versiones/VersionService.js';
@@ -37,6 +38,7 @@ export class EmpresaController {
     private readonly versiones: VersionService,
     private readonly avisar: AvisarEmpresasService,
     private readonly excel: EmpresaExcelService,
+    private readonly filtrosGuardados: FiltrosGuardadosService,
   ) {}
 
   listar = async (req: Request, res: Response): Promise<void> => {
@@ -45,7 +47,7 @@ export class EmpresaController {
     const soloPendientes = req.query.pendientes === '1';
     const soloFavoritas = req.query.favoritas === '1';
     const sistema = str(req.query.sistema);
-    const [empresas, versiones] = await Promise.all([
+    const [empresas, versiones, filtrosGuardados] = await Promise.all([
       this.empresas.listar({
         ...(texto ? { texto } : {}),
         ...(incluirArchivadas ? {} : { activa: true }),
@@ -53,6 +55,7 @@ export class EmpresaController {
         ...(sistema ? { sistema } : {}),
       }),
       this.versiones.listar(),
+      this.filtrosGuardados.listar(req.user!, 'empresas'),
     ]);
     const oficial = this.mapaOficial(versiones);
     const sistemasDisponibles = [
@@ -85,6 +88,8 @@ export class EmpresaController {
       soloFavoritas,
       sistema,
       sistemasDisponibles,
+      filtrosGuardados,
+      error: str(req.query.error) || null,
     });
   };
 

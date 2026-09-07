@@ -199,6 +199,11 @@ export function backofficeRoutes(container: Container): Router {
     papelera().vaciarPost(req, res),
   );
 
+  // ── Filtros guardados (búsquedas frecuentes personales) ────────────────────
+  const filtros = () => container.resolve('filtrosController');
+  r.post('/filtros', (req, res) => filtros().guardarPost(req, res));
+  r.post('/filtros/:id/eliminar', (req, res) => filtros().eliminarPost(req, res));
+
   // ── Bitácora ───────────────────────────────────────────────────────────────
   r.get('/bitacora', requirePermission('bitacora:leer'), (req, res) => bitacora().listar(req, res));
   r.get('/bitacora/export.csv', requirePermission('bitacora:leer'), (req, res) =>

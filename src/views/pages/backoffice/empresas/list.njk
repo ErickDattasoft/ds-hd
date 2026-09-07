@@ -22,6 +22,29 @@
     <button class="btn btn--sm" type="submit">Buscar</button>
   </form>
 
+  {% if error %}<div class="alert alert--error" role="alert">{{ error }}</div>{% endif %}
+
+  <div class="chips">
+    {% for f in filtrosGuardados %}
+      <span class="chip">
+        <a href="/app/empresas?{{ f.query }}">{{ f.nombre }}</a>
+        <button type="submit" form="delfiltro-{{ f.id }}" class="chip__x" title="Borrar filtro guardado" aria-label="Borrar {{ f.nombre }}">×</button>
+      </span>
+      <form id="delfiltro-{{ f.id }}" method="post" action="/app/filtros/{{ f.id }}/eliminar" hidden>
+        <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+        <input type="hidden" name="volver" value="/app/empresas{{ qs }}" />
+      </form>
+    {% endfor %}
+    <form method="post" action="/app/filtros" class="chips__save">
+      <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+      <input type="hidden" name="modulo" value="empresas" />
+      <input type="hidden" name="query" value="{{ qs }}" />
+      <input type="hidden" name="volver" value="/app/empresas{{ qs }}" />
+      <input type="text" name="nombre" placeholder="Guardar esta búsqueda como…" maxlength="40" />
+      <button class="btn btn--sm btn--ghost" type="submit">Guardar filtro</button>
+    </form>
+  </div>
+
   <table class="data-table">
     <thead>
       <tr>

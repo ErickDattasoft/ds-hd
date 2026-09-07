@@ -142,4 +142,33 @@ describe('empresas y contactos', () => {
     expect(lista.text).toContain('Con Contpaqi');
     expect(lista.text).not.toContain('Con Compac');
   });
+
+  it('guarda una búsqueda, la vuelve a aplicar y la borra', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    t.empresaRepo.items.set('e1', new Empresa({ id: 'e1', nombre: 'Con Contpaqi', sistemasContratados: ['Contpaqi'] }));
+    t.empresaRepo.items.set('e2', new Empresa({ id: 'e2', nombre: 'Con Compac', sistemasContratados: ['Compac'] }));
+    const { agent, csrf } = await login(t.app, ADMIN.email, ADMIN.password);
+
+    const guardar = await agent.post('/app/filtros').type('form').send({
+      _csrf: csrf,
+      modulo: 'empresas',
+      nombre: 'Solo Contpaqi',
+      query: '?sistema=Contpaqi',
+      volver: '/app/empresas',
+    });
+    expect(guardar.status).toBe(302);
+    const [f] = [...t.filtroGuardadoRepo.items.values()];
+    expect(f?.query).toBe('sistema=Contpaqi');
+
+    const lista = await agent.get('/app/empresas');
+    expect(lista.text).toContain('Solo Contpaqi');
+    expect(lista.text).toContain('/app/empresas?sistema=Contpaqi');
+
+    const borrar = await agent
+      .post(`/app/filtros/${f!.id}/eliminar`)
+      .type('form')
+      .send({ _csrf: csrf, volver: '/app/empresas' });
+    expect(borrar.status).toBe(302);
+    expect(t.filtroGuardadoRepo.items.size).toBe(0);
+  });
 });
