@@ -5,6 +5,16 @@ import type { ILogger } from '../../core/ports/services/ILogger.js';
 import type { EntradaBitacora } from '../../core/entities/EntradaBitacora.js';
 import type { SessionUser } from './SessionUser.js';
 
+/** Días que se conservan las entradas de bitácora; el job de retención borra lo anterior. */
+export const BITACORA_RETENCION_DIAS = 60;
+
+const DIA_MS = 86_400_000;
+
+/** Escapa un valor para una celda CSV (comillas dobles, saltos de línea, comas). */
+function celdaCsv(v: string): string {
+  return /[",\n\r]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v;
+}
+
 /**
  * Servicio transversal de auditoría: los casos de uso lo invocan para dejar registro de una
  * acción relevante. Best-effort — si el registro falla, se loguea pero no rompe la operación.
@@ -48,5 +58,37 @@ export class BitacoraService {
 
   listar(filtro?: FiltroBitacora): Promise<EntradaBitacora[]> {
     return this.repo.listar(filtro);
+  }
+
+  /** Borra entradas anteriores a `fecha` (acción manual "Limpiar"). */
+  purgar(fecha: Date, maxBorrar?: number): Promise<{ borradas: number; hayMas: boolean }> {
+    return this.repo.purgar(fecha, maxBorrar);
+  }
+
+  /** Retención automática: borra lo anterior a {@link BITACORA_RETENCION_DIAS} días. */
+  async aplicarRetencion(): Promise<{ borradas: number; hayMas: boolean; corte: Date }> {
+    const corte = new Date(this.clock.now().getTime() - BITACORA_RETENCION_DIAS * DIA_MS);
+    const r = await this.repo.purgar(corte);
+    if (r.borradas) this.logger.info('Retención de bitácora', { ...r, corte });
+    return { ...r, corte };
+  }
+
+  /** Exporta la bitácora filtrada como CSV (UTF-8, separador coma). */
+  async exportarCsv(filtro?: FiltroBitacora): Promise<string> {
+    const entradas = await this.repo.listar({ ...filtro, limite: filtro?.limite ?? 5000 });
+    const cabecera = ['Fecha', 'Módulo', 'Acción', 'Entidad', 'Resumen', 'Usuario'];
+    const filas = entradas.map((e) =>
+      [
+        e.at.toISOString(),
+        e.modulo,
+        e.accion,
+        `${e.entidadTipo} ${e.entidadId}`.trim(),
+        e.resumen,
+        e.actorNombre ?? '',
+      ]
+        .map((c) => celdaCsv(String(c)))
+        .join(','),
+    );
+    return [cabecera.join(','), ...filas].join('\r\n');
   }
 }

@@ -794,7 +794,7 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
       (c: Cradle) => new ContactoController(c.contactoService, c.empresaService, c.contactoExcelService),
     ).singleton(),
     bitacoraController: asFunction(
-      (c: Cradle) => new BitacoraController(c.bitacoraService),
+      (c: Cradle) => new BitacoraController(c.bitacoraService, c.usuarioRepo, c.clock),
     ).singleton(),
     versionController: asFunction(
       (c: Cradle) => new VersionController(c.versionService, c.configuracionRepo),
@@ -835,6 +835,7 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
           c.clock,
           c.logger,
           c.config.jobs.secret,
+          c.bitacoraService,
         ),
     ).singleton(),
   });

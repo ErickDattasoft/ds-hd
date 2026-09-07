@@ -39,3 +39,26 @@ Registro de auditoría global (`bitacora/{id}`), solo escritura vía append.
 #### Returns
 
 `Promise`\<[`EntradaBitacora`](../../../../entities/EntradaBitacora/interfaces/EntradaBitacora.md)[]\>
+
+***
+
+### purgar()
+
+> **purgar**(`fecha`, `maxBorrar?`): `Promise`\<\{ `borradas`: `number`; `hayMas`: `boolean`; \}\>
+
+Borra entradas con fecha anterior a `fecha`, empezando por las más viejas.
+`maxBorrar` acota el trabajo por llamada; `hayMas` indica si quedaron pendientes.
+
+#### Parameters
+
+##### fecha
+
+`Date`
+
+##### maxBorrar?
+
+`number`
+
+#### Returns
+
+`Promise`\<\{ `borradas`: `number`; `hayMas`: `boolean`; \}\>

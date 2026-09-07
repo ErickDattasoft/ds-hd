@@ -9,5 +9,7 @@ export function jobsRoutes(container: Container): Router {
   r.get('/recordatorios-eventos', (req, res) => jobs().recordatoriosEventos(req, res));
   r.post('/recalcular-sla', (req, res) => jobs().recalcularSla(req, res));
   r.get('/recalcular-sla', (req, res) => jobs().recalcularSla(req, res));
+  r.post('/purgar-bitacora', (req, res) => jobs().purgarBitacora(req, res));
+  r.get('/purgar-bitacora', (req, res) => jobs().purgarBitacora(req, res));
   return r;
 }

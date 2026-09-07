@@ -17,3 +17,7 @@ jobs:
         run: |
           curl -fsS -X POST "${{ secrets.APP_BASE_URL }}/jobs/recalcular-sla" \
             -H "Authorization: Bearer ${{ secrets.JOBS_SECRET }}"
+      - name: Retención de bitácora (60 días)
+        run: |
+          curl -fsS -X POST "${{ secrets.APP_BASE_URL }}/jobs/purgar-bitacora" \
+            -H "Authorization: Bearer ${{ secrets.JOBS_SECRET }}"

@@ -72,6 +72,19 @@ export class InMemoryBitacoraRepository implements IBitacoraRepository {
     if (f.modulo) out = out.filter((e) => e.modulo === f.modulo);
     if (f.actorUid) out = out.filter((e) => e.actorUid === f.actorUid);
     if (f.entidadId) out = out.filter((e) => e.entidadId === f.entidadId);
+    if (f.desde) out = out.filter((e) => e.at.getTime() >= f.desde!.getTime());
+    if (f.hasta) out = out.filter((e) => e.at.getTime() <= f.hasta!.getTime());
     return out.slice(0, f.limite ?? 200);
+  }
+  async purgar(fecha: Date, maxBorrar = 5000): Promise<{ borradas: number; hayMas: boolean }> {
+    const viejas = this.entradas
+      .filter((e) => e.at.getTime() < fecha.getTime())
+      .sort((a, b) => a.at.getTime() - b.at.getTime());
+    const aBorrar = viejas.slice(0, maxBorrar);
+    const ids = new Set(aBorrar.map((e) => e.id));
+    for (let i = this.entradas.length - 1; i >= 0; i--) {
+      if (ids.has(this.entradas[i]!.id)) this.entradas.splice(i, 1);
+    }
+    return { borradas: aBorrar.length, hayMas: viejas.length > maxBorrar };
   }
 }

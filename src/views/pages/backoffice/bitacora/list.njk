@@ -1,16 +1,37 @@
 {% extends "layouts/backoffice.njk" %}
 {% block title %}Bitácora{% endblock %}
 {% block content %}
-  <h1>Bitácora</h1>
+  {% set qs %}modulo={{ f.modulo }}&actor={{ f.actor }}&desde={{ f.desde }}&hasta={{ f.hasta }}{% endset %}
+  <div class="page-head">
+    <h1>Bitácora</h1>
+    <div class="page-head__actions">
+      <a class="btn btn--ghost btn--sm" href="/app/bitacora/export.csv?{{ qs }}">Exportar CSV</a>
+    </div>
+  </div>
+
+  {% if aviso %}<div class="alert alert--ok" role="status">{{ aviso }}</div>{% endif %}
+
   <form method="get" class="filterbar">
-    <select name="modulo">
+    <select name="modulo" aria-label="Módulo">
       <option value="">Todos los módulos</option>
-      {% for m in ['empresas','contactos','tickets','cotizaciones','versiones','kb','eventos','usuarios'] %}
-        <option value="{{ m }}" {{ 'selected' if modulo == m }}>{{ m }}</option>
+      {% for m in ['empresas','contactos','tickets','cotizaciones','versiones','kb','eventos','usuarios','seguimiento','papelera','bitacora'] %}
+        <option value="{{ m }}" {{ 'selected' if f.modulo == m }}>{{ m }}</option>
       {% endfor %}
     </select>
+    <select name="actor" aria-label="Usuario">
+      <option value="">Cualquier usuario</option>
+      {% for u in usuarios %}
+        <option value="{{ u.uid }}" {{ 'selected' if f.actor == u.uid }}>{{ u.nombre }}</option>
+      {% endfor %}
+    </select>
+    <input type="date" name="desde" value="{{ f.desde }}" aria-label="Desde">
+    <input type="date" name="hasta" value="{{ f.hasta }}" aria-label="Hasta">
     <button class="btn btn--sm" type="submit">Filtrar</button>
+    {% if f.modulo or f.actor or f.desde or f.hasta %}
+      <a class="btn btn--ghost btn--sm" href="/app/bitacora">Quitar filtros</a>
+    {% endif %}
   </form>
+
   <table class="data-table">
     <thead><tr><th>Fecha</th><th>Módulo</th><th>Acción</th><th>Resumen</th><th>Usuario</th></tr></thead>
     <tbody>
@@ -25,4 +46,19 @@
       {% else %}<tr><td colspan="5" class="muted">Sin registros.</td></tr>{% endfor %}
     </tbody>
   </table>
+  <p class="muted">Se conservan las entradas de los últimos 60 días.</p>
+
+  {% if can('bitacora:gestionar') %}
+    <details class="disclosure">
+      <summary class="disclosure__summary">Limpiar bitácora</summary>
+      <form method="post" action="/app/bitacora/limpiar" class="stack"
+            data-confirm="¿Borrar las entradas de bitácora anteriores a la fecha indicada? No se puede deshacer.">
+        <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+        <label>Borrar entradas anteriores a
+          <input type="date" name="antesDe" required>
+        </label>
+        <button class="btn btn--danger btn--sm" type="submit">Limpiar</button>
+      </form>
+    </details>
+  {% endif %}
 {% endblock %}

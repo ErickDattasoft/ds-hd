@@ -59,6 +59,7 @@ export const PERMISOS = [
 
   // Bitácora
   'bitacora:leer',
+  'bitacora:gestionar',
 
   // Configuración
   'configuracion:catalogos',

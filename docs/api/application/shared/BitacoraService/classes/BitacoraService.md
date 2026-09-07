@@ -90,3 +90,55 @@ acción relevante. Best-effort — si el registro falla, se loguea pero no rompe
 #### Returns
 
 `Promise`\<[`EntradaBitacora`](../../../../core/entities/EntradaBitacora/interfaces/EntradaBitacora.md)[]\>
+
+***
+
+### purgar()
+
+> **purgar**(`fecha`, `maxBorrar?`): `Promise`\<\{ `borradas`: `number`; `hayMas`: `boolean`; \}\>
+
+Borra entradas anteriores a `fecha` (acción manual "Limpiar").
+
+#### Parameters
+
+##### fecha
+
+`Date`
+
+##### maxBorrar?
+
+`number`
+
+#### Returns
+
+`Promise`\<\{ `borradas`: `number`; `hayMas`: `boolean`; \}\>
+
+***
+
+### aplicarRetencion()
+
+> **aplicarRetencion**(): `Promise`\<\{ `borradas`: `number`; `hayMas`: `boolean`; `corte`: `Date`; \}\>
+
+Retención automática: borra lo anterior a [BITACORA\_RETENCION\_DIAS](../variables/BITACORA_RETENCION_DIAS.md) días.
+
+#### Returns
+
+`Promise`\<\{ `borradas`: `number`; `hayMas`: `boolean`; `corte`: `Date`; \}\>
+
+***
+
+### exportarCsv()
+
+> **exportarCsv**(`filtro?`): `Promise`\<`string`\>
+
+Exporta la bitácora filtrada como CSV (UTF-8, separador coma).
+
+#### Parameters
+
+##### filtro?
+
+[`FiltroBitacora`](../../../../core/ports/repositories/IBitacoraRepository/interfaces/FiltroBitacora.md)
+
+#### Returns
+
+`Promise`\<`string`\>

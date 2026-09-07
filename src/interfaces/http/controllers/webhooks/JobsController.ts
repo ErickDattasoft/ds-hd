@@ -5,6 +5,7 @@ import type { ITicketQueries } from '../../../../core/ports/repositories/ITicket
 import type { IIdGenerator } from '../../../../core/ports/services/IIdGenerator.js';
 import type { IClock } from '../../../../core/ports/services/IClock.js';
 import type { ILogger } from '../../../../core/ports/services/ILogger.js';
+import type { BitacoraService } from '../../../../application/shared/BitacoraService.js';
 
 /**
  * Endpoints invocados por el cron (GitHub Actions). Protegidos por bearer `JOBS_SECRET`.
@@ -18,6 +19,7 @@ export class JobsController {
     private readonly clock: IClock,
     private readonly logger: ILogger,
     private readonly secret: string,
+    private readonly bitacora: BitacoraService,
   ) {}
 
   private autorizado(req: Request): boolean {
@@ -54,5 +56,12 @@ export class JobsController {
     }
     this.logger.info('Recalculo de SLA', { revisados: abiertos.length, vencidos });
     res.json({ ok: true, revisados: abiertos.length, vencidos });
+  };
+
+  /** Retención de bitácora: borra entradas más viejas que la ventana de retención. */
+  purgarBitacora = async (req: Request, res: Response): Promise<void> => {
+    if (!this.autorizado(req)) return void res.status(401).json({ error: 'no autorizado' });
+    const r = await this.bitacora.aplicarRetencion();
+    res.json({ ok: true, borradas: r.borradas, hayMas: r.hayMas, corte: r.corte.toISOString() });
   };
 }

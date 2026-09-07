@@ -188,6 +188,12 @@ export function backofficeRoutes(container: Container): Router {
 
   // ── Bitácora ───────────────────────────────────────────────────────────────
   r.get('/bitacora', requirePermission('bitacora:leer'), (req, res) => bitacora().listar(req, res));
+  r.get('/bitacora/export.csv', requirePermission('bitacora:leer'), (req, res) =>
+    bitacora().exportarCsv(req, res),
+  );
+  r.post('/bitacora/limpiar', requirePermission('bitacora:gestionar'), (req, res) =>
+    bitacora().limpiar(req, res),
+  );
 
   // ── Configuración ──────────────────────────────────────────────────────────
   r.get('/configuracion', requirePermission('configuracion:catalogos'), (req, res) =>

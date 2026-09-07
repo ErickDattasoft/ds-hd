@@ -28,6 +28,22 @@ Filtros para consultar la bitácora de auditoría.
 
 ***
 
+### desde?
+
+> `optional` **desde?**: `Date`
+
+Solo entradas con fecha `>= desde`.
+
+***
+
+### hasta?
+
+> `optional` **hasta?**: `Date`
+
+Solo entradas con fecha `<= hasta`.
+
+***
+
 ### limite?
 
 > `optional` **limite?**: `number`
