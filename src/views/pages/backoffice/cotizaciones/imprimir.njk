@@ -1,0 +1,70 @@
+{% extends "layouts/base.njk" %}
+{% block title %}{{ cotizacion.folio }}{% endblock %}
+
+{% block head %}
+<style>
+  .doc { max-width: 800px; margin: 2rem auto; padding: 0 1rem; }
+  .doc__head { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; }
+  .doc__brand { font-size: 1.4rem; font-weight: 700; }
+  .doc__meta { text-align: right; font-size: 0.9rem; color: var(--color-text-muted); }
+  .doc table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; }
+  .doc th, .doc td { border: 1px solid var(--color-border); padding: 0.5rem 0.65rem; text-align: left; }
+  .doc td.num, .doc th.num { text-align: right; }
+  .doc tfoot td { border: none; text-align: right; }
+  .doc__actions { margin: 1.5rem auto; max-width: 800px; padding: 0 1rem; }
+  @media print {
+    .doc__actions, .skip-link { display: none !important; }
+    .doc { margin: 0; }
+    a[href]::after { content: none !important; }
+  }
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="doc__actions">
+  <button type="button" class="btn btn--sm" data-print>Imprimir / Guardar como PDF</button>
+  <a class="btn btn--sm btn--ghost" href="/app/cotizaciones/{{ cotizacion.id }}">Volver</a>
+</div>
+{% if auto %}<span data-print-auto hidden></span>{% endif %}
+
+<article class="doc" id="contenido">
+  <div class="doc__head">
+    <div>
+      <div class="doc__brand">DATTASOFT</div>
+      <div class="muted">Cotización</div>
+    </div>
+    <div class="doc__meta">
+      <div><strong>{{ cotizacion.folio }}</strong></div>
+      <div>Fecha: {{ cotizacion.fecha | fecha }}</div>
+      <div>Vigencia: {{ cotizacion.vigenciaDias }} días (vence {{ cotizacion.venceEl | fecha }})</div>
+      <div>Estado: {{ cotizacion.estado }}</div>
+    </div>
+  </div>
+
+  <p><strong>Cliente:</strong> {{ cotizacion.empresaNombre or '—' }}</p>
+
+  <table>
+    <thead>
+      <tr><th>Concepto</th><th class="num">Cant.</th><th class="num">P. unitario</th><th class="num">Importe</th></tr>
+    </thead>
+    <tbody>
+      {% for c in cotizacion.conceptos %}
+        <tr>
+          <td>{{ c.descripcion }}</td>
+          <td class="num">{{ c.cantidad }}</td>
+          <td class="num">{{ c.precioUnitario | moneda(cotizacion.moneda) }}</td>
+          <td class="num">{{ c.importe | moneda(cotizacion.moneda) }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+    <tfoot>
+      <tr><td colspan="3">Subtotal</td><td class="num">{{ cotizacion.subtotal | moneda(cotizacion.moneda) }}</td></tr>
+      <tr><td colspan="3">IVA</td><td class="num">{{ cotizacion.iva | moneda(cotizacion.moneda) }}</td></tr>
+      <tr><td colspan="3"><strong>Total</strong></td><td class="num"><strong>{{ cotizacion.total | moneda(cotizacion.moneda) }}</strong></td></tr>
+    </tfoot>
+  </table>
+
+  {% if cotizacion.notas %}<p style="white-space:pre-line"><strong>Notas:</strong>
+{{ cotizacion.notas }}</p>{% endif %}
+</article>
+{% endblock %}

@@ -142,8 +142,11 @@ export function backofficeRoutes(container: Container): Router {
   r.get('/cotizaciones/nueva', requirePermission('cotizaciones:crear'), (req, res) => cotizaciones().nuevo(req, res));
   r.post('/cotizaciones', requirePermission('cotizaciones:crear'), (req, res) => cotizaciones().crearPost(req, res));
   r.get('/cotizaciones/:id', leerCot, (req, res) => cotizaciones().ver(req, res));
+  r.get('/cotizaciones/:id/imprimir', leerCot, (req, res) => cotizaciones().imprimir(req, res));
   r.get('/cotizaciones/:id/editar', requirePermission('cotizaciones:editar'), (req, res) => cotizaciones().editar(req, res));
   r.post('/cotizaciones/:id/estado', requirePermission('cotizaciones:editar'), (req, res) => cotizaciones().cambiarEstadoPost(req, res));
+  r.post('/cotizaciones/:id/enviar', requirePermission('cotizaciones:editar'), (req, res) => cotizaciones().enviarPost(req, res));
+  r.post('/cotizaciones/:id/crear-ticket', requirePermission('tickets:crear'), (req, res) => cotizaciones().crearTicketPost(req, res));
   r.post('/cotizaciones/:id', requirePermission('cotizaciones:editar'), (req, res) => cotizaciones().actualizarPost(req, res));
 
   // ── Versiones de sistemas ──────────────────────────────────────────────────

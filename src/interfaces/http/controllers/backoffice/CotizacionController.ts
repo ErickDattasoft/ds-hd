@@ -33,7 +33,11 @@ export class CotizacionController {
 
   ver = async (req: Request, res: Response): Promise<void> => {
     const cotizacion = await this.cotizaciones.obtener(str(req.params.id));
-    res.render('pages/backoffice/cotizaciones/detail', { titulo: cotizacion.folio, cotizacion });
+    res.render('pages/backoffice/cotizaciones/detail', {
+      titulo: cotizacion.folio,
+      cotizacion,
+      aviso: str(req.query.aviso) || null,
+    });
   };
 
   nuevo = async (req: Request, res: Response): Promise<void> => {
@@ -102,6 +106,37 @@ export class CotizacionController {
   cambiarEstadoPost = async (req: Request, res: Response): Promise<void> => {
     await this.cotizaciones.cambiarEstado(req.user!, str(req.params.id), str(req.body?.estado) as EstadoCotizacion);
     res.redirect(`/app/cotizaciones/${str(req.params.id)}`);
+  };
+
+  imprimir = async (req: Request, res: Response): Promise<void> => {
+    const cotizacion = await this.cotizaciones.obtener(str(req.params.id));
+    res.render('pages/backoffice/cotizaciones/imprimir', {
+      titulo: cotizacion.folio,
+      cotizacion,
+      auto: req.query.auto === '1',
+    });
+  };
+
+  enviarPost = async (req: Request, res: Response): Promise<void> => {
+    const id = str(req.params.id);
+    try {
+      const { enviadoA } = await this.cotizaciones.enviarPorCorreo(req.user!, id, {
+        para: str(req.body?.para) || undefined,
+      });
+      res.redirect(`/app/cotizaciones/${id}?aviso=${encodeURIComponent(`Enviada a ${enviadoA}`)}`);
+    } catch (err) {
+      const cotizacion = await this.cotizaciones.obtener(id).catch(() => null);
+      res.status(422).render('pages/backoffice/cotizaciones/detail', {
+        titulo: cotizacion?.folio ?? 'Cotización',
+        cotizacion,
+        errorEnvio: camposDeError(err).para ?? camposDeError(err).general ?? 'No se pudo enviar',
+      });
+    }
+  };
+
+  crearTicketPost = async (req: Request, res: Response): Promise<void> => {
+    const ticket = await this.cotizaciones.crearTicketSeguimiento(req.user!, str(req.params.id));
+    res.redirect(`/app/tickets/${ticket.id}`);
   };
 
   // ── Calculadora Compac ────────────────────────────────────────────────────

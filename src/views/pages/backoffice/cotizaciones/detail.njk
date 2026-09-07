@@ -3,11 +3,17 @@
 {% block content %}
   <div class="page-head">
     <h1>{{ cotizacion.folio }} <span class="badge badge--estado">{{ cotizacion.estado }}</span></h1>
-    {% if can('cotizaciones:editar') and cotizacion.estado != 'aceptada' %}
-      <a class="btn btn--sm" href="/app/cotizaciones/{{ cotizacion.id }}/editar">Editar</a>
-    {% endif %}
+    <div class="page-head__actions">
+      <a class="btn btn--sm btn--ghost" href="/app/cotizaciones/{{ cotizacion.id }}/imprimir?auto=1" target="_blank" rel="noopener">PDF / Imprimir</a>
+      {% if can('cotizaciones:editar') and cotizacion.estado != 'aceptada' %}
+        <a class="btn btn--sm" href="/app/cotizaciones/{{ cotizacion.id }}/editar">Editar</a>
+      {% endif %}
+    </div>
   </div>
   <p class="muted">{{ cotizacion.empresaNombre }} · Fecha {{ cotizacion.fecha | fecha }} · Vence {{ cotizacion.venceEl | fecha }}</p>
+
+  {% if aviso %}<div class="alert alert--ok" role="status">{{ aviso }}</div>{% endif %}
+  {% if errorEnvio %}<div class="alert alert--error" role="alert">{{ errorEnvio }}</div>{% endif %}
 
   <table class="data-table">
     <thead><tr><th>Descripción</th><th>Cant.</th><th>P. Unit.</th><th>Importe</th></tr></thead>
@@ -26,16 +32,35 @@
   {% if cotizacion.notas %}<div class="card"><p class="muted">{{ cotizacion.notas }}</p></div>{% endif %}
 
   {% if can('cotizaciones:editar') %}
-    <form method="post" action="/app/cotizaciones/{{ cotizacion.id }}/estado" class="form">
-      <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
-      <label class="field"><span>Cambiar estado</span>
-        <select name="estado">
-          {% for e in ['borrador','enviada','aceptada','rechazada','vencida'] %}
-            {% if e != cotizacion.estado %}<option>{{ e }}</option>{% endif %}
-          {% endfor %}
-        </select>
-      </label>
-      <button class="btn btn--sm" type="submit">Actualizar</button>
-    </form>
+    <div class="dash-grid">
+      <form method="post" action="/app/cotizaciones/{{ cotizacion.id }}/estado" class="card form">
+        <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+        <label class="field"><span>Cambiar estado</span>
+          <select name="estado">
+            {% for e in ['borrador','enviada','aceptada','rechazada','vencida'] %}
+              {% if e != cotizacion.estado %}<option>{{ e }}</option>{% endif %}
+            {% endfor %}
+          </select>
+        </label>
+        <button class="btn btn--sm" type="submit">Actualizar</button>
+      </form>
+
+      <form method="post" action="/app/cotizaciones/{{ cotizacion.id }}/enviar" class="card form"
+            data-confirm="¿Enviar la cotización por correo?">
+        <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+        <label class="field"><span>Enviar por correo</span>
+          <input type="email" name="para" placeholder="Dejar vacío = contacto de la empresa" />
+        </label>
+        <button class="btn btn--sm btn--secondary" type="submit">Enviar</button>
+      </form>
+
+      {% if can('tickets:crear') %}
+        <form method="post" action="/app/cotizaciones/{{ cotizacion.id }}/crear-ticket" class="card form">
+          <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+          <p class="muted">Crea un ticket interno de seguimiento comercial para esta cotización.</p>
+          <button class="btn btn--sm btn--secondary" type="submit">Crear ticket de seguimiento</button>
+        </form>
+      {% endif %}
+    </div>
   {% endif %}
 {% endblock %}

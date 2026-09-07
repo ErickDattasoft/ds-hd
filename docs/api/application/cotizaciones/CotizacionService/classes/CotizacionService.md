@@ -12,7 +12,7 @@ Gestión de cotizaciones: folio consecutivo, conceptos, ciclo de estado.
 
 ### Constructor
 
-> **new CotizacionService**(`repo`, `contadores`, `empresas`, `ids`, `clock`, `bitacora`, `webhooks`): `CotizacionService`
+> **new CotizacionService**(`repo`, `contadores`, `empresas`, `ids`, `clock`, `bitacora`, `webhooks`, `contactos`, `email`, `crearTicket`, `baseUrl`): `CotizacionService`
 
 #### Parameters
 
@@ -43,6 +43,22 @@ Gestión de cotizaciones: folio consecutivo, conceptos, ciclo de estado.
 ##### webhooks
 
 [`IWebhookPublisher`](../../../../core/ports/services/IWebhookPublisher/interfaces/IWebhookPublisher.md)
+
+##### contactos
+
+[`IContactoRepository`](../../../../core/ports/repositories/IContactoRepository/interfaces/IContactoRepository.md)
+
+##### email
+
+[`IEmailSender`](../../../../core/ports/services/IEmailSender/interfaces/IEmailSender.md)
+
+##### crearTicket
+
+[`CrearTicketService`](../../../tickets/CrearTicketService/classes/CrearTicketService.md)
+
+##### baseUrl
+
+`string`
 
 #### Returns
 
@@ -161,3 +177,54 @@ Gestión de cotizaciones: folio consecutivo, conceptos, ciclo de estado.
 #### Returns
 
 `Promise`\<`Record`\<`string`, `number`\>\>
+
+***
+
+### enviarPorCorreo()
+
+> **enviarPorCorreo**(`actor`, `id`, `opts?`): `Promise`\<\{ `enviadoA`: `string`; \}\>
+
+Envía la cotización por correo al contacto indicado (o al principal de la empresa) y,
+si estaba en borrador, la marca como "enviada".
+
+#### Parameters
+
+##### actor
+
+[`SessionUser`](../../../shared/SessionUser/interfaces/SessionUser.md)
+
+##### id
+
+`string`
+
+##### opts?
+
+###### para?
+
+`string`
+
+#### Returns
+
+`Promise`\<\{ `enviadoA`: `string`; \}\>
+
+***
+
+### crearTicketSeguimiento()
+
+> **crearTicketSeguimiento**(`actor`, `id`): `Promise`\<[`Ticket`](../../../../core/entities/Ticket/classes/Ticket.md)\>
+
+Crea un ticket interno de seguimiento a partir de la cotización.
+
+#### Parameters
+
+##### actor
+
+[`SessionUser`](../../../shared/SessionUser/interfaces/SessionUser.md)
+
+##### id
+
+`string`
+
+#### Returns
+
+`Promise`\<[`Ticket`](../../../../core/entities/Ticket/classes/Ticket.md)\>

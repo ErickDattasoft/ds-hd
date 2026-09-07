@@ -652,6 +652,10 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
           c.clock,
           c.bitacoraService,
           c.webhookPublisher,
+          c.contactoRepo,
+          c.emailSender,
+          c.crearTicketService,
+          c.config.baseUrl,
         ),
     ).singleton(),
     calculadoraCompacService: asFunction(

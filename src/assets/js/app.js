@@ -237,6 +237,17 @@
     }
   });
 
+  // ── Imprimir / guardar como PDF ────────────────────────────────────────
+  document.addEventListener('click', function (e) {
+    if (e.target.closest('[data-print]')) {
+      e.preventDefault();
+      window.print();
+    }
+  });
+  document.addEventListener('DOMContentLoaded', function () {
+    if (document.querySelector('[data-print-auto]')) setTimeout(function () { window.print(); }, 150);
+  });
+
   // ── Doble clic en una fila de tabla → abrir el primer enlace de la fila ──
   document.addEventListener('dblclick', function (e) {
     if (e.target.closest('a, button, input, select, textarea, label')) return;

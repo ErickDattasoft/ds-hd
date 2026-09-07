@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import request from 'supertest';
 import { makeTestApp, cookieValor } from '../helpers/app.js';
 import { Empresa } from '../../src/core/entities/Empresa.js';
+import { Contacto } from '../../src/core/entities/Contacto.js';
 
 const ADMIN = { uid: 'u-a', email: 'admin@dattasoft.mx', password: 'admin12345', nombre: 'Admin', rol: 'admin' as const };
 
@@ -63,5 +64,76 @@ describe('cotizaciones', () => {
     const { agent } = await login(t.app, VENDEDOR.email, VENDEDOR.password);
     expect((await agent.get('/app/cotizaciones')).status).toBe(200);
     expect((await agent.get('/app/cotizaciones/nueva')).status).toBe(403);
+  });
+
+  async function crearCotizacion(
+    t: ReturnType<typeof makeTestApp>,
+    csrf: string,
+    agent: Awaited<ReturnType<typeof login>>["agent"],
+  ) {
+    await agent.post('/app/cotizaciones').type('form').send({
+      _csrf: csrf, empresaId: 'e1',
+      concepto_descripcion: 'Licencia', concepto_cantidad: '1', concepto_precio: '5000',
+    });
+    return [...t.cotizacionRepo.items.values()][0]!;
+  }
+
+  it('página imprimible: sin sidebar, con la tabla de conceptos', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    t.empresaRepo.items.set('e1', new Empresa({ id: 'e1', nombre: 'ACME' }));
+    const { agent, csrf } = await login(t.app, ADMIN.email, ADMIN.password);
+    const cot = await crearCotizacion(t, csrf, agent);
+
+    const p = await agent.get(`/app/cotizaciones/${cot.id}/imprimir`);
+    expect(p.status).toBe(200);
+    expect(p.text).toContain('Licencia');
+    expect(p.text).toContain('DATTASOFT');
+    expect(p.text).not.toContain('class="sidebar"');
+  });
+
+  it('envía la cotización por correo al contacto de la empresa y la marca enviada', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    t.empresaRepo.items.set('e1', new Empresa({ id: 'e1', nombre: 'ACME' }));
+    t.contactoRepo.items.set(
+      'c1',
+      new Contacto({ id: 'c1', nombre: 'Ana', empresaId: 'e1', email: 'ana@acme.mx' }),
+    );
+    const { agent, csrf } = await login(t.app, ADMIN.email, ADMIN.password);
+    const cot = await crearCotizacion(t, csrf, agent);
+
+    const r = await agent
+      .post(`/app/cotizaciones/${cot.id}/enviar`)
+      .type('form')
+      .send({ _csrf: csrf });
+    expect(r.status).toBe(302);
+    expect(t.emailSender.ultimo?.para[0]?.email).toBe('ana@acme.mx');
+    expect((await t.cotizacionRepo.findById(cot.id))?.estado).toBe('enviada');
+  });
+
+  it('sin contacto con correo y sin destinatario: 422', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    t.empresaRepo.items.set('e1', new Empresa({ id: 'e1', nombre: 'ACME' }));
+    const { agent, csrf } = await login(t.app, ADMIN.email, ADMIN.password);
+    const cot = await crearCotizacion(t, csrf, agent);
+
+    const r = await agent.post(`/app/cotizaciones/${cot.id}/enviar`).type('form').send({ _csrf: csrf });
+    expect(r.status).toBe(422);
+    expect(t.emailSender.enviados).toHaveLength(0);
+  });
+
+  it('crea un ticket de seguimiento desde la cotización', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    t.empresaRepo.items.set('e1', new Empresa({ id: 'e1', nombre: 'ACME' }));
+    const { agent, csrf } = await login(t.app, ADMIN.email, ADMIN.password);
+    const cot = await crearCotizacion(t, csrf, agent);
+
+    const r = await agent
+      .post(`/app/cotizaciones/${cot.id}/crear-ticket`)
+      .type('form')
+      .send({ _csrf: csrf });
+    expect(r.status).toBe(302);
+    const [ticket] = [...t.ticketStore.tickets.values()];
+    expect(ticket!.asunto).toBe(`Seguimiento cotización ${cot.folio}`);
+    expect(ticket!.empresaId).toBe('e1');
   });
 });
