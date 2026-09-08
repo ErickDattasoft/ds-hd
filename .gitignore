@@ -16,6 +16,7 @@ public/vendor/
 *firebase-adminsdk*.json
 serviceAccount*.json
 service-account*.json
+scripts/migrate/crm-viejo-sa.json
 /run/secrets/
 
 # Datos sensibles / PII de producción (nunca versionar)

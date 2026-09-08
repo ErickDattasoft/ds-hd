@@ -21,7 +21,8 @@ import { CONFIG_TICKETS_POR_DEFECTO, type ConfiguracionTickets } from '../../src
 import { CONFIG_AVISOS_POR_DEFECTO, type ConfiguracionAvisos, type ContactoSoporte } from '../../src/core/entities/ConfiguracionAvisos.js';
 import { CONTADOR_TICKETS } from '../../src/application/tickets/constantes.js';
 import { FirestoreRestClient } from '../../src/infrastructure/firestore-rest/FirestoreRestClient.js';
-import { readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { arr, DRY_RUN, hashId, log, slug } from './lib.js';
 import type { Container } from '../../src/config/container.js';
 
@@ -334,25 +335,59 @@ export async function importarTickets(c: Container, datos: Dato): Promise<{ ok: 
   return { ok, total };
 }
 
+interface SaViejo {
+  client_email: string;
+  private_key: string;
+  project_id?: string;
+}
+
+/**
+ * Localiza la service account del CRM viejo (`agenda-crm-netlify`) para migrar adjuntos.
+ * Sin configurar nada: busca `scripts/migrate/crm-viejo-sa.json` (gitignored) o cualquier
+ * `agenda-crm-netlify-firebase-adminsdk-*.json` en `scripts/migrate/` o la raíz del repo.
+ * Alternativas: env `CRM_VIEJO_SA_B64` (JSON en base64) o `CRM_VIEJO_SA_JSON` (ruta).
+ */
+function ubicarSaViejo(): SaViejo | null {
+  const { CRM_VIEJO_SA_B64, CRM_VIEJO_SA_JSON } = process.env;
+  if (CRM_VIEJO_SA_B64) {
+    return JSON.parse(Buffer.from(CRM_VIEJO_SA_B64, 'base64').toString('utf8')) as SaViejo;
+  }
+  const raiz = process.cwd();
+  const candidatos = [
+    CRM_VIEJO_SA_JSON,
+    join(raiz, 'scripts', 'migrate', 'crm-viejo-sa.json'),
+    ...['scripts/migrate', '.'].flatMap((dir) => {
+      const abs = join(raiz, dir);
+      try {
+        return readdirSync(abs)
+          .filter((f) => /^agenda-crm-netlify-firebase-adminsdk-.*\.json$/.test(f))
+          .map((f) => join(abs, f));
+      } catch {
+        return [];
+      }
+    }),
+  ].filter((p): p is string => Boolean(p) && existsSync(p!));
+  if (!candidatos[0]) return null;
+  return JSON.parse(readFileSync(candidatos[0], 'utf8')) as SaViejo;
+}
+
 // ── Adjuntos de tickets ────────────────────────────────────────────────────────────────────
 //
 // El respaldo ("Respaldar") trae SOLO las referencias (`ticket.adjuntos = [{adjId, nombre,
 // tipo, size}]`); el contenido vive en la colección `tickets_adjuntos` del Firestore del CRM
 // viejo (proyecto `agenda-crm-netlify`). Este paso lee ese proyecto directo con su service
-// account y copia cada adjunto a `tickets_adjuntos` de ds-hd, ligado por `ticketId=tic-<folio>`.
-// Se omite (sin fallar) si no se define `CRM_VIEJO_SA_JSON` (ruta al JSON de la service
-// account del proyecto viejo). Idempotente: el doc de ds-hd usa el id `mig-<adjId>`.
+// account (ver `ubicarSaViejo`) y copia cada adjunto a `tickets_adjuntos` de ds-hd, ligado por
+// `ticketId=tic-<folio>`. Se omite (sin fallar) si no encuentra la SA del viejo. Idempotente:
+// el doc de ds-hd usa el id `mig-<adjId>`.
 export async function importarAdjuntos(c: Container, datos: Dato): Promise<number> {
-  const saPath = process.env.CRM_VIEJO_SA_JSON;
-  if (!saPath) {
-    log('adjuntos', 'CRM_VIEJO_SA_JSON no definido — se omiten (el contenido vive en el Firestore del CRM viejo).');
+  const sa = ubicarSaViejo();
+  if (!sa) {
+    log(
+      'adjuntos',
+      'sin service account del CRM viejo — se omiten. Copia el JSON a scripts/migrate/crm-viejo-sa.json (o define CRM_VIEJO_SA_B64).',
+    );
     return 0;
   }
-  const sa = JSON.parse(readFileSync(saPath, 'utf8')) as {
-    client_email: string;
-    private_key: string;
-    project_id?: string;
-  };
   const viejo = new FirestoreRestClient({
     projectId: sa.project_id ?? 'agenda-crm-netlify',
     serviceAccount: sa,

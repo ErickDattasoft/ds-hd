@@ -51,18 +51,18 @@ tsx scripts/migrate/99-verify-migration.ts
   original igual se preserva como nota interna del ticket cuando el mapeo pudo perder matiz.
 - **"Acerca de"**: el respaldo trae `acercaDe: { version, fecha, notas }` — se importa a
   `configuracion/acercaDe` (el campo `fecha` del viejo pasa a `ultimaActualizacion`).
-- **Adjuntos de tickets**: sí se migran, pero necesitan un paso extra. El respaldo
-  ("Respaldar") trae solo las *referencias* (`ticket.adjuntos = [{adjId, nombre, tipo,
-  size}]`); el contenido vive en la colección `tickets_adjuntos` del Firestore del CRM
-  viejo (proyecto `agenda-crm-netlify`). `importarAdjuntos` lo lee de ahí con la service
-  account de ese proyecto y lo copia a `tickets_adjuntos` de ds-hd (base64 en Firestore,
-  igual que el viejo — sin Firebase Storage).
+- **Adjuntos de tickets**: se migran solos. El respaldo ("Respaldar") trae solo las
+  *referencias* (`ticket.adjuntos = [{adjId, nombre, tipo, size}]`); el contenido vive en
+  la colección `tickets_adjuntos` del Firestore del CRM viejo (`agenda-crm-netlify`).
+  `importarAdjuntos` lo lee de ahí y lo copia a `tickets_adjuntos` de ds-hd (base64 en
+  Firestore, igual que el viejo — sin Firebase Storage).
 
-  ```bash
-  CRM_VIEJO_SA_JSON=/ruta/al/agenda-crm-netlify-firebase-adminsdk-*.json \
-    tsx scripts/migrate/run-all.ts --input=/ruta/al/respaldo.json
-  ```
+  Único requisito: **copia el JSON de la service account del CRM viejo a
+  `scripts/migrate/crm-viejo-sa.json`** (gitignored). `run-all.ts` lo encuentra solo — no
+  hay que pasar rutas ni variables. (También reconoce cualquier
+  `agenda-crm-netlify-firebase-adminsdk-*.json` en `scripts/migrate/` o la raíz del repo, o
+  el env `CRM_VIEJO_SA_B64` con el JSON en base64.)
 
-  Si `CRM_VIEJO_SA_JSON` no está definido, el paso se omite sin fallar (el resto de la
-  migración corre igual). Idempotente: cada adjunto se guarda con id `mig-<adjId>`.
-  Se saltan (con aviso) los adjuntos > 1 MiB (no caben en un doc de Firestore).
+  Si no está la SA del viejo, el paso se omite sin fallar (el resto de la migración corre
+  igual). Idempotente: cada adjunto se guarda con id `mig-<adjId>`. Se saltan (con aviso)
+  los adjuntos > 1 MiB (no caben en un doc de Firestore).
