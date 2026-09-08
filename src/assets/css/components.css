@@ -272,6 +272,7 @@ input:focus {
   box-shadow: var(--ring);
 }
 .field textarea { resize: vertical; min-height: 4rem; }
+#ticket-descripcion { min-height: 20rem; line-height: 1.5; }
 .field__error { color: var(--danger); font-size: var(--text-xs); }
 fieldset.field {
   border: 1px solid var(--color-border);

@@ -14,7 +14,7 @@
 
   <div class="card">
     <p><strong>Tu solicitud</strong></p>
-    <p>{{ ticket.descripcion }}</p>
+    <p style="white-space:pre-wrap">{{ ticket.descripcion }}</p>
   </div>
 
   <div class="card">
@@ -22,7 +22,7 @@
     {% for n in notas %}
       <div class="nota">
         <div class="nota__head"><span>{{ n.autorNombre }}</span></div>
-        <p>{{ n.cuerpo }}</p>
+        <p style="white-space:pre-wrap">{{ n.cuerpo }}</p>
       </div>
     {% else %}
       <p class="muted">Aún no hay respuestas. El equipo de soporte te contactará pronto.</p>

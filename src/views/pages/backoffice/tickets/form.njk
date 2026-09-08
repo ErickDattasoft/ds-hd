@@ -73,7 +73,7 @@
     <div class="card">
       <p><strong>Descripción *</strong></p>
       {{ tk.editorToolbar(user, '[name="descripcion"]') }}
-      <textarea name="descripcion" id="ticket-descripcion" rows="7" required placeholder="Describe el problema en detalle…">{{ valores.descripcion }}</textarea>
+      <textarea name="descripcion" id="ticket-descripcion" rows="16" required placeholder="Describe el problema en detalle…">{{ valores.descripcion }}</textarea>
       {% if errores.descripcion %}<em class="field__error">{{ errores.descripcion }}</em>{% endif %}
     </div>
 
