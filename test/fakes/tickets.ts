@@ -110,7 +110,7 @@ export class InMemoryTicketQueries implements ITicketQueries {
       .sort((a, b) =>
         filtro.soloProgramados
           ? a.fechaHoraProgramada!.getTime() - b.fechaHoraProgramada!.getTime()
-          : b.abiertoEn.getTime() - a.abiertoEn.getTime(),
+          : b.numero - a.numero,
       );
     return filtro.limite ? out.slice(0, filtro.limite) : out;
   }

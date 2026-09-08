@@ -404,9 +404,149 @@
       });
     });
   }
+  // ── Tablas: scroll horizontal, ordenar por columna y ancho ajustable ─────
+  function claveTabla(tabla) {
+    if (tabla.getAttribute('data-tabla')) return 'tbl:' + tabla.getAttribute('data-tabla');
+    var ths = tabla.tHead ? tabla.tHead.rows[0].cells : [];
+    var cols = Array.prototype.map.call(ths, function (th) { return th.textContent.trim().slice(0, 12); }).join('|');
+    return 'tbl:' + location.pathname + '#' + cols;
+  }
+  function lee(clave) { try { return JSON.parse(localStorage.getItem(clave) || 'null'); } catch (e) { void e; return null; } }
+  function guarda(clave, val) { try { localStorage.setItem(clave, JSON.stringify(val)); } catch (e) { void e; } }
+
+  function valorCelda(fila, idx) {
+    var td = fila.cells[idx];
+    if (!td) return '';
+    var raw = td.getAttribute('data-sort-value');
+    var txt = raw != null ? raw : td.textContent.trim();
+    var num = parseFloat(txt.replace(/[^0-9.,-]/g, '').replace(/\.(?=.*\.)/g, '').replace(',', '.'));
+    return { txt: txt, num: isNaN(num) || !/[0-9]/.test(txt) ? null : num };
+  }
+
+  function ordenarPor(tabla, idx, dir) {
+    var tb = tabla.tBodies[0];
+    if (!tb) return;
+    var filas = Array.prototype.filter.call(tb.rows, function (r) {
+      return r.cells.length > 1 && !r.querySelector('[colspan]');
+    });
+    if (filas.length < 2) return;
+    filas.sort(function (a, b) {
+      var va = valorCelda(a, idx), vb = valorCelda(b, idx), c;
+      if (va.num !== null && vb.num !== null) c = va.num - vb.num;
+      else c = va.txt.localeCompare(vb.txt, 'es', { numeric: true });
+      return dir === 'desc' ? -c : c;
+    });
+    filas.forEach(function (f) { tb.appendChild(f); });
+  }
+
+  function initTablas(scope) {
+    (scope || document).querySelectorAll('table.data-table').forEach(function (tabla) {
+      if (tabla.__enh) return;
+      tabla.__enh = true;
+
+      if (!tabla.parentElement.classList.contains('table-wrap')) {
+        var wrap = document.createElement('div');
+        wrap.className = 'table-wrap';
+        tabla.parentNode.insertBefore(wrap, tabla);
+        wrap.appendChild(tabla);
+      }
+      var thead = tabla.tHead;
+      if (!thead || !thead.rows.length) return;
+      var clave = claveTabla(tabla);
+      var estado = lee(clave) || {};
+
+      // Anchos guardados
+      if (estado.anchos) {
+        tabla.style.tableLayout = 'fixed';
+        Array.prototype.forEach.call(thead.rows[0].cells, function (th, i) {
+          if (estado.anchos[i]) th.style.width = estado.anchos[i] + 'px';
+        });
+      }
+
+      Array.prototype.forEach.call(thead.rows[0].cells, function (th, idx) {
+        if (!th.hasAttribute('data-no-ordenar')) {
+          th.classList.add('th-ordenable');
+          th.addEventListener('click', function (e) {
+            if (e.target.classList.contains('col-ajuste')) return;
+            var dir = estado.orden && estado.orden.idx === idx && estado.orden.dir === 'asc' ? 'desc' : 'asc';
+            estado.orden = { idx: idx, dir: dir };
+            guarda(clave, estado);
+            marcarFlechas(thead.rows[0], idx, dir);
+            ordenarPor(tabla, idx, dir);
+          });
+        }
+        // Handle de ajuste de ancho
+        var h = document.createElement('span');
+        h.className = 'col-ajuste';
+        th.appendChild(h);
+        h.addEventListener('mousedown', function (e) {
+          e.preventDefault();
+          e.stopPropagation();
+          tabla.style.tableLayout = 'fixed';
+          var x0 = e.pageX, w0 = th.offsetWidth;
+          function mover(ev) {
+            var w = Math.max(48, w0 + (ev.pageX - x0));
+            th.style.width = w + 'px';
+          }
+          function soltar() {
+            document.removeEventListener('mousemove', mover);
+            document.removeEventListener('mouseup', soltar);
+            estado.anchos = estado.anchos || {};
+            Array.prototype.forEach.call(thead.rows[0].cells, function (c, i) {
+              estado.anchos[i] = c.offsetWidth;
+            });
+            guarda(clave, estado);
+          }
+          document.addEventListener('mousemove', mover);
+          document.addEventListener('mouseup', soltar);
+        });
+      });
+
+      if (estado.orden) {
+        marcarFlechas(thead.rows[0], estado.orden.idx, estado.orden.dir);
+        ordenarPor(tabla, estado.orden.idx, estado.orden.dir);
+      }
+    });
+  }
+  function marcarFlechas(tr, idx, dir) {
+    Array.prototype.forEach.call(tr.cells, function (th, i) {
+      var f = th.querySelector('.col-flecha');
+      if (i === idx) {
+        if (!f) { f = document.createElement('span'); f.className = 'col-flecha'; th.insertBefore(f, th.querySelector('.col-ajuste')); }
+        f.textContent = dir === 'desc' ? ' ▼' : ' ▲';
+      } else if (f) {
+        f.remove();
+      }
+    });
+  }
+
+  // ── Insertar encabezado / firma en el editor de tickets ──────────────────
+  document.addEventListener('click', function (e) {
+    var btn = e.target.closest('[data-insertar]');
+    if (!btn) return;
+    e.preventDefault();
+    var tipo = btn.getAttribute('data-insertar');
+    var caja = document.querySelector(btn.getAttribute('data-destino') || '#nota-cuerpo, [name="descripcion"], [name="cuerpo"]');
+    if (!caja) return;
+    var texto = btn.getAttribute('data-texto') || '';
+    if (tipo === 'encabezado') {
+      var hoy = new Date().toLocaleDateString('es-MX');
+      texto = (texto || 'Fecha: [fecha]\n\nSíntoma:\n\nProblema:\n\nSolución:\n\nTiempo trabajado:\n').replace(/\[fecha\]/g, hoy);
+      caja.value = texto + (caja.value ? '\n\n' + caja.value : '');
+    } else {
+      if (!texto) { toast('No tienes una firma configurada — ponla en "Mi perfil"'); return; }
+      caja.value = (caja.value ? caja.value.replace(/\s+$/, '') + '\n\n' : '') + texto;
+    }
+    caja.focus();
+  });
+
   document.addEventListener('DOMContentLoaded', function () {
     updateToggle();
     initKanban();
+    initTablas();
   });
-  document.body.addEventListener('htmx:afterSwap', initKanban);
+  document.body.addEventListener('htmx:afterSwap', function (e) {
+    initKanban();
+    initTablas(e.target);
+  });
 })();

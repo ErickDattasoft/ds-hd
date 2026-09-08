@@ -52,7 +52,8 @@ export class FirestoreTicketQueries implements ITicketQueries {
         .filter((x) => x.fechaHoraProgramada !== null)
         .sort((a, b) => a.fechaHoraProgramada!.getTime() - b.fechaHoraProgramada!.getTime());
     }
-    return out.sort((a, b) => b.abiertoEn.getTime() - a.abiertoEn.getTime());
+    // Orden por defecto: folio descendente (el más nuevo arriba), como el CRM viejo.
+    return out.sort((a, b) => b.numero - a.numero);
   }
 
   async listar(filtro: FiltroTickets): Promise<Ticket[]> {

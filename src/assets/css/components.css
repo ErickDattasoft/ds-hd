@@ -309,8 +309,25 @@ fieldset.field {
 }
 .data-table tbody tr:hover { background: var(--color-surface-2); }
 .data-table td { max-width: 22rem; overflow: hidden; text-overflow: ellipsis; }
+
+/* Mejoras aplicadas por app.js (initTablas): ordenar por columna + ancho ajustable */
+.data-table thead th { position: relative; }
+.data-table th.th-ordenable { cursor: pointer; user-select: none; }
+.data-table th.th-ordenable:hover { color: var(--color-text); }
+.data-table .col-flecha { font-size: 0.9em; opacity: 0.8; }
+.data-table th .col-ajuste {
+  position: absolute;
+  top: 0;
+  right: -3px;
+  width: 8px;
+  height: 100%;
+  cursor: col-resize;
+  z-index: 2;
+}
+.data-table th .col-ajuste:hover { background: var(--color-brand, currentColor); opacity: 0.35; }
+
 @media (max-width: 640px) {
-  .data-table { display: block; overflow-x: auto; white-space: nowrap; }
+  .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 }
 
 /* ── Badges ────────────────────────────────────────────────────────────── */
