@@ -20,6 +20,8 @@ import { sanearAcercaDe } from '../../src/core/entities/AcercaDe.js';
 import { CONFIG_TICKETS_POR_DEFECTO, type ConfiguracionTickets } from '../../src/core/entities/ConfiguracionTickets.js';
 import { CONFIG_AVISOS_POR_DEFECTO, type ConfiguracionAvisos, type ContactoSoporte } from '../../src/core/entities/ConfiguracionAvisos.js';
 import { CONTADOR_TICKETS } from '../../src/application/tickets/constantes.js';
+import { FirestoreRestClient } from '../../src/infrastructure/firestore-rest/FirestoreRestClient.js';
+import { readFileSync } from 'node:fs';
 import { arr, DRY_RUN, hashId, log, slug } from './lib.js';
 import type { Container } from '../../src/config/container.js';
 
@@ -330,6 +332,89 @@ export async function importarTickets(c: Container, datos: Dato): Promise<{ ok: 
     for (const linea of renumerados) log('tickets', `  - ${linea}`);
   }
   return { ok, total };
+}
+
+// ── Adjuntos de tickets ────────────────────────────────────────────────────────────────────
+//
+// El respaldo ("Respaldar") trae SOLO las referencias (`ticket.adjuntos = [{adjId, nombre,
+// tipo, size}]`); el contenido vive en la colección `tickets_adjuntos` del Firestore del CRM
+// viejo (proyecto `agenda-crm-netlify`). Este paso lee ese proyecto directo con su service
+// account y copia cada adjunto a `tickets_adjuntos` de ds-hd, ligado por `ticketId=tic-<folio>`.
+// Se omite (sin fallar) si no se define `CRM_VIEJO_SA_JSON` (ruta al JSON de la service
+// account del proyecto viejo). Idempotente: el doc de ds-hd usa el id `mig-<adjId>`.
+export async function importarAdjuntos(c: Container, datos: Dato): Promise<number> {
+  const saPath = process.env.CRM_VIEJO_SA_JSON;
+  if (!saPath) {
+    log('adjuntos', 'CRM_VIEJO_SA_JSON no definido — se omiten (el contenido vive en el Firestore del CRM viejo).');
+    return 0;
+  }
+  const sa = JSON.parse(readFileSync(saPath, 'utf8')) as {
+    client_email: string;
+    private_key: string;
+    project_id?: string;
+  };
+  const viejo = new FirestoreRestClient({
+    projectId: sa.project_id ?? 'agenda-crm-netlify',
+    serviceAccount: sa,
+  }) as unknown as {
+    doc(path: string): { get(): Promise<{ exists: boolean; data(): Dato | undefined }> };
+  };
+  const adjRepo = c.resolve('adjuntoTicketRepo');
+  const ticketRepo = c.resolve('ticketRepo');
+
+  let ok = 0;
+  let saltados = 0;
+  for (const t of [...arr(datos.tickets), ...arr(datos.papelera)]) {
+    const refs = arr(t.adjuntos);
+    const numero = Number(t.numero ?? 0);
+    if (!refs.length || !numero) continue;
+    const ticketId = `tic-${numero}`;
+    if (!(await ticketRepo.findById(ticketId))) {
+      log('adjuntos', `ticket #${numero} no está en ds-hd — se omiten sus ${refs.length} adjunto(s)`);
+      saltados += refs.length;
+      continue;
+    }
+    for (const ref of refs) {
+      const adjId = s(ref.adjId);
+      if (!adjId) continue;
+      try {
+        const snap = await viejo.doc(`tickets_adjuntos/${adjId}`).get();
+        const d = snap.exists ? snap.data() : undefined;
+        const dataUrl = s(d?.data);
+        if (!dataUrl) {
+          log('adjuntos', `adjunto ${adjId} sin contenido en el CRM viejo — se omite`);
+          saltados++;
+          continue;
+        }
+        if (dataUrl.length > 1_000_000) {
+          log('adjuntos', `adjunto ${adjId} "${s(d?.nombre)}" supera el límite de 1 MiB de un doc — se omite`);
+          saltados++;
+          continue;
+        }
+        const contentType = s(d?.tipo) || s(ref.tipo) || 'application/octet-stream';
+        const base64 = dataUrl.includes(',') ? dataUrl.slice(dataUrl.indexOf(',') + 1) : dataUrl;
+        if (!DRY_RUN) {
+          await adjRepo.crear({
+            id: `mig-${adjId}`,
+            ticketId,
+            nombre: s(d?.nombre) || s(ref.nombre) || 'adjunto',
+            contentType,
+            tamano: Number(d?.size ?? ref.size ?? Math.floor((base64.length * 3) / 4)),
+            data: `data:${contentType};base64,${base64}`,
+            subidoPorUid: null,
+            subidoPorNombre: 'Migración CRM viejo',
+            createdAt: fecha(d?.fecha),
+          });
+        }
+        ok++;
+      } catch (err) {
+        log('adjuntos', `ERROR con adjunto ${adjId}: ${err instanceof Error ? err.message : err}`);
+        saltados++;
+      }
+    }
+  }
+  log('adjuntos', `${ok} adjunto(s) migrado(s), ${saltados} saltado(s)`);
+  return ok;
 }
 
 // ── Versiones de sistemas (`versionesMercado` + `cartasTecnicas`, dos dicts sistema→valor) ──

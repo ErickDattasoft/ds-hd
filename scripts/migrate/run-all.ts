@@ -22,6 +22,7 @@ import {
   importarConfiguracionAvisos,
   importarAcercaDe,
   importarUsuarios,
+  importarAdjuntos,
 } from './importers.js';
 
 const datos = leerExport();
@@ -39,6 +40,7 @@ await importarConfiguracionTickets(c, datos);
 await importarConfiguracionAvisos(c, datos);
 await importarAcercaDe(c, datos);
 await importarTickets(c, datos);
+await importarAdjuntos(c, datos); // requiere CRM_VIEJO_SA_JSON; si no, se omite
 
 if (contactos.sinEmpresa.length) {
   log('run-all', `contactos sin empresa emparejada (revisar en "Sin empresa (revisar tras migración)"):`);
