@@ -1,0 +1,67 @@
+{% extends "layouts/base.njk" %}
+{% block title %}Ticket #{{ ticket.numero }}{% endblock %}
+
+{% block head %}
+<style>
+  .doc { max-width: 800px; margin: 2rem auto; padding: 0 1rem; }
+  .doc__brand { font-size: 1.3rem; font-weight: 700; }
+  .doc table.datos { width: 100%; border-collapse: collapse; margin: 1rem 0 1.5rem; }
+  .doc table.datos th, .doc table.datos td { border: 1px solid var(--color-border); padding: 0.4rem 0.6rem; text-align: left; font-size: 0.9rem; }
+  .doc table.datos th { background: var(--color-surface-2); width: 8rem; }
+  .doc h2 { font-size: 1.05rem; margin: 1.4rem 0 0.4rem; }
+  .doc .bloque { white-space: pre-wrap; background: var(--color-surface-2); border: 1px solid var(--color-border); border-radius: 6px; padding: 0.8rem; }
+  .doc .nota { border-left: 3px solid var(--color-border); padding: 0.2rem 0 0.2rem 0.7rem; margin: 0.6rem 0; }
+  .doc .nota div { white-space: pre-wrap; }
+  .doc__actions { margin: 1.5rem auto; max-width: 800px; padding: 0 1rem; }
+  @media print {
+    .doc__actions, .skip-link { display: none !important; }
+    .doc { margin: 0; }
+    a[href]::after { content: none !important; }
+  }
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="doc__actions">
+  <button type="button" class="btn btn--sm" data-print>Imprimir / Guardar como PDF</button>
+  <a class="btn btn--sm btn--ghost" href="/app/tickets/{{ ticket.id }}">Volver</a>
+</div>
+{% if auto %}<span data-print-auto hidden></span>{% endif %}
+
+<article class="doc" id="contenido">
+  {% if conLogo %}<div class="doc__brand">DATTASOFT <span class="muted" style="font-weight:400;font-size:0.8rem">— Sistema de tickets</span></div>{% endif %}
+  <h1>Ticket #{{ ticket.numero }} — {{ ticket.asunto }}</h1>
+
+  <table class="datos">
+    <tr><th>Empresa</th><td>{{ ticket.empresaNombre or '—' }}</td><th>Contacto</th><td>{{ ticket.contactoNombre or '—' }}</td></tr>
+    <tr><th>Tipo</th><td>{{ ticket.tipo }}</td><th>Sistema</th><td>{{ ticket.sistema or '—' }}</td></tr>
+    <tr><th>Prioridad</th><td>{{ ticket.prioridad }}</td><th>Estado</th><td>{{ ticket.estado }}</td></tr>
+    <tr><th>Agente</th><td>{{ ticket.agenteAsignadoNombre or 'Sin asignar' }}</td><th>Grupo</th><td>{{ ticket.grupo or '—' }}</td></tr>
+    {% if ticket.solicitadoPor or ticket.canalizadoA %}
+      <tr><th>Solicitado por</th><td>{{ ticket.solicitadoPor or '—' }}</td><th>Canalizado a</th><td>{{ ticket.canalizadoA or '—' }}</td></tr>
+    {% endif %}
+    <tr><th>Creado</th><td>{{ ticket.createdAt | fechahora }}</td><th>Tiempo trab.</th><td>{{ vm.tiempoTrabajado }}</td></tr>
+  </table>
+
+  <h2>Descripción</h2>
+  <div class="bloque">{{ ticket.descripcion }}</div>
+
+  {% if notas | length %}
+    <h2>Conversación</h2>
+    {% for n in notas %}
+      <div class="nota">
+        <p class="muted" style="margin:0">{{ n.autorNombre }} · {{ n.createdAt | fechahora }}</p>
+        <div>{{ n.cuerpo }}</div>
+      </div>
+    {% endfor %}
+  {% endif %}
+
+  {% if adjuntos | length %}
+    <h2>Adjuntos</h2>
+    <ul>{% for a in adjuntos %}<li>{{ a.nombre }} <span class="muted">({{ (a.tamano / 1024) | round }} KB)</span></li>{% endfor %}</ul>
+    {% for a in adjuntos %}{% if a.contentType.startsWith('image/') %}
+      <img src="/app/tickets/{{ ticket.id }}/adjuntos/{{ a.id }}" alt="{{ a.nombre }}" style="max-width:100%;margin-top:8px" />
+    {% endif %}{% endfor %}
+  {% endif %}
+</article>
+{% endblock %}

@@ -71,6 +71,16 @@ export interface TicketProps {
   agenteAsignadoUid?: string | null;
   agenteAsignadoNombre?: string | null;
 
+  /** Quién pidió el ticket (texto libre, no necesariamente un contacto registrado). */
+  solicitadoPor?: string | null;
+  /** Área o persona a la que se canaliza el ticket (texto libre). */
+  canalizadoA?: string | null;
+  /** Notas internas persistentes (NO se envían al cliente). Aparte del hilo de conversación. */
+  notasInternas?: string | null;
+  /** Correos en copia en las notificaciones del ticket. */
+  cc?: string[];
+  cco?: string[];
+
   origenPublicoId?: string | null;
   solicitanteUid?: string | null;
   creadoPorUid?: string | null;
@@ -128,6 +138,12 @@ export class Ticket {
   agenteAsignadoUid: string | null;
   agenteAsignadoNombre: string | null;
 
+  solicitadoPor: string | null;
+  canalizadoA: string | null;
+  notasInternas: string | null;
+  cc: string[];
+  cco: string[];
+
   readonly origenPublicoId: string | null;
   readonly solicitanteUid: string | null;
   readonly creadoPorUid: string | null;
@@ -168,6 +184,12 @@ export class Ticket {
 
     this.agenteAsignadoUid = props.agenteAsignadoUid ?? null;
     this.agenteAsignadoNombre = props.agenteAsignadoNombre ?? null;
+
+    this.solicitadoPor = props.solicitadoPor?.trim() || null;
+    this.canalizadoA = props.canalizadoA?.trim() || null;
+    this.notasInternas = props.notasInternas?.trim() || null;
+    this.cc = (props.cc ?? []).map((c) => c.trim()).filter(Boolean);
+    this.cco = (props.cco ?? []).map((c) => c.trim()).filter(Boolean);
 
     this.origenPublicoId = props.origenPublicoId ?? null;
     this.solicitanteUid = props.solicitanteUid ?? null;
@@ -220,6 +242,11 @@ export class Ticket {
     contactoId?: string | null;
     contactoNombre?: string | null;
     contactoCorreo?: string | null;
+    solicitadoPor?: string | null;
+    canalizadoA?: string | null;
+    notasInternas?: string | null;
+    cc?: string[];
+    cco?: string[];
     solicitanteUid?: string | null;
     creadoPorUid?: string | null;
     origenPublicoId?: string | null;
@@ -320,6 +347,17 @@ export class Ticket {
 
   registrarPrimeraRespuesta(ahora: Date): void {
     this.primeraRespuestaEn ??= ahora;
+    this.updatedAt = ahora;
+  }
+
+  /** Actualiza los campos de gestión interna del ticket (solicitado por / canalizado a / notas). */
+  actualizarGestion(
+    datos: { solicitadoPor?: string; canalizadoA?: string; notasInternas?: string },
+    ahora: Date,
+  ): void {
+    if (datos.solicitadoPor !== undefined) this.solicitadoPor = datos.solicitadoPor.trim() || null;
+    if (datos.canalizadoA !== undefined) this.canalizadoA = datos.canalizadoA.trim() || null;
+    if (datos.notasInternas !== undefined) this.notasInternas = datos.notasInternas.trim() || null;
     this.updatedAt = ahora;
   }
 

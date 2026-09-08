@@ -90,6 +90,12 @@ Roles asignados (fuente de verdad). Ver getters `rol`/`rolPrincipal`.
 
 ***
 
+### encabezado
+
+> **encabezado**: `string` \| `null`
+
+***
+
 ### createdAt
 
 > `readonly` **createdAt**: `Date`
@@ -253,6 +259,26 @@ Reemplaza el conjunto de roles validando coherencia (`cliente` es exclusivo).
 #### Parameters
 
 ##### firma
+
+`string`
+
+##### ahora
+
+`Date`
+
+#### Returns
+
+`void`
+
+***
+
+### fijarEncabezado()
+
+> **fijarEncabezado**(`encabezado`, `ahora`): `void`
+
+#### Parameters
+
+##### encabezado
 
 `string`
 

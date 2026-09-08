@@ -23,6 +23,8 @@ export interface SessionUser {
   readonly permisos: readonly string[];
   /** Firma que se agrega a las respuestas públicas de tickets, si la tiene configurada. */
   readonly firma?: string | null;
+  /** Encabezado/plantilla del usuario para redactar tickets (con `[fecha]`). */
+  readonly encabezado?: string | null;
 }
 
 /** ¿El actor tiene este permiso concreto? */

@@ -47,6 +47,47 @@ describe('flujo de tickets', () => {
     expect(t.emailSender.enviados.length).toBeGreaterThanOrEqual(3);
   });
 
+  it('alta con estado inicial, solicitado/canalizado y notas internas; luego gestión e imprimir', async () => {
+    const t = makeTestApp({ usuarios: [SUP] });
+    const { agent, csrf } = await login(t.app, SUP.email, SUP.password);
+    const crear = await agent.post('/app/tickets').type('form').send({
+      _csrf: csrf,
+      asunto: 'Timbrado fallido',
+      descripcion: 'No timbra desde la actualización',
+      tipo: 'General',
+      prioridad: 'Alta',
+      estado: 'En proceso',
+      solicitadoPor: 'Juan Pérez',
+      canalizadoA: 'Mesa de ayuda',
+      notasInternas: 'Revisar certificado del PAC',
+      cc: 'jefe@x.com, otro@x.com',
+    });
+    expect(crear.status).toBe(302);
+    const id = String(crear.headers.location).split('/').pop()!;
+    const ticket = t.ticketStore.tickets.get(id)!;
+    expect(ticket.estado).toBe('En proceso');
+    expect(ticket.solicitadoPor).toBe('Juan Pérez');
+    expect(ticket.canalizadoA).toBe('Mesa de ayuda');
+    expect(ticket.notasInternas).toBe('Revisar certificado del PAC');
+    expect(ticket.cc).toEqual(['jefe@x.com', 'otro@x.com']);
+
+    // gestión desde el detalle
+    const g = await agent
+      .post(`/app/tickets/${id}/gestion`)
+      .type('form')
+      .send({ _csrf: csrf, solicitadoPor: 'María', canalizadoA: '', notasInternas: 'Escalado a nivel 2' });
+    expect(g.status).toBe(302);
+    const upd = t.ticketStore.tickets.get(id)!;
+    expect(upd.solicitadoPor).toBe('María');
+    expect(upd.canalizadoA).toBeNull();
+    expect(upd.notasInternas).toBe('Escalado a nivel 2');
+
+    const imp = await agent.get(`/app/tickets/${id}/imprimir`);
+    expect(imp.status).toBe(200);
+    expect(imp.text).toContain('Timbrado fallido');
+    expect(imp.text).toContain('María');
+  });
+
   it('adjuntar un archivo al ticket, verlo y quitarlo', async () => {
     const t = makeTestApp({ usuarios: [SUP] });
     const { agent, csrf } = await login(t.app, SUP.email, SUP.password);

@@ -4,7 +4,13 @@
 {% block content %}
   <div class="page-head">
     <h1>#{{ ticket.numero }} — {{ ticket.asunto }}</h1>
-    <a class="btn btn--sm btn--ghost" href="/app/tickets">← Volver</a>
+    <div class="page-head__actions">
+      <a class="btn btn--sm btn--ghost" href="/app/tickets/{{ ticket.id }}/imprimir?auto=1" target="_blank" rel="noopener">🖨️ Imprimir</a>
+      {% if permisos.cotizar %}
+        <a class="btn btn--sm btn--ghost" href="/app/cotizaciones/nueva?empresa={{ ticket.empresaId or '' }}&conceptos=[{{ '{' }}&quot;descripcion&quot;:&quot;{{ ticket.asunto }}&quot;,&quot;cantidad&quot;:1,&quot;precioUnitario&quot;:0{{ '}' }}]">🧾 Cotizar</a>
+      {% endif %}
+      <a class="btn btn--sm btn--ghost" href="/app/tickets">← Volver</a>
+    </div>
   </div>
 
   {% if aviso == 'correo-reenviado' %}
@@ -35,7 +41,8 @@
         {% if permisos.editar %}
           <form method="post" action="/app/tickets/{{ ticket.id }}/nota" class="form">
             <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
-            <textarea name="cuerpo" rows="3" required placeholder="Escribe una respuesta…"></textarea>
+            {{ tk.editorToolbar(user, '#nota-cuerpo') }}
+            <textarea name="cuerpo" id="nota-cuerpo" rows="3" required placeholder="Escribe una respuesta…"></textarea>
             <label class="field--check">
               <input type="checkbox" name="tipo" value="interna" {{ 'disabled' if not permisos.notasInternas }} />
               <span>Nota interna (no visible para el cliente)</span>
@@ -44,6 +51,25 @@
           </form>
         {% endif %}
       </div>
+
+      {% if permisos.editar %}
+        <div class="card">
+          <p><strong>Gestión</strong> <span class="muted">— datos internos del ticket</span></p>
+          <form method="post" action="/app/tickets/{{ ticket.id }}/gestion" class="form">
+            <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+            <div class="form-grid">
+              <label class="field"><span>Solicitado por</span><input name="solicitadoPor" value="{{ ticket.solicitadoPor or '' }}" placeholder="—" /></label>
+              <label class="field"><span>Canalizado a</span><input name="canalizadoA" value="{{ ticket.canalizadoA or '' }}" placeholder="—" /></label>
+            </div>
+            {% if permisos.notasInternas %}
+              <label class="field"><span>🔒 Notas internas <span class="muted">(no se envían al cliente)</span></span>
+                <textarea name="notasInternas" rows="3" placeholder="Ej: Factura A-001, pendiente autorización…">{{ ticket.notasInternas or '' }}</textarea>
+              </label>
+            {% endif %}
+            <button class="btn btn--sm" type="submit">Guardar gestión</button>
+          </form>
+        </div>
+      {% endif %}
 
       {{ tk.adjuntosTicket(adjuntos, '/app/tickets/' + ticket.id, csrfToken, permisos.editar) }}
 
@@ -105,6 +131,11 @@
         </p>
         <p><strong>Agente:</strong> {{ ticket.agenteAsignadoNombre or 'Sin asignar' }}</p>
         <p><strong>Empresa:</strong> {{ ticket.empresaNombre or '—' }}</p>
+        <p><strong>Contacto:</strong> {{ ticket.contactoNombre or '—' }}{% if ticket.contactoCorreo %} <span class="muted">({{ ticket.contactoCorreo }})</span>{% endif %}</p>
+        <p><strong>Grupo:</strong> {{ ticket.grupo or '—' }}</p>
+        <p><strong>Sistema:</strong> {{ ticket.sistema or '—' }}</p>
+        {% if ticket.solicitadoPor %}<p><strong>Solicitado por:</strong> {{ ticket.solicitadoPor }}</p>{% endif %}
+        {% if ticket.canalizadoA %}<p><strong>Canalizado a:</strong> {{ ticket.canalizadoA }}</p>{% endif %}
         <p><strong>Canal:</strong> {{ ticket.canal }}</p>
         {% if vm.agenda %}
           <p><strong>📅 Programado:</strong>

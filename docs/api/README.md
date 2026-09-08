@@ -34,6 +34,7 @@
 - [application/shared/FiltrosGuardadosService](application/shared/FiltrosGuardadosService/README.md)
 - [application/shared/SessionUser](application/shared/SessionUser/README.md)
 - [application/tickets/ActualizarEstadoTicketService](application/tickets/ActualizarEstadoTicketService/README.md)
+- [application/tickets/ActualizarGestionTicketService](application/tickets/ActualizarGestionTicketService/README.md)
 - [application/tickets/AdjuntoTicketService](application/tickets/AdjuntoTicketService/README.md)
 - [application/tickets/AjustarTiempoService](application/tickets/AjustarTiempoService/README.md)
 - [application/tickets/ArchivarTicketService](application/tickets/ArchivarTicketService/README.md)

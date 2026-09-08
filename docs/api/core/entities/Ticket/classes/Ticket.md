@@ -129,6 +129,36 @@ de tiempo trabajado y el reloj de SLA con pausa. No conoce Firestore ni HTTP.
 
 ***
 
+### solicitadoPor
+
+> **solicitadoPor**: `string` \| `null`
+
+***
+
+### canalizadoA
+
+> **canalizadoA**: `string` \| `null`
+
+***
+
+### notasInternas
+
+> **notasInternas**: `string` \| `null`
+
+***
+
+### cc
+
+> **cc**: `string`[]
+
+***
+
+### cco
+
+> **cco**: `string`[]
+
+***
+
 ### origenPublicoId
 
 > `readonly` **origenPublicoId**: `string` \| `null`
@@ -349,6 +379,26 @@ La fecha/hora programada, o `null` si el ticket no tiene agenda.
 
 `string` \| `null`
 
+###### solicitadoPor?
+
+`string` \| `null`
+
+###### canalizadoA?
+
+`string` \| `null`
+
+###### notasInternas?
+
+`string` \| `null`
+
+###### cc?
+
+`string`[]
+
+###### cco?
+
+`string`[]
+
 ###### solicitanteUid?
 
 `string` \| `null`
@@ -458,6 +508,38 @@ readonly `string`[]
 > **registrarPrimeraRespuesta**(`ahora`): `void`
 
 #### Parameters
+
+##### ahora
+
+`Date`
+
+#### Returns
+
+`void`
+
+***
+
+### actualizarGestion()
+
+> **actualizarGestion**(`datos`, `ahora`): `void`
+
+Actualiza los campos de gestión interna del ticket (solicitado por / canalizado a / notas).
+
+#### Parameters
+
+##### datos
+
+###### solicitadoPor?
+
+`string`
+
+###### canalizadoA?
+
+`string`
+
+###### notasInternas?
+
+`string`
 
 ##### ahora
 

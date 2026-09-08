@@ -29,6 +29,7 @@ function aSessionUser(u: Usuario): SessionUser {
     esTecnico: u.esTecnico,
     permisos: permisosEfectivos(u),
     firma: u.firma,
+    encabezado: u.encabezado,
   };
 }
 

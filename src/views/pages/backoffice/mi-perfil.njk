@@ -2,13 +2,24 @@
 {% block title %}Mi perfil{% endblock %}
 {% block content %}
   <h1>Mi perfil</h1>
-  {% if guardado %}<p class="alert alert--ok">Firma guardada.</p>{% endif %}
-  <p class="muted">Se agrega automáticamente al final de tus respuestas públicas en tickets.</p>
+  {% if guardado %}<p class="alert alert--ok">Guardado.</p>{% endif %}
   <form method="post" action="/app/mi-perfil" class="form form--wide">
     <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
-    <label class="field"><span>Firma</span>
-      <textarea name="firma" rows="6" placeholder="Ej. Saludos, Erick Casas — Soporte DATTASOFT">{{ firma }}</textarea>
-    </label>
+
+    <div class="card">
+      <label class="field"><span>Firma</span>
+        <textarea name="firma" rows="5" placeholder="Ej. Saludos, Erick Casas — Soporte DATTASOFT">{{ firma }}</textarea>
+      </label>
+      <p class="muted">Se agrega al final de tus respuestas públicas en tickets, y con el botón 🖊️ Firma al redactar.</p>
+    </div>
+
+    <div class="card">
+      <label class="field"><span>Encabezado</span>
+        <textarea name="encabezado" rows="6" placeholder="Vacío = usar la plantilla por defecto (Fecha / Síntoma / Problema / Solución / Tiempo trabajado)">{{ encabezado }}</textarea>
+      </label>
+      <p class="muted">Se inserta con el botón 📋 Encabezado al redactar un ticket. Usa <code>[fecha]</code> y se reemplaza por la fecha de hoy.</p>
+    </div>
+
     <button class="btn" type="submit">Guardar</button>
   </form>
 {% endblock %}

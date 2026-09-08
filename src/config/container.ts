@@ -56,6 +56,7 @@ import { CrearTicketPortalService } from '../application/portal/CrearTicketPorta
 import { MisTicketsService } from '../application/portal/MisTicketsService.js';
 import { ResponderMiTicketService } from '../application/portal/ResponderMiTicketService.js';
 import { CrearTicketService } from '../application/tickets/CrearTicketService.js';
+import { ActualizarGestionTicketService } from '../application/tickets/ActualizarGestionTicketService.js';
 import { ActualizarEstadoTicketService } from '../application/tickets/ActualizarEstadoTicketService.js';
 import { AsignarAgenteService } from '../application/tickets/AsignarAgenteService.js';
 import { RegistrarNotaService } from '../application/tickets/RegistrarNotaService.js';
@@ -208,6 +209,7 @@ export interface Cradle {
   misTicketsService: MisTicketsService;
   responderMiTicketService: ResponderMiTicketService;
   crearTicketService: CrearTicketService;
+  actualizarGestionTicketService: ActualizarGestionTicketService;
   actualizarEstadoTicketService: ActualizarEstadoTicketService;
   asignarAgenteService: AsignarAgenteService;
   registrarNotaService: RegistrarNotaService;
@@ -559,6 +561,10 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
           c.logger,
         ),
     ).singleton(),
+    actualizarGestionTicketService: asFunction(
+      (c: Cradle) =>
+        new ActualizarGestionTicketService(c.ticketRepo, c.idGenerator, c.clock, c.logger),
+    ).singleton(),
     actualizarEstadoTicketService: asFunction(
       (c: Cradle) =>
         new ActualizarEstadoTicketService(
@@ -794,6 +800,7 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
           c.registrarNotaService,
           c.reenviarCorreoTicketService,
           c.adjuntoTicketService,
+          c.actualizarGestionTicketService,
           c.marcarFacturacionService,
           c.programarAtencionService,
           c.ajustarTiempoService,

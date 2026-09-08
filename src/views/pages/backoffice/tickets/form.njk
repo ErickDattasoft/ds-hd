@@ -1,31 +1,44 @@
 {% extends "layouts/backoffice.njk" %}
+{% import "components/tickets.njk" as tk %}
 {% block title %}Nuevo ticket{% endblock %}
 {% block content %}
-  <h1>Nuevo ticket</h1>
+  <div class="page-head">
+    <h1>Nuevo ticket</h1>
+    <a class="btn btn--sm btn--ghost" href="/app/tickets">← Tickets</a>
+  </div>
   {% if errores.general %}<p class="alert alert--error">{{ errores.general }}</p>{% endif %}
-  <form method="post" action="/app/tickets" class="form form--wide">
+  {% if aviso == 'ok' %}<p class="alert alert--ok">Ticket creado. Puedes capturar el siguiente.</p>{% endif %}
+
+  <form method="post" action="/app/tickets" class="form form--wide" data-form-ticket>
     <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+    <input type="hidden" name="guardarYNuevo" value="0" data-guardar-y-nuevo />
+    <input type="hidden" name="adjuntosNuevos" value="" data-adjuntos-nuevos />
 
-    <label class="field"><span>Asunto</span>
-      <input name="asunto" value="{{ valores.asunto }}" required />
-      {% if errores.asunto %}<em class="field__error">{{ errores.asunto }}</em>{% endif %}
-    </label>
-    <label class="field"><span>Descripción</span>
-      <textarea name="descripcion" rows="5" required>{{ valores.descripcion }}</textarea>
-      {% if errores.descripcion %}<em class="field__error">{{ errores.descripcion }}</em>{% endif %}
-    </label>
-    <label class="field"><span>Prioridad</span>
-      <select name="prioridad">{% for p in config.prioridades %}<option {{ 'selected' if valores.prioridad == p }}>{{ p }}</option>{% endfor %}</select>
-    </label>
+    <div class="card">
+      <label class="field"><span>Asunto *</span>
+        <input name="asunto" value="{{ valores.asunto }}" required autofocus placeholder="Ej: Error al timbrar" />
+        {% if errores.asunto %}<em class="field__error">{{ errores.asunto }}</em>{% endif %}
+      </label>
 
-    <details class="disclosure"{{ ' open' if errores.tipo or valores.tipo or valores.sistema or valores.grupo }}>
-      <summary class="disclosure__summary">Clasificación <span class="disclosure__hint">— tipo, sistema, grupo (opcional)</span></summary>
-      <div class="disclosure__body form">
+      <div class="form-grid">
         <label class="field"><span>Tipo</span>
           <select name="tipo">{% for t in config.tipos %}<option {{ 'selected' if valores.tipo == t }}>{{ t }}</option>{% endfor %}</select>
         </label>
+        <label class="field"><span>Prioridad</span>
+          <select name="prioridad">{% for p in config.prioridades %}<option {{ 'selected' if valores.prioridad == p }}>{{ p }}</option>{% endfor %}</select>
+        </label>
+        <label class="field"><span>Estado inicial</span>
+          <select name="estado">{% for e in config.estados %}<option {{ 'selected' if valores.estado == e or (not valores.estado and config.estadoInicial == e) }}>{{ e }}</option>{% endfor %}</select>
+        </label>
         <label class="field"><span>Sistema</span>
-          <select name="sistema"><option value="">—</option>{% for s in config.sistemas %}<option {{ 'selected' if valores.sistema == s }}>{{ s }}</option>{% endfor %}</select>
+          <select name="sistema" data-sistema-select>
+            <option value="">—</option>
+            {% for s in config.sistemas %}<option {{ 'selected' if valores.sistema == s }}>{{ s }}</option>{% endfor %}
+            <option value="__otro__" {{ 'selected' if valores.sistema and valores.sistema not in config.sistemas }}>Otro…</option>
+          </select>
+        </label>
+        <label class="field" data-sistema-otro {{ 'hidden' if not (valores.sistema and valores.sistema not in config.sistemas) }}><span>Especifica el sistema</span>
+          <input name="sistemaOtro" value="{{ valores.sistemaOtro or (valores.sistema if valores.sistema not in config.sistemas else '') }}" placeholder="Nombre del sistema" />
         </label>
         <label class="field"><span>Grupo</span>
           <select name="grupo"><option value="">—</option>{% for g in config.grupos %}<option {{ 'selected' if valores.grupo == g }}>{{ g }}</option>{% endfor %}</select>
@@ -36,35 +49,73 @@
           </select>
         </label>
       </div>
-    </details>
+    </div>
 
-    <details class="disclosure"{{ ' open' if valores.empresaNombre or valores.contactoNombre or valores.contactoCorreo }}>
-      <summary class="disclosure__summary">Datos del cliente <span class="disclosure__hint">— si el ticket llega por otra vía</span></summary>
+    <div class="card">
+      <p><strong>Descripción *</strong></p>
+      {{ tk.editorToolbar(user, '[name="descripcion"]') }}
+      <textarea name="descripcion" id="ticket-descripcion" rows="7" required placeholder="Describe el problema en detalle…">{{ valores.descripcion }}</textarea>
+      {% if errores.descripcion %}<em class="field__error">{{ errores.descripcion }}</em>{% endif %}
+    </div>
+
+    {% if puedeNotasInternas %}
+      <details class="disclosure"{{ ' open' if valores.notasInternas }}>
+        <summary class="disclosure__summary">🔒 Notas internas <span class="disclosure__hint">— uso interno, no se envía al cliente</span></summary>
+        <div class="disclosure__body">
+          <textarea name="notasInternas" rows="3" placeholder="Ej: Factura A-001, pendiente autorización, contactar el lunes…">{{ valores.notasInternas }}</textarea>
+        </div>
+      </details>
+    {% endif %}
+
+    <details class="disclosure"{{ ' open' if valores.contactoNombre or valores.contactoCorreo or valores.empresaNombre or valores.cc or valores.cco }}>
+      <summary class="disclosure__summary">Cliente y copias <span class="disclosure__hint">— contacto, empresa y CC/CCO del correo</span></summary>
       <div class="disclosure__body form">
-        <label class="field"><span>Empresa (nombre)</span><input name="empresaNombre" value="{{ valores.empresaNombre }}" /></label>
-        <label class="field"><span>Contacto</span><input name="contactoNombre" value="{{ valores.contactoNombre }}" /></label>
-        <label class="field"><span>Correo del contacto</span><input type="email" name="contactoCorreo" value="{{ valores.contactoCorreo }}" /></label>
+        <div class="form-grid">
+          <label class="field"><span>Contacto</span><input name="contactoNombre" value="{{ valores.contactoNombre }}" placeholder="Nombre del contacto" /></label>
+          <label class="field"><span>Correo del contacto</span><input type="email" name="contactoCorreo" value="{{ valores.contactoCorreo }}" placeholder="correo@empresa.mx" /></label>
+          <label class="field"><span>Empresa</span><input name="empresaNombre" value="{{ valores.empresaNombre }}" placeholder="Nombre de la empresa" /></label>
+        </div>
+        <div class="form-grid">
+          <label class="field"><span>CC</span><input name="cc" value="{{ valores.cc }}" placeholder="correo1@x.com, correo2@x.com" /></label>
+          <label class="field"><span>CCO</span><input name="cco" value="{{ valores.cco }}" placeholder="correo@x.com" /></label>
+        </div>
       </div>
     </details>
 
-    <details class="disclosure">
-      <summary class="disclosure__summary">Asignación</summary>
+    <details class="disclosure"{{ ' open' if valores.solicitadoPor or valores.canalizadoA or valores.agenteUid or valores.asignarAMi }}>
+      <summary class="disclosure__summary">Asignación y gestión</summary>
       <div class="disclosure__body form">
-        <label class="field--check"><input type="checkbox" name="asignarAMi" /> <span>Asignármelo (si soy técnico de soporte)</span></label>
+        <div class="form-grid">
+          <label class="field"><span>Solicitado por</span><input name="solicitadoPor" value="{{ valores.solicitadoPor }}" placeholder="Nombre de quien solicita" /></label>
+          <label class="field"><span>Canalizado a</span><input name="canalizadoA" value="{{ valores.canalizadoA }}" placeholder="Área o persona destino" /></label>
+          {% if puedeAsignar %}
+            <label class="field"><span>Agente</span>
+              <select name="agenteUid">
+                <option value="">Sin asignar</option>
+                {% for a in agentes %}<option value="{{ a.uid }}" {{ 'selected' if valores.agenteUid == a.uid }}>{{ a.nombre }}</option>{% endfor %}
+              </select>
+            </label>
+          {% endif %}
+        </div>
+        {% if user.esTecnico %}
+          <label class="field--check"><input type="checkbox" name="asignarAMi" {{ 'checked' if valores.asignarAMi == 'on' }} /> <span>Asignármelo a mí</span></label>
+        {% endif %}
       </div>
     </details>
 
     <details class="disclosure"{{ ' open' if valores.agendaFecha or errores.agendaFecha or errores.agendaHora }}>
       <summary class="disclosure__summary">📅 Programar atención <span class="disclosure__hint">— fecha, hora y recordatorio (opcional)</span></summary>
       <div class="disclosure__body form">
-        <label class="field"><span>Fecha programada</span>
-          <input type="date" name="agendaFecha" value="{{ valores.agendaFecha }}" />
-          {% if errores.agendaFecha %}<em class="field__error">{{ errores.agendaFecha }}</em>{% endif %}
-        </label>
-        <label class="field"><span>Hora programada</span>
-          <input type="time" name="agendaHora" value="{{ valores.agendaHora or '09:00' }}" />
-          {% if errores.agendaHora %}<em class="field__error">{{ errores.agendaHora }}</em>{% endif %}
-        </label>
+        <div class="form-grid">
+          <label class="field"><span>Fecha programada</span>
+            <input type="date" name="agendaFecha" value="{{ valores.agendaFecha }}" />
+            {% if errores.agendaFecha %}<em class="field__error">{{ errores.agendaFecha }}</em>{% endif %}
+          </label>
+          <label class="field"><span>Hora programada</span>
+            <input type="time" name="agendaHora" value="{{ valores.agendaHora or '09:00' }}" />
+            {% if errores.agendaHora %}<em class="field__error">{{ errores.agendaHora }}</em>{% endif %}
+          </label>
+        </div>
         <label class="field--check">
           <input type="checkbox" name="agendaRecordatorio" {{ 'checked' if valores.agendaRecordatorio == 'on' }} />
           <span>Enviar recordatorio por WhatsApp 30 min antes (vía n8n)</span>
@@ -72,8 +123,20 @@
       </div>
     </details>
 
+    <details class="disclosure">
+      <summary class="disclosure__summary">📎 Adjuntos <span class="disclosure__hint">— imágenes y PDF, máx 700 KB c/u</span></summary>
+      <div class="disclosure__body" data-adjuntos data-adjuntos-modo="crear">
+        <ul class="adjuntos-lista" data-adjuntos-preview><li class="muted">Sin adjuntos.</li></ul>
+        <label class="field">
+          <span>Agregar archivo (o pega una imagen con Ctrl+V)</span>
+          <input type="file" accept="image/png,image/jpeg,image/gif,image/webp,application/pdf" multiple data-adjunto-file />
+        </label>
+      </div>
+    </details>
+
     <div class="page-head__actions">
       <button class="btn" type="submit">Crear ticket</button>
+      <button class="btn btn--secondary" type="submit" data-submit-y-nuevo>Guardar y crear otro</button>
       <a class="btn btn--ghost" href="/app/tickets">Cancelar</a>
     </div>
   </form>

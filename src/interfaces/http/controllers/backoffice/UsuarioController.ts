@@ -28,14 +28,20 @@ export class UsuarioController {
 
   miPerfilView = async (req: Request, res: Response): Promise<void> => {
     const usuario = await this.usuarios.findByUid(req.user!.uid);
-    res.render('pages/backoffice/mi-perfil', { titulo: 'Mi perfil', firma: usuario?.firma ?? '', guardado: false });
+    res.render('pages/backoffice/mi-perfil', {
+      titulo: 'Mi perfil',
+      firma: usuario?.firma ?? '',
+      encabezado: usuario?.encabezado ?? '',
+      guardado: false,
+    });
   };
 
   miPerfilPost = async (req: Request, res: Response): Promise<void> => {
     const firma = String(req.body?.firma ?? '');
-    await this.actualizarFirma.ejecutar({ actor: req.user!, firma });
+    const encabezado = String(req.body?.encabezado ?? '');
+    await this.actualizarFirma.ejecutar({ actor: req.user!, firma, encabezado });
     invalidarCacheUsuario(req.user!.uid);
-    res.render('pages/backoffice/mi-perfil', { titulo: 'Mi perfil', firma, guardado: true });
+    res.render('pages/backoffice/mi-perfil', { titulo: 'Mi perfil', firma, encabezado, guardado: true });
   };
 
   listar = async (req: Request, res: Response): Promise<void> => {

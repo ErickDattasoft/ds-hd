@@ -60,6 +60,23 @@
   </div>
 {% endmacro %}
 
+{#
+  Barra de botones para el editor de descripción/nota de un ticket. Inserta el encabezado
+  (plantilla del usuario o la por defecto, con [fecha]), la firma del usuario, o una imagen
+  (que se sube como adjunto). `destino` = selector CSS del textarea.
+#}
+{% macro editorToolbar(user, destino) %}
+  <div class="editor-toolbar">
+    <button type="button" class="btn btn--ghost btn--sm"
+      data-insertar="encabezado" data-destino="{{ destino }}" data-texto="{{ user.encabezado or '' }}"
+      title="Inserta tu encabezado (configúralo en Mi perfil) o la plantilla por defecto">📋 Encabezado</button>
+    <button type="button" class="btn btn--ghost btn--sm"
+      data-insertar="firma" data-destino="{{ destino }}" data-texto="{{ user.firma or '' }}"
+      title="Inserta tu firma (configúrala en Mi perfil)">🖊️ Firma</button>
+    <button type="button" class="btn btn--ghost btn--sm" data-insertar-imagen title="Adjuntar una imagen">🖼️ Imagen</button>
+  </div>
+{% endmacro %}
+
 {% macro tablaTickets(tickets) %}
   <table class="data-table">
     <thead>

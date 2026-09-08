@@ -651,3 +651,7 @@ fieldset.field {
   object-fit: cover;
   vertical-align: middle;
 }
+
+/* ── Editor de tickets ─────────────────────────────────────────────────── */
+.editor-toolbar { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 0.4rem; }
+.form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.75rem; }

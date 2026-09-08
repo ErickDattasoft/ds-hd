@@ -38,6 +38,8 @@ export interface UsuarioProps {
   agente?: Partial<PerfilAgente>;
   /** Firma que se agrega a las respuestas públicas de tickets, si la tiene configurada. */
   firma?: string | null;
+  /** Encabezado/plantilla que el usuario inserta al redactar un ticket (con `[fecha]`). */
+  encabezado?: string | null;
   createdAt?: Date;
   updatedAt?: Date;
   lastLoginAt?: Date | null;
@@ -66,6 +68,7 @@ export class Usuario {
   empresaId: string | null;
   agente: PerfilAgente;
   firma: string | null;
+  encabezado: string | null;
   readonly createdAt: Date;
   updatedAt: Date;
   lastLoginAt: Date | null;
@@ -85,6 +88,7 @@ export class Usuario {
     this.empresaId = props.empresaId ?? null;
     this.agente = { ...AGENTE_POR_DEFECTO, ...props.agente };
     this.firma = props.firma?.trim() || null;
+    this.encabezado = props.encabezado?.trim() || null;
     this.createdAt = props.createdAt ?? new Date();
     this.updatedAt = props.updatedAt ?? this.createdAt;
     this.lastLoginAt = props.lastLoginAt ?? null;
@@ -143,6 +147,11 @@ export class Usuario {
 
   fijarFirma(firma: string, ahora: Date): void {
     this.firma = firma.trim() || null;
+    this.updatedAt = ahora;
+  }
+
+  fijarEncabezado(encabezado: string, ahora: Date): void {
+    this.encabezado = encabezado.trim() || null;
     this.updatedAt = ahora;
   }
 }

@@ -23,6 +23,19 @@ export interface CrearTicketInput {
   origenPublicoId?: string | null;
   /** El agente que crea se autoasigna. */
   asignarAlActor?: boolean;
+  /** Asignar a un agente concreto al crear (staff con `tickets:asignar`). */
+  agenteUid?: string | null;
+  /** Estado inicial elegido (si no, `estadoInicial` de la config). */
+  estado?: string | null;
+  /** Quién pidió el ticket (texto libre). */
+  solicitadoPor?: string | null;
+  /** Área/persona a la que se canaliza (texto libre). */
+  canalizadoA?: string | null;
+  /** Notas internas iniciales (solo staff con permiso). */
+  notasInternas?: string | null;
+  /** Correos en copia de las notificaciones del ticket. */
+  cc?: string[];
+  cco?: string[];
   /** Si se omite, se infiere del tipo (`tiposFacturables`) — solo el alta desde el back-office lo captura. */
   estadoFacturacion?: EstadoFacturacion;
   /** Programación de atención opcional, solo desde el alta del back-office. */

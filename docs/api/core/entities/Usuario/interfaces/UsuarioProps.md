@@ -90,6 +90,14 @@ Firma que se agrega a las respuestas públicas de tickets, si la tiene configura
 
 ***
 
+### encabezado?
+
+> `optional` **encabezado?**: `string` \| `null`
+
+Encabezado/plantilla que el usuario inserta al redactar un ticket (con `[fecha]`).
+
+***
+
 ### createdAt?
 
 > `optional` **createdAt?**: `Date`

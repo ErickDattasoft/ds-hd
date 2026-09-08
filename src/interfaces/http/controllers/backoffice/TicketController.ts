@@ -5,6 +5,7 @@ import type { AsignarAgenteService } from '../../../../application/tickets/Asign
 import type { RegistrarNotaService } from '../../../../application/tickets/RegistrarNotaService.js';
 import type { ReenviarCorreoTicketService } from '../../../../application/tickets/ReenviarCorreoTicketService.js';
 import type { AdjuntoTicketService } from '../../../../application/tickets/AdjuntoTicketService.js';
+import type { ActualizarGestionTicketService } from '../../../../application/tickets/ActualizarGestionTicketService.js';
 import type { MarcarFacturacionService } from '../../../../application/tickets/MarcarFacturacionService.js';
 import type { ProgramarAtencionService } from '../../../../application/tickets/ProgramarAtencionService.js';
 import type { AjustarTiempoService } from '../../../../application/tickets/AjustarTiempoService.js';
@@ -45,6 +46,7 @@ export class TicketController {
     private readonly registrarNota: RegistrarNotaService,
     private readonly reenviarCorreo: ReenviarCorreoTicketService,
     private readonly adjuntos: AdjuntoTicketService,
+    private readonly gestion: ActualizarGestionTicketService,
     private readonly facturar: MarcarFacturacionService,
     private readonly programarAtencion: ProgramarAtencionService,
     private readonly ajustarTiempo: AjustarTiempoService,
@@ -123,19 +125,35 @@ export class TicketController {
     res.render('pages/backoffice/tickets/carga-agentes', { titulo: 'Carga de agentes', carga });
   };
 
-  nuevoForm = async (req: Request, res: Response): Promise<void> => {
-    const { config } = await this.listar.listar(req.user!, { limite: 0 });
-    res.render('pages/backoffice/tickets/form', {
-      titulo: 'Nuevo ticket',
+  private async datosFormNuevo(user: NonNullable<Request['user']>) {
+    const { config } = await this.listar.listar(user, { limite: 0 });
+    const puedeAsignar = user.permisos.includes('tickets:asignar');
+    return {
       config,
       estadosFacturacion: catalogoFacturacion(),
+      agentes: puedeAsignar ? await this.usuarios.list({ roles: ROLES_TECNICOS, activo: true }) : [],
+      puedeAsignar,
+      puedeNotasInternas: user.permisos.includes('tickets:ver_notas_internas'),
+    };
+  }
+
+  nuevoForm = async (req: Request, res: Response): Promise<void> => {
+    res.render('pages/backoffice/tickets/form', {
+      titulo: 'Nuevo ticket',
+      ...(await this.datosFormNuevo(req.user!)),
       valores: { prioridad: 'Media', estadoFacturacion: 'no_facturado' },
+      aviso: req.query.ok ? 'ok' : '',
       errores: {},
     });
   };
 
   crearPost = async (req: Request, res: Response): Promise<void> => {
     const b = req.body ?? {};
+    const lista = (v: unknown) =>
+      str(v)
+        .split(/[,;\n]/)
+        .map((x) => x.trim())
+        .filter(Boolean);
     try {
       const ticket = await this.crear.ejecutar({
         actor: req.user!,
@@ -143,24 +161,36 @@ export class TicketController {
         descripcion: str(b.descripcion),
         tipo: str(b.tipo),
         prioridad: parsePrioridad(b.prioridad || 'Media'),
-        sistema: str(b.sistema) || null,
+        sistema: (str(b.sistema) === '__otro__' ? str(b.sistemaOtro) : str(b.sistema)) || null,
         grupo: str(b.grupo) || null,
+        estado: str(b.estado) || null,
         empresaNombre: str(b.empresaNombre) || null,
         contactoNombre: str(b.contactoNombre) || null,
         contactoCorreo: str(b.contactoCorreo) || null,
+        solicitadoPor: str(b.solicitadoPor) || null,
+        canalizadoA: str(b.canalizadoA) || null,
+        cc: lista(b.cc),
+        cco: lista(b.cco),
+        ...(req.user!.permisos.includes('tickets:ver_notas_internas')
+          ? { notasInternas: str(b.notasInternas) || null }
+          : {}),
         asignarAlActor: b.asignarAMi === 'on',
         estadoFacturacion: esEstadoFacturacion(b.estadoFacturacion) ? b.estadoFacturacion : undefined,
         agenda: str(b.agendaFecha)
           ? parseAgenda({ fecha: b.agendaFecha, hora: b.agendaHora, recordatorioWhatsapp: b.agendaRecordatorio === 'on' })
           : null,
       });
-      res.redirect(`/app/tickets/${ticket.id}`);
+
+      if (str(b.agenteUid) && req.user!.permisos.includes('tickets:asignar') && b.asignarAMi !== 'on') {
+        await this.asignar.ejecutar({ actor: req.user!, ticketId: ticket.id, agenteUid: str(b.agenteUid) }).catch(() => {});
+      }
+      await this.subirAdjuntosIniciales(req.user!, ticket.id, b.adjuntosNuevos);
+
+      res.redirect(b.guardarYNuevo === '1' ? '/app/tickets/nuevo?ok=1' : `/app/tickets/${ticket.id}`);
     } catch (err) {
-      const { config } = await this.listar.listar(req.user!, { limite: 0 });
       res.status(422).render('pages/backoffice/tickets/form', {
         titulo: 'Nuevo ticket',
-        config,
-        estadosFacturacion: catalogoFacturacion(),
+        ...(await this.datosFormNuevo(req.user!)),
         valores: b,
         errores: camposDeError(err),
       });
@@ -187,6 +217,7 @@ export class TicketController {
         asignar: d.puedeAsignar,
         cambiarEstado: d.puedeCambiarEstado,
         notasInternas: req.user!.permisos.includes('tickets:ver_notas_internas'),
+        cotizar: req.user!.permisos.includes('cotizaciones:crear'),
         eliminar: req.user!.permisos.includes('tickets:eliminar'),
       },
       agentes,
@@ -271,6 +302,57 @@ export class TicketController {
   adjuntoEliminarPost = async (req: Request, res: Response): Promise<void> => {
     await this.adjuntos.eliminar(req.user!, str(req.params.id), str(req.params.adjId));
     res.redirect(`/app/tickets/${str(req.params.id)}`);
+  };
+
+  /** Sube los adjuntos que venían en el form de alta (JSON `[{nombre, contentType, base64}]`). */
+  private async subirAdjuntosIniciales(
+    actor: NonNullable<Request['user']>,
+    ticketId: string,
+    raw: unknown,
+  ): Promise<void> {
+    if (!str(raw)) return;
+    let items: { nombre?: string; contentType?: string; base64?: string }[] = [];
+    try {
+      const parsed = JSON.parse(str(raw));
+      if (Array.isArray(parsed)) items = parsed;
+    } catch {
+      return;
+    }
+    for (const it of items.slice(0, 20)) {
+      await this.adjuntos
+        .subir({
+          actor,
+          ticketId,
+          nombre: str(it.nombre),
+          contentType: str(it.contentType),
+          base64: str(it.base64),
+        })
+        .catch(() => {});
+    }
+  }
+
+  gestionPost = async (req: Request, res: Response): Promise<void> => {
+    await this.gestion.ejecutar({
+      actor: req.user!,
+      ticketId: str(req.params.id),
+      solicitadoPor: str(req.body?.solicitadoPor),
+      canalizadoA: str(req.body?.canalizadoA),
+      notasInternas: str(req.body?.notasInternas),
+    });
+    res.redirect(`/app/tickets/${str(req.params.id)}`);
+  };
+
+  imprimirView = async (req: Request, res: Response): Promise<void> => {
+    const d = await this.ver.ejecutar(req.user!, str(req.params.id));
+    res.render('pages/backoffice/tickets/imprimir', {
+      titulo: `Ticket #${d.ticket.numero}`,
+      vm: ticketVM(d.ticket, this.clock.now()),
+      ticket: d.ticket,
+      notas: d.notas,
+      adjuntos: d.adjuntos,
+      conLogo: req.query.logo !== '0',
+      auto: req.query.auto === '1',
+    });
   };
 
   facturarPost = async (req: Request, res: Response): Promise<void> => {

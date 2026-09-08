@@ -112,6 +112,44 @@ Props para construir un [Ticket](../classes/Ticket.md).
 
 ***
 
+### solicitadoPor?
+
+> `optional` **solicitadoPor?**: `string` \| `null`
+
+Quién pidió el ticket (texto libre, no necesariamente un contacto registrado).
+
+***
+
+### canalizadoA?
+
+> `optional` **canalizadoA?**: `string` \| `null`
+
+Área o persona a la que se canaliza el ticket (texto libre).
+
+***
+
+### notasInternas?
+
+> `optional` **notasInternas?**: `string` \| `null`
+
+Notas internas persistentes (NO se envían al cliente). Aparte del hilo de conversación.
+
+***
+
+### cc?
+
+> `optional` **cc?**: `string`[]
+
+Correos en copia en las notificaciones del ticket.
+
+***
+
+### cco?
+
+> `optional` **cco?**: `string`[]
+
+***
+
 ### origenPublicoId?
 
 > `optional` **origenPublicoId?**: `string` \| `null`

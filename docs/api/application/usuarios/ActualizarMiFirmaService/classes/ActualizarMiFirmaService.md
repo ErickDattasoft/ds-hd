@@ -6,7 +6,7 @@
 
 # Class: ActualizarMiFirmaService
 
-Caso de uso: un usuario de staff fija su propia firma para respuestas de tickets.
+Caso de uso: un usuario de staff fija su propia firma y encabezado para redactar tickets.
 
 ## Constructors
 
@@ -43,6 +43,10 @@ Caso de uso: un usuario de staff fija su propia firma para respuestas de tickets
 [`SessionUser`](../../../shared/SessionUser/interfaces/SessionUser.md)
 
 ###### firma
+
+`string`
+
+###### encabezado?
 
 `string`
 

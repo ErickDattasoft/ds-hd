@@ -108,6 +108,60 @@ El agente que crea se autoasigna.
 
 ***
 
+### agenteUid?
+
+> `optional` **agenteUid?**: `string` \| `null`
+
+Asignar a un agente concreto al crear (staff con `tickets:asignar`).
+
+***
+
+### estado?
+
+> `optional` **estado?**: `string` \| `null`
+
+Estado inicial elegido (si no, `estadoInicial` de la config).
+
+***
+
+### solicitadoPor?
+
+> `optional` **solicitadoPor?**: `string` \| `null`
+
+Quién pidió el ticket (texto libre).
+
+***
+
+### canalizadoA?
+
+> `optional` **canalizadoA?**: `string` \| `null`
+
+Área/persona a la que se canaliza (texto libre).
+
+***
+
+### notasInternas?
+
+> `optional` **notasInternas?**: `string` \| `null`
+
+Notas internas iniciales (solo staff con permiso).
+
+***
+
+### cc?
+
+> `optional` **cc?**: `string`[]
+
+Correos en copia de las notificaciones del ticket.
+
+***
+
+### cco?
+
+> `optional` **cco?**: `string`[]
+
+***
+
 ### estadoFacturacion?
 
 > `optional` **estadoFacturacion?**: `"no_facturado"` \| `"facturado"` \| `"no_aplica"` \| `"factura_mensual"` \| `"consulta_sin_costo"`

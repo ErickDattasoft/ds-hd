@@ -32,6 +32,8 @@ export class CrearTicketService {
     if (input.tipo && !cfg.tipos.includes(input.tipo)) {
       throw new ValidationError(`Tipo de ticket no válido: ${input.tipo}`, { tipo: 'No reconocido' });
     }
+    const estadoInicial =
+      input.estado && cfg.estados.includes(input.estado) ? input.estado : cfg.estadoInicial;
 
     const ahora = this.clock.now();
     const numero = await this.contadores.siguiente(CONTADOR_TICKETS);
@@ -43,7 +45,7 @@ export class CrearTicketService {
       descripcion: input.descripcion,
       tipo: input.tipo || cfg.tipos[0]!,
       prioridad,
-      estadoInicial: cfg.estadoInicial,
+      estadoInicial,
       canal: input.canal ?? 'interno',
       sistema: input.sistema ?? null,
       grupo: input.grupo ?? null,
@@ -52,6 +54,11 @@ export class CrearTicketService {
       contactoId: input.contactoId ?? null,
       contactoNombre: input.contactoNombre ?? null,
       contactoCorreo: input.contactoCorreo ?? null,
+      solicitadoPor: input.solicitadoPor ?? null,
+      canalizadoA: input.canalizadoA ?? null,
+      notasInternas: input.notasInternas ?? null,
+      cc: input.cc ?? [],
+      cco: input.cco ?? [],
       solicitanteUid: input.solicitanteUid ?? null,
       creadoPorUid: input.actor.uid,
       origenPublicoId: input.origenPublicoId ?? null,

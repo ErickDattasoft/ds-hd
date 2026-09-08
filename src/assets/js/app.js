@@ -262,59 +262,112 @@
     }
   });
 
-  // ── Adjuntos de ticket: subir por selector de archivo o pegando (Ctrl+V) ──
-  function subirAdjunto(file) {
-    var cont = document.querySelector('[data-adjuntos]');
-    if (!cont) return;
-    var base = cont.getAttribute('data-adjuntos-base');
-    var salida = cont.querySelector('[data-adjunto-resultado]');
-    var MAX = 700 * 1024;
-    if (file.size > MAX) {
-      if (salida) salida.textContent = '❌ "' + file.name + '" supera 700 KB';
-      return;
-    }
-    if (salida) salida.textContent = 'Subiendo "' + file.name + '"…';
+  // ── Adjuntos de ticket ──────────────────────────────────────────────────
+  // Modo "detalle": sube al instante contra el ticket. Modo "crear": acumula en un
+  // campo oculto (JSON) que se manda al crear el ticket.
+  var ADJ_MAX = 700 * 1024;
+  function leerBase64(file, cb) {
     var reader = new FileReader();
     reader.onload = function () {
-      var dataUrl = String(reader.result || '');
-      var base64 = dataUrl.indexOf(',') >= 0 ? dataUrl.slice(dataUrl.indexOf(',') + 1) : dataUrl;
+      var d = String(reader.result || '');
+      cb(d.indexOf(',') >= 0 ? d.slice(d.indexOf(',') + 1) : d);
+    };
+    reader.readAsDataURL(file);
+  }
+  function nuevosCrear(cont) {
+    var campo = document.querySelector('[data-adjuntos-nuevos]');
+    var lista = cont.querySelector('[data-adjuntos-preview]');
+    try { return { campo: campo, lista: lista, arr: JSON.parse(campo.value || '[]') }; }
+    catch (e) { void e; return { campo: campo, lista: lista, arr: [] }; }
+  }
+  function pintaPreview(st) {
+    if (!st.lista) return;
+    st.lista.innerHTML = st.arr.length
+      ? st.arr.map(function (a, i) {
+          return '<li>📎 ' + a.nombre + ' <button type="button" class="btn btn--ghost btn--sm" data-quitar-nuevo="' + i + '">✕</button></li>';
+        }).join('')
+      : '<li class="muted">Sin adjuntos.</li>';
+  }
+  function agregarAdjunto(file) {
+    var cont = file.__cont || document.querySelector('[data-adjuntos]');
+    if (!cont) return;
+    var modo = cont.getAttribute('data-adjuntos-modo') || 'detalle';
+    var salida = cont.querySelector('[data-adjunto-resultado]');
+    if (file.size > ADJ_MAX) { if (salida) salida.textContent = '❌ "' + file.name + '" supera 700 KB'; return; }
+
+    if (modo === 'crear') {
+      leerBase64(file, function (b64) {
+        var st = nuevosCrear(cont);
+        if (st.arr.length >= 20) return;
+        st.arr.push({ nombre: file.name || 'adjunto', contentType: file.type || 'application/octet-stream', base64: b64 });
+        st.campo.value = JSON.stringify(st.arr);
+        pintaPreview(st);
+      });
+      return;
+    }
+    var base = cont.getAttribute('data-adjuntos-base');
+    if (!base) return;
+    if (salida) salida.textContent = 'Subiendo "' + file.name + '"…';
+    leerBase64(file, function (b64) {
       fetch(base + '/adjuntos', {
         method: 'POST',
         headers: { 'content-type': 'application/json', 'x-csrf-token': cookie('x-csrf-token') },
-        body: JSON.stringify({
-          nombre: file.name || 'adjunto',
-          contentType: file.type || 'application/octet-stream',
-          base64: base64,
-        }),
+        body: JSON.stringify({ nombre: file.name || 'adjunto', contentType: file.type || 'application/octet-stream', base64: b64 }),
       })
         .then(function (r) { return r.json(); })
         .then(function (data) {
           if (data.ok) window.location.reload();
           else if (salida) salida.textContent = '❌ ' + (data.detalle || 'No se pudo subir');
         })
-        .catch(function () {
-          if (salida) salida.textContent = '❌ No se pudo subir. Revisa tu conexión.';
-        });
-    };
-    reader.readAsDataURL(file);
+        .catch(function () { if (salida) salida.textContent = '❌ No se pudo subir. Revisa tu conexión.'; });
+    });
   }
 
   document.addEventListener('change', function (e) {
     var input = e.target.closest('[data-adjunto-file]');
     if (!input || !input.files) return;
-    Array.prototype.forEach.call(input.files, subirAdjunto);
+    var cont = input.closest('[data-adjuntos]');
+    Array.prototype.forEach.call(input.files, function (f) { f.__cont = cont; agregarAdjunto(f); });
     input.value = '';
   });
-
+  document.addEventListener('click', function (e) {
+    var q = e.target.closest('[data-quitar-nuevo]');
+    if (!q) return;
+    var cont = q.closest('[data-adjuntos]');
+    var st = nuevosCrear(cont);
+    st.arr.splice(parseInt(q.getAttribute('data-quitar-nuevo'), 10), 1);
+    st.campo.value = JSON.stringify(st.arr);
+    pintaPreview(st);
+  });
   document.addEventListener('paste', function (e) {
-    if (!document.querySelector('[data-adjuntos] [data-adjunto-file]')) return;
+    var cont = document.querySelector('[data-adjuntos] [data-adjunto-file]');
+    if (!cont) return;
+    cont = cont.closest('[data-adjuntos]');
     var items = (e.clipboardData && e.clipboardData.items) || [];
     Array.prototype.forEach.call(items, function (it) {
-      if (it.kind === 'file') {
-        var f = it.getAsFile();
-        if (f) subirAdjunto(f);
-      }
+      if (it.kind === 'file') { var f = it.getAsFile(); if (f) { f.__cont = cont; agregarAdjunto(f); } }
     });
+  });
+  // Botón 🖼️ Imagen del editor → abre el selector de adjuntos
+  document.addEventListener('click', function (e) {
+    if (!e.target.closest('[data-insertar-imagen]')) return;
+    e.preventDefault();
+    var f = document.querySelector('[data-adjuntos] [data-adjunto-file]');
+    if (f) f.click();
+    else toast('Abre la sección "Adjuntos" para agregar imágenes');
+  });
+
+  // ── Form de ticket: "Otro" sistema + "Guardar y crear otro" ──────────────
+  document.addEventListener('change', function (e) {
+    var sel = e.target.closest('[data-sistema-select]');
+    if (!sel) return;
+    var otro = document.querySelector('[data-sistema-otro]');
+    if (otro) otro.hidden = sel.value !== '__otro__';
+  });
+  document.addEventListener('click', function (e) {
+    if (!e.target.closest('[data-submit-y-nuevo]')) return;
+    var f = document.querySelector('[data-guardar-y-nuevo]');
+    if (f) f.value = '1';
   });
 
   // ── Imprimir / guardar como PDF ────────────────────────────────────────

@@ -91,3 +91,11 @@ Permisos efectivos (`modulo:accion`).
 > `readonly` `optional` **firma?**: `string` \| `null`
 
 Firma que se agrega a las respuestas públicas de tickets, si la tiene configurada.
+
+***
+
+### encabezado?
+
+> `readonly` `optional` **encabezado?**: `string` \| `null`
+
+Encabezado/plantilla del usuario para redactar tickets (con `[fecha]`).
