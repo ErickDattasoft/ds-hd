@@ -77,13 +77,22 @@ export class CrearUsuarioService {
 
     const urlInvitacion = await this.crearInvitacion(uid, correo.value, input.actor.uid);
 
-    await this.email.enviar({
-      para: [{ email: correo.value, nombre }],
-      asunto: 'Tu acceso a ds-hd',
-      html: `<p>Hola ${nombre}, se creó tu cuenta.</p>
+    // Best-effort: si el correo falla, la cuenta ya existe y el admin ve el enlace de
+    // invitación en pantalla para compartirlo a mano. No revertimos el alta por esto.
+    try {
+      await this.email.enviar({
+        para: [{ email: correo.value, nombre }],
+        asunto: 'Tu acceso a ds-hd',
+        html: `<p>Hola ${nombre}, se creó tu cuenta.</p>
              <p><a href="${urlInvitacion}">Haz clic aquí para establecer tu contraseña</a> (expira en ${this.invitacionTtlHoras} h).</p>`,
-      tags: ['invitacion-staff'],
-    });
+        tags: ['invitacion-staff'],
+      });
+    } catch (err) {
+      this.logger.error('No se pudo enviar el correo de invitación de staff', {
+        uid,
+        err: err instanceof Error ? err.message : err,
+      });
+    }
 
     this.logger.info('Usuario staff creado', { uid, roles, por: input.actor.uid });
     return { usuario, urlInvitacion };

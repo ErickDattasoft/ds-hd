@@ -24,6 +24,11 @@
     "FIRESTORE_DRIVER": "rest",
     "LOG_LEVEL": "info",
     "FIREBASE_PROJECT_ID": "ds-hd-b4939",
-    "TURNSTILE_SITE_KEY": "0x4AAAAAAElIoYKcevpkmti3"
+    "TURNSTILE_SITE_KEY": "0x4AAAAAAElIoYKcevpkmti3",
+    // Remitente de correo. `BREVO_SENDER_EMAIL` debe ser un remitente/dominio verificado en
+    // Brevo (hoy: dominio `dattasoft.mx` autenticado; sender `erick.casas@dattasoft.mx`).
+    // NO son secretos, por eso van aquí y no en `wrangler secret put`.
+    "BREVO_SENDER_NAME": "DATTASOFT Soporte",
+    "BREVO_SENDER_EMAIL": "erick.casas@dattasoft.mx"
   }
 }

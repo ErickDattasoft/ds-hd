@@ -102,6 +102,23 @@ describe('gestión de usuarios (admin)', () => {
     expect(creado?.activo).toBe(true);
   });
 
+  it('si el correo de invitación falla, el alta igual se completa y muestra el enlace', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    t.emailSender.fallar = true;
+    const { agent, csrf } = await login(t.app, ADMIN.email, ADMIN.password);
+
+    const res = await agent
+      .post('/app/usuarios')
+      .type('form')
+      .send({ _csrf: csrf, nombre: 'Sin Correo', email: 'sincorreo@dattasoft.mx', roles: 'lectura' });
+
+    expect(res.status).toBe(200);
+    expect(res.text).toContain('/invitacion/');
+    const creado = await t.usuarioRepo.findByEmail('sincorreo@dattasoft.mx');
+    expect(creado?.activo).toBe(true);
+    expect(t.emailSender.enviados).toHaveLength(0);
+  });
+
   it('crea un usuario con dos roles y suma sus permisos', async () => {
     const t = makeTestApp({ usuarios: [ADMIN] });
     const { agent, csrf } = await login(t.app, ADMIN.email, ADMIN.password);

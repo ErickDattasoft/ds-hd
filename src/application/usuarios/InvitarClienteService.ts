@@ -84,13 +84,22 @@ export class InvitarClienteService {
     });
     const urlInvitacion = `${this.baseUrl}/invitacion/${token}`;
 
-    await this.email.enviar({
-      para: [{ email: correo.value, nombre }],
-      asunto: 'Acceso al portal de soporte DATTASOFT',
-      html: `<p>Hola ${nombre}, te damos acceso al portal donde podrás crear y dar seguimiento a tus tickets.</p>
+    // Best-effort: igual que en el alta de staff, si el correo falla el admin comparte el
+    // enlace de invitación a mano (se muestra en pantalla). No revertimos la invitación.
+    try {
+      await this.email.enviar({
+        para: [{ email: correo.value, nombre }],
+        asunto: 'Acceso al portal de soporte DATTASOFT',
+        html: `<p>Hola ${nombre}, te damos acceso al portal donde podrás crear y dar seguimiento a tus tickets.</p>
              <p><a href="${urlInvitacion}">Establece tu contraseña aquí</a> (expira en ${this.invitacionTtlHoras} h).</p>`,
-      tags: ['invitacion-cliente'],
-    });
+        tags: ['invitacion-cliente'],
+      });
+    } catch (err) {
+      this.logger.error('No se pudo enviar el correo de invitación de cliente', {
+        uid,
+        err: err instanceof Error ? err.message : err,
+      });
+    }
 
     this.logger.info('Cliente invitado al portal', { uid, empresaId: input.empresaId, por: input.actor.uid });
     return { usuario, urlInvitacion };
