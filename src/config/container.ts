@@ -811,6 +811,8 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
           c.gestionTicketPublicoService,
           c.ticketPublicoRepo,
           c.usuarioRepo,
+          c.contactoRepo,
+          c.empresaRepo,
           c.clock,
           c.ticketExcelService,
         ),

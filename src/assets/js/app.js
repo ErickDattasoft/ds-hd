@@ -357,6 +357,26 @@
     else toast('Abre la sección "Adjuntos" para agregar imágenes');
   });
 
+  // ── Form de ticket: buscador de contacto → autocompleta empresa y correo ──
+  document.addEventListener('input', function (e) {
+    var busca = e.target.closest('[data-buscar-contacto]');
+    if (!busca) return;
+    var wrap = busca.closest('[data-contacto-picker]');
+    var dl = document.getElementById(busca.getAttribute('list'));
+    if (!wrap || !dl) return;
+    var opt = Array.prototype.filter.call(dl.options, function (o) { return o.value === busca.value; })[0];
+    var nombre = wrap.querySelector('[data-c-nombre]');
+    var correo = wrap.querySelector('[data-c-correo]');
+    var empresa = wrap.querySelector('[data-c-empresa]');
+    if (opt) {
+      if (nombre) nombre.value = opt.value;
+      if (correo && opt.getAttribute('data-email')) correo.value = opt.getAttribute('data-email');
+      if (empresa && opt.getAttribute('data-empresa')) empresa.value = opt.getAttribute('data-empresa');
+    } else if (nombre) {
+      nombre.value = busca.value;
+    }
+  });
+
   // ── Form de ticket: "Otro" sistema + "Guardar y crear otro" ──────────────
   document.addEventListener('change', function (e) {
     var sel = e.target.closest('[data-sistema-select]');

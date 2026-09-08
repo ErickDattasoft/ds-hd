@@ -17,6 +17,8 @@ import type { GestionTicketPublicoService } from '../../../../application/ticket
 import type { TicketExcelService } from '../../../../application/tickets/TicketExcelService.js';
 import type { ITicketPublicoRepository } from '../../../../core/ports/repositories/ITicketPublicoRepository.js';
 import type { IUsuarioRepository } from '../../../../core/ports/repositories/IUsuarioRepository.js';
+import type { IContactoRepository } from '../../../../core/ports/repositories/IContactoRepository.js';
+import type { IEmpresaRepository } from '../../../../core/ports/repositories/IEmpresaRepository.js';
 import type { IClock } from '../../../../core/ports/services/IClock.js';
 import type { FiltroTickets } from '../../../../core/ports/repositories/ITicketQueries.js';
 import { parsePrioridad } from '../../../../core/entities/value-objects/Prioridad.js';
@@ -57,6 +59,8 @@ export class TicketController {
     private readonly gestionPublico: GestionTicketPublicoService,
     private readonly buzon: ITicketPublicoRepository,
     private readonly usuarios: IUsuarioRepository,
+    private readonly contactosRepo: IContactoRepository,
+    private readonly empresasRepo: IEmpresaRepository,
     private readonly clock: IClock,
     private readonly excel: TicketExcelService,
   ) {}
@@ -126,7 +130,12 @@ export class TicketController {
   };
 
   private async datosFormNuevo(user: NonNullable<Request['user']>) {
-    const { config } = await this.listar.listar(user, { limite: 0 });
+    const [{ config }, empresas, contactos] = await Promise.all([
+      this.listar.listar(user, { limite: 0 }),
+      this.empresasRepo.list({ activa: true }),
+      this.contactosRepo.list({ activo: true }),
+    ]);
+    const nombreEmpresa = new Map(empresas.map((e) => [e.id, e.nombre]));
     const puedeAsignar = user.permisos.includes('tickets:asignar');
     return {
       config,
@@ -134,6 +143,14 @@ export class TicketController {
       agentes: puedeAsignar ? await this.usuarios.list({ roles: ROLES_TECNICOS, activo: true }) : [],
       puedeAsignar,
       puedeNotasInternas: user.permisos.includes('tickets:ver_notas_internas'),
+      // Para el buscador de contacto (autocompletar empresa/correo al elegir).
+      contactos: contactos
+        .filter((c) => c.email || c.empresaId)
+        .map((c) => ({
+          nombre: c.nombre,
+          email: c.email ?? '',
+          empresa: nombreEmpresa.get(c.empresaId) ?? '',
+        })),
     };
   }
 

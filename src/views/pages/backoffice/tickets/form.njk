@@ -14,9 +14,28 @@
     <input type="hidden" name="guardarYNuevo" value="0" data-guardar-y-nuevo />
     <input type="hidden" name="adjuntosNuevos" value="" data-adjuntos-nuevos />
 
+    <div class="card" data-contacto-picker>
+      <p><strong>1 · Contacto</strong></p>
+      <label class="field"><span>🔍 Buscar contacto por empresa, nombre o correo</span>
+        <input list="ticket-contactos" data-buscar-contacto autocomplete="off" placeholder="Empieza a escribir…" value="{{ valores.contactoNombre }}" />
+      </label>
+      <datalist id="ticket-contactos">
+        {% for c in contactos %}<option value="{{ c.nombre }}" data-email="{{ c.email }}" data-empresa="{{ c.empresa }}">{{ c.empresa }}{% if c.email %} · {{ c.email }}{% endif %}</option>{% endfor %}
+      </datalist>
+      <div class="form-grid">
+        <label class="field"><span>Contacto</span><input name="contactoNombre" value="{{ valores.contactoNombre }}" data-c-nombre placeholder="Nombre del contacto" /></label>
+        <label class="field"><span>Correo del contacto</span><input type="email" name="contactoCorreo" value="{{ valores.contactoCorreo }}" data-c-correo placeholder="correo@empresa.mx" /></label>
+        <label class="field"><span>Empresa</span><input name="empresaNombre" value="{{ valores.empresaNombre }}" data-c-empresa placeholder="Nombre de la empresa" /></label>
+      </div>
+      <div class="form-grid">
+        <label class="field"><span>CC</span><input name="cc" value="{{ valores.cc }}" placeholder="correo1@x.com, correo2@x.com" /></label>
+        <label class="field"><span>CCO</span><input name="cco" value="{{ valores.cco }}" placeholder="correo@x.com" /></label>
+      </div>
+    </div>
+
     <div class="card">
       <label class="field"><span>Asunto *</span>
-        <input name="asunto" value="{{ valores.asunto }}" required autofocus placeholder="Ej: Error al timbrar" />
+        <input name="asunto" value="{{ valores.asunto }}" required placeholder="Ej: Error al timbrar" />
         {% if errores.asunto %}<em class="field__error">{{ errores.asunto }}</em>{% endif %}
       </label>
 
@@ -66,21 +85,6 @@
         </div>
       </details>
     {% endif %}
-
-    <details class="disclosure"{{ ' open' if valores.contactoNombre or valores.contactoCorreo or valores.empresaNombre or valores.cc or valores.cco }}>
-      <summary class="disclosure__summary">Cliente y copias <span class="disclosure__hint">— contacto, empresa y CC/CCO del correo</span></summary>
-      <div class="disclosure__body form">
-        <div class="form-grid">
-          <label class="field"><span>Contacto</span><input name="contactoNombre" value="{{ valores.contactoNombre }}" placeholder="Nombre del contacto" /></label>
-          <label class="field"><span>Correo del contacto</span><input type="email" name="contactoCorreo" value="{{ valores.contactoCorreo }}" placeholder="correo@empresa.mx" /></label>
-          <label class="field"><span>Empresa</span><input name="empresaNombre" value="{{ valores.empresaNombre }}" placeholder="Nombre de la empresa" /></label>
-        </div>
-        <div class="form-grid">
-          <label class="field"><span>CC</span><input name="cc" value="{{ valores.cc }}" placeholder="correo1@x.com, correo2@x.com" /></label>
-          <label class="field"><span>CCO</span><input name="cco" value="{{ valores.cco }}" placeholder="correo@x.com" /></label>
-        </div>
-      </div>
-    </details>
 
     <details class="disclosure"{{ ' open' if valores.solicitadoPor or valores.canalizadoA or valores.agenteUid or valores.asignarAMi }}>
       <summary class="disclosure__summary">Asignación y gestión</summary>
