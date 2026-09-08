@@ -146,6 +146,10 @@ describe('ActualizarEstadoTicketService', () => {
     expect(email.enviados).toHaveLength(1);
     expect(email.ultimo?.asunto).toContain('cerrado');
     expect(webhooks.eventos).toContain('ticket.cerrado');
+    // El correo lleva la bitácora: creación + el cambio de estado que acaba de ocurrir.
+    expect(email.ultimo?.html).toContain('Actividad del ticket');
+    expect(email.ultimo?.html).toContain('creado');
+    expect(email.ultimo?.html).toMatch(/Estado: .+ → Cerrado/);
   });
 
   it('un agente no puede cambiar el estado de un ticket que no es suyo', async () => {

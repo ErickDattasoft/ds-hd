@@ -50,6 +50,7 @@
 - [application/tickets/constantes](application/tickets/constantes/README.md)
 - [application/tickets/dto](application/tickets/dto/README.md)
 - [application/tickets/efectos](application/tickets/efectos/README.md)
+- [application/tickets/historialCorreo](application/tickets/historialCorreo/README.md)
 - [application/usuarios/AceptarInvitacionService](application/usuarios/AceptarInvitacionService/README.md)
 - [application/usuarios/ActualizarMiFirmaService](application/usuarios/ActualizarMiFirmaService/README.md)
 - [application/usuarios/ActualizarUsuarioService](application/usuarios/ActualizarUsuarioService/README.md)

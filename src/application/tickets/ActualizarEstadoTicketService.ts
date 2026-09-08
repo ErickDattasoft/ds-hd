@@ -8,6 +8,7 @@ import type { IWebhookPublisher } from '../../core/ports/services/IWebhookPublis
 import type { Ticket } from '../../core/entities/Ticket.js';
 import { ForbiddenError, NotFoundError } from '../../core/errors/DomainError.js';
 import { registrarEvento } from './efectos.js';
+import { historialActividadHtml } from './historialCorreo.js';
 import type { CambiarEstadoInput } from './dto.js';
 
 /**
@@ -92,10 +93,11 @@ export class ActualizarEstadoTicketService {
     });
 
     if (ticket.contactoCorreo) {
+      const historial = historialActividadHtml(await this.tickets.listarEventos(ticket.id), 'cliente');
       await this.email.enviar({
         para: [{ email: ticket.contactoCorreo, ...(ticket.contactoNombre ? { nombre: ticket.contactoNombre } : {}) }],
         asunto: `Tu ticket #${ticket.numero} fue ${tipo}`,
-        html: `<p>Hola,</p><p>Tu ticket <strong>#${ticket.numero} — ${ticket.asunto}</strong> fue marcado como <strong>${tipo}</strong>.</p>`,
+        html: `<p>Hola,</p><p>Tu ticket <strong>#${ticket.numero} — ${ticket.asunto}</strong> fue marcado como <strong>${tipo}</strong>.</p>${historial}`,
         tags: [`ticket-${tipo}`, `ticket-${ticket.numero}`],
       });
       await registrarEvento(this.tickets, this.ids, ticket.id, {

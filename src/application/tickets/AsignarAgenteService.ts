@@ -9,6 +9,7 @@ import type { IWebhookPublisher } from '../../core/ports/services/IWebhookPublis
 import type { Ticket } from '../../core/entities/Ticket.js';
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '../../core/errors/DomainError.js';
 import { registrarEvento } from './efectos.js';
+import { historialActividadHtml } from './historialCorreo.js';
 import type { AsignarAgenteInput } from './dto.js';
 
 /** Caso de uso: asignar un ticket a un agente técnico, respetando su capacidad. */
@@ -66,10 +67,11 @@ export class AsignarAgenteService {
       payload: { id: ticket.id, numero: ticket.numero, agenteUid: agente.uid, agenteNombre: agente.nombre },
     });
 
+    const historial = historialActividadHtml(await this.tickets.listarEventos(ticket.id), 'interno');
     await this.email.enviar({
       para: [{ email: agente.email.value, nombre: agente.nombre }],
       asunto: `Ticket #${ticket.numero} asignado a ti`,
-      html: `<p>Se te asignó el ticket <strong>#${ticket.numero} — ${ticket.asunto}</strong> (prioridad ${ticket.prioridad}).</p>`,
+      html: `<p>Se te asignó el ticket <strong>#${ticket.numero} — ${ticket.asunto}</strong> (prioridad ${ticket.prioridad}).</p>${historial}`,
       tags: ['ticket-asignado', `ticket-${ticket.numero}`],
     });
 

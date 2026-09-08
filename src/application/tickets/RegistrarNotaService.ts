@@ -6,6 +6,7 @@ import type { IEmailSender } from '../../core/ports/services/IEmailSender.js';
 import type { NotaTicket } from '../../core/entities/NotaTicket.js';
 import { ForbiddenError, NotFoundError, ValidationError } from '../../core/errors/DomainError.js';
 import { registrarEvento } from './efectos.js';
+import { historialActividadHtml } from './historialCorreo.js';
 import type { RegistrarNotaInput } from './dto.js';
 
 /** Caso de uso: agregar una nota (pública o interna) a un ticket. */
@@ -64,10 +65,11 @@ export class RegistrarNotaService {
 
     if (nota.tipo === 'publica' && input.actor.esStaff && ticket.contactoCorreo) {
       const firma = input.actor.firma ? `<hr />${input.actor.firma}` : '';
+      const historial = historialActividadHtml(await this.tickets.listarEventos(ticket.id), 'cliente');
       await this.email.enviar({
         para: [{ email: ticket.contactoCorreo, ...(ticket.contactoNombre ? { nombre: ticket.contactoNombre } : {}) }],
         asunto: `Actualización de tu ticket #${ticket.numero}`,
-        html: `<p>${cuerpo}</p>${firma}<hr /><p class="muted">Ticket #${ticket.numero} — ${ticket.asunto}</p>`,
+        html: `<p>${cuerpo}</p>${firma}<hr /><p class="muted">Ticket #${ticket.numero} — ${ticket.asunto}</p>${historial}`,
         tags: ['ticket-nota', `ticket-${ticket.numero}`],
       });
     }
