@@ -240,10 +240,10 @@ contraseña. ds-hd nace con cuentas reales de Firebase Auth por invitación.
 
 ## Plan de implementación (por bloques, cada uno "todas las funciones, mejor acomodadas")
 
-1. **Tickets — editor y detalle** (lo que el usuario ve ahora): encabezado/firma
-   configurables + botones, notas internas (alta y detalle), CC/CCO, estado
-   inicial, agente, solicitado/canalizado, sistema "otro", adjuntar al crear,
-   guardar-y-nuevo, imprimir, cotizar.
+1. ✅ **HECHO** (`0bb69a6`) — **Tickets — editor y detalle**: encabezado/firma
+   configurables + botones 📋/🖊️/🖼️, notas internas (alta y detalle), CC/CCO,
+   estado inicial, agente, solicitado/canalizado, sistema "otro", adjuntar al
+   crear, guardar-y-nuevo, imprimir, cotizar.
 2. **Contactos + Empresas**: RFC en contacto, crear empresa inline, campos por
    sistema al crear, enlace WhatsApp por contacto, campos extra.
 3. **Cotizaciones**: datos generales (contacto/RFC/tel/quien cotiza) + condiciones
