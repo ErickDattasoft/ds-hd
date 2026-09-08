@@ -53,7 +53,8 @@
       <summary class="disclosure__summary">Facturación y avisos</summary>
       <div class="disclosure__body form">
         <label class="field"><span>Tipos facturables</span><textarea name="tiposFacturables" rows="3">{{ config.tiposFacturables | join('\n') }}</textarea></label>
-        <label class="field"><span>Correos a notificar cuando llega un ticket del portal</span><textarea name="correosNotificacion" rows="3">{{ config.correosNotificacion | join('\n') }}</textarea></label>
+        <label class="field"><span>Correos de notificación de tickets</span><textarea name="correosNotificacion" rows="3">{{ config.correosNotificacion | join('\n') }}</textarea></label>
+        <p class="muted">Uno por línea. Reciben copia de todos los correos de tickets (nuevo del portal, nota pública al cliente, resuelto/cerrado, reenvíos). El primero es la dirección de respuesta.</p>
       </div>
     </details>
 

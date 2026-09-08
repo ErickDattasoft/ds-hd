@@ -7,6 +7,12 @@
     <a class="btn btn--sm btn--ghost" href="/app/tickets">← Volver</a>
   </div>
 
+  {% if aviso == 'correo-reenviado' %}
+    <p class="alert alert--ok">✉️ Correo reenviado{% if avisoDetalle %} a {{ avisoDetalle }}{% endif %}.</p>
+  {% elif aviso == 'correo-sin-destinatario' %}
+    <p class="alert alert--warn">No se pudo reenviar: el ticket no tiene correo de contacto y no hay correos de notificación configurados.</p>
+  {% endif %}
+
   <div class="ticket-grid">
     <section>
       <div class="card">
@@ -74,6 +80,14 @@
           {% endif %}
         </div>
       </details>
+
+      {% if permisos.editar %}
+        <form method="post" action="/app/tickets/{{ ticket.id }}/reenviar-correo" class="form">
+          <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+          <button class="btn btn--sm btn--secondary" type="submit">✉️ Reenviar correo</button>
+          <span class="muted">— manda al contacto el resumen actual del ticket (con copia al equipo). Nunca incluye notas internas.</span>
+        </form>
+      {% endif %}
     </section>
 
     <aside class="ticket-side">

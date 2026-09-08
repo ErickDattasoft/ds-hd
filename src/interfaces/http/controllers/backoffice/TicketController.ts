@@ -3,6 +3,7 @@ import type { CrearTicketService } from '../../../../application/tickets/CrearTi
 import type { ActualizarEstadoTicketService } from '../../../../application/tickets/ActualizarEstadoTicketService.js';
 import type { AsignarAgenteService } from '../../../../application/tickets/AsignarAgenteService.js';
 import type { RegistrarNotaService } from '../../../../application/tickets/RegistrarNotaService.js';
+import type { ReenviarCorreoTicketService } from '../../../../application/tickets/ReenviarCorreoTicketService.js';
 import type { MarcarFacturacionService } from '../../../../application/tickets/MarcarFacturacionService.js';
 import type { ProgramarAtencionService } from '../../../../application/tickets/ProgramarAtencionService.js';
 import type { AjustarTiempoService } from '../../../../application/tickets/AjustarTiempoService.js';
@@ -27,6 +28,7 @@ import {
 import { parseAgenda } from '../../../../core/entities/value-objects/AgendaTicket.js';
 import { ticketVM } from '../../presenters/TicketPresenter.js';
 import { camposDeError } from '../../support/errores.js';
+import { ValidationError } from '../../../../core/errors/DomainError.js';
 
 const str = (v: unknown): string => (typeof v === 'string' ? v : '');
 
@@ -40,6 +42,7 @@ export class TicketController {
     private readonly cambiarEstado: ActualizarEstadoTicketService,
     private readonly asignar: AsignarAgenteService,
     private readonly registrarNota: RegistrarNotaService,
+    private readonly reenviarCorreo: ReenviarCorreoTicketService,
     private readonly facturar: MarcarFacturacionService,
     private readonly programarAtencion: ProgramarAtencionService,
     private readonly ajustarTiempo: AjustarTiempoService,
@@ -184,6 +187,8 @@ export class TicketController {
         eliminar: req.user!.permisos.includes('tickets:eliminar'),
       },
       agentes,
+      aviso: str(req.query.aviso),
+      avisoDetalle: str(req.query.a),
       errores: {},
     });
   };
@@ -216,6 +221,17 @@ export class TicketController {
       tipo: req.body?.tipo === 'interna' ? 'interna' : 'publica',
     });
     res.redirect(`/app/tickets/${str(req.params.id)}`);
+  };
+
+  reenviarCorreoPost = async (req: Request, res: Response): Promise<void> => {
+    const id = str(req.params.id);
+    try {
+      const { enviadoA } = await this.reenviarCorreo.ejecutar({ actor: req.user!, ticketId: id });
+      res.redirect(`/app/tickets/${id}?aviso=correo-reenviado&a=${encodeURIComponent(enviadoA.join(', '))}`);
+    } catch (err) {
+      if (!(err instanceof ValidationError)) throw err;
+      res.redirect(`/app/tickets/${id}?aviso=correo-sin-destinatario`);
+    }
   };
 
   facturarPost = async (req: Request, res: Response): Promise<void> => {

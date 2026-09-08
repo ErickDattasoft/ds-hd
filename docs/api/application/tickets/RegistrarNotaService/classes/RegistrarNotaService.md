@@ -12,13 +12,21 @@ Caso de uso: agregar una nota (pública o interna) a un ticket.
 
 ### Constructor
 
-> **new RegistrarNotaService**(`tickets`, `ids`, `clock`, `email`, `logger`): `RegistrarNotaService`
+> **new RegistrarNotaService**(`tickets`, `config`, `usuarios`, `ids`, `clock`, `email`, `logger`): `RegistrarNotaService`
 
 #### Parameters
 
 ##### tickets
 
 [`ITicketRepository`](../../../../core/ports/repositories/ITicketRepository/interfaces/ITicketRepository.md)
+
+##### config
+
+[`IConfiguracionRepository`](../../../../core/ports/repositories/IConfiguracionRepository/interfaces/IConfiguracionRepository.md)
+
+##### usuarios
+
+[`IUsuarioRepository`](../../../../core/ports/repositories/IUsuarioRepository/interfaces/IUsuarioRepository.md)
 
 ##### ids
 

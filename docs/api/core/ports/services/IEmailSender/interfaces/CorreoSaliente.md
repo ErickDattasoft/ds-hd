@@ -72,6 +72,22 @@ Texto plano opcional (si se omite, el proveedor puede derivarlo del HTML).
 
 ***
 
+### responderA?
+
+> `optional` **responderA?**: `object`
+
+Dirección a la que responde el destinatario (si se omite, el remitente configurado).
+
+#### email
+
+> **email**: `string`
+
+#### nombre?
+
+> `optional` **nombre?**: `string`
+
+***
+
 ### tags?
 
 > `optional` **tags?**: `string`[]

@@ -8,4 +8,5 @@
 
 ## Functions
 
+- [escaparHtml](functions/escaparHtml.md)
 - [historialActividadHtml](functions/historialActividadHtml.md)

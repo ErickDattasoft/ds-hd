@@ -38,6 +38,7 @@ export class SmtpEmailSender implements IEmailSender {
       to: correo.para.map((p) => (p.nombre ? `"${p.nombre}" <${p.email}>` : p.email)),
       cc: correo.cc?.map((p) => p.email),
       bcc: correo.cco?.map((p) => p.email),
+      replyTo: correo.responderA?.email,
       subject: correo.asunto,
       html: correo.html,
       text: correo.texto,

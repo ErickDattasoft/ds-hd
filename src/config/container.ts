@@ -57,6 +57,7 @@ import { CrearTicketService } from '../application/tickets/CrearTicketService.js
 import { ActualizarEstadoTicketService } from '../application/tickets/ActualizarEstadoTicketService.js';
 import { AsignarAgenteService } from '../application/tickets/AsignarAgenteService.js';
 import { RegistrarNotaService } from '../application/tickets/RegistrarNotaService.js';
+import { ReenviarCorreoTicketService } from '../application/tickets/ReenviarCorreoTicketService.js';
 import { MarcarFacturacionService } from '../application/tickets/MarcarFacturacionService.js';
 import { ProgramarAtencionService } from '../application/tickets/ProgramarAtencionService.js';
 import { AjustarTiempoService } from '../application/tickets/AjustarTiempoService.js';
@@ -205,6 +206,7 @@ export interface Cradle {
   actualizarEstadoTicketService: ActualizarEstadoTicketService;
   asignarAgenteService: AsignarAgenteService;
   registrarNotaService: RegistrarNotaService;
+  reenviarCorreoTicketService: ReenviarCorreoTicketService;
   marcarFacturacionService: MarcarFacturacionService;
   programarAtencionService: ProgramarAtencionService;
   ajustarTiempoService: AjustarTiempoService;
@@ -548,6 +550,7 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
         new ActualizarEstadoTicketService(
           c.ticketRepo,
           c.configuracionRepo,
+          c.usuarioRepo,
           c.idGenerator,
           c.clock,
           c.emailSender,
@@ -570,7 +573,27 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
     ).singleton(),
     registrarNotaService: asFunction(
       (c: Cradle) =>
-        new RegistrarNotaService(c.ticketRepo, c.idGenerator, c.clock, c.emailSender, c.logger),
+        new RegistrarNotaService(
+          c.ticketRepo,
+          c.configuracionRepo,
+          c.usuarioRepo,
+          c.idGenerator,
+          c.clock,
+          c.emailSender,
+          c.logger,
+        ),
+    ).singleton(),
+    reenviarCorreoTicketService: asFunction(
+      (c: Cradle) =>
+        new ReenviarCorreoTicketService(
+          c.ticketRepo,
+          c.configuracionRepo,
+          c.usuarioRepo,
+          c.idGenerator,
+          c.clock,
+          c.emailSender,
+          c.logger,
+        ),
     ).singleton(),
     marcarFacturacionService: asFunction(
       (c: Cradle) =>
@@ -753,6 +776,7 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
           c.actualizarEstadoTicketService,
           c.asignarAgenteService,
           c.registrarNotaService,
+          c.reenviarCorreoTicketService,
           c.marcarFacturacionService,
           c.programarAtencionService,
           c.ajustarTiempoService,

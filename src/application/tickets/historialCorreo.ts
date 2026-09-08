@@ -5,10 +5,12 @@ const FMT = new Intl.DateTimeFormat('es-MX', { dateStyle: 'medium', timeStyle: '
 /** Eventos que puede ver el cliente en un correo: nunca revelan que existen notas internas. */
 const VISIBLE_CLIENTE: ReadonlySet<EventoTicket['tipo']> = new Set(['creacion', 'cambio_estado', 'asignacion']);
 
-/** Escapa `&<>"` para interpolar texto en el HTML del correo. */
-function esc(s: string): string {
+/** Escapa `&<>"` para interpolar texto en el HTML de un correo. */
+export function escaparHtml(s: string): string {
   return s.replace(/[&<>"]/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[ch]!);
 }
+
+const esc = escaparHtml;
 
 /**
  * Bloque HTML con la bitácora del ticket para incrustar al pie de un correo.

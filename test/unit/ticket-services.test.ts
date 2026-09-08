@@ -130,7 +130,7 @@ describe('ActualizarEstadoTicketService', () => {
     const email = new FakeEmailSender();
     const webhooks = new FakeWebhookPublisher();
     const crear = new CrearTicketService(repo, new InMemoryContadorRepository(), new InMemoryConfiguracionRepository(), ids, clock, new FakeWebhookPublisher(), silentLogger);
-    const cambiar = new ActualizarEstadoTicketService(repo, new InMemoryConfiguracionRepository(), ids, clock, email, webhooks, silentLogger);
+    const cambiar = new ActualizarEstadoTicketService(repo, new InMemoryConfiguracionRepository(), new InMemoryUsuarioRepository(), ids, clock, email, webhooks, silentLogger);
 
     const t = await crear.ejecutar({
       actor: actor(),
@@ -158,7 +158,7 @@ describe('ActualizarEstadoTicketService', () => {
     const clock = new FixedClock(new Date());
     const repo = new InMemoryTicketRepository(store);
     const crear = new CrearTicketService(repo, new InMemoryContadorRepository(), new InMemoryConfiguracionRepository(), ids, clock, new FakeWebhookPublisher(), silentLogger);
-    const cambiar = new ActualizarEstadoTicketService(repo, new InMemoryConfiguracionRepository(), ids, clock, new FakeEmailSender(), new FakeWebhookPublisher(), silentLogger);
+    const cambiar = new ActualizarEstadoTicketService(repo, new InMemoryConfiguracionRepository(), new InMemoryUsuarioRepository(), ids, clock, new FakeEmailSender(), new FakeWebhookPublisher(), silentLogger);
     const t = await crear.ejecutar({ actor: actor(), asunto: 'Ajeno', descripcion: 'descripción', tipo: 'General', prioridad: 'Media' });
 
     const agenteOtro = actor({ uid: 'ag2', rol: 'agente', permisos: ['tickets:cambiar_estado'] });

@@ -11,6 +11,8 @@ export class LoggingEmailSender implements IEmailSender {
   async enviar(correo: CorreoSaliente): Promise<void> {
     this.logger.info('[correo simulado]', {
       para: correo.para.map((p) => p.email),
+      ...(correo.cc?.length ? { cc: correo.cc.map((p) => p.email) } : {}),
+      ...(correo.responderA ? { responderA: correo.responderA.email } : {}),
       asunto: correo.asunto,
       tags: correo.tags,
       html: correo.html,

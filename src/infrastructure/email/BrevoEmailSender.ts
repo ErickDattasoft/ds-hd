@@ -20,6 +20,9 @@ export class BrevoEmailSender implements IEmailSender {
       to: correo.para.map((p) => ({ email: p.email, name: p.nombre })),
       cc: correo.cc?.map((p) => ({ email: p.email, name: p.nombre })),
       bcc: correo.cco?.map((p) => ({ email: p.email, name: p.nombre })),
+      replyTo: correo.responderA
+        ? { email: correo.responderA.email, name: correo.responderA.nombre }
+        : undefined,
       subject: correo.asunto,
       htmlContent: correo.html,
       textContent: correo.texto,

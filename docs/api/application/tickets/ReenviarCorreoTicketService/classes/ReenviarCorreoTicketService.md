@@ -2,18 +2,17 @@
 
 ***
 
-[ds-hd](../../../../README.md) / [application/tickets/ActualizarEstadoTicketService](../README.md) / ActualizarEstadoTicketService
+[ds-hd](../../../../README.md) / [application/tickets/ReenviarCorreoTicketService](../README.md) / ReenviarCorreoTicketService
 
-# Class: ActualizarEstadoTicketService
+# Class: ReenviarCorreoTicketService
 
-Caso de uso: cambiar el estado de un ticket, con los efectos colaterales del ciclo de vida
-(primera respuesta, correos y webhooks de resuelto/cerrado).
+Caso de uso: reenviar al cliente el correo con el resumen actual del ticket.
 
 ## Constructors
 
 ### Constructor
 
-> **new ActualizarEstadoTicketService**(`tickets`, `config`, `usuarios`, `ids`, `clock`, `email`, `webhooks`, `logger`): `ActualizarEstadoTicketService`
+> **new ReenviarCorreoTicketService**(`tickets`, `config`, `usuarios`, `ids`, `clock`, `email`, `logger`): `ReenviarCorreoTicketService`
 
 #### Parameters
 
@@ -41,30 +40,26 @@ Caso de uso: cambiar el estado de un ticket, con los efectos colaterales del cic
 
 [`IEmailSender`](../../../../core/ports/services/IEmailSender/interfaces/IEmailSender.md)
 
-##### webhooks
-
-[`IWebhookPublisher`](../../../../core/ports/services/IWebhookPublisher/interfaces/IWebhookPublisher.md)
-
 ##### logger
 
 [`ILogger`](../../../../core/ports/services/ILogger/interfaces/ILogger.md)
 
 #### Returns
 
-`ActualizarEstadoTicketService`
+`ReenviarCorreoTicketService`
 
 ## Methods
 
 ### ejecutar()
 
-> **ejecutar**(`input`): `Promise`\<[`Ticket`](../../../../core/entities/Ticket/classes/Ticket.md)\>
+> **ejecutar**(`input`): `Promise`\<\{ `enviadoA`: `string`[]; \}\>
 
 #### Parameters
 
 ##### input
 
-[`CambiarEstadoInput`](../../dto/interfaces/CambiarEstadoInput.md)
+[`ReenviarCorreoInput`](../interfaces/ReenviarCorreoInput.md)
 
 #### Returns
 
-`Promise`\<[`Ticket`](../../../../core/entities/Ticket/classes/Ticket.md)\>
+`Promise`\<\{ `enviadoA`: `string`[]; \}\>
