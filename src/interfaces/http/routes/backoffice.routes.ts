@@ -246,6 +246,11 @@ export function backofficeRoutes(container: Container): Router {
     requirePermission('configuracion:integraciones'),
     (req, res) => configuracion().probarWhatsappPost(req, res),
   );
+  r.post(
+    '/configuracion/integraciones/probar-correo',
+    requirePermission('configuracion:integraciones'),
+    (req, res) => configuracion().probarCorreoPost(req, res),
+  );
   r.get('/configuracion/backup', requirePermission('configuracion:integraciones'), (req, res) =>
     configuracion().backupView(req, res),
   );

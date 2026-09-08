@@ -234,6 +234,31 @@
         .catch(function () {
           salidaWa.textContent = '❌ No se pudo probar. Revisa tu conexión.';
         });
+      return;
+    }
+
+    var btnCorreo = e.target.closest('[data-probar-correo]');
+    if (btnCorreo) {
+      var dest = document.querySelector('[data-correo-prueba]');
+      var salidaCorreo = document.querySelector('[data-resultado-correo]');
+      if (!dest || !salidaCorreo) return;
+      if (!dest.value || dest.value.indexOf('@') === -1) {
+        salidaCorreo.textContent = 'Escribe un correo de destino primero.';
+        return;
+      }
+      salidaCorreo.textContent = 'Enviando…';
+      fetch('/app/configuracion/integraciones/probar-correo', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'x-csrf-token': cookie('x-csrf-token') },
+        body: JSON.stringify({ email: dest.value }),
+      })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          salidaCorreo.textContent = (data.ok ? '✅ ' : '❌ ') + data.detalle;
+        })
+        .catch(function () {
+          salidaCorreo.textContent = '❌ No se pudo probar. Revisa tu conexión.';
+        });
     }
   });
 

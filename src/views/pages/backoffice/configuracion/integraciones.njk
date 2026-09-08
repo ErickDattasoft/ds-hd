@@ -56,6 +56,28 @@
     </details>
 
     <details class="disclosure">
+      <summary class="disclosure__summary">Correo saliente</summary>
+      <div class="disclosure__body form">
+        {% if infoCorreo.modo == 'log' %}
+          <p class="alert alert--warn">
+            El servidor no tiene <code>BREVO_API_KEY</code> ni SMTP configurado: los correos
+            <strong>solo se registran en el log</strong>, no se envían.
+          </p>
+        {% else %}
+          <p class="muted">
+            Enviando vía <strong>{{ 'Brevo' if infoCorreo.modo == 'brevo' else 'SMTP' }}</strong>,
+            remitente <strong>{{ infoCorreo.remitente }}</strong>.
+          </p>
+        {% endif %}
+        <label class="field"><span>Enviar un correo de prueba a</span>
+          <input type="email" placeholder="destinatario@correo.com" data-correo-prueba />
+        </label>
+        <button type="button" class="btn btn--ghost btn--sm" data-probar-correo>Enviar prueba</button>
+        <span class="muted" data-resultado-correo></span>
+      </div>
+    </details>
+
+    <details class="disclosure">
       <summary class="disclosure__summary">Matriz de reglas por evento</summary>
       <div class="disclosure__body">
         <table class="data-table">

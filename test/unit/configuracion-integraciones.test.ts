@@ -9,6 +9,8 @@ import type {
 } from '../../src/core/ports/services/IIntegracionesGateway.js';
 import { InMemoryConfiguracionRepository } from '../fakes/tickets.js';
 import { silentLogger } from '../fakes/support.js';
+import { FakeEmailSender } from '../fakes/FakeEmailSender.js';
+import type { InfoCorreo } from '../../src/application/configuracion/ConfiguracionIntegracionesService.js';
 
 class FakeIntegracionesGateway implements IIntegracionesGateway {
   readonly webhooksLlamados: { url: string; payload: Record<string, unknown> }[] = [];
@@ -45,12 +47,15 @@ const actor = (over: Partial<SessionUser> = {}): SessionUser => ({
 describe('ConfiguracionIntegracionesService', () => {
   let repo: InMemoryConfiguracionRepository;
   let gateway: FakeIntegracionesGateway;
+  let email: FakeEmailSender;
   let service: ConfiguracionIntegracionesService;
+  const infoCorreo: InfoCorreo = { modo: 'brevo', remitente: 'soporte@dattasoft.mx' };
 
   beforeEach(() => {
     repo = new InMemoryConfiguracionRepository();
     gateway = new FakeIntegracionesGateway();
-    service = new ConfiguracionIntegracionesService(repo, gateway, silentLogger);
+    email = new FakeEmailSender();
+    service = new ConfiguracionIntegracionesService(repo, gateway, email, infoCorreo, silentLogger);
   });
 
   it('sin permiso no se puede actualizar', async () => {
@@ -109,6 +114,42 @@ describe('ConfiguracionIntegracionesService', () => {
     const r = await service.probarWhatsApp(actor(), '+521234567890', 'clave');
     expect(r.ok).toBe(true);
     expect(gateway.whatsappLlamados).toHaveLength(1);
+  });
+
+  it('probarCorreo exige permiso y valida el destino', async () => {
+    await expect(service.probarCorreo(actor({ permisos: [] }), 'a@b.com')).rejects.toThrow(ForbiddenError);
+    const invalido = await service.probarCorreo(actor(), 'no-es-correo');
+    expect(invalido.ok).toBe(false);
+    expect(email.enviados).toHaveLength(0);
+  });
+
+  it('probarCorreo envía y reporta el remitente', async () => {
+    const r = await service.probarCorreo(actor(), 'destino@cliente.com');
+    expect(r.ok).toBe(true);
+    expect(r.detalle).toContain('soporte@dattasoft.mx');
+    expect(email.ultimo?.para[0]?.email).toBe('destino@cliente.com');
+    expect(email.ultimo?.tags).toContain('prueba-correo');
+  });
+
+  it('probarCorreo avisa cuando el servidor solo registra en el log', async () => {
+    const soloLog = new ConfiguracionIntegracionesService(
+      repo,
+      gateway,
+      email,
+      { modo: 'log', remitente: 'soporte@dattasoft.mx' },
+      silentLogger,
+    );
+    const r = await soloLog.probarCorreo(actor(), 'destino@cliente.com');
+    expect(r.ok).toBe(false);
+    expect(r.detalle).toContain('log');
+    expect(email.enviados).toHaveLength(0);
+  });
+
+  it('probarCorreo reporta el error si el envío falla', async () => {
+    email.fallar = true;
+    const r = await service.probarCorreo(actor(), 'destino@cliente.com');
+    expect(r.ok).toBe(false);
+    expect(r.detalle).toContain('Brevo respondió 400');
   });
 });
 

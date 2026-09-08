@@ -128,15 +128,23 @@ export class ConfiguracionController {
     }
   };
 
-  integracionesView = async (_req: Request, res: Response): Promise<void> => {
+  private async renderIntegraciones(
+    res: Response,
+    opts: { status?: number; errores?: Record<string, string>; guardado?: boolean } = {},
+  ): Promise<void> {
     const config = await this.configIntegraciones.obtener();
-    res.render('pages/backoffice/configuracion/integraciones', {
+    res.status(opts.status ?? 200).render('pages/backoffice/configuracion/integraciones', {
       titulo: 'Integraciones',
       config,
       eventosEtiquetas: ETIQUETAS_EVENTOS,
-      errores: {},
-      guardado: false,
+      infoCorreo: this.configIntegraciones.infoCorreo(),
+      errores: opts.errores ?? {},
+      guardado: opts.guardado ?? false,
     });
+  }
+
+  integracionesView = async (_req: Request, res: Response): Promise<void> => {
+    await this.renderIntegraciones(res);
   };
 
   integracionesPost = async (req: Request, res: Response): Promise<void> => {
@@ -151,23 +159,9 @@ export class ConfiguracionController {
         whatsappApiKey: str(b.whatsappApiKey),
         reglas: ConfiguracionIntegracionesService.reglasDeForm(b),
       });
-      const config = await this.configIntegraciones.obtener();
-      res.render('pages/backoffice/configuracion/integraciones', {
-        titulo: 'Integraciones',
-        config,
-        eventosEtiquetas: ETIQUETAS_EVENTOS,
-        errores: {},
-        guardado: true,
-      });
+      await this.renderIntegraciones(res, { guardado: true });
     } catch (err) {
-      const config = await this.configIntegraciones.obtener();
-      res.status(422).render('pages/backoffice/configuracion/integraciones', {
-        titulo: 'Integraciones',
-        config,
-        eventosEtiquetas: ETIQUETAS_EVENTOS,
-        errores: camposDeError(err),
-        guardado: false,
-      });
+      await this.renderIntegraciones(res, { status: 422, errores: camposDeError(err) });
     }
   };
 
@@ -187,6 +181,15 @@ export class ConfiguracionController {
         str(req.body?.telefono),
         str(req.body?.apiKey),
       );
+      res.json(resultado);
+    } catch (err) {
+      res.status(422).json({ ok: false, detalle: err instanceof Error ? err.message : 'No se pudo probar' });
+    }
+  };
+
+  probarCorreoPost = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const resultado = await this.configIntegraciones.probarCorreo(req.user!, str(req.body?.email));
       res.json(resultado);
     } catch (err) {
       res.status(422).json({ ok: false, detalle: err instanceof Error ? err.message : 'No se pudo probar' });

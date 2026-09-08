@@ -12,7 +12,7 @@ Casos de uso: leer/actualizar la config de n8n + WhatsApp (CallMeBot) y probar c
 
 ### Constructor
 
-> **new ConfiguracionIntegracionesService**(`repo`, `gateway`, `logger`): `ConfiguracionIntegracionesService`
+> **new ConfiguracionIntegracionesService**(`repo`, `gateway`, `email`, `correo`, `logger`): `ConfiguracionIntegracionesService`
 
 #### Parameters
 
@@ -24,6 +24,14 @@ Casos de uso: leer/actualizar la config de n8n + WhatsApp (CallMeBot) y probar c
 
 [`IIntegracionesGateway`](../../../../core/ports/services/IIntegracionesGateway/interfaces/IIntegracionesGateway.md)
 
+##### email
+
+[`IEmailSender`](../../../../core/ports/services/IEmailSender/interfaces/IEmailSender.md)
+
+##### correo
+
+[`InfoCorreo`](../interfaces/InfoCorreo.md)
+
 ##### logger
 
 [`ILogger`](../../../../core/ports/services/ILogger/interfaces/ILogger.md)
@@ -33,6 +41,18 @@ Casos de uso: leer/actualizar la config de n8n + WhatsApp (CallMeBot) y probar c
 `ConfiguracionIntegracionesService`
 
 ## Methods
+
+### infoCorreo()
+
+> **infoCorreo**(): [`InfoCorreo`](../interfaces/InfoCorreo.md)
+
+Estado del envío de correo del servidor, para mostrarlo junto al botón de prueba.
+
+#### Returns
+
+[`InfoCorreo`](../interfaces/InfoCorreo.md)
+
+***
 
 ### obtener()
 
@@ -113,6 +133,28 @@ Convierte los campos `regla_<evento>_webhook`/`regla_<evento>_whatsapp` del form
 `string`
 
 ##### apiKey
+
+`string`
+
+#### Returns
+
+`Promise`\<[`ResultadoPrueba`](../../../../core/ports/services/IIntegracionesGateway/interfaces/ResultadoPrueba.md)\>
+
+***
+
+### probarCorreo()
+
+> **probarCorreo**(`actor`, `destino`): `Promise`\<[`ResultadoPrueba`](../../../../core/ports/services/IIntegracionesGateway/interfaces/ResultadoPrueba.md)\>
+
+Manda un correo de prueba a `destino` para verificar que el envío funciona de verdad.
+
+#### Parameters
+
+##### actor
+
+[`SessionUser`](../../../shared/SessionUser/interfaces/SessionUser.md)
+
+##### destino
 
 `string`
 

@@ -615,7 +615,10 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
     ).singleton(),
     configuracionIntegracionesService: asFunction(
       (c: Cradle) =>
-        new ConfiguracionIntegracionesService(c.configuracionRepo, c.integracionesGateway, c.logger),
+        new ConfiguracionIntegracionesService(c.configuracionRepo, c.integracionesGateway, c.emailSender, {
+          modo: c.config.smtp.host ? 'smtp' : c.config.brevo.apiKey ? 'brevo' : 'log',
+          remitente: c.config.brevo.senderEmail,
+        }, c.logger),
     ).singleton(),
     acercaDeService: asFunction(
       (c: Cradle) => new AcercaDeService(c.configuracionRepo, c.logger),
