@@ -96,6 +96,13 @@ export function backofficeRoutes(container: Container): Router {
   r.post('/tickets/:id/reenviar-correo', requirePermission('tickets:editar'), (req, res) =>
     tickets().reenviarCorreoPost(req, res),
   );
+  r.post('/tickets/:id/adjuntos', requirePermission('tickets:editar'), (req, res) =>
+    tickets().adjuntoSubirPost(req, res),
+  );
+  r.get('/tickets/:id/adjuntos/:adjId', leerTickets, (req, res) => tickets().adjuntoVerGet(req, res));
+  r.post('/tickets/:id/adjuntos/:adjId/eliminar', requirePermission('tickets:editar'), (req, res) =>
+    tickets().adjuntoEliminarPost(req, res),
+  );
   r.post('/tickets/:id/agenda', requirePermission('tickets:editar'), (req, res) =>
     tickets().agendaPost(req, res),
   );

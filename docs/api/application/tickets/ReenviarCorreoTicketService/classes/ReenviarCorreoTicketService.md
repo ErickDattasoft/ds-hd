@@ -12,7 +12,7 @@ Caso de uso: reenviar al cliente el correo con el resumen actual del ticket.
 
 ### Constructor
 
-> **new ReenviarCorreoTicketService**(`tickets`, `config`, `usuarios`, `ids`, `clock`, `email`, `logger`): `ReenviarCorreoTicketService`
+> **new ReenviarCorreoTicketService**(`tickets`, `config`, `usuarios`, `adjuntos`, `ids`, `clock`, `email`, `logger`): `ReenviarCorreoTicketService`
 
 #### Parameters
 
@@ -27,6 +27,10 @@ Caso de uso: reenviar al cliente el correo con el resumen actual del ticket.
 ##### usuarios
 
 [`IUsuarioRepository`](../../../../core/ports/repositories/IUsuarioRepository/interfaces/IUsuarioRepository.md)
+
+##### adjuntos
+
+[`IAdjuntoTicketRepository`](../../../../core/ports/repositories/IAdjuntoTicketRepository/interfaces/IAdjuntoTicketRepository.md)
 
 ##### ids
 

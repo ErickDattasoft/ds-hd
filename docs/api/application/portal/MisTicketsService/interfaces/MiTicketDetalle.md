@@ -29,3 +29,11 @@ SOLO notas públicas — el portal nunca muestra notas internas.
 > **eventos**: [`EventoTicket`](../../../../core/entities/NotaTicket/interfaces/EventoTicket.md)[]
 
 Eventos "seguros" para el cliente (cambios de estado y respuestas).
+
+***
+
+### adjuntos
+
+> **adjuntos**: [`AdjuntoTicketMeta`](../../../../core/entities/AdjuntoTicket/type-aliases/AdjuntoTicketMeta.md)[]
+
+Adjuntos del ticket (metadatos, sin el contenido).

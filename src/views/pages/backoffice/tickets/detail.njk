@@ -45,6 +45,8 @@
         {% endif %}
       </div>
 
+      {{ tk.adjuntosTicket(adjuntos, '/app/tickets/' + ticket.id, csrfToken, permisos.editar) }}
+
       <div class="card">
         <p><strong>Línea de tiempo</strong> <span class="muted">— duración por estado</span></p>
         <ul class="tl">

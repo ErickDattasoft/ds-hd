@@ -5,6 +5,7 @@ import type { IEmpresaRepository } from '../../core/ports/repositories/IEmpresaR
 import type { IContactoRepository } from '../../core/ports/repositories/IContactoRepository.js';
 import type { ITicketRepository } from '../../core/ports/repositories/ITicketRepository.js';
 import type { ITicketQueries } from '../../core/ports/repositories/ITicketQueries.js';
+import type { IAdjuntoTicketRepository } from '../../core/ports/repositories/IAdjuntoTicketRepository.js';
 import type { BitacoraService } from '../shared/BitacoraService.js';
 import type { ILogger } from '../../core/ports/services/ILogger.js';
 import { ForbiddenError } from '../../core/errors/DomainError.js';
@@ -35,6 +36,7 @@ export class PapeleraService {
     private readonly contactoRepo: IContactoRepository,
     private readonly ticketRepo: ITicketRepository,
     private readonly ticketQueries: ITicketQueries,
+    private readonly adjuntoRepo: IAdjuntoTicketRepository,
     private readonly bitacora: BitacoraService,
     private readonly logger: ILogger,
   ) {}
@@ -103,7 +105,10 @@ export class PapeleraService {
       return;
     }
     const t = await this.ticketRepo.findById(id);
-    if (t && t.archivado) await this.ticketRepo.eliminar(id);
+    if (t && t.archivado) {
+      await this.adjuntoRepo.eliminarPorTicket(id);
+      await this.ticketRepo.eliminar(id);
+    }
   }
 
   private async idsArchivados(tipo: TipoPapelera): Promise<string[]> {

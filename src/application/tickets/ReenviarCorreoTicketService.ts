@@ -1,6 +1,7 @@
 import type { ITicketRepository } from '../../core/ports/repositories/ITicketRepository.js';
 import type { IConfiguracionRepository } from '../../core/ports/repositories/IConfiguracionRepository.js';
 import type { IUsuarioRepository } from '../../core/ports/repositories/IUsuarioRepository.js';
+import type { IAdjuntoTicketRepository } from '../../core/ports/repositories/IAdjuntoTicketRepository.js';
 import type { IClock } from '../../core/ports/services/IClock.js';
 import type { IIdGenerator } from '../../core/ports/services/IIdGenerator.js';
 import type { IEmailSender } from '../../core/ports/services/IEmailSender.js';
@@ -22,6 +23,7 @@ export class ReenviarCorreoTicketService {
     private readonly tickets: ITicketRepository,
     private readonly config: IConfiguracionRepository,
     private readonly usuarios: IUsuarioRepository,
+    private readonly adjuntos: IAdjuntoTicketRepository,
     private readonly ids: IIdGenerator,
     private readonly clock: IClock,
     private readonly email: IEmailSender,
@@ -61,14 +63,17 @@ export class ReenviarCorreoTicketService {
       agente?.email.value ?? input.actor.email,
     );
 
-    const eventos = await this.tickets.listarEventos(ticket.id);
+    const [eventos, adjuntos] = await Promise.all([
+      this.tickets.listarEventos(ticket.id),
+      this.adjuntos.listarPorTicket(ticket.id),
+    ]);
     const ahora = this.clock.now();
     await this.email.enviar({
       para: dest.para,
       ...(dest.cc.length ? { cc: dest.cc } : {}),
       ...(dest.responderA ? { responderA: dest.responderA } : {}),
       asunto: `[Ticket #${ticket.numero}] ${ticket.asunto}`,
-      html: resumenTicketHtml(ticket, eventos, { reenvio: true, sinContacto: dest.sinContacto }),
+      html: resumenTicketHtml(ticket, eventos, { reenvio: true, sinContacto: dest.sinContacto, adjuntos }),
       tags: ['ticket-reenvio', `ticket-${ticket.numero}`],
     });
 

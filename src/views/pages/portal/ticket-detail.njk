@@ -1,4 +1,5 @@
 {% extends "layouts/portal.njk" %}
+{% import "components/tickets.njk" as tk %}
 {% block title %}Ticket #{{ ticket.numero }}{% endblock %}
 {% block content %}
   <div class="page-head">
@@ -38,6 +39,8 @@
       <p class="muted">Este ticket está cerrado. Si necesitas más ayuda, crea uno nuevo.</p>
     {% endif %}
   </div>
+
+  {{ tk.adjuntosTicket(adjuntos, '/portal/tickets/' + ticket.id, csrfToken, not ticket.esCerrado) }}
 
   {% if eventos | length %}
     <div class="card">

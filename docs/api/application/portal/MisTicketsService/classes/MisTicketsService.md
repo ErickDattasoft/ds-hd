@@ -14,7 +14,7 @@ de su misma empresa).
 
 ### Constructor
 
-> **new MisTicketsService**(`queries`, `tickets`, `config`): `MisTicketsService`
+> **new MisTicketsService**(`queries`, `tickets`, `config`, `adjuntos`): `MisTicketsService`
 
 #### Parameters
 
@@ -29,6 +29,10 @@ de su misma empresa).
 ##### config
 
 [`IConfiguracionRepository`](../../../../core/ports/repositories/IConfiguracionRepository/interfaces/IConfiguracionRepository.md)
+
+##### adjuntos
+
+[`IAdjuntoTicketRepository`](../../../../core/ports/repositories/IAdjuntoTicketRepository/interfaces/IAdjuntoTicketRepository.md)
 
 #### Returns
 

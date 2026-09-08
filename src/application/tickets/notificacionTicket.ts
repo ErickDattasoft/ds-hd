@@ -1,5 +1,6 @@
 import type { Ticket } from '../../core/entities/Ticket.js';
 import type { EventoTicket } from '../../core/entities/NotaTicket.js';
+import type { AdjuntoTicketMeta } from '../../core/entities/AdjuntoTicket.js';
 import { escaparHtml as esc, historialActividadHtml } from './historialCorreo.js';
 
 /** Normaliza, valida (contiene `@`) y deduplica una lista de correos. */
@@ -68,7 +69,7 @@ function fila(k: string, v: string | null | undefined): string {
 export function resumenTicketHtml(
   ticket: Ticket,
   eventos: readonly EventoTicket[],
-  opts: { reenvio?: boolean; sinContacto?: boolean } = {},
+  opts: { reenvio?: boolean; sinContacto?: boolean; adjuntos?: readonly AdjuntoTicketMeta[] } = {},
 ): string {
   const avisoSinContacto = opts.sinContacto
     ? `<p style="background:#fef3c7;color:#92400e;padding:8px 12px;border-radius:6px;font-size:13px">⚠️ El contacto no tiene correo registrado — este ticket no se notificó al cliente.</p>`
@@ -91,5 +92,12 @@ export function resumenTicketHtml(
     <div style="background:#f9fafb;padding:12px;border-radius:6px;font-family:sans-serif;white-space:pre-wrap">${esc(
       ticket.descripcion,
     )}</div>
+    ${
+      opts.adjuntos && opts.adjuntos.length
+        ? `<p style="font-family:sans-serif;font-size:14px"><strong>Adjuntos:</strong> ${opts.adjuntos
+            .map((a) => esc(a.nombre))
+            .join(', ')}</p>`
+        : ''
+    }
     ${historialActividadHtml(eventos, 'cliente')}`;
 }

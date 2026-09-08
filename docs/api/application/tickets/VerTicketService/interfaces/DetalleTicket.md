@@ -6,7 +6,7 @@
 
 # Interface: DetalleTicket
 
-Ticket con sus notas/eventos y los permisos del actor ya resueltos para la vista.
+Ticket con sus notas/eventos/adjuntos y los permisos del actor ya resueltos para la vista.
 
 ## Properties
 
@@ -25,6 +25,12 @@ Ticket con sus notas/eventos y los permisos del actor ya resueltos para la vista
 ### eventos
 
 > **eventos**: [`EventoTicket`](../../../../core/entities/NotaTicket/interfaces/EventoTicket.md)[]
+
+***
+
+### adjuntos
+
+> **adjuntos**: [`AdjuntoTicketMeta`](../../../../core/entities/AdjuntoTicket/type-aliases/AdjuntoTicketMeta.md)[]
 
 ***
 

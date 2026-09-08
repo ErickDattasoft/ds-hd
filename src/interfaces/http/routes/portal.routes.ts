@@ -24,6 +24,11 @@ export function portalRoutes(container: Container): Router {
   r.post('/tickets', puedeTickets, (req, res) => tickets().crearPost(req, res));
   r.get('/tickets/:id', puedeTickets, (req, res) => tickets().detalle(req, res));
   r.post('/tickets/:id/responder', puedeTickets, (req, res) => tickets().responderPost(req, res));
+  r.post('/tickets/:id/adjuntos', puedeTickets, (req, res) => tickets().adjuntoSubirPost(req, res));
+  r.get('/tickets/:id/adjuntos/:adjId', puedeTickets, (req, res) => tickets().adjuntoVerGet(req, res));
+  r.post('/tickets/:id/adjuntos/:adjId/eliminar', puedeTickets, (req, res) =>
+    tickets().adjuntoEliminarPost(req, res),
+  );
 
   r.get('/perfil', requirePermission('portal:perfil'), (req, res) => perfil().ver(req, res));
   r.post('/perfil', requirePermission('portal:perfil'), (req, res) => perfil().actualizar_(req, res));

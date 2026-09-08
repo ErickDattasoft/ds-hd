@@ -19,6 +19,8 @@ import { FirestoreTicketQueries } from '../infrastructure/firestore/FirestoreTic
 import { FirestoreContadorRepository } from '../infrastructure/firestore/FirestoreContadorRepository.js';
 import { FirestoreIntentosLoginRepository } from '../infrastructure/firestore/FirestoreIntentosLoginRepository.js';
 import { FirestoreFiltroGuardadoRepository } from '../infrastructure/firestore/FirestoreFiltroGuardadoRepository.js';
+import { FirestoreAdjuntoTicketRepository } from '../infrastructure/firestore/FirestoreAdjuntoTicketRepository.js';
+import { AdjuntoTicketService } from '../application/tickets/AdjuntoTicketService.js';
 import { FiltrosGuardadosService } from '../application/shared/FiltrosGuardadosService.js';
 import { FiltrosController } from '../interfaces/http/controllers/backoffice/FiltrosController.js';
 import { FirestoreConfiguracionRepository } from '../infrastructure/firestore/FirestoreConfiguracionRepository.js';
@@ -123,6 +125,7 @@ import type { ITicketQueries } from '../core/ports/repositories/ITicketQueries.j
 import type { IContadorRepository } from '../core/ports/repositories/IContadorRepository.js';
 import type { IIntentosLoginRepository } from '../core/ports/repositories/IIntentosLoginRepository.js';
 import type { IFiltroGuardadoRepository } from '../core/ports/repositories/IFiltroGuardadoRepository.js';
+import type { IAdjuntoTicketRepository } from '../core/ports/repositories/IAdjuntoTicketRepository.js';
 import type { IConfiguracionRepository } from '../core/ports/repositories/IConfiguracionRepository.js';
 import type { ITicketPublicoRepository } from '../core/ports/repositories/ITicketPublicoRepository.js';
 import type { IWebhookPublisher } from '../core/ports/services/IWebhookPublisher.js';
@@ -170,6 +173,8 @@ export interface Cradle {
   contadorRepo: IContadorRepository;
   intentosLoginRepo: IIntentosLoginRepository;
   filtroGuardadoRepo: IFiltroGuardadoRepository;
+  adjuntoTicketRepo: IAdjuntoTicketRepository;
+  adjuntoTicketService: AdjuntoTicketService;
   filtrosGuardadosService: FiltrosGuardadosService;
   filtrosController: FiltrosController;
   configuracionRepo: IConfiguracionRepository;
@@ -387,6 +392,14 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
       ({ firestoreDb }: Cradle): IFiltroGuardadoRepository =>
         new FirestoreFiltroGuardadoRepository(requireFirestore(firestoreDb)),
     ).singleton(),
+    adjuntoTicketRepo: asFunction(
+      ({ firestoreDb }: Cradle): IAdjuntoTicketRepository =>
+        new FirestoreAdjuntoTicketRepository(requireFirestore(firestoreDb)),
+    ).singleton(),
+    adjuntoTicketService: asFunction(
+      (c: Cradle) =>
+        new AdjuntoTicketService(c.ticketRepo, c.adjuntoTicketRepo, c.idGenerator, c.clock, c.logger),
+    ).singleton(),
     filtrosGuardadosService: asFunction(
       (c: Cradle) => new FiltrosGuardadosService(c.filtroGuardadoRepo, c.idGenerator, c.clock),
     ).singleton(),
@@ -519,7 +532,8 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
       (c: Cradle) => new CrearTicketPortalService(c.crearTicketService),
     ).singleton(),
     misTicketsService: asFunction(
-      (c: Cradle) => new MisTicketsService(c.ticketQueries, c.ticketRepo, c.configuracionRepo),
+      (c: Cradle) =>
+        new MisTicketsService(c.ticketQueries, c.ticketRepo, c.configuracionRepo, c.adjuntoTicketRepo),
     ).singleton(),
     responderMiTicketService: asFunction(
       (c: Cradle) =>
@@ -589,6 +603,7 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
           c.ticketRepo,
           c.configuracionRepo,
           c.usuarioRepo,
+          c.adjuntoTicketRepo,
           c.idGenerator,
           c.clock,
           c.emailSender,
@@ -613,7 +628,7 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
       (c: Cradle) => new ListarTicketsService(c.ticketQueries, c.configuracionRepo),
     ).singleton(),
     verTicketService: asFunction(
-      (c: Cradle) => new VerTicketService(c.ticketRepo, c.configuracionRepo),
+      (c: Cradle) => new VerTicketService(c.ticketRepo, c.configuracionRepo, c.adjuntoTicketRepo),
     ).singleton(),
     panelCargaAgentesService: asFunction(
       (c: Cradle) => new PanelCargaAgentesService(c.ticketQueries, c.usuarioRepo, c.clock),
@@ -766,6 +781,7 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
           c.crearTicketPortalService,
           c.misTicketsService,
           c.responderMiTicketService,
+          c.adjuntoTicketService,
           c.clock,
         ),
     ).singleton(),
@@ -777,6 +793,7 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
           c.asignarAgenteService,
           c.registrarNotaService,
           c.reenviarCorreoTicketService,
+          c.adjuntoTicketService,
           c.marcarFacturacionService,
           c.programarAtencionService,
           c.ajustarTiempoService,
@@ -875,6 +892,7 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
           c.contactoRepo,
           c.ticketRepo,
           c.ticketQueries,
+          c.adjuntoTicketRepo,
           c.bitacoraService,
           c.logger,
         ),

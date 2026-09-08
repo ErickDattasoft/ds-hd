@@ -1,8 +1,10 @@
 import type { ITicketQueries } from '../../core/ports/repositories/ITicketQueries.js';
 import type { ITicketRepository } from '../../core/ports/repositories/ITicketRepository.js';
 import type { IConfiguracionRepository } from '../../core/ports/repositories/IConfiguracionRepository.js';
+import type { IAdjuntoTicketRepository } from '../../core/ports/repositories/IAdjuntoTicketRepository.js';
 import type { Ticket } from '../../core/entities/Ticket.js';
 import type { EventoTicket, NotaTicket } from '../../core/entities/NotaTicket.js';
+import type { AdjuntoTicketMeta } from '../../core/entities/AdjuntoTicket.js';
 import { NotFoundError } from '../../core/errors/DomainError.js';
 import type { ConfiguracionTickets } from '../../core/entities/ConfiguracionTickets.js';
 import type { SessionUser } from '../shared/SessionUser.js';
@@ -14,6 +16,8 @@ export interface MiTicketDetalle {
   notas: NotaTicket[];
   /** Eventos "seguros" para el cliente (cambios de estado y respuestas). */
   eventos: EventoTicket[];
+  /** Adjuntos del ticket (metadatos, sin el contenido). */
+  adjuntos: AdjuntoTicketMeta[];
 }
 
 /**
@@ -26,6 +30,7 @@ export class MisTicketsService {
     private readonly queries: ITicketQueries,
     private readonly tickets: ITicketRepository,
     private readonly config: IConfiguracionRepository,
+    private readonly adjuntos: IAdjuntoTicketRepository,
   ) {}
 
   async listar(actor: SessionUser, incluirCerrados: boolean): Promise<Ticket[]> {
@@ -46,9 +51,10 @@ export class MisTicketsService {
       throw new NotFoundError('Ticket', ticketId);
     }
 
-    const [todasLasNotas, todosLosEventos] = await Promise.all([
+    const [todasLasNotas, todosLosEventos, adjuntos] = await Promise.all([
       this.tickets.listarNotas(ticketId),
       this.tickets.listarEventos(ticketId),
+      this.adjuntos.listarPorTicket(ticketId),
     ]);
 
     return {
@@ -56,6 +62,7 @@ export class MisTicketsService {
       notas: todasLasNotas.filter((n) => n.tipo === 'publica'),
       // Solo cambios de estado: los eventos de "nota" revelarían que existen notas internas.
       eventos: todosLosEventos.filter((e) => e.tipo === 'cambio_estado'),
+      adjuntos,
     };
   }
 }

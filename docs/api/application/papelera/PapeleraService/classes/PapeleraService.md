@@ -14,7 +14,7 @@ módulo (que ya valida `<modulo>:eliminar` y registra en bitácora).
 
 ### Constructor
 
-> **new PapeleraService**(`empresasSvc`, `contactosSvc`, `archivarTicket`, `empresaRepo`, `contactoRepo`, `ticketRepo`, `ticketQueries`, `bitacora`, `logger`): `PapeleraService`
+> **new PapeleraService**(`empresasSvc`, `contactosSvc`, `archivarTicket`, `empresaRepo`, `contactoRepo`, `ticketRepo`, `ticketQueries`, `adjuntoRepo`, `bitacora`, `logger`): `PapeleraService`
 
 #### Parameters
 
@@ -45,6 +45,10 @@ módulo (que ya valida `<modulo>:eliminar` y registra en bitácora).
 ##### ticketQueries
 
 [`ITicketQueries`](../../../../core/ports/repositories/ITicketQueries/interfaces/ITicketQueries.md)
+
+##### adjuntoRepo
+
+[`IAdjuntoTicketRepository`](../../../../core/ports/repositories/IAdjuntoTicketRepository/interfaces/IAdjuntoTicketRepository.md)
 
 ##### bitacora
 

@@ -21,6 +21,45 @@
   </tr>
 {% endmacro %}
 
+{#
+  Sección de adjuntos de un ticket. `base` = prefijo de ruta ("/app/tickets/<id>" o
+  "/portal/tickets/<id>"). `puedeEditar` habilita subir/quitar.
+#}
+{% macro adjuntosTicket(adjuntos, base, csrfToken, puedeEditar) %}
+  <div class="card" data-adjuntos data-adjuntos-base="{{ base }}">
+    <p><strong>Adjuntos</strong> <span class="muted">— imágenes y PDF, máx 700 KB c/u</span></p>
+    <ul class="adjuntos-lista">
+      {% for a in adjuntos %}
+        <li>
+          {% if a.contentType.startsWith('image/') %}
+            <a href="{{ base }}/adjuntos/{{ a.id }}" target="_blank" rel="noopener">
+              <img src="{{ base }}/adjuntos/{{ a.id }}" alt="{{ a.nombre }}" class="adjunto-thumb" loading="lazy" />
+            </a>
+          {% else %}
+            📄 <a href="{{ base }}/adjuntos/{{ a.id }}" target="_blank" rel="noopener">{{ a.nombre }}</a>
+          {% endif %}
+          <span class="muted">{{ (a.tamano / 1024) | round }} KB{% if a.subidoPorNombre %} · {{ a.subidoPorNombre }}{% endif %}</span>
+          {% if puedeEditar %}
+            <form method="post" action="{{ base }}/adjuntos/{{ a.id }}/eliminar" style="display:inline" data-confirm="¿Quitar este adjunto?">
+              <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+              <button class="btn btn--ghost btn--sm" type="submit" title="Quitar">✕</button>
+            </form>
+          {% endif %}
+        </li>
+      {% else %}
+        <li class="muted">Sin adjuntos.</li>
+      {% endfor %}
+    </ul>
+    {% if puedeEditar %}
+      <label class="field">
+        <span>Agregar archivo (o pega una imagen con Ctrl+V)</span>
+        <input type="file" accept="image/png,image/jpeg,image/gif,image/webp,application/pdf" multiple data-adjunto-file />
+      </label>
+      <span class="muted" data-adjunto-resultado></span>
+    {% endif %}
+  </div>
+{% endmacro %}
+
 {% macro tablaTickets(tickets) %}
   <table class="data-table">
     <thead>

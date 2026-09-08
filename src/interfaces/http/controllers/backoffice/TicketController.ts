@@ -4,6 +4,7 @@ import type { ActualizarEstadoTicketService } from '../../../../application/tick
 import type { AsignarAgenteService } from '../../../../application/tickets/AsignarAgenteService.js';
 import type { RegistrarNotaService } from '../../../../application/tickets/RegistrarNotaService.js';
 import type { ReenviarCorreoTicketService } from '../../../../application/tickets/ReenviarCorreoTicketService.js';
+import type { AdjuntoTicketService } from '../../../../application/tickets/AdjuntoTicketService.js';
 import type { MarcarFacturacionService } from '../../../../application/tickets/MarcarFacturacionService.js';
 import type { ProgramarAtencionService } from '../../../../application/tickets/ProgramarAtencionService.js';
 import type { AjustarTiempoService } from '../../../../application/tickets/AjustarTiempoService.js';
@@ -43,6 +44,7 @@ export class TicketController {
     private readonly asignar: AsignarAgenteService,
     private readonly registrarNota: RegistrarNotaService,
     private readonly reenviarCorreo: ReenviarCorreoTicketService,
+    private readonly adjuntos: AdjuntoTicketService,
     private readonly facturar: MarcarFacturacionService,
     private readonly programarAtencion: ProgramarAtencionService,
     private readonly ajustarTiempo: AjustarTiempoService,
@@ -177,6 +179,7 @@ export class TicketController {
       ticket: d.ticket,
       notas: d.notas,
       eventos: d.eventos,
+      adjuntos: d.adjuntos,
       config: d.config,
       estadosFacturacion: catalogoFacturacion(),
       permisos: {
@@ -232,6 +235,42 @@ export class TicketController {
       if (!(err instanceof ValidationError)) throw err;
       res.redirect(`/app/tickets/${id}?aviso=correo-sin-destinatario`);
     }
+  };
+
+  adjuntoSubirPost = async (req: Request, res: Response): Promise<void> => {
+    const b = req.body ?? {};
+    try {
+      const adj = await this.adjuntos.subir({
+        actor: req.user!,
+        ticketId: str(req.params.id),
+        nombre: str(b.nombre),
+        contentType: str(b.contentType),
+        base64: str(b.base64),
+      });
+      res.json({ ok: true, adjunto: adj });
+    } catch (err) {
+      res.status(err instanceof ValidationError ? 422 : 400).json({
+        ok: false,
+        detalle: err instanceof Error ? err.message : 'No se pudo subir',
+      });
+    }
+  };
+
+  adjuntoVerGet = async (req: Request, res: Response): Promise<void> => {
+    const { nombre, contentType, buffer } = await this.adjuntos.ver(
+      req.user!,
+      str(req.params.id),
+      str(req.params.adjId),
+    );
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Content-Disposition', `inline; filename="${nombre.replace(/"/g, '')}"`);
+    res.setHeader('Cache-Control', 'private, max-age=3600');
+    res.send(buffer);
+  };
+
+  adjuntoEliminarPost = async (req: Request, res: Response): Promise<void> => {
+    await this.adjuntos.eliminar(req.user!, str(req.params.id), str(req.params.adjId));
+    res.redirect(`/app/tickets/${str(req.params.id)}`);
   };
 
   facturarPost = async (req: Request, res: Response): Promise<void> => {

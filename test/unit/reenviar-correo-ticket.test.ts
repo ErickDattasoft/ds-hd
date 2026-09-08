@@ -12,6 +12,7 @@ import {
   FakeWebhookPublisher,
 } from '../fakes/tickets.js';
 import { InMemoryUsuarioRepository } from '../fakes/InMemoryUsuarioRepository.js';
+import { InMemoryAdjuntoTicketRepository } from '../fakes/InMemoryAdjuntoTicketRepository.js';
 import { FakeEmailSender } from '../fakes/FakeEmailSender.js';
 import { FixedClock, silentLogger } from '../fakes/support.js';
 
@@ -91,6 +92,7 @@ describe('ReenviarCorreoTicketService', () => {
       repo,
       cfg,
       new InMemoryUsuarioRepository(),
+      new InMemoryAdjuntoTicketRepository(),
       ids,
       clock,
       email,

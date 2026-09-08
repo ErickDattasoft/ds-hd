@@ -262,6 +262,61 @@
     }
   });
 
+  // ── Adjuntos de ticket: subir por selector de archivo o pegando (Ctrl+V) ──
+  function subirAdjunto(file) {
+    var cont = document.querySelector('[data-adjuntos]');
+    if (!cont) return;
+    var base = cont.getAttribute('data-adjuntos-base');
+    var salida = cont.querySelector('[data-adjunto-resultado]');
+    var MAX = 700 * 1024;
+    if (file.size > MAX) {
+      if (salida) salida.textContent = '❌ "' + file.name + '" supera 700 KB';
+      return;
+    }
+    if (salida) salida.textContent = 'Subiendo "' + file.name + '"…';
+    var reader = new FileReader();
+    reader.onload = function () {
+      var dataUrl = String(reader.result || '');
+      var base64 = dataUrl.indexOf(',') >= 0 ? dataUrl.slice(dataUrl.indexOf(',') + 1) : dataUrl;
+      fetch(base + '/adjuntos', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'x-csrf-token': cookie('x-csrf-token') },
+        body: JSON.stringify({
+          nombre: file.name || 'adjunto',
+          contentType: file.type || 'application/octet-stream',
+          base64: base64,
+        }),
+      })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          if (data.ok) window.location.reload();
+          else if (salida) salida.textContent = '❌ ' + (data.detalle || 'No se pudo subir');
+        })
+        .catch(function () {
+          if (salida) salida.textContent = '❌ No se pudo subir. Revisa tu conexión.';
+        });
+    };
+    reader.readAsDataURL(file);
+  }
+
+  document.addEventListener('change', function (e) {
+    var input = e.target.closest('[data-adjunto-file]');
+    if (!input || !input.files) return;
+    Array.prototype.forEach.call(input.files, subirAdjunto);
+    input.value = '';
+  });
+
+  document.addEventListener('paste', function (e) {
+    if (!document.querySelector('[data-adjuntos] [data-adjunto-file]')) return;
+    var items = (e.clipboardData && e.clipboardData.items) || [];
+    Array.prototype.forEach.call(items, function (it) {
+      if (it.kind === 'file') {
+        var f = it.getAsFile();
+        if (f) subirAdjunto(f);
+      }
+    });
+  });
+
   // ── Imprimir / guardar como PDF ────────────────────────────────────────
   document.addEventListener('click', function (e) {
     if (e.target.closest('[data-print]')) {

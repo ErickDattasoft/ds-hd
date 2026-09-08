@@ -32,6 +32,10 @@ readonly [`EventoTicket`](../../../../core/entities/NotaTicket/interfaces/Evento
 
 `boolean`
 
+#### adjuntos?
+
+readonly [`AdjuntoTicketMeta`](../../../../core/entities/AdjuntoTicket/type-aliases/AdjuntoTicketMeta.md)[]
+
 ## Returns
 
 `string`

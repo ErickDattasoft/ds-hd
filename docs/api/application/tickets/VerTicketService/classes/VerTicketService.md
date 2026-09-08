@@ -12,7 +12,7 @@ Caso de uso: cargar el detalle de un ticket para el back-office (notas internas 
 
 ### Constructor
 
-> **new VerTicketService**(`tickets`, `config`): `VerTicketService`
+> **new VerTicketService**(`tickets`, `config`, `adjuntos`): `VerTicketService`
 
 #### Parameters
 
@@ -23,6 +23,10 @@ Caso de uso: cargar el detalle de un ticket para el back-office (notas internas 
 ##### config
 
 [`IConfiguracionRepository`](../../../../core/ports/repositories/IConfiguracionRepository/interfaces/IConfiguracionRepository.md)
+
+##### adjuntos
+
+[`IAdjuntoTicketRepository`](../../../../core/ports/repositories/IAdjuntoTicketRepository/interfaces/IAdjuntoTicketRepository.md)
 
 #### Returns
 

@@ -47,6 +47,48 @@ describe('flujo de tickets', () => {
     expect(t.emailSender.enviados.length).toBeGreaterThanOrEqual(3);
   });
 
+  it('adjuntar un archivo al ticket, verlo y quitarlo', async () => {
+    const t = makeTestApp({ usuarios: [SUP] });
+    const { agent, csrf } = await login(t.app, SUP.email, SUP.password);
+    const crear = await agent
+      .post('/app/tickets')
+      .type('form')
+      .send({ _csrf: csrf, asunto: 'Con adjunto', descripcion: 'descripción larga', tipo: 'General', prioridad: 'Baja' });
+    const id = String(crear.headers.location).split('/').pop()!;
+
+    const png = Buffer.alloc(20, 7).toString('base64');
+    const subir = await agent
+      .post(`/app/tickets/${id}/adjuntos`)
+      .set('x-csrf-token', csrf)
+      .send({ nombre: 'captura.png', contentType: 'image/png', base64: png });
+    expect(subir.status).toBe(200);
+    expect(subir.body.ok).toBe(true);
+    const adjId = subir.body.adjunto.id as string;
+
+    const detalle = await agent.get(`/app/tickets/${id}`);
+    expect(detalle.text).toContain('captura.png');
+    expect(detalle.text).toContain(`/adjuntos/${adjId}`);
+
+    const ver = await agent.get(`/app/tickets/${id}/adjuntos/${adjId}`);
+    expect(ver.status).toBe(200);
+    expect(ver.headers['content-type']).toContain('image/png');
+    expect(ver.body.length).toBe(20);
+
+    // tipo no permitido → 422
+    const malo = await agent
+      .post(`/app/tickets/${id}/adjuntos`)
+      .set('x-csrf-token', csrf)
+      .send({ nombre: 'x.zip', contentType: 'application/zip', base64: png });
+    expect(malo.status).toBe(422);
+
+    const quitar = await agent
+      .post(`/app/tickets/${id}/adjuntos/${adjId}/eliminar`)
+      .type('form')
+      .send({ _csrf: csrf });
+    expect(quitar.status).toBe(302);
+    expect(await t.adjuntoTicketRepo.listarPorTicket(id)).toHaveLength(0);
+  });
+
   it('el agente solo ve/edita sus tickets asignados', async () => {
     const t = makeTestApp({ usuarios: [SUP, AG] });
     const sup = await login(t.app, SUP.email, SUP.password);
