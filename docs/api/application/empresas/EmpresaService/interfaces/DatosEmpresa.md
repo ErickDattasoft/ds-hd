@@ -68,6 +68,22 @@ Versión instalada por sistema (texto libre).
 
 ***
 
+### camposExtra?
+
+> `optional` **camposExtra?**: `object`[]
+
+Campos personalizados libres.
+
+#### etiqueta
+
+> **etiqueta**: `string`
+
+#### valor
+
+> **valor**: `string`
+
+***
+
 ### notas?
 
 > `optional` **notas?**: `string`

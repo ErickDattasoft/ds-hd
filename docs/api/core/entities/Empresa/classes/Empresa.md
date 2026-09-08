@@ -110,6 +110,20 @@ Empresa/cliente del CRM.
 
 ***
 
+### camposExtra
+
+> **camposExtra**: `object`[]
+
+#### etiqueta
+
+> **etiqueta**: `string`
+
+#### valor
+
+> **valor**: `string`
+
+***
+
 ### creadoPorUid
 
 > `readonly` **creadoPorUid**: `string` \| `null`

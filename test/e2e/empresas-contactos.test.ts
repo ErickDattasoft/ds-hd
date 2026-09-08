@@ -88,6 +88,39 @@ describe('empresas y contactos', () => {
     expect(lista.text).toContain('1 desactualizada');
   });
 
+  it('contacto con RFC y creando la empresa inline; campos extra en la empresa', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    const { agent, csrf } = await login(t.app, ADMIN.email, ADMIN.password);
+
+    const crear = await agent
+      .post('/app/contactos')
+      .type('form')
+      .send({ _csrf: csrf, nombre: 'Ana G', empresaNueva: 'Nueva Inline SA', rfc: 'aaa010101aaa', celular: '9998887766' });
+    expect(crear.status).toBe(302);
+    const empId = String(crear.headers.location).split('/').pop()!;
+    const emp = t.empresaRepo.items.get(empId)!;
+    expect(emp.nombre).toBe('Nueva Inline SA');
+    const contacto = (await t.contactoRepo.list({ empresaId: empId }))[0]!;
+    expect(contacto.rfc).toBe('AAA010101AAA');
+
+    // campos extra al editar la empresa
+    const edit = await agent
+      .post(`/app/empresas/${empId}`)
+      .type('form')
+      .send({
+        _csrf: csrf,
+        nombre: 'Nueva Inline SA',
+        campoExtraEtiqueta: ['Contrato', 'Vendedor'],
+        campoExtraValor: ['C-2026-01', 'Beto'],
+      });
+    expect(edit.status).toBe(302);
+    const upd = t.empresaRepo.items.get(empId)!;
+    expect(upd.camposExtra).toEqual([
+      { etiqueta: 'Contrato', valor: 'C-2026-01' },
+      { etiqueta: 'Vendedor', valor: 'Beto' },
+    ]);
+  });
+
   it('rechaza contacto con empresa inexistente', async () => {
     const t = makeTestApp({ usuarios: [ADMIN] });
     const { agent, csrf } = await login(t.app, ADMIN.email, ADMIN.password);

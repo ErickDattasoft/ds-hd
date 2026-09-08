@@ -12,6 +12,7 @@ export interface DatosContacto {
   nombre: string;
   empresaId: string;
   puesto?: string;
+  rfc?: string;
   email?: string;
   telefono?: string;
   celular?: string;
@@ -74,6 +75,7 @@ export class ContactoService {
     contacto.nombre = datos.nombre.trim();
     contacto.empresaId = datos.empresaId;
     contacto.puesto = datos.puesto?.trim() || null;
+    contacto.rfc = datos.rfc?.trim().toUpperCase() || null;
     contacto.email = datos.email?.trim().toLowerCase() || null;
     contacto.telefono = datos.telefono?.trim() || null;
     contacto.celular = datos.celular?.trim() || null;

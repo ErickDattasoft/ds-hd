@@ -7,6 +7,7 @@ export interface ContactoProps {
   nombre: string;
   empresaId: string;
   puesto?: string | null;
+  rfc?: string | null;
   email?: string | null;
   telefono?: string | null;
   celular?: string | null;
@@ -26,6 +27,7 @@ export class Contacto {
   nombre: string;
   empresaId: string;
   puesto: string | null;
+  rfc: string | null;
   email: string | null;
   telefono: string | null;
   celular: string | null;
@@ -47,6 +49,7 @@ export class Contacto {
     this.nombre = props.nombre.trim();
     this.empresaId = props.empresaId;
     this.puesto = props.puesto?.trim() || null;
+    this.rfc = props.rfc?.trim().toUpperCase() || null;
     this.email = props.email ? Email.create(props.email).value : null;
     this.telefono = props.telefono?.trim() || null;
     this.celular = props.celular?.trim() || null;

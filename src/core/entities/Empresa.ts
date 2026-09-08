@@ -43,6 +43,8 @@ export interface EmpresaProps {
   activa?: boolean;
   /** Marcada como favorita (⭐) por el equipo — atajo para la lista. */
   favorita?: boolean;
+  /** Campos personalizados libres de esta empresa. */
+  camposExtra?: { etiqueta: string; valor: string }[];
   creadoPorUid?: string | null;
   createdAt?: Date;
   updatedAt?: Date;
@@ -67,6 +69,7 @@ export class Empresa {
   notas: string | null;
   activa: boolean;
   favorita: boolean;
+  camposExtra: { etiqueta: string; valor: string }[];
   readonly creadoPorUid: string | null;
   readonly createdAt: Date;
   updatedAt: Date;
@@ -91,6 +94,9 @@ export class Empresa {
     this.notas = props.notas?.trim() || null;
     this.activa = props.activa ?? true;
     this.favorita = props.favorita ?? false;
+    this.camposExtra = (props.camposExtra ?? [])
+      .map((c) => ({ etiqueta: String(c.etiqueta ?? '').trim(), valor: String(c.valor ?? '').trim() }))
+      .filter((c) => c.etiqueta || c.valor);
     this.creadoPorUid = props.creadoPorUid ?? null;
     this.createdAt = props.createdAt ?? new Date();
     this.updatedAt = props.updatedAt ?? this.createdAt;

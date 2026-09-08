@@ -48,7 +48,13 @@ export class ContactoController {
   crearPost = async (req: Request, res: Response): Promise<void> => {
     const b = req.body ?? {};
     try {
-      const c = await this.contactos.crear(req.user!, this.datos(b));
+      let empresaId = str(b.empresaId);
+      // "Crear empresa" inline: si se escribió un nombre de empresa nueva y no se eligió una existente.
+      if (!empresaId && str(b.empresaNueva).trim()) {
+        const emp = await this.empresas.crear(req.user!, { nombre: str(b.empresaNueva).trim() });
+        empresaId = emp.id;
+      }
+      const c = await this.contactos.crear(req.user!, { ...this.datos(b), empresaId });
       res.redirect(`/app/empresas/${c.empresaId}`);
     } catch (err) {
       const empresas = await this.empresas.listar({ activa: true });
@@ -136,6 +142,7 @@ export class ContactoController {
       nombre: str(b.nombre),
       empresaId: str(b.empresaId),
       puesto: str(b.puesto),
+      rfc: str(b.rfc),
       email: str(b.email),
       telefono: str(b.telefono),
       celular: str(b.celular),

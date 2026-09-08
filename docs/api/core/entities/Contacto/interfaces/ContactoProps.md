@@ -34,6 +34,12 @@ Props para construir un [Contacto](../classes/Contacto.md).
 
 ***
 
+### rfc?
+
+> `optional` **rfc?**: `string` \| `null`
+
+***
+
 ### email?
 
 > `optional` **email?**: `string` \| `null`

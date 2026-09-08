@@ -243,7 +243,14 @@ export class EmpresaController {
       sistemasContratados: lista(b.sistemasContratados),
       vigencias: mapaConPrefijo(b, 'vigencia:'),
       versionesInstaladas: mapaConPrefijo(b, 'version:'),
+      camposExtra: this.camposExtra(b),
       notas: str(b.notas),
     };
+  }
+
+  private camposExtra(b: Record<string, unknown>): { etiqueta: string; valor: string }[] {
+    const et = ([] as unknown[]).concat(b.campoExtraEtiqueta ?? []).map(String);
+    const va = ([] as unknown[]).concat(b.campoExtraValor ?? []).map(String);
+    return et.map((etiqueta, i) => ({ etiqueta, valor: va[i] ?? '' })).filter((c) => c.etiqueta || c.valor);
   }
 }

@@ -50,6 +50,12 @@ Persona de contacto asociada a una empresa.
 
 ***
 
+### rfc
+
+> **rfc**: `string` \| `null`
+
+***
+
 ### email
 
 > **email**: `string` \| `null`

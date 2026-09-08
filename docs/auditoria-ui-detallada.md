@@ -244,8 +244,10 @@ contraseña. ds-hd nace con cuentas reales de Firebase Auth por invitación.
    configurables + botones 📋/🖊️/🖼️, notas internas (alta y detalle), CC/CCO,
    estado inicial, agente, solicitado/canalizado, sistema "otro", adjuntar al
    crear, guardar-y-nuevo, imprimir, cotizar.
-2. **Contactos + Empresas**: RFC en contacto, crear empresa inline, campos por
-   sistema al crear, enlace WhatsApp por contacto, campos extra.
+2. ✅ **HECHO** — **Contactos + Empresas**: RFC en contacto, crear empresa inline
+   desde el alta de contacto, licencias/versiones por sistema también al crear
+   (tabla JS desde el textarea), enlace WhatsApp (wa.me) por contacto en el
+   detalle de empresa, campos extra libres (`Empresa.camposExtra`).
 3. **Cotizaciones**: datos generales (contacto/RFC/tel/quien cotiza) + condiciones
    por defecto.
 4. **Versiones**: grid "versiones del mercado", reporte de desactualizadas

@@ -370,6 +370,48 @@
     if (f) f.value = '1';
   });
 
+  // ── Form de empresa: licencias por sistema (desde el textarea) + campos extra ──
+  function sincroLicencias() {
+    var ta = document.querySelector('[data-sistemas-textarea]');
+    var tabla = document.querySelector('[data-licencias-tabla]');
+    if (!ta || !tabla) return;
+    var vig, ver;
+    try { vig = JSON.parse(tabla.getAttribute('data-vigencias') || '{}'); } catch (e) { void e; vig = {}; }
+    try { ver = JSON.parse(tabla.getAttribute('data-versiones') || '{}'); } catch (e) { void e; ver = {}; }
+    var tb = tabla.tBodies[0];
+    // conserva lo ya escrito
+    Array.prototype.forEach.call(tb.querySelectorAll('tr[data-sistema]'), function (tr) {
+      var s = tr.getAttribute('data-sistema');
+      var vi = tr.querySelector('input[type="date"]'); if (vi) vig[s] = vi.value;
+      var vr = tr.querySelector('input[type="text"]'); if (vr) ver[s] = vr.value;
+    });
+    var sistemas = ta.value.split('\n').map(function (x) { return x.trim(); }).filter(Boolean);
+    tb.innerHTML = sistemas.length
+      ? sistemas.map(function (s) {
+          return '<tr data-sistema="' + s + '"><td>' + s + '</td>' +
+            '<td><input type="date" name="vigencia:' + s + '" value="' + (vig[s] || '') + '"></td>' +
+            '<td><input type="text" name="version:' + s + '" value="' + (ver[s] || '') + '" placeholder="ej. 16.3.1 SP2"></td></tr>';
+        }).join('')
+      : '<tr><td colspan="3" class="muted">Agrega sistemas arriba.</td></tr>';
+  }
+  document.addEventListener('input', function (e) {
+    if (e.target.closest('[data-sistemas-textarea]')) sincroLicencias();
+  });
+  document.addEventListener('click', function (e) {
+    if (e.target.closest('[data-agregar-campo-extra]')) {
+      var tb = document.querySelector('[data-campos-extra-body]');
+      if (!tb) return;
+      var tr = document.createElement('tr');
+      tr.innerHTML = '<td><input name="campoExtraEtiqueta" placeholder="Ej: Contrato"></td>' +
+        '<td><input name="campoExtraValor"></td>' +
+        '<td><button type="button" class="btn btn--ghost btn--sm" data-quitar-fila>✕</button></td>';
+      tb.appendChild(tr);
+      return;
+    }
+    var q = e.target.closest('[data-quitar-fila]');
+    if (q) { var row = q.closest('tr'); if (row) row.remove(); }
+  });
+
   // ── Imprimir / guardar como PDF ────────────────────────────────────────
   document.addEventListener('click', function (e) {
     if (e.target.closest('[data-print]')) {

@@ -72,19 +72,30 @@
     </details>
   {% endif %}
 
+  {% if empresa.camposExtra | length %}
+    <h2>Campos extra</h2>
+    <table class="data-table">
+      <tbody>{% for c in empresa.camposExtra %}<tr><th>{{ c.etiqueta }}</th><td>{{ c.valor }}</td></tr>{% endfor %}</tbody>
+    </table>
+  {% endif %}
+
   <h2>Contactos ({{ contactos | length }})</h2>
   <table class="data-table">
-    <thead><tr><th>Nombre</th><th>Puesto</th><th>Correo</th><th>Teléfono</th><th>Portal</th></tr></thead>
+    <thead><tr><th>Nombre</th><th>Puesto</th><th>Correo</th><th>Teléfono</th><th data-no-ordenar>WhatsApp</th><th>Portal</th></tr></thead>
     <tbody>
       {% for c in contactos %}
         <tr>
           <td><a href="/app/contactos/{{ c.id }}/editar">{{ c.nombre }}</a></td>
           <td>{{ c.puesto or '—' }}</td>
           <td>{{ c.email or '—' }}</td>
-          <td>{{ c.telefono or '—' }}</td>
+          <td>{{ c.telefono or c.celular or '—' }}</td>
+          <td>
+            {% set tel = (c.celular or c.telefono) | replace(' ', '') | replace('-', '') | replace('(', '') | replace(')', '') | replace('+', '') %}
+            {% if tel %}<a class="btn btn--ghost btn--sm" target="_blank" rel="noopener" href="https://wa.me/{{ '52' if tel|length == 10 else '' }}{{ tel }}">💬 WhatsApp</a>{% else %}—{% endif %}
+          </td>
           <td>{{ 'Sí' if c.esPortal else 'No' }}</td>
         </tr>
-      {% else %}<tr><td colspan="5" class="muted">Sin contactos.</td></tr>{% endfor %}
+      {% else %}<tr><td colspan="6" class="muted">Sin contactos.</td></tr>{% endfor %}
     </tbody>
   </table>
 

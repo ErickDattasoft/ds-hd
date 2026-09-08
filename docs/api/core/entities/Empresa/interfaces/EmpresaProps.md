@@ -100,6 +100,22 @@ Marcada como favorita (⭐) por el equipo — atajo para la lista.
 
 ***
 
+### camposExtra?
+
+> `optional` **camposExtra?**: `object`[]
+
+Campos personalizados libres de esta empresa.
+
+#### etiqueta
+
+> **etiqueta**: `string`
+
+#### valor
+
+> **valor**: `string`
+
+***
+
 ### creadoPorUid?
 
 > `optional` **creadoPorUid?**: `string` \| `null`

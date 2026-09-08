@@ -28,6 +28,12 @@ Datos editables de un contacto (alta o edición).
 
 ***
 
+### rfc?
+
+> `optional` **rfc?**: `string`
+
+***
+
 ### email?
 
 > `optional` **email?**: `string`

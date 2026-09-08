@@ -19,6 +19,8 @@ export interface DatosEmpresa {
   vigencias?: Record<string, string>;
   /** Versión instalada por sistema (texto libre). */
   versionesInstaladas?: Record<string, string>;
+  /** Campos personalizados libres. */
+  camposExtra?: { etiqueta: string; valor: string }[];
   notas?: string;
 }
 
@@ -86,6 +88,9 @@ export class EmpresaService {
     empresa.sistemasContratados = [...new Set((datos.sistemasContratados ?? []).map((s) => s.trim()).filter(Boolean))];
     empresa.vigencias = Empresa.sanearVigencias(datos.vigencias, empresa.sistemasContratados);
     empresa.versionesInstaladas = Empresa.sanearMapaSistemas(datos.versionesInstaladas, empresa.sistemasContratados);
+    empresa.camposExtra = (datos.camposExtra ?? [])
+      .map((c) => ({ etiqueta: c.etiqueta.trim(), valor: c.valor.trim() }))
+      .filter((c) => c.etiqueta || c.valor);
     empresa.notas = datos.notas?.trim() || null;
     empresa.updatedAt = ahora;
     await this.repo.save(empresa);
