@@ -38,9 +38,6 @@ export const UsuarioMapper = {
       email: u.email.value,
       nombre: u.nombre,
       roles: u.roles,
-      // Doble escritura durante la transición a multi-rol: `rol` = rol principal, para poder
-      // volver al código de un solo rol sin migrar datos. Se retira en un commit posterior.
-      rol: u.rolPrincipal,
       permisosExtra: u.permisosExtra,
       permisosRevocados: u.permisosRevocados,
       activo: u.activo,

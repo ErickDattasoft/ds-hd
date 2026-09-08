@@ -29,11 +29,6 @@ export const ROLES_STAFF: readonly Rol[] = [
  */
 export const ROLES_TECNICOS: readonly Rol[] = ['agente', 'soporte'];
 
-/** ¿El rol puede tomar tickets como técnico (aparece en dropdowns de asignación)? */
-export function esRolTecnico(rol: Rol): boolean {
-  return ROLES_TECNICOS.includes(rol);
-}
-
 /** Type guard: ¿el valor es uno de los roles válidos? */
 export function esRol(value: unknown): value is Rol {
   return typeof value === 'string' && (ROLES as readonly string[]).includes(value);
@@ -44,8 +39,8 @@ export function esRolStaff(rol: Rol): boolean {
   return ROLES_STAFF.includes(rol);
 }
 
-/** Valida y normaliza un rol recibido de un formulario o de la BD. */
-export function parseRol(value: unknown): Rol {
+/** Valida y normaliza un rol suelto. Uso interno de {@link parseRoles} (lecturas legacy). */
+function parseRol(value: unknown): Rol {
   if (!esRol(value)) {
     throw new ValidationError(`Rol inválido: ${String(value)}`, { rol: 'Rol no reconocido' });
   }

@@ -68,10 +68,10 @@ describe('UsuarioMapper', () => {
     expect(u.roles).toEqual(['soporte', 'ventas']);
   });
 
-  it('escribe `roles` y `rol` (principal) para la transición', () => {
+  it('escribe solo `roles` (ordenados por alcance), sin el `rol` legacy', () => {
     const u = new Usuario({ ...base, roles: ['ventas', 'admin'] });
     const doc = UsuarioMapper.toDocument(u);
     expect(doc.roles).toEqual(['admin', 'ventas']);
-    expect(doc.rol).toBe('admin');
+    expect(doc.rol).toBeUndefined();
   });
 });
