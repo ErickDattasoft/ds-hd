@@ -119,6 +119,35 @@ describe('base de conocimiento — visibilidad', () => {
     expect(art.text).toContain('<strong>Ajustes</strong>');
   });
 
+  it('subida en lote + export JSON/ZIP + filtro por categoría script', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    const { agent, csrf } = await login(t.app, ADMIN.email, ADMIN.password);
+
+    const sub = await agent.post('/app/kb/subir').set('x-csrf-token', csrf).send({
+      archivos: [
+        { nombre: 'limpieza.ps1', contenido: 'Remove-Item C:\\temp\\* -Recurse -Force', rutaRelativa: 'ps/limpieza.ps1' },
+        { nombre: 'manual.md', contenido: '# Manual\nTexto de ayuda suficientemente largo.' },
+      ],
+      visibilidad: 'staff',
+    });
+    expect(sub.status).toBe(200);
+    expect(sub.body).toMatchObject({ ok: true, creados: 2 });
+
+    const gestion = await agent.get('/app/kb?categoria=script');
+    expect(gestion.text).toContain('limpieza');
+    expect(gestion.text).not.toContain('>manual<');
+
+    const json = await agent.get('/app/kb/export.json?categoria=script');
+    expect(json.status).toBe(200);
+    const arr = JSON.parse(json.text);
+    expect(arr).toHaveLength(1);
+    expect(arr[0].rutaDestino).toBe('ps/limpieza.ps1');
+
+    const zip = await agent.get('/app/kb/export.zip');
+    expect(zip.status).toBe(200);
+    expect(zip.headers['content-type']).toContain('zip');
+  });
+
   it('un agente sin permiso de publicar no puede publicar', async () => {
     const AG = { uid: 'u-g', email: 'g@d.com', password: 'agente12345', nombre: 'Ag', rol: 'agente' as const };
     const t = makeTestApp({ usuarios: [AG] });

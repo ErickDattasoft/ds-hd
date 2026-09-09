@@ -1,8 +1,9 @@
 import type { IKnowledgeRepository, ListarKBFiltro } from '../../core/ports/repositories/IKnowledgeRepository.js';
 import type { IClock } from '../../core/ports/services/IClock.js';
 import type { IIdGenerator } from '../../core/ports/services/IIdGenerator.js';
-import { ArticuloKB, type VisibilidadKB } from '../../core/entities/ArticuloKB.js';
-import { ForbiddenError, NotFoundError } from '../../core/errors/DomainError.js';
+import { zipSync, strToU8 } from 'fflate';
+import { ArticuloKB, adivinarCategoriaKB, slugify, type VisibilidadKB } from '../../core/entities/ArticuloKB.js';
+import { ForbiddenError, NotFoundError, ValidationError } from '../../core/errors/DomainError.js';
 import type { BitacoraService } from '../shared/BitacoraService.js';
 import type { SessionUser } from '../shared/SessionUser.js';
 
@@ -12,8 +13,17 @@ export interface DatosArticulo {
   categoria?: string;
   cuerpoMarkdown: string;
   tags?: string[];
+  rutaDestino?: string;
   publicado?: boolean;
   visibilidad?: VisibilidadKB;
+}
+
+/** Un archivo de la subida en lote. */
+export interface ArchivoLote {
+  nombre: string;
+  contenido: string;
+  /** Ruta relativa dentro de la carpeta elegida (si se subió una carpeta). */
+  rutaRelativa?: string;
 }
 
 export type Contexto = { esStaff: boolean; esCliente: boolean; anonimo: boolean };
@@ -62,6 +72,7 @@ export class KnowledgeService {
       categoria: datos.categoria ?? null,
       cuerpoMarkdown: datos.cuerpoMarkdown,
       tags: datos.tags ?? [],
+      rutaDestino: datos.rutaDestino ?? previo?.rutaDestino ?? null,
       publicado: datos.publicado ?? previo?.publicado ?? false,
       visibilidad: datos.visibilidad ?? previo?.visibilidad ?? 'staff',
       autorUid: previo?.autorUid ?? actor.uid,
@@ -79,6 +90,74 @@ export class KnowledgeService {
       resumen: `${articulo.publicado ? 'Publicado' : 'Borrador'}: ${articulo.titulo}`,
     });
     return articulo;
+  }
+
+  /**
+   * Alta en lote desde archivos (`.md`, `.ps1`, `.bat`, `.sql`, `.txt`…). Un artículo por
+   * archivo: título = nombre sin extensión, cuerpo = contenido, categoría adivinada, y la
+   * ruta relativa se guarda como `rutaDestino` (para volver a exportarlos a Windows).
+   */
+  async crearLote(
+    actor: SessionUser,
+    archivos: ArchivoLote[],
+    opts: { visibilidad?: VisibilidadKB; publicado?: boolean } = {},
+  ): Promise<ArticuloKB[]> {
+    if (!actor.permisos.includes('kb:escribir')) throw new ForbiddenError('No puedes editar la base de conocimiento');
+    const publicado = opts.publicado ?? false;
+    if (publicado && !actor.permisos.includes('kb:publicar')) {
+      throw new ForbiddenError('No tienes permiso para publicar artículos');
+    }
+    const validos = archivos.filter((a) => a.nombre.trim() && a.contenido.trim().length >= 10);
+    if (!validos.length) throw new ValidationError('No hay archivos con contenido para importar', { archivos: 'Vacío' });
+
+    const ahora = this.clock.now();
+    const creados: ArticuloKB[] = [];
+    for (const archivo of validos) {
+      const nombre = archivo.nombre.trim();
+      const titulo = nombre.replace(/\.[^.]+$/, '') || nombre;
+      const articulo = new ArticuloKB({
+        id: this.ids.newId(),
+        titulo: titulo.slice(0, 120),
+        cuerpoMarkdown: archivo.contenido,
+        categoria: adivinarCategoriaKB(nombre),
+        rutaDestino: (archivo.rutaRelativa || nombre).replace(/\\/g, '/'),
+        publicado,
+        visibilidad: opts.visibilidad ?? 'staff',
+        autorUid: actor.uid,
+        autorNombre: actor.nombre,
+        createdAt: ahora,
+        updatedAt: ahora,
+      });
+      await this.repo.save(articulo);
+      creados.push(articulo);
+    }
+    await this.bitacora.registrar({
+      actor,
+      accion: 'crear',
+      modulo: 'kb',
+      entidadTipo: 'ArticuloKB',
+      entidadId: 'lote',
+      resumen: `Subida en lote: ${creados.length} archivo(s)`,
+    });
+    return creados;
+  }
+
+  /** Los artículos visibles que cumplen el filtro, como `.zip` (un archivo por artículo). */
+  async exportarZip(ctx: Contexto, filtro: { categoria?: string; desde?: Date } = {}): Promise<Buffer> {
+    const articulos = await this.listarVisibles(ctx, filtro.categoria ? { categoria: filtro.categoria } : {});
+    const usados = new Set<string>();
+    const entradas: Record<string, Uint8Array> = {};
+    for (const a of articulos) {
+      if (filtro.desde && a.updatedAt < filtro.desde) continue;
+      let ruta = (a.rutaDestino || `${a.slug || slugify(a.titulo)}.md`).replace(/\\/g, '/').replace(/^\/+/, '');
+      if (usados.has(ruta)) {
+        const m = ruta.match(/^(.*?)(\.[^.]+)?$/)!;
+        ruta = `${m[1]}-${a.id.slice(0, 6)}${m[2] ?? ''}`;
+      }
+      usados.add(ruta);
+      entradas[ruta] = strToU8(a.cuerpoMarkdown);
+    }
+    return Buffer.from(zipSync(entradas));
   }
 
   async eliminar(actor: SessionUser, id: string): Promise<void> {

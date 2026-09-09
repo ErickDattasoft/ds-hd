@@ -13,6 +13,7 @@
 ## Interfaces
 
 - [DatosArticulo](interfaces/DatosArticulo.md)
+- [ArchivoLote](interfaces/ArchivoLote.md)
 
 ## Type Aliases
 

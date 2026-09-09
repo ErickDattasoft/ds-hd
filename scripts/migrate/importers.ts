@@ -492,6 +492,7 @@ export async function importarKB(c: Container, datos: Dato): Promise<number> {
             categoria: s(d.category) || null,
             cuerpoMarkdown: s(d.content) || '(sin contenido)',
             tags: arr(d.tags as unknown as Dato[]).map(String),
+            rutaDestino: s(d.sourcePath) || null,
             // Documentación técnica interna ya publicada en el viejo — visible para staff.
             publicado: true,
             visibilidad: 'staff',

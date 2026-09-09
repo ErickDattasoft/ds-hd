@@ -15,7 +15,13 @@
     <details class="disclosure" open>
       <summary class="disclosure__summary">Publicación y clasificación</summary>
       <div class="disclosure__body form">
-        <label class="field"><span>Categoría</span><input name="categoria" value="{{ valores.categoria }}" /></label>
+        <label class="field"><span>Categoría</span>
+          <input name="categoria" value="{{ valores.categoria }}" list="kb-categorias" placeholder="solucion · empresa · script" />
+          <datalist id="kb-categorias"><option value="solucion"></option><option value="empresa"></option><option value="script"></option></datalist>
+        </label>
+        <label class="field"><span>Ruta destino en Windows (para scripts)</span>
+          <input name="rutaDestino" value="{{ valores.rutaDestino }}" placeholder="p. ej. C:\Scripts\respaldo.ps1 o solo respaldo.ps1" />
+        </label>
         <label class="field"><span>Etiquetas (separadas por coma)</span><input name="tags" value="{{ valores.tags }}" /></label>
         <label class="field"><span>Visibilidad</span>
           <select name="visibilidad">

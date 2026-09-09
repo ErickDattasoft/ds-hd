@@ -183,6 +183,58 @@
       });
   });
 
+  // ── Base de conocimiento: subida en lote (lee los archivos en el navegador) ──
+  document.addEventListener('submit', function (e) {
+    var form = e.target.closest('[data-kb-subir]');
+    if (!form) return;
+    e.preventDefault();
+    var input = form.querySelector('input[type="file"]');
+    var files = input && input.files ? Array.prototype.slice.call(input.files) : [];
+    var salida = document.getElementById('resultado-kb-subir');
+    if (!files.length || !salida) return;
+    salida.innerHTML = '<p class="muted">Leyendo ' + files.length + ' archivo(s)…</p>';
+    Promise.all(
+      files.map(function (file) {
+        return new Promise(function (resolve) {
+          var reader = new FileReader();
+          reader.onload = function () {
+            resolve({
+              nombre: file.name || 'archivo',
+              contenido: String(reader.result || ''),
+              rutaRelativa: file.webkitRelativePath || file.name || '',
+            });
+          };
+          reader.onerror = function () { resolve(null); };
+          reader.readAsText(file);
+        });
+      }),
+    ).then(function (archivos) {
+      var vis = form.querySelector('[name="visibilidad"]');
+      var pub = form.querySelector('[name="publicado"]');
+      salida.innerHTML = '<p class="muted">Subiendo…</p>';
+      fetch(form.getAttribute('action'), {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'x-csrf-token': cookie('x-csrf-token') },
+        body: JSON.stringify({
+          archivos: archivos.filter(Boolean),
+          visibilidad: vis ? vis.value : 'staff',
+          publicado: pub && pub.checked ? 'on' : '',
+        }),
+      })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          if (data.ok) {
+            window.location.href = '/app/kb?aviso=' + encodeURIComponent(data.creados + ' archivo(s) importado(s)');
+          } else {
+            salida.innerHTML = '<p class="alert alert--error">' + data.error + '</p>';
+          }
+        })
+        .catch(function () {
+          salida.innerHTML = '<p class="alert alert--error">No se pudo subir. Revisa tu conexión e inténtalo de nuevo.</p>';
+        });
+    });
+  });
+
   // ── Configuración → Integraciones: "probar conexión" (webhook n8n / WhatsApp) ──
   document.addEventListener('click', function (e) {
     var btnWebhook = e.target.closest('[data-probar-webhook]');

@@ -1,0 +1,36 @@
+{% extends "layouts/backoffice.njk" %}
+{% block title %}Subir archivos a la base de conocimiento{% endblock %}
+{% block content %}
+  <div class="page-head">
+    <h1>Subir archivos</h1>
+    <a class="btn btn--sm btn--ghost" href="/app/kb">Volver</a>
+  </div>
+  <p class="muted">
+    Cada archivo se convierte en un artículo: el título es el nombre sin extensión, el
+    contenido es el texto del archivo, y la ruta se guarda para poder exportarlos de vuelta.
+    Los <code>.ps1</code>, <code>.bat</code>, <code>.cmd</code>, <code>.sql</code> se marcan como <strong>⚡ Scripts</strong>.
+  </p>
+
+  <form method="post" action="/app/kb/subir" class="form form--wide" data-kb-subir>
+    <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+    <label class="field"><span>Archivos</span>
+      <input type="file" name="archivos" multiple
+             accept=".md,.markdown,.txt,.ps1,.bat,.cmd,.sql,.sh,.py,.json,.yml,.yaml,.ini,.reg" required />
+      <em class="field__hint">Puedes seleccionar varios a la vez.</em>
+    </label>
+    <label class="field"><span>Visibilidad</span>
+      <select name="visibilidad">
+        <option value="staff">Solo staff</option>
+        <option value="portal">Staff + clientes del portal</option>
+        <option value="publico">Público</option>
+      </select>
+    </label>
+    {% if can('kb:publicar') %}
+      <label class="field--check"><input type="checkbox" name="publicado" /> <span>Publicar de una vez</span></label>
+    {% endif %}
+    <div class="page-head__actions">
+      <button class="btn" type="submit">Subir</button>
+    </div>
+  </form>
+  <div id="resultado-kb-subir" aria-live="polite"></div>
+{% endblock %}

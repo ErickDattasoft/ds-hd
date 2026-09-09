@@ -124,6 +124,68 @@ Lista visible para un contexto dado (aplica publicado + visibilidad).
 
 ***
 
+### crearLote()
+
+> **crearLote**(`actor`, `archivos`, `opts?`): `Promise`\<[`ArticuloKB`](../../../../core/entities/ArticuloKB/classes/ArticuloKB.md)[]\>
+
+Alta en lote desde archivos (`.md`, `.ps1`, `.bat`, `.sql`, `.txt`…). Un artículo por
+archivo: título = nombre sin extensión, cuerpo = contenido, categoría adivinada, y la
+ruta relativa se guarda como `rutaDestino` (para volver a exportarlos a Windows).
+
+#### Parameters
+
+##### actor
+
+[`SessionUser`](../../../shared/SessionUser/interfaces/SessionUser.md)
+
+##### archivos
+
+[`ArchivoLote`](../interfaces/ArchivoLote.md)[]
+
+##### opts?
+
+###### visibilidad?
+
+[`VisibilidadKB`](../../../../core/entities/ArticuloKB/type-aliases/VisibilidadKB.md)
+
+###### publicado?
+
+`boolean`
+
+#### Returns
+
+`Promise`\<[`ArticuloKB`](../../../../core/entities/ArticuloKB/classes/ArticuloKB.md)[]\>
+
+***
+
+### exportarZip()
+
+> **exportarZip**(`ctx`, `filtro?`): `Promise`\<`Buffer`\<`ArrayBufferLike`\>\>
+
+Los artículos visibles que cumplen el filtro, como `.zip` (un archivo por artículo).
+
+#### Parameters
+
+##### ctx
+
+[`Contexto`](../type-aliases/Contexto.md)
+
+##### filtro?
+
+###### categoria?
+
+`string`
+
+###### desde?
+
+`Date`
+
+#### Returns
+
+`Promise`\<`Buffer`\<`ArrayBufferLike`\>\>
+
+***
+
 ### eliminar()
 
 > **eliminar**(`actor`, `id`): `Promise`\<`void`\>

@@ -7,13 +7,28 @@
   </div>
   <form method="get" class="filterbar">
     <input type="search" name="q" value="{{ q }}" placeholder="Buscar artículos…" autocomplete="off" spellcheck="false" />
+    {% if categorias | length %}
+      <label class="field"><span>Categoría</span>
+        <select name="categoria">
+          <option value="">todas</option>
+          {% for c in categorias %}<option value="{{ c.nombre }}" {{ 'selected' if categoria == c.nombre }}>{{ '⚡ Scripts' if c.nombre == 'script' else c.nombre }} ({{ c.total }})</option>{% endfor %}
+        </select>
+      </label>
+    {% endif %}
+    <label class="field"><span>Orden</span>
+      <select name="orden">
+        <option value="">relevancia</option>
+        <option value="az" {{ 'selected' if orden == 'az' }}>A → Z</option>
+        <option value="za" {{ 'selected' if orden == 'za' }}>Z → A</option>
+      </select>
+    </label>
     <button class="btn btn--sm" type="submit">Buscar</button>
   </form>
   <ul class="kb-list">
     {% for a in articulos %}
       <li>
         <a href="{{ kbBase }}/{{ a.slug or a.id }}"><strong>{{ a.titulo }}</strong></a>
-        {% if a.categoria %}<span class="badge">{{ a.categoria }}</span>{% endif %}
+        {% if a.categoria %}<span class="badge">{{ '⚡ Scripts' if a.categoria == 'script' else a.categoria }}</span>{% endif %}
         {% if not a.publicado %}<span class="badge badge--warning">borrador</span>{% endif %}
       </li>
     {% else %}

@@ -34,6 +34,12 @@ Datos editables de un artículo de la base de conocimiento (alta o edición).
 
 ***
 
+### rutaDestino?
+
+> `optional` **rutaDestino?**: `string`
+
+***
+
 ### publicado?
 
 > `optional` **publicado?**: `boolean`

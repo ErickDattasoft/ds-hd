@@ -46,6 +46,14 @@ Props para construir un [ArticuloKB](../classes/ArticuloKB.md); `slug` se autoge
 
 ***
 
+### rutaDestino?
+
+> `optional` **rutaDestino?**: `string` \| `null`
+
+Ruta destino en Windows (para scripts que se despliegan a una carpeta).
+
+***
+
 ### publicado?
 
 > `optional` **publicado?**: `boolean`

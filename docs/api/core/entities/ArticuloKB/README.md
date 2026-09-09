@@ -18,6 +18,11 @@
 
 - [VisibilidadKB](type-aliases/VisibilidadKB.md)
 
+## Variables
+
+- [CATEGORIAS\_KB](variables/CATEGORIAS_KB.md)
+
 ## Functions
 
+- [adivinarCategoriaKB](functions/adivinarCategoriaKB.md)
 - [slugify](functions/slugify.md)

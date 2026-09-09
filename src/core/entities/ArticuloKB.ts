@@ -10,12 +10,28 @@ export interface ArticuloKBProps {
   categoria?: string | null;
   cuerpoMarkdown: string;
   tags?: string[];
+  /** Ruta destino en Windows (para scripts que se despliegan a una carpeta). */
+  rutaDestino?: string | null;
   publicado?: boolean;
   visibilidad?: VisibilidadKB;
   autorUid?: string | null;
   autorNombre?: string | null;
   createdAt?: Date;
   updatedAt?: Date;
+}
+
+/** Categorías sugeridas de la base de conocimiento (paridad con el CRM viejo). */
+export const CATEGORIAS_KB = ['solucion', 'empresa', 'script'] as const;
+
+/** Extensiones que se consideran "script" al subir archivos en lote. */
+const EXT_SCRIPT = ['ps1', 'bat', 'cmd', 'sql', 'sh', 'py'];
+
+/** Adivina la categoría de un archivo por su nombre (`script` si parece un script). */
+export function adivinarCategoriaKB(nombreArchivo: string): string {
+  const n = nombreArchivo.toLowerCase();
+  const ext = n.includes('.') ? n.split('.').pop()! : '';
+  if (EXT_SCRIPT.includes(ext) || /script|query|consulta/.test(n)) return 'script';
+  return 'solucion';
 }
 
 /** Convierte un título a slug URL-friendly (sin acentos, minúsculas, guiones). */
@@ -37,6 +53,7 @@ export class ArticuloKB {
   categoria: string | null;
   cuerpoMarkdown: string;
   tags: string[];
+  rutaDestino: string | null;
   publicado: boolean;
   visibilidad: VisibilidadKB;
   readonly autorUid: string | null;
@@ -57,12 +74,18 @@ export class ArticuloKB {
     this.categoria = props.categoria?.trim() || null;
     this.cuerpoMarkdown = props.cuerpoMarkdown;
     this.tags = [...new Set((props.tags ?? []).map((t) => t.trim().toLowerCase()).filter(Boolean))];
+    this.rutaDestino = props.rutaDestino?.trim() || null;
     this.publicado = props.publicado ?? false;
     this.visibilidad = props.visibilidad ?? 'staff';
     this.autorUid = props.autorUid ?? null;
     this.autorNombre = props.autorNombre ?? null;
     this.createdAt = props.createdAt ?? new Date();
     this.updatedAt = props.updatedAt ?? this.createdAt;
+  }
+
+  /** ¿Es un script (por categoría)? */
+  get esScript(): boolean {
+    return this.categoria === 'script';
   }
 
   /** ¿Un usuario con este rol/área puede ver el artículo? */

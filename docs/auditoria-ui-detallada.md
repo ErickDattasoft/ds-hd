@@ -180,13 +180,13 @@ cruzado. **Revisar**: "Ordenar" (por fecha) en la lista, ícono del evento.
 | Viejo | ds-hd | Acción |
 |---|---|---|
 | Lista + editor de documentos (markdown) | ✅ | — |
-| **Vista dividida (lista / split / panel derecho)** | ❌ | evaluar |
-| **Tipos de archivo** (bat / ps1 / sql / md) + "⚡ Scripts" | ❌ | agregar categoría/tipo |
-| **Carpeta destino en Windows** (para scripts) | ❌ | agregar campo |
-| Filtros: modificados hoy / esta semana / con cambios | ◐ | revisar |
-| Ordenar A→Z / Z→A | ◐ | revisar |
-| **Subir archivos** (batch) | ❌ | agregar |
-| **Exportar** (todos / con cambios) a .md/.zip | ❌ | agregar |
+| **Vista dividida (lista / split / panel derecho)** | ➖ (diferido — la lista + el detalle a página completa cubren el flujo) | — |
+| **Tipos de archivo** (bat / ps1 / sql / md) + "⚡ Scripts" | ✅ (categoría `script`, se adivina al subir; tab en la lista) | — |
+| **Carpeta destino en Windows** (para scripts) | ✅ (`ArticuloKB.rutaDestino`, en el form y el ZIP) | — |
+| Filtros: modificados hoy / esta semana / con cambios | ✅ (`?desde=hoy|semana`) | — |
+| Ordenar A→Z / Z→A | ✅ (`?orden=az|za|recientes`) | — |
+| **Subir archivos** (batch) | ✅ (`/app/kb/subir`, un artículo por archivo) | — |
+| **Exportar** (todos / con cambios) a .md/.zip | ✅ (`/app/kb/export.json` + `/export.zip`, con `?categoria=`/`?desde=`) | — |
 | Visibilidad staff / portal / público | ✅ *(mejora)* | — |
 
 ## 14. Configuración (`/app/configuracion/*`)
@@ -260,8 +260,14 @@ contraseña. ds-hd nace con cuentas reales de Firebase Auth por invitación.
    (empresas con sistemas desactualizados y/o licencias vencidas/por vencer),
    con `?empresa=` para acotar, export `.xlsx`, vista `/imprimir` y envío por
    correo a destinatarios libres. La carta técnica sale en el reporte y el aviso.
-5. **KB**: tipos de archivo / scripts / carpeta destino / subida batch / export /
-   vista dividida.
+5. ✅ **HECHO** — **KB**: `ArticuloKB.rutaDestino` + categoría `script` (se
+   adivina de la extensión al subir, `esScript` getter). Subida en lote
+   `/app/kb/subir` (el navegador lee los archivos y los manda como JSON, un
+   artículo por archivo). Export `/app/kb/export.json` y `/app/kb/export.zip`
+   (fflate, un archivo por artículo en su `rutaDestino`), ambos con `?categoria=`
+   y `?desde=hoy|semana`. Filtros de categoría / recientes / orden A→Z en la
+   lista y en gestión. Migración: mapea `sourcePath` → `rutaDestino`. Vista
+   dividida: diferida (no aporta sobre lista + detalle a página completa).
 6. **Dashboard**: calendario, nueva tarea rápida.
 7. **Configuración**: logo de empresa, resumen diario, precios de calculadora
    editables, apariencia.

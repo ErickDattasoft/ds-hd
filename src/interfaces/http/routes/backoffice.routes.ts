@@ -183,6 +183,10 @@ export function backofficeRoutes(container: Container): Router {
   // ── Base de conocimiento ───────────────────────────────────────────────────
   r.get('/kb', requirePermission('kb:leer'), (req, res) => kb().gestionar(req, res));
   r.get('/kb/nuevo', requirePermission('kb:escribir'), (req, res) => kb().nuevo(req, res));
+  r.get('/kb/subir', requirePermission('kb:escribir'), (req, res) => kb().subirView(req, res));
+  r.post('/kb/subir', requirePermission('kb:escribir'), (req, res) => kb().subirPost(req, res));
+  r.get('/kb/export.json', requirePermission('kb:leer'), (req, res) => kb().exportJson(req, res));
+  r.get('/kb/export.zip', requirePermission('kb:leer'), (req, res) => kb().exportZip(req, res));
   r.post('/kb', requirePermission('kb:escribir'), (req, res) => kb().guardarPost(req, res));
   r.get('/kb/:id/editar', requirePermission('kb:escribir'), (req, res) => kb().editar(req, res));
   r.post('/kb/:id/eliminar', requirePermission('kb:publicar'), (req, res) => kb().eliminarPost(req, res));

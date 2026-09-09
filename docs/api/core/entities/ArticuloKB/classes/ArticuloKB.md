@@ -62,6 +62,12 @@ Artículo de la base de conocimiento.
 
 ***
 
+### rutaDestino
+
+> **rutaDestino**: `string` \| `null`
+
+***
+
 ### publicado
 
 > **publicado**: `boolean`
@@ -95,6 +101,20 @@ Artículo de la base de conocimiento.
 ### updatedAt
 
 > **updatedAt**: `Date`
+
+## Accessors
+
+### esScript
+
+#### Get Signature
+
+> **get** **esScript**(): `boolean`
+
+¿Es un script (por categoría)?
+
+##### Returns
+
+`boolean`
 
 ## Methods
 

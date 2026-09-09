@@ -1,22 +1,59 @@
 {% extends "layouts/backoffice.njk" %}
 {% block title %}Base de conocimiento{% endblock %}
+{% macro qs(cat, ord, des) %}?categoria={{ cat }}&orden={{ ord }}&desde={{ des }}{% endmacro %}
 {% block content %}
   <div class="page-head">
     <h1>Base de conocimiento</h1>
-    <a class="btn btn--sm" href="/app/kb/nuevo">Nuevo artículo</a>
+    <div class="page-head__actions">
+      <a class="btn btn--sm btn--secondary" href="/app/kb/subir">Subir archivos</a>
+      <a class="btn btn--sm btn--ghost" href="/app/kb/export.json{{ qs(categoria, orden, desde) }}">Exportar JSON</a>
+      <a class="btn btn--sm btn--ghost" href="/app/kb/export.zip{{ qs(categoria, orden, desde) }}">Exportar ZIP</a>
+      <a class="btn btn--sm" href="/app/kb/nuevo">Nuevo artículo</a>
+    </div>
   </div>
+  {% if aviso %}<div class="alert alert--ok" role="status">{{ aviso }}</div>{% endif %}
+
+  <form method="get" class="filterbar">
+    <label class="field"><span>Categoría</span>
+      <select name="categoria">
+        <option value="">todas</option>
+        <option value="script" {{ 'selected' if categoria == 'script' }}>⚡ Scripts</option>
+        {% for c in categorias %}
+          {% if c.nombre != 'script' %}<option value="{{ c.nombre }}" {{ 'selected' if categoria == c.nombre }}>{{ c.nombre }} ({{ c.total }})</option>{% endif %}
+        {% endfor %}
+      </select>
+    </label>
+    <label class="field"><span>Modificados</span>
+      <select name="desde">
+        <option value="">cualquier fecha</option>
+        <option value="hoy" {{ 'selected' if desde == 'hoy' }}>hoy</option>
+        <option value="semana" {{ 'selected' if desde == 'semana' }}>últimos 7 días</option>
+      </select>
+    </label>
+    <label class="field"><span>Orden</span>
+      <select name="orden">
+        <option value="recientes" {{ 'selected' if orden == 'recientes' }}>más recientes</option>
+        <option value="az" {{ 'selected' if orden == 'az' }}>A → Z</option>
+        <option value="za" {{ 'selected' if orden == 'za' }}>Z → A</option>
+      </select>
+    </label>
+    <button class="btn btn--sm" type="submit">Aplicar</button>
+  </form>
+
   <table class="data-table">
-    <thead><tr><th>Título</th><th>Categoría</th><th>Visibilidad</th><th>Estado</th><th></th></tr></thead>
+    <thead><tr><th>Título</th><th>Categoría</th><th>Ruta destino</th><th>Visibilidad</th><th>Estado</th><th>Modificado</th><th></th></tr></thead>
     <tbody>
       {% for a in articulos %}
         <tr>
           <td><a href="/app/kb/{{ a.slug or a.id }}">{{ a.titulo }}</a></td>
-          <td>{{ a.categoria or '—' }}</td>
+          <td>{% if a.esScript %}⚡ {% endif %}{{ a.categoria or '—' }}</td>
+          <td>{{ a.rutaDestino or '—' }}</td>
           <td>{{ a.visibilidad }}</td>
           <td>{{ 'Publicado' if a.publicado else 'Borrador' }}</td>
+          <td>{{ a.updatedAt | fecha }}</td>
           <td><a href="/app/kb/{{ a.id }}/editar">Editar</a></td>
         </tr>
-      {% else %}<tr><td colspan="5" class="muted">Sin artículos.</td></tr>{% endfor %}
+      {% else %}<tr><td colspan="7" class="muted">Sin artículos que coincidan.</td></tr>{% endfor %}
     </tbody>
   </table>
 {% endblock %}
