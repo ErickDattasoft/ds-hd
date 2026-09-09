@@ -8,6 +8,8 @@ export interface VersionSistemaProps {
   fechaLiberacion?: string | null;
   notasVersion?: string | null;
   linkDescarga?: string | null;
+  /** Enlace a la carta técnica oficial del sistema. */
+  linkCartaTecnica?: string | null;
   updatedAt?: Date;
   actualizadoPorUid?: string | null;
 }
@@ -20,6 +22,7 @@ export class VersionSistema {
   fechaLiberacion: string | null;
   notasVersion: string | null;
   linkDescarga: string | null;
+  linkCartaTecnica: string | null;
   updatedAt: Date;
   actualizadoPorUid: string | null;
 
@@ -36,6 +39,7 @@ export class VersionSistema {
     this.fechaLiberacion = props.fechaLiberacion?.trim() || null;
     this.notasVersion = props.notasVersion?.trim() || null;
     this.linkDescarga = props.linkDescarga?.trim() || null;
+    this.linkCartaTecnica = props.linkCartaTecnica?.trim() || null;
     this.updatedAt = props.updatedAt ?? new Date();
     this.actualizadoPorUid = props.actualizadoPorUid ?? null;
   }

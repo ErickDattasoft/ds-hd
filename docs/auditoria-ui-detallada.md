@@ -139,12 +139,12 @@ Leyenda: ✅ existe · ◐ parcial · ❌ falta · ➖ no aplica (decisión de d
 | Viejo | ds-hd | Acción |
 |---|---|---|
 | Lista de versiones instaladas por empresa | ✅ | — |
-| **📊 "Versiones del Mercado"** (grid sistema → versión oficial editable) | ◐ (existe `VersionSistema` pero revisar la vista de edición masiva) | revisar |
-| 🔗 Link carta técnica por sistema | ◐ verificar | revisar |
+| **📊 "Versiones del Mercado"** (grid sistema → versión oficial editable) | ✅ (`/app/versiones/mercado`, edición masiva) | — |
+| 🔗 Link carta técnica por sistema | ✅ (`VersionSistema.linkCartaTecnica`) | — |
 | Plantilla de notificación de licencias | ✅ (`/app/versiones/avisos`) | — |
-| **📋 Reporte de versiones/licencias desactualizadas** (modal: exportar Excel / imprimir / enviar por correo) | ❌ | agregar reporte |
+| **📋 Reporte de versiones/licencias desactualizadas** (modal: exportar Excel / imprimir / enviar por correo) | ✅ (`/app/versiones/reporte` + `.xlsx` + `/imprimir` + enviar) | — |
 | Avisos a empresas (masivo) | ✅ | — |
-| Filtrar por empresa | ◐ verificar | revisar |
+| Filtrar por empresa | ✅ (en el reporte, `?empresa=`) | — |
 
 ## 10. Dashboard (`/app`)
 
@@ -254,8 +254,12 @@ contraseña. ds-hd nace con cuentas reales de Firebase Auth por invitación.
    precargado de `configuracion/cotizaciones` (`ConfiguracionCotizaciones`,
    editable en `/app/configuracion/cotizaciones`). Todo visible en el detalle, el
    PDF y el correo. Backup exporta/restaura la nueva sección de config.
-4. **Versiones**: grid "versiones del mercado", reporte de desactualizadas
-   (export/print/enviar), link carta técnica, filtro por empresa.
+4. ✅ **HECHO** — **Versiones**: `VersionSistema.linkCartaTecnica`; grid de
+   edición masiva `/app/versiones/mercado` (una fila por sistema del catálogo,
+   upsert por nombre); `ReporteVersionesService` → `/app/versiones/reporte`
+   (empresas con sistemas desactualizados y/o licencias vencidas/por vencer),
+   con `?empresa=` para acotar, export `.xlsx`, vista `/imprimir` y envío por
+   correo a destinatarios libres. La carta técnica sale en el reporte y el aviso.
 5. **KB**: tipos de archivo / scripts / carpeta destino / subida batch / export /
    vista dividida.
 6. **Dashboard**: calendario, nueva tarea rápida.

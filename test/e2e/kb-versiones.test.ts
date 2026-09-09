@@ -26,6 +26,56 @@ describe('versiones de sistemas', () => {
     expect(lista.text).toContain('CONTPAQi Contabilidad');
     expect(lista.text).toContain('16.1.1');
   });
+
+  it('grid "versiones del mercado": guarda varias de un tiro (upsert por sistema)', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    t.configuracionRepo.config.sistemas = ['Contabilidad', 'Bancos', 'Nóminas'];
+    const { agent, csrf } = await login(t.app, ADMIN.email, ADMIN.password);
+
+    const res = await agent.post('/app/versiones/mercado').type('form').send({
+      _csrf: csrf,
+      sistema: ['Bancos', 'Contabilidad', 'Nóminas'],
+      versionActual: ['14.0.0', '19.1.0', ''],
+      fechaLiberacion: ['', '2026-08-01', ''],
+      linkDescarga: ['', '', ''],
+      linkCartaTecnica: ['', 'https://ct/cont', ''],
+    });
+    expect(res.status).toBe(200);
+    const registradas = await t.versionRepo.list();
+    expect(registradas.map((v) => v.sistema).sort()).toEqual(['Bancos', 'Contabilidad']); // Nóminas vacío → no se crea
+    expect(registradas.find((v) => v.sistema === 'Contabilidad')?.linkCartaTecnica).toBe('https://ct/cont');
+  });
+
+  it('reporte de desactualizadas: pantalla, Excel y filtro por empresa', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    await t.versionRepo.save(
+      new (await import('../../src/core/entities/VersionSistema.js')).VersionSistema({
+        id: 'v1', sistema: 'Contabilidad', versionActual: '19.1.0',
+      }),
+    );
+    await t.empresaRepo.save(
+      new (await import('../../src/core/entities/Empresa.js')).Empresa({
+        id: 'e1', nombre: 'Rezagada SA', sistemasContratados: ['Contabilidad'],
+        versionesInstaladas: { Contabilidad: '17.0.0' },
+      }),
+    );
+    const { agent } = await login(t.app, ADMIN.email, ADMIN.password);
+
+    const rep = await agent.get('/app/versiones/reporte');
+    expect(rep.status).toBe(200);
+    expect(rep.text).toContain('Rezagada SA');
+    expect(rep.text).toContain('17.0.0');
+
+    const xlsx = await agent.get('/app/versiones/reporte.xlsx');
+    expect(xlsx.status).toBe(200);
+    expect(xlsx.headers['content-disposition']).toContain('desactualizadas-');
+
+    // filtro a otra empresa → la fila de Rezagada (su versión 17.0.0) ya no sale
+    // ("Rezagada SA" seguiría en el <select> de empresas, por eso comparamos la versión)
+    const vacio = await agent.get('/app/versiones/reporte?empresa=otra');
+    expect(vacio.text).not.toContain('17.0.0');
+    expect(vacio.text).toContain('Ninguna empresa con sistemas o licencias desactualizadas');
+  });
 });
 
 describe('base de conocimiento — visibilidad', () => {

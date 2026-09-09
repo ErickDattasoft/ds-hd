@@ -4,12 +4,14 @@
   <div class="page-head">
     <h1>Versiones de sistemas</h1>
     <div class="page-head__actions">
+      <a class="btn btn--sm btn--secondary" href="/app/versiones/reporte">Reporte de desactualizadas</a>
+      {% if can('versiones:editar') %}<a class="btn btn--sm btn--secondary" href="/app/versiones/mercado">Versiones del mercado</a>{% endif %}
       {% if can('versiones:editar') %}<a class="btn btn--sm btn--secondary" href="/app/versiones/avisos">Avisos a empresas</a>{% endif %}
       {% if can('versiones:editar') %}<a class="btn btn--sm" href="/app/versiones/nueva">Nueva versión</a>{% endif %}
     </div>
   </div>
   <table class="data-table">
-    <thead><tr><th>Sistema</th><th>Versión actual</th><th>Liberación</th><th>Descarga</th><th></th></tr></thead>
+    <thead><tr><th>Sistema</th><th>Versión actual</th><th>Liberación</th><th>Descarga</th><th>Carta técnica</th><th></th></tr></thead>
     <tbody>
       {% for v in versiones %}
         <tr>
@@ -17,9 +19,10 @@
           <td><strong>{{ v.versionActual }}</strong></td>
           <td>{{ v.fechaLiberacion or '—' }}</td>
           <td>{% if v.linkDescarga %}<a href="{{ v.linkDescarga }}" rel="noopener">enlace</a>{% else %}—{% endif %}</td>
+          <td>{% if v.linkCartaTecnica %}<a href="{{ v.linkCartaTecnica }}" rel="noopener">carta</a>{% else %}—{% endif %}</td>
           <td>{% if can('versiones:editar') %}<a href="/app/versiones/{{ v.id }}/editar">Editar</a>{% endif %}</td>
         </tr>
-      {% else %}<tr><td colspan="5" class="muted">Sin versiones registradas.</td></tr>{% endfor %}
+      {% else %}<tr><td colspan="6" class="muted">Sin versiones registradas.</td></tr>{% endfor %}
     </tbody>
   </table>
 {% endblock %}

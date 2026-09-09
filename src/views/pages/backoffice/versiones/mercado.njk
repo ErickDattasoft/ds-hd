@@ -1,0 +1,38 @@
+{% extends "layouts/backoffice.njk" %}
+{% block title %}Versiones del mercado{% endblock %}
+{% block content %}
+  <div class="page-head">
+    <h1>Versiones del mercado</h1>
+    <div class="page-head__actions">
+      <a class="btn btn--sm btn--ghost" href="/app/versiones">Volver</a>
+    </div>
+  </div>
+  {% if guardado %}<p class="alert alert--ok">Versiones guardadas.</p>{% endif %}
+  <p class="muted">Una fila por sistema del catálogo. Deja la versión vacía para no registrar ese sistema.</p>
+
+  <form method="post" action="/app/versiones/mercado" class="form form--wide">
+    <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+    <table class="data-table">
+      <thead><tr><th>Sistema</th><th>Versión oficial</th><th>Liberación</th><th>Link descarga</th><th>Link carta técnica</th></tr></thead>
+      <tbody>
+        {% for f in filas %}
+          <tr>
+            <td>
+              <input type="hidden" name="sistema" value="{{ f.sistema }}" />
+              {{ f.sistema }}
+            </td>
+            <td><input name="versionActual" value="{{ f.versionActual }}" style="width:9rem" /></td>
+            <td><input type="date" name="fechaLiberacion" value="{{ f.fechaLiberacion }}" /></td>
+            <td><input name="linkDescarga" value="{{ f.linkDescarga }}" style="width:100%" placeholder="https://…" /></td>
+            <td><input name="linkCartaTecnica" value="{{ f.linkCartaTecnica }}" style="width:100%" placeholder="https://…" /></td>
+          </tr>
+        {% else %}
+          <tr><td colspan="5" class="muted">No hay sistemas en el catálogo. Agrégalos en Configuración → Tickets.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <div class="page-head__actions">
+      <button class="btn" type="submit">Guardar todo</button>
+    </div>
+  </form>
+{% endblock %}

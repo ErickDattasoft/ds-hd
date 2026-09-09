@@ -10,11 +10,12 @@
     <label class="field"><span>Versión actual</span><input name="versionActual" value="{{ valores.versionActual }}" required />
       {% if errores.versionActual %}<em class="field__error">{{ errores.versionActual }}</em>{% endif %}</label>
 
-    <details class="disclosure"{{ ' open' if valores.fechaLiberacion or valores.linkDescarga or valores.notasVersion }}>
+    <details class="disclosure"{{ ' open' if valores.fechaLiberacion or valores.linkDescarga or valores.linkCartaTecnica or valores.notasVersion }}>
       <summary class="disclosure__summary">Detalles de la versión</summary>
       <div class="disclosure__body form">
         <label class="field"><span>Fecha de liberación</span><input type="date" name="fechaLiberacion" value="{{ valores.fechaLiberacion }}" /></label>
         <label class="field"><span>Link de descarga</span><input name="linkDescarga" value="{{ valores.linkDescarga }}" /></label>
+        <label class="field"><span>Link carta técnica</span><input name="linkCartaTecnica" value="{{ valores.linkCartaTecnica }}" placeholder="https://…" /></label>
         <label class="field"><span>Notas de versión</span><textarea name="notasVersion" rows="4">{{ valores.notasVersion }}</textarea></label>
       </div>
     </details>

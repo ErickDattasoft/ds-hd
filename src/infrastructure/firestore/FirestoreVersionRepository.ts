@@ -13,6 +13,7 @@ const toDomain = (id: string, d: DocumentData): VersionSistema =>
     fechaLiberacion: d.fechaLiberacion ?? null,
     notasVersion: d.notasVersion ?? null,
     linkDescarga: d.linkDescarga ?? null,
+    linkCartaTecnica: d.linkCartaTecnica ?? null,
     updatedAt: d.updatedAt instanceof Timestamp ? d.updatedAt.toDate() : new Date(),
     actualizadoPorUid: d.actualizadoPorUid ?? null,
   });
@@ -40,6 +41,7 @@ export class FirestoreVersionRepository implements IVersionRepository {
         fechaLiberacion: v.fechaLiberacion,
         notasVersion: v.notasVersion,
         linkDescarga: v.linkDescarga,
+        linkCartaTecnica: v.linkCartaTecnica,
         updatedAt: Timestamp.fromDate(v.updatedAt),
         actualizadoPorUid: v.actualizadoPorUid,
       },

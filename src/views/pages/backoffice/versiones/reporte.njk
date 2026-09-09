@@ -1,0 +1,65 @@
+{% extends "layouts/backoffice.njk" %}
+{% block title %}Reporte de desactualizadas{% endblock %}
+{% block content %}
+  <div class="page-head">
+    <h1>Versiones y licencias desactualizadas</h1>
+    <div class="page-head__actions">
+      <a class="btn btn--sm btn--ghost" href="/app/versiones">Volver</a>
+      <a class="btn btn--sm btn--secondary" href="/app/versiones/reporte/imprimir?auto=1{% if empresaId %}&empresa={{ empresaId }}{% endif %}" target="_blank" rel="noopener">Imprimir</a>
+      <a class="btn btn--sm btn--secondary" href="/app/versiones/reporte.xlsx{% if empresaId %}?empresa={{ empresaId }}{% endif %}">Exportar Excel</a>
+    </div>
+  </div>
+
+  {% if aviso %}<div class="alert alert--ok" role="status">{{ aviso }}</div>{% endif %}
+
+  <form method="get" action="/app/versiones/reporte" class="filterbar">
+    <label class="field"><span>Empresa</span>
+      <select name="empresa">
+        <option value="">— todas —</option>
+        {% for e in empresas %}<option value="{{ e.id }}" {{ 'selected' if empresaId == e.id }}>{{ e.nombre }}</option>{% endfor %}
+      </select>
+    </label>
+    <button class="btn btn--sm" type="submit">Filtrar</button>
+  </form>
+
+  <table class="data-table">
+    <thead>
+      <tr><th>Empresa</th><th>RFC</th><th>Contacto</th><th>Correo</th><th>Teléfono</th><th>Sistemas desactualizados</th><th>Licencias</th></tr>
+    </thead>
+    <tbody>
+      {% for f in filas %}
+        <tr>
+          <td><a href="/app/empresas/{{ f.empresaId }}">{{ f.empresa }}</a></td>
+          <td>{{ f.rfc or '—' }}</td>
+          <td>{{ f.contacto or '—' }}</td>
+          <td>{{ f.correo or '—' }}</td>
+          <td>{{ f.telefono or '—' }}</td>
+          <td>
+            {% for s in f.sistemasDesactualizados %}
+              <div>{{ s.sistema }}: {{ s.instalada }} → <strong>{{ s.oficial }}</strong>{% if s.cartaTecnica %} · <a href="{{ s.cartaTecnica }}" rel="noopener">carta técnica</a>{% endif %}</div>
+            {% else %}—{% endfor %}
+          </td>
+          <td>
+            {% for l in f.licencias %}
+              <div>{{ l.sistema }}: <span class="badge {{ 'badge--danger' if l.estado == 'vencida' }}">{{ 'vencida' if l.estado == 'vencida' else 'por vencer' }}</span> ({{ l.fecha }})</div>
+            {% else %}—{% endfor %}
+          </td>
+        </tr>
+      {% else %}
+        <tr><td colspan="7" class="muted">Ninguna empresa con sistemas o licencias desactualizadas. 🎉</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  {% if filas | length and can('versiones:editar') %}
+    <form method="post" action="/app/versiones/reporte/enviar" class="form form--wide" data-confirm="¿Enviar el reporte por correo?">
+      <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+      <input type="hidden" name="empresa" value="{{ empresaId }}" />
+      <label class="field"><span>Enviar por correo a</span>
+        <input name="destinatarios" placeholder="correo@ejemplo.mx, otro@ejemplo.mx" required />
+        {% if errores.destinatarios %}<em class="field__error">{{ errores.destinatarios }}</em>{% endif %}
+      </label>
+      <button class="btn btn--sm btn--secondary" type="submit">Enviar reporte</button>
+    </form>
+  {% endif %}
+{% endblock %}

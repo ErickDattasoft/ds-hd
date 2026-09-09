@@ -62,6 +62,12 @@ Versión vigente de un sistema (CONTPAQi/Compac) que el equipo instala/soporta.
 
 ***
 
+### linkCartaTecnica
+
+> **linkCartaTecnica**: `string` \| `null`
+
+***
+
 ### updatedAt
 
 > **updatedAt**: `Date`

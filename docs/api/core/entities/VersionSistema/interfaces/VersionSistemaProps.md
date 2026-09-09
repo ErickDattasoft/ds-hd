@@ -46,6 +46,14 @@ Props para construir una [VersionSistema](../classes/VersionSistema.md).
 
 ***
 
+### linkCartaTecnica?
+
+> `optional` **linkCartaTecnica?**: `string` \| `null`
+
+Enlace a la carta técnica oficial del sistema.
+
+***
+
 ### updatedAt?
 
 > `optional` **updatedAt?**: `Date`

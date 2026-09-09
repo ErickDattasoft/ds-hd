@@ -168,6 +168,12 @@ export function backofficeRoutes(container: Container): Router {
   r.get('/versiones', requirePermission('versiones:leer'), (req, res) => versiones().listar(req, res));
   r.get('/versiones/avisos', requirePermission('versiones:editar'), (req, res) => versiones().avisosView(req, res));
   r.post('/versiones/avisos', requirePermission('versiones:editar'), (req, res) => versiones().avisosPost(req, res));
+  r.get('/versiones/mercado', requirePermission('versiones:editar'), (req, res) => versiones().mercadoView(req, res));
+  r.post('/versiones/mercado', requirePermission('versiones:editar'), (req, res) => versiones().mercadoPost(req, res));
+  r.get('/versiones/reporte', requirePermission('versiones:leer'), (req, res) => versiones().reporteView(req, res));
+  r.get('/versiones/reporte.xlsx', requirePermission('versiones:leer'), (req, res) => versiones().reporteExcel(req, res));
+  r.get('/versiones/reporte/imprimir', requirePermission('versiones:leer'), (req, res) => versiones().reporteImprimir(req, res));
+  r.post('/versiones/reporte/enviar', requirePermission('versiones:editar'), (req, res) => versiones().reporteEnviarPost(req, res));
   r.get('/versiones/nueva', requirePermission('versiones:editar'), (req, res) => versiones().nuevo(req, res));
   r.post('/versiones', requirePermission('versiones:editar'), (req, res) => versiones().guardarPost(req, res));
   r.get('/versiones/:id/editar', requirePermission('versiones:editar'), (req, res) => versiones().editar(req, res));

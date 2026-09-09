@@ -2,11 +2,11 @@
 
 ***
 
-[ds-hd](../../../../README.md) / [application/versiones/VersionService](../README.md) / DatosVersion
+[ds-hd](../../../../README.md) / [application/versiones/VersionService](../README.md) / FilaMercado
 
-# Interface: DatosVersion
+# Interface: FilaMercado
 
-Datos editables de una versión de sistema (alta o edición).
+Una fila del grid "versiones del mercado" (edición masiva).
 
 ## Properties
 
@@ -25,12 +25,6 @@ Datos editables de una versión de sistema (alta o edición).
 ### fechaLiberacion?
 
 > `optional` **fechaLiberacion?**: `string`
-
-***
-
-### notasVersion?
-
-> `optional` **notasVersion?**: `string`
 
 ***
 

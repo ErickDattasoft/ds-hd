@@ -81,6 +81,7 @@ import { ContactoService } from '../application/contactos/ContactoService.js';
 import { ContactoExcelService } from '../application/contactos/ContactoExcelService.js';
 import { TicketExcelService } from '../application/tickets/TicketExcelService.js';
 import { VersionService } from '../application/versiones/VersionService.js';
+import { ReporteVersionesService } from '../application/versiones/ReporteVersionesService.js';
 import { KnowledgeService } from '../application/knowledge/KnowledgeService.js';
 import { CotizacionService } from '../application/cotizaciones/CotizacionService.js';
 import { CalculadoraCompacService } from '../application/cotizaciones/CalculadoraCompacService.js';
@@ -236,6 +237,7 @@ export interface Cradle {
   contactoExcelService: ContactoExcelService;
   ticketExcelService: TicketExcelService;
   versionService: VersionService;
+  reporteVersionesService: ReporteVersionesService;
   knowledgeService: KnowledgeService;
   cotizacionService: CotizacionService;
   calculadoraCompacService: CalculadoraCompacService;
@@ -706,6 +708,18 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
     versionService: asFunction(
       (c: Cradle) => new VersionService(c.versionRepo, c.idGenerator, c.clock, c.bitacoraService),
     ).singleton(),
+    reporteVersionesService: asFunction(
+      (c: Cradle) =>
+        new ReporteVersionesService(
+          c.empresaRepo,
+          c.contactoRepo,
+          c.versionRepo,
+          c.excelIO,
+          c.emailSender,
+          c.bitacoraService,
+          c.clock,
+        ),
+    ).singleton(),
     knowledgeService: asFunction(
       (c: Cradle) => new KnowledgeService(c.knowledgeRepo, c.idGenerator, c.clock, c.bitacoraService),
     ).singleton(),
@@ -880,7 +894,13 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
       (c: Cradle) => new BitacoraController(c.bitacoraService, c.usuarioRepo, c.clock),
     ).singleton(),
     versionController: asFunction(
-      (c: Cradle) => new VersionController(c.versionService, c.configuracionRepo),
+      (c: Cradle) =>
+        new VersionController(
+          c.versionService,
+          c.configuracionRepo,
+          c.reporteVersionesService,
+          c.empresaService,
+        ),
     ).singleton(),
     knowledgeController: asFunction(
       (c: Cradle) => new KnowledgeController(c.knowledgeService),

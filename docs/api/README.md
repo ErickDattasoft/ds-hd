@@ -61,6 +61,7 @@
 - [application/usuarios/ActualizarUsuarioService](application/usuarios/ActualizarUsuarioService/README.md)
 - [application/usuarios/CrearUsuarioService](application/usuarios/CrearUsuarioService/README.md)
 - [application/usuarios/InvitarClienteService](application/usuarios/InvitarClienteService/README.md)
+- [application/versiones/ReporteVersionesService](application/versiones/ReporteVersionesService/README.md)
 - [application/versiones/VersionService](application/versiones/VersionService/README.md)
 - [core/entities/AcercaDe](core/entities/AcercaDe/README.md)
 - [core/entities/AdjuntoTicket](core/entities/AdjuntoTicket/README.md)

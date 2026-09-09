@@ -88,6 +88,47 @@ Catálogo de versiones vigentes de sistemas.
 
 ***
 
+### gridMercado()
+
+> **gridMercado**(`sistemasCatalogo`): `Promise`\<[`FilaMercado`](../interfaces/FilaMercado.md) & `object`[]\>
+
+Grid "versiones del mercado": combina el catálogo de sistemas con las versiones ya
+registradas para que se editen todas juntas. Devuelve una fila por sistema conocido.
+
+#### Parameters
+
+##### sistemasCatalogo
+
+`string`[]
+
+#### Returns
+
+`Promise`\<[`FilaMercado`](../interfaces/FilaMercado.md) & `object`[]\>
+
+***
+
+### guardarMercado()
+
+> **guardarMercado**(`actor`, `filas`): `Promise`\<`number`\>
+
+Guarda de una sola vez el grid "versiones del mercado" (upsert por nombre de sistema).
+
+#### Parameters
+
+##### actor
+
+[`SessionUser`](../../../shared/SessionUser/interfaces/SessionUser.md)
+
+##### filas
+
+[`FilaMercado`](../interfaces/FilaMercado.md)[]
+
+#### Returns
+
+`Promise`\<`number`\>
+
+***
+
 ### eliminar()
 
 > **eliminar**(`actor`, `id`): `Promise`\<`void`\>

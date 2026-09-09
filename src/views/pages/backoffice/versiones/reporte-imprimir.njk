@@ -1,0 +1,51 @@
+{% extends "layouts/base.njk" %}
+{% block title %}Reporte de desactualizadas{% endblock %}
+
+{% block head %}
+<style>
+  .doc { max-width: 1000px; margin: 2rem auto; padding: 0 1rem; }
+  .doc__brand { font-size: 1.3rem; font-weight: 700; }
+  .doc table { width: 100%; border-collapse: collapse; margin: 1.25rem 0; font-size: 0.85rem; }
+  .doc th, .doc td { border: 1px solid var(--color-border); padding: 0.4rem 0.55rem; text-align: left; vertical-align: top; }
+  .doc__actions { margin: 1.5rem auto; max-width: 1000px; padding: 0 1rem; }
+  @media print {
+    .doc__actions, .skip-link { display: none !important; }
+    .doc { margin: 0; }
+    a[href]::after { content: none !important; }
+  }
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="doc__actions">
+  <button type="button" class="btn btn--sm" data-print>Imprimir / Guardar como PDF</button>
+  <a class="btn btn--sm btn--ghost" href="/app/versiones/reporte">Volver</a>
+</div>
+{% if auto %}<span data-print-auto hidden></span>{% endif %}
+
+<article class="doc" id="contenido">
+  <div class="doc__brand">DATTASOFT</div>
+  <p class="muted">Reporte de versiones y licencias desactualizadas · {{ filas | length }} empresa(s)</p>
+
+  <table>
+    <thead>
+      <tr><th>Empresa</th><th>RFC</th><th>Contacto</th><th>Correo</th><th>Teléfono</th><th>Sistemas desactualizados</th><th>Licencias</th></tr>
+    </thead>
+    <tbody>
+      {% for f in filas %}
+        <tr>
+          <td>{{ f.empresa }}</td>
+          <td>{{ f.rfc or '—' }}</td>
+          <td>{{ f.contacto or '—' }}</td>
+          <td>{{ f.correo or '—' }}</td>
+          <td>{{ f.telefono or '—' }}</td>
+          <td>{% for s in f.sistemasDesactualizados %}{{ s.sistema }}: {{ s.instalada }} → {{ s.oficial }}<br>{% else %}—{% endfor %}</td>
+          <td>{% for l in f.licencias %}{{ l.sistema }}: {{ 'vencida' if l.estado == 'vencida' else 'por vencer' }} ({{ l.fecha }})<br>{% else %}—{% endfor %}</td>
+        </tr>
+      {% else %}
+        <tr><td colspan="7">Ninguna empresa con pendientes.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</article>
+{% endblock %}
