@@ -115,8 +115,8 @@ Leyenda: ✅ existe · ◐ parcial · ❌ falta · ➖ no aplica (decisión de d
 | Viejo | ds-hd | Acción |
 |---|---|---|
 | Alta: empresa / conceptos / vigencia / notas | ✅ | — |
-| **Datos generales: contacto, RFC, teléfono, "quien cotiza"** | ❌ | agregar campos |
-| **Condiciones / términos por defecto** (config) | ❌ | agregar a config + al form |
+| **Datos generales: contacto, RFC, teléfono, "quien cotiza"** | ✅ | — |
+| **Condiciones / términos por defecto** (config) | ✅ (`configuracion/cotizaciones`) | — |
 | Concepto: cant / precio unit / descuento % | ✅ | — |
 | Subtotal / IVA 16% / Total | ✅ | — |
 | Calculadora Compac → enviar al cotizador | ✅ | — |
@@ -208,7 +208,7 @@ cruzado. **Revisar**: "Ordenar" (por fecha) en la lista, ícono del evento.
 | **📊 "Enviar resumen ahora"** (resumen diario por correo) | ❌ | evaluar — agregar job + botón |
 | Contactos de soporte (Licencias / Versiones) | ✅ (dentro de avisos) | — |
 | Calculadora Compac — precios | ◐ | ver punto 8 |
-| Cotizaciones — datos generales por defecto | ❌ | ver punto 7 |
+| Cotizaciones — datos generales / condiciones por defecto | ✅ (`/app/configuracion/cotizaciones`) | — |
 
 ## 15. Bitácora (`/app/bitacora`)
 
@@ -248,8 +248,12 @@ contraseña. ds-hd nace con cuentas reales de Firebase Auth por invitación.
    desde el alta de contacto, licencias/versiones por sistema también al crear
    (tabla JS desde el textarea), enlace WhatsApp (wa.me) por contacto en el
    detalle de empresa, campos extra libres (`Empresa.camposExtra`).
-3. **Cotizaciones**: datos generales (contacto/RFC/tel/quien cotiza) + condiciones
-   por defecto.
+3. ✅ **HECHO** — **Cotizaciones**: datos generales — emisor (nombre/cargo/tel/
+   correo, "quien cotiza", precargado del usuario) + receptor (RFC heredado de la
+   empresa, contacto/correo/tel); campo `condiciones`/términos aparte de `notas`,
+   precargado de `configuracion/cotizaciones` (`ConfiguracionCotizaciones`,
+   editable en `/app/configuracion/cotizaciones`). Todo visible en el detalle, el
+   PDF y el correo. Backup exporta/restaura la nueva sección de config.
 4. **Versiones**: grid "versiones del mercado", reporte de desactualizadas
    (export/print/enviar), link carta técnica, filtro por empresa.
 5. **KB**: tipos de archivo / scripts / carpeta destino / subida batch / export /

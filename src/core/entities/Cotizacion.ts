@@ -11,8 +11,22 @@ export interface ConceptoCotizacion {
   importe: number;
 }
 
+/** Datos del emisor (quien cotiza) y del receptor (empresa/contacto) de una cotización. */
+export interface DatosGeneralesCotizacion {
+  /** Emisor — quien elabora la cotización. */
+  emisorNombre?: string | null;
+  emisorCargo?: string | null;
+  emisorTelefono?: string | null;
+  emisorCorreo?: string | null;
+  /** Receptor — datos fiscales/de contacto de la empresa. */
+  rfc?: string | null;
+  contactoNombre?: string | null;
+  contactoCorreo?: string | null;
+  contactoTelefono?: string | null;
+}
+
 /** Props para construir una {@link Cotizacion}. */
-export interface CotizacionProps {
+export interface CotizacionProps extends DatosGeneralesCotizacion {
   id: string;
   folio: string;
   empresaId: string;
@@ -25,6 +39,8 @@ export interface CotizacionProps {
   ivaTasa?: number;
   conceptos?: ConceptoCotizacion[];
   notas?: string | null;
+  /** Condiciones / términos comerciales (forma de pago, tiempos de entrega…). */
+  condiciones?: string | null;
   origenCalculadora?: boolean;
   parametrosCompac?: Record<string, unknown> | null;
   creadoPorUid?: string | null;
@@ -54,6 +70,15 @@ export class Cotizacion {
   ivaTasa: number;
   conceptos: ConceptoCotizacion[];
   notas: string | null;
+  condiciones: string | null;
+  emisorNombre: string | null;
+  emisorCargo: string | null;
+  emisorTelefono: string | null;
+  emisorCorreo: string | null;
+  rfc: string | null;
+  contactoNombre: string | null;
+  contactoCorreo: string | null;
+  contactoTelefono: string | null;
   origenCalculadora: boolean;
   parametrosCompac: Record<string, unknown> | null;
   readonly creadoPorUid: string | null;
@@ -78,6 +103,15 @@ export class Cotizacion {
       importe: Math.round(c.cantidad * c.precioUnitario * 100) / 100,
     }));
     this.notas = props.notas ?? null;
+    this.condiciones = props.condiciones ?? null;
+    this.emisorNombre = props.emisorNombre ?? null;
+    this.emisorCargo = props.emisorCargo ?? null;
+    this.emisorTelefono = props.emisorTelefono ?? null;
+    this.emisorCorreo = props.emisorCorreo ?? null;
+    this.rfc = props.rfc ?? null;
+    this.contactoNombre = props.contactoNombre ?? null;
+    this.contactoCorreo = props.contactoCorreo ?? null;
+    this.contactoTelefono = props.contactoTelefono ?? null;
     this.origenCalculadora = props.origenCalculadora ?? false;
     this.parametrosCompac = props.parametrosCompac ?? null;
     this.creadoPorUid = props.creadoPorUid ?? null;
@@ -116,6 +150,28 @@ export class Cotizacion {
       precioUnitario: c.precioUnitario,
       importe: Math.round(c.cantidad * c.precioUnitario * 100) / 100,
     }));
+    this.updatedAt = ahora;
+  }
+
+  /** Actualiza los datos generales (emisor / receptor) y las condiciones comerciales. */
+  actualizarDatosGenerales(
+    datos: DatosGeneralesCotizacion,
+    condiciones: string | null | undefined,
+    ahora: Date,
+  ): void {
+    const limpiar = (v: string | null | undefined): string | null => {
+      const t = (v ?? '').trim();
+      return t.length ? t : null;
+    };
+    this.emisorNombre = limpiar(datos.emisorNombre);
+    this.emisorCargo = limpiar(datos.emisorCargo);
+    this.emisorTelefono = limpiar(datos.emisorTelefono);
+    this.emisorCorreo = limpiar(datos.emisorCorreo);
+    this.rfc = limpiar(datos.rfc);
+    this.contactoNombre = limpiar(datos.contactoNombre);
+    this.contactoCorreo = limpiar(datos.contactoCorreo);
+    this.contactoTelefono = limpiar(datos.contactoTelefono);
+    if (condiciones !== undefined) this.condiciones = limpiar(condiciones);
     this.updatedAt = ahora;
   }
 }

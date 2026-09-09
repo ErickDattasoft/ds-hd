@@ -244,6 +244,12 @@ export function backofficeRoutes(container: Container): Router {
   r.post('/configuracion/tickets', requirePermission('configuracion:catalogos'), (req, res) =>
     configuracion().ticketsPost(req, res),
   );
+  r.get('/configuracion/cotizaciones', requirePermission('configuracion:catalogos'), (req, res) =>
+    configuracion().cotizacionesView(req, res),
+  );
+  r.post('/configuracion/cotizaciones', requirePermission('configuracion:catalogos'), (req, res) =>
+    configuracion().cotizacionesPost(req, res),
+  );
   r.get('/configuracion/integraciones', requirePermission('configuracion:integraciones'), (req, res) =>
     configuracion().integracionesView(req, res),
   );

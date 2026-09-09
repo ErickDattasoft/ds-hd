@@ -98,6 +98,60 @@ Cotización comercial con folio consecutivo, conceptos e importes.
 
 ***
 
+### condiciones
+
+> **condiciones**: `string` \| `null`
+
+***
+
+### emisorNombre
+
+> **emisorNombre**: `string` \| `null`
+
+***
+
+### emisorCargo
+
+> **emisorCargo**: `string` \| `null`
+
+***
+
+### emisorTelefono
+
+> **emisorTelefono**: `string` \| `null`
+
+***
+
+### emisorCorreo
+
+> **emisorCorreo**: `string` \| `null`
+
+***
+
+### rfc
+
+> **rfc**: `string` \| `null`
+
+***
+
+### contactoNombre
+
+> **contactoNombre**: `string` \| `null`
+
+***
+
+### contactoCorreo
+
+> **contactoCorreo**: `string` \| `null`
+
+***
+
+### contactoTelefono
+
+> **contactoTelefono**: `string` \| `null`
+
+***
+
 ### origenCalculadora
 
 > **origenCalculadora**: `boolean`
@@ -205,6 +259,32 @@ Cotización comercial con folio consecutivo, conceptos e importes.
 ##### conceptos
 
 [`ConceptoCotizacion`](../interfaces/ConceptoCotizacion.md)[]
+
+##### ahora
+
+`Date`
+
+#### Returns
+
+`void`
+
+***
+
+### actualizarDatosGenerales()
+
+> **actualizarDatosGenerales**(`datos`, `condiciones`, `ahora`): `void`
+
+Actualiza los datos generales (emisor / receptor) y las condiciones comerciales.
+
+#### Parameters
+
+##### datos
+
+[`DatosGeneralesCotizacion`](../interfaces/DatosGeneralesCotizacion.md)
+
+##### condiciones
+
+`string` \| `null` \| `undefined`
 
 ##### ahora
 

@@ -13,6 +13,7 @@
 ## Interfaces
 
 - [ConceptoCotizacion](interfaces/ConceptoCotizacion.md)
+- [DatosGeneralesCotizacion](interfaces/DatosGeneralesCotizacion.md)
 - [CotizacionProps](interfaces/CotizacionProps.md)
 
 ## Type Aliases

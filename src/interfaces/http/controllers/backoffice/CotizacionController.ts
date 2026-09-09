@@ -42,13 +42,35 @@ export class CotizacionController {
 
   nuevo = async (req: Request, res: Response): Promise<void> => {
     const empresas = await this.empresas.listar({ activa: true });
+    const cfg = await this.cotizaciones.configModulo();
     res.render('pages/backoffice/cotizaciones/form', {
       titulo: 'Nueva cotización',
       empresas,
-      valores: { empresaId: str(req.query.empresa), conceptos: this.conceptosDesdeQuery(req) },
+      valores: {
+        empresaId: str(req.query.empresa),
+        conceptos: this.conceptosDesdeQuery(req),
+        condiciones: cfg.condicionesPorDefecto,
+        emisorNombre: req.user!.nombre,
+        emisorCargo: cfg.emisorCargoPorDefecto,
+        emisorTelefono: cfg.emisorTelefonoPorDefecto,
+        emisorCorreo: req.user!.email,
+      },
       errores: {},
     });
   };
+
+  private datosGeneralesDeBody(b: Record<string, unknown>): Record<string, string> {
+    return {
+      emisorNombre: str(b.emisorNombre),
+      emisorCargo: str(b.emisorCargo),
+      emisorTelefono: str(b.emisorTelefono),
+      emisorCorreo: str(b.emisorCorreo),
+      rfc: str(b.rfc),
+      contactoNombre: str(b.contactoNombre),
+      contactoCorreo: str(b.contactoCorreo),
+      contactoTelefono: str(b.contactoTelefono),
+    };
+  }
 
   crearPost = async (req: Request, res: Response): Promise<void> => {
     const b = req.body ?? {};
@@ -57,8 +79,10 @@ export class CotizacionController {
         empresaId: str(b.empresaId),
         vigenciaDias: num(b.vigenciaDias) || 15,
         notas: str(b.notas),
+        condiciones: str(b.condiciones),
         conceptos: this.conceptosDeBody(b),
         origenCalculadora: b.origenCalculadora === 'true',
+        ...this.datosGeneralesDeBody(b),
       });
       res.redirect(`/app/cotizaciones/${cot.id}`);
     } catch (err) {
@@ -88,7 +112,12 @@ export class CotizacionController {
     const id = str(req.params.id);
     const b = req.body ?? {};
     try {
-      await this.cotizaciones.actualizarConceptos(req.user!, id, this.conceptosDeBody(b), str(b.notas));
+      await this.cotizaciones.actualizarConceptos(req.user!, id, {
+        conceptos: this.conceptosDeBody(b),
+        notas: str(b.notas),
+        condiciones: str(b.condiciones),
+        ...this.datosGeneralesDeBody(b),
+      });
       res.redirect(`/app/cotizaciones/${id}`);
     } catch (err) {
       const cotizacion = await this.cotizaciones.obtener(id).catch(() => null);

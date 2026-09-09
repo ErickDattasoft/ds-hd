@@ -6,7 +6,14 @@ import type { IClock } from '../../core/ports/services/IClock.js';
 import type { IIdGenerator } from '../../core/ports/services/IIdGenerator.js';
 import type { IWebhookPublisher } from '../../core/ports/services/IWebhookPublisher.js';
 import type { IEmailSender } from '../../core/ports/services/IEmailSender.js';
-import { Cotizacion, type ConceptoCotizacion, type EstadoCotizacion } from '../../core/entities/Cotizacion.js';
+import type { IConfiguracionRepository } from '../../core/ports/repositories/IConfiguracionRepository.js';
+import type { ConfiguracionCotizaciones } from '../../core/entities/ConfiguracionCotizaciones.js';
+import {
+  Cotizacion,
+  type ConceptoCotizacion,
+  type DatosGeneralesCotizacion,
+  type EstadoCotizacion,
+} from '../../core/entities/Cotizacion.js';
 import { ForbiddenError, NotFoundError, ValidationError } from '../../core/errors/DomainError.js';
 import type { CrearTicketService } from '../tickets/CrearTicketService.js';
 import type { BitacoraService } from '../shared/BitacoraService.js';
@@ -14,14 +21,22 @@ import type { SessionUser } from '../shared/SessionUser.js';
 import type { Ticket } from '../../core/entities/Ticket.js';
 
 /** Datos para crear una cotización (folio y montos se calculan en el servicio). */
-export interface DatosCotizacion {
+export interface DatosCotizacion extends DatosGeneralesCotizacion {
   empresaId: string;
   contactoId?: string;
   vigenciaDias?: number;
   notas?: string;
+  condiciones?: string;
   conceptos: ConceptoCotizacion[];
   origenCalculadora?: boolean;
   parametrosCompac?: Record<string, unknown> | null;
+}
+
+/** Cambios a los datos generales / condiciones de una cotización existente. */
+export interface EdicionCotizacion extends DatosGeneralesCotizacion {
+  conceptos: ConceptoCotizacion[];
+  notas?: string;
+  condiciones?: string;
 }
 
 /** Gestión de cotizaciones: folio consecutivo, conceptos, ciclo de estado. */
@@ -37,8 +52,14 @@ export class CotizacionService {
     private readonly contactos: IContactoRepository,
     private readonly email: IEmailSender,
     private readonly crearTicket: CrearTicketService,
+    private readonly configuracion: IConfiguracionRepository,
     private readonly baseUrl: string,
   ) {}
+
+  /** Config del módulo (condiciones y datos de emisor por defecto). */
+  configModulo(): Promise<ConfiguracionCotizaciones> {
+    return this.configuracion.obtenerCotizaciones();
+  }
 
   listar(filtro?: ListarCotizacionesFiltro): Promise<Cotizacion[]> {
     return this.repo.list(filtro);
@@ -66,6 +87,12 @@ export class CotizacionService {
     const num = await this.contadores.siguiente(`cotizaciones-${ahora.getFullYear()}`);
     const folio = `COT-${ahora.getFullYear()}-${String(num).padStart(4, '0')}`;
 
+    const cfg = await this.configuracion.obtenerCotizaciones();
+    const oNull = (v: string | null | undefined): string | null => {
+      const t = (v ?? '').trim();
+      return t.length ? t : null;
+    };
+
     const cotizacion = new Cotizacion({
       id: this.ids.newId(),
       folio,
@@ -76,6 +103,15 @@ export class CotizacionService {
       vigenciaDias: datos.vigenciaDias ?? 15,
       conceptos: datos.conceptos,
       notas: datos.notas ?? null,
+      condiciones: oNull(datos.condiciones) ?? cfg.condicionesPorDefecto,
+      emisorNombre: oNull(datos.emisorNombre) ?? oNull(actor.nombre),
+      emisorCargo: oNull(datos.emisorCargo) ?? oNull(cfg.emisorCargoPorDefecto),
+      emisorTelefono: oNull(datos.emisorTelefono) ?? oNull(cfg.emisorTelefonoPorDefecto),
+      emisorCorreo: oNull(datos.emisorCorreo) ?? oNull(actor.email),
+      rfc: oNull(datos.rfc) ?? oNull(empresa.rfc),
+      contactoNombre: oNull(datos.contactoNombre),
+      contactoCorreo: oNull(datos.contactoCorreo),
+      contactoTelefono: oNull(datos.contactoTelefono),
       origenCalculadora: datos.origenCalculadora ?? false,
       parametrosCompac: datos.parametrosCompac ?? null,
       creadoPorUid: actor.uid,
@@ -98,16 +134,13 @@ export class CotizacionService {
     return cotizacion;
   }
 
-  async actualizarConceptos(
-    actor: SessionUser,
-    id: string,
-    conceptos: ConceptoCotizacion[],
-    notas?: string,
-  ): Promise<Cotizacion> {
+  async actualizarConceptos(actor: SessionUser, id: string, cambios: EdicionCotizacion): Promise<Cotizacion> {
     this.assertPuedeEditar(actor);
     const cotizacion = await this.obtener(id);
-    cotizacion.reemplazarConceptos(conceptos, this.clock.now());
-    if (notas !== undefined) cotizacion.notas = notas.trim() || null;
+    const ahora = this.clock.now();
+    cotizacion.reemplazarConceptos(cambios.conceptos, ahora);
+    if (cambios.notas !== undefined) cotizacion.notas = cambios.notas.trim() || null;
+    cotizacion.actualizarDatosGenerales(cambios, cambios.condiciones, ahora);
     await this.repo.save(cotizacion);
     await this.bitacora.registrar({
       actor,
@@ -157,6 +190,10 @@ export class CotizacionService {
 
     let destino = opts.para?.trim().toLowerCase() || '';
     let nombreDestino = '';
+    if (!destino && cotizacion.contactoCorreo) {
+      destino = cotizacion.contactoCorreo.toLowerCase();
+      nombreDestino = cotizacion.contactoNombre ?? '';
+    }
     if (!destino) {
       const contactos = await this.contactos.list({ empresaId: cotizacion.empresaId, activo: true });
       const contacto =
@@ -234,6 +271,12 @@ export class CotizacionService {
           `<td align="right">${this.fmt(x.importe, c.moneda)}</td></tr>`,
       )
       .join('');
+    const emisor = [c.emisorNombre, c.emisorCargo, c.emisorTelefono, c.emisorCorreo]
+      .filter(Boolean)
+      .map((x) => escaparHtml(String(x)))
+      .join(' · ');
+    const parrafo = (rotulo: string, texto: string): string =>
+      `<p><strong>${rotulo}:</strong><br>${escaparHtml(texto).replaceAll('\n', '<br>')}</p>`;
     return `
       <p>Adjuntamos la cotización <strong>${c.folio}</strong>.</p>
       <table border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse">
@@ -245,7 +288,10 @@ export class CotizacionService {
           <tr><td colspan="3" align="right"><strong>Total</strong></td><td align="right"><strong>${this.fmt(c.total, c.moneda)}</strong></td></tr>
         </tfoot>
       </table>
-      <p>Vigencia: ${c.vigenciaDias} días.${c.notas ? `<br>${escaparHtml(c.notas).replaceAll('\n', '<br>')}` : ''}</p>
+      <p>Vigencia: ${c.vigenciaDias} días.</p>
+      ${c.condiciones ? parrafo('Condiciones', c.condiciones) : ''}
+      ${c.notas ? parrafo('Notas', c.notas) : ''}
+      ${emisor ? `<p>Atentamente,<br>${emisor}</p>` : ''}
       <p><a href="${this.baseUrl}/app/cotizaciones/${c.id}/imprimir">Ver / imprimir cotización</a></p>`;
   }
 

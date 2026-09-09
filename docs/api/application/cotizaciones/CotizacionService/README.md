@@ -13,3 +13,4 @@
 ## Interfaces
 
 - [DatosCotizacion](interfaces/DatosCotizacion.md)
+- [EdicionCotizacion](interfaces/EdicionCotizacion.md)

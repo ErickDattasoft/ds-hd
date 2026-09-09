@@ -12,7 +12,7 @@ Gestión de cotizaciones: folio consecutivo, conceptos, ciclo de estado.
 
 ### Constructor
 
-> **new CotizacionService**(`repo`, `contadores`, `empresas`, `ids`, `clock`, `bitacora`, `webhooks`, `contactos`, `email`, `crearTicket`, `baseUrl`): `CotizacionService`
+> **new CotizacionService**(`repo`, `contadores`, `empresas`, `ids`, `clock`, `bitacora`, `webhooks`, `contactos`, `email`, `crearTicket`, `configuracion`, `baseUrl`): `CotizacionService`
 
 #### Parameters
 
@@ -56,6 +56,10 @@ Gestión de cotizaciones: folio consecutivo, conceptos, ciclo de estado.
 
 [`CrearTicketService`](../../../tickets/CrearTicketService/classes/CrearTicketService.md)
 
+##### configuracion
+
+[`IConfiguracionRepository`](../../../../core/ports/repositories/IConfiguracionRepository/interfaces/IConfiguracionRepository.md)
+
 ##### baseUrl
 
 `string`
@@ -65,6 +69,18 @@ Gestión de cotizaciones: folio consecutivo, conceptos, ciclo de estado.
 `CotizacionService`
 
 ## Methods
+
+### configModulo()
+
+> **configModulo**(): `Promise`\<[`ConfiguracionCotizaciones`](../../../../core/entities/ConfiguracionCotizaciones/interfaces/ConfiguracionCotizaciones.md)\>
+
+Config del módulo (condiciones y datos de emisor por defecto).
+
+#### Returns
+
+`Promise`\<[`ConfiguracionCotizaciones`](../../../../core/entities/ConfiguracionCotizaciones/interfaces/ConfiguracionCotizaciones.md)\>
+
+***
 
 ### listar()
 
@@ -120,7 +136,7 @@ Gestión de cotizaciones: folio consecutivo, conceptos, ciclo de estado.
 
 ### actualizarConceptos()
 
-> **actualizarConceptos**(`actor`, `id`, `conceptos`, `notas?`): `Promise`\<[`Cotizacion`](../../../../core/entities/Cotizacion/classes/Cotizacion.md)\>
+> **actualizarConceptos**(`actor`, `id`, `cambios`): `Promise`\<[`Cotizacion`](../../../../core/entities/Cotizacion/classes/Cotizacion.md)\>
 
 #### Parameters
 
@@ -132,13 +148,9 @@ Gestión de cotizaciones: folio consecutivo, conceptos, ciclo de estado.
 
 `string`
 
-##### conceptos
+##### cambios
 
-[`ConceptoCotizacion`](../../../../core/entities/Cotizacion/interfaces/ConceptoCotizacion.md)[]
-
-##### notas?
-
-`string`
+[`EdicionCotizacion`](../interfaces/EdicionCotizacion.md)
 
 #### Returns
 

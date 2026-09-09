@@ -29,6 +29,10 @@ import {
   CONFIG_INTEGRACIONES_POR_DEFECTO,
   type ConfiguracionIntegraciones,
 } from '../../src/core/entities/ConfiguracionIntegraciones.js';
+import {
+  CONFIG_COTIZACIONES_POR_DEFECTO,
+  type ConfiguracionCotizaciones,
+} from '../../src/core/entities/ConfiguracionCotizaciones.js';
 import { ACERCA_DE_POR_DEFECTO, type AcercaDe } from '../../src/core/entities/AcercaDe.js';
 import { esEstadoFinal, slugEstado } from '../../src/core/entities/value-objects/EstadoTicket.js';
 
@@ -187,6 +191,13 @@ export class InMemoryConfiguracionRepository implements IConfiguracionRepository
   }
   async guardarIntegraciones(config: ConfiguracionIntegraciones): Promise<void> {
     this.integraciones = config;
+  }
+  cotizaciones: ConfiguracionCotizaciones = { ...CONFIG_COTIZACIONES_POR_DEFECTO };
+  async obtenerCotizaciones(): Promise<ConfiguracionCotizaciones> {
+    return this.cotizaciones;
+  }
+  async guardarCotizaciones(config: ConfiguracionCotizaciones): Promise<void> {
+    this.cotizaciones = config;
   }
   acercaDe: AcercaDe = { ...ACERCA_DE_POR_DEFECTO };
   async obtenerAcercaDe(): Promise<AcercaDe> {

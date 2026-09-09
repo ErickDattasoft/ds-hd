@@ -12,6 +12,14 @@
   </div>
   <p class="muted">{{ cotizacion.empresaNombre }} · Fecha {{ cotizacion.fecha | fecha }} · Vence {{ cotizacion.venceEl | fecha }}</p>
 
+  {% if cotizacion.emisorNombre or cotizacion.rfc or cotizacion.contactoNombre %}
+    <div class="card">
+      {% if cotizacion.emisorNombre %}<p><strong>Cotiza:</strong> {{ cotizacion.emisorNombre }}{% if cotizacion.emisorCargo %} · {{ cotizacion.emisorCargo }}{% endif %}{% if cotizacion.emisorTelefono %} · {{ cotizacion.emisorTelefono }}{% endif %}{% if cotizacion.emisorCorreo %} · {{ cotizacion.emisorCorreo }}{% endif %}</p>{% endif %}
+      {% if cotizacion.rfc %}<p><strong>RFC:</strong> {{ cotizacion.rfc }}</p>{% endif %}
+      {% if cotizacion.contactoNombre %}<p><strong>Contacto:</strong> {{ cotizacion.contactoNombre }}{% if cotizacion.contactoCorreo %} · {{ cotizacion.contactoCorreo }}{% endif %}{% if cotizacion.contactoTelefono %} · {{ cotizacion.contactoTelefono }}{% endif %}</p>{% endif %}
+    </div>
+  {% endif %}
+
   {% if aviso %}<div class="alert alert--ok" role="status">{{ aviso }}</div>{% endif %}
   {% if errorEnvio %}<div class="alert alert--error" role="alert">{{ errorEnvio }}</div>{% endif %}
 
@@ -29,7 +37,8 @@
     </tfoot>
   </table>
 
-  {% if cotizacion.notas %}<div class="card"><p class="muted">{{ cotizacion.notas }}</p></div>{% endif %}
+  {% if cotizacion.condiciones %}<div class="card"><h2>Condiciones</h2><p style="white-space:pre-wrap">{{ cotizacion.condiciones }}</p></div>{% endif %}
+  {% if cotizacion.notas %}<div class="card"><p class="muted" style="white-space:pre-wrap">{{ cotizacion.notas }}</p></div>{% endif %}
 
   {% if can('cotizaciones:editar') %}
     <div class="dash-grid">

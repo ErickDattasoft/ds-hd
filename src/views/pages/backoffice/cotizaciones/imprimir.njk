@@ -41,7 +41,20 @@
     </div>
   </div>
 
-  <p><strong>Cliente:</strong> {{ cotizacion.empresaNombre or '—' }}</p>
+  <div class="doc__parties">
+    <p><strong>Cliente:</strong> {{ cotizacion.empresaNombre or '—' }}
+      {%- if cotizacion.rfc %}<br><strong>RFC:</strong> {{ cotizacion.rfc }}{% endif %}
+      {%- if cotizacion.contactoNombre %}<br><strong>Contacto:</strong> {{ cotizacion.contactoNombre }}
+        {%- if cotizacion.contactoCorreo %} · {{ cotizacion.contactoCorreo }}{% endif %}
+        {%- if cotizacion.contactoTelefono %} · {{ cotizacion.contactoTelefono }}{% endif %}
+      {%- endif %}</p>
+    {% if cotizacion.emisorNombre %}
+      <p><strong>Cotiza:</strong> {{ cotizacion.emisorNombre }}
+        {%- if cotizacion.emisorCargo %} · {{ cotizacion.emisorCargo }}{% endif %}
+        {%- if cotizacion.emisorTelefono %}<br>{{ cotizacion.emisorTelefono }}{% endif %}
+        {%- if cotizacion.emisorCorreo %} · {{ cotizacion.emisorCorreo }}{% endif %}</p>
+    {% endif %}
+  </div>
 
   <table>
     <thead>
@@ -64,6 +77,8 @@
     </tfoot>
   </table>
 
+  {% if cotizacion.condiciones %}<p style="white-space:pre-line"><strong>Condiciones:</strong>
+{{ cotizacion.condiciones }}</p>{% endif %}
   {% if cotizacion.notas %}<p style="white-space:pre-line"><strong>Notas:</strong>
 {{ cotizacion.notas }}</p>{% endif %}
 </article>

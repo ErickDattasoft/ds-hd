@@ -71,6 +71,7 @@ import { PanelCargaAgentesService } from '../application/tickets/PanelCargaAgent
 import { CrearTicketPublicoService } from '../application/tickets/CrearTicketPublicoService.js';
 import { GestionTicketPublicoService } from '../application/tickets/GestionTicketPublicoService.js';
 import { ConfiguracionTicketsService } from '../application/configuracion/ConfiguracionTicketsService.js';
+import { ConfiguracionCotizacionesService } from '../application/configuracion/ConfiguracionCotizacionesService.js';
 import { AcercaDeService } from '../application/configuracion/AcercaDeService.js';
 import { ConfiguracionIntegracionesService } from '../application/configuracion/ConfiguracionIntegracionesService.js';
 import { BitacoraService } from '../application/shared/BitacoraService.js';
@@ -224,6 +225,7 @@ export interface Cradle {
   crearTicketPublicoService: CrearTicketPublicoService;
   gestionTicketPublicoService: GestionTicketPublicoService;
   configuracionTicketsService: ConfiguracionTicketsService;
+  configuracionCotizacionesService: ConfiguracionCotizacionesService;
   configuracionIntegracionesService: ConfiguracionIntegracionesService;
   acercaDeService: AcercaDeService;
   bitacoraService: BitacoraService;
@@ -657,6 +659,9 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
     configuracionTicketsService: asFunction(
       (c: Cradle) => new ConfiguracionTicketsService(c.configuracionRepo, c.logger),
     ).singleton(),
+    configuracionCotizacionesService: asFunction(
+      (c: Cradle) => new ConfiguracionCotizacionesService(c.configuracionRepo, c.logger),
+    ).singleton(),
     configuracionIntegracionesService: asFunction(
       (c: Cradle) =>
         new ConfiguracionIntegracionesService(c.configuracionRepo, c.integracionesGateway, c.emailSender, {
@@ -717,6 +722,7 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
           c.contactoRepo,
           c.emailSender,
           c.crearTicketService,
+          c.configuracionRepo,
           c.config.baseUrl,
         ),
     ).singleton(),
@@ -840,6 +846,7 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
           c.configuracionIntegracionesService,
           c.backupService,
           c.acercaDeService,
+          c.configuracionCotizacionesService,
         ),
     ).singleton(),
     ticketPublicoController: asFunction(

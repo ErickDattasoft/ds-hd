@@ -114,6 +114,32 @@ Documentos singleton de configuración (`configuracion/{seccion}`).
 
 ***
 
+### obtenerCotizaciones()
+
+> **obtenerCotizaciones**(): `Promise`\<[`ConfiguracionCotizaciones`](../../../../entities/ConfiguracionCotizaciones/interfaces/ConfiguracionCotizaciones.md)\>
+
+#### Returns
+
+`Promise`\<[`ConfiguracionCotizaciones`](../../../../entities/ConfiguracionCotizaciones/interfaces/ConfiguracionCotizaciones.md)\>
+
+***
+
+### guardarCotizaciones()
+
+> **guardarCotizaciones**(`config`): `Promise`\<`void`\>
+
+#### Parameters
+
+##### config
+
+[`ConfiguracionCotizaciones`](../../../../entities/ConfiguracionCotizaciones/interfaces/ConfiguracionCotizaciones.md)
+
+#### Returns
+
+`Promise`\<`void`\>
+
+***
+
 ### obtenerAcercaDe()
 
 > **obtenerAcercaDe**(): `Promise`\<[`AcercaDe`](../../../../entities/AcercaDe/interfaces/AcercaDe.md)\>

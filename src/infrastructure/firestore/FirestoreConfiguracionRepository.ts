@@ -18,6 +18,10 @@ import {
   sanearReglas,
   type ConfiguracionIntegraciones,
 } from '../../core/entities/ConfiguracionIntegraciones.js';
+import {
+  sanearConfigCotizaciones,
+  type ConfiguracionCotizaciones,
+} from '../../core/entities/ConfiguracionCotizaciones.js';
 import { sanearAcercaDe, type AcercaDe } from '../../core/entities/AcercaDe.js';
 
 const COL = 'configuracion';
@@ -95,6 +99,15 @@ export class FirestoreConfiguracionRepository implements IConfiguracionRepositor
 
   async guardarIntegraciones(config: ConfiguracionIntegraciones): Promise<void> {
     await this.db.collection(COL).doc('integraciones').set(config, { merge: true });
+  }
+
+  async obtenerCotizaciones(): Promise<ConfiguracionCotizaciones> {
+    const snap = await this.db.collection(COL).doc('cotizaciones').get();
+    return sanearConfigCotizaciones(snap.exists ? snap.data() : null);
+  }
+
+  async guardarCotizaciones(config: ConfiguracionCotizaciones): Promise<void> {
+    await this.db.collection(COL).doc('cotizaciones').set(config, { merge: true });
   }
 
   async obtenerAcercaDe(): Promise<AcercaDe> {

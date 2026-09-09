@@ -17,6 +17,7 @@ import { VersionSistema, type VersionSistemaProps } from '../../core/entities/Ve
 import { ArticuloKB, type ArticuloKBProps } from '../../core/entities/ArticuloKB.js';
 import { Usuario, type UsuarioProps } from '../../core/entities/Usuario.js';
 import { sanearAcercaDe } from '../../core/entities/AcercaDe.js';
+import { sanearConfigCotizaciones } from '../../core/entities/ConfiguracionCotizaciones.js';
 import { CONTADOR_TICKETS } from '../tickets/constantes.js';
 import { ForbiddenError } from '../../core/errors/DomainError.js';
 import type { SessionUser } from '../shared/SessionUser.js';
@@ -81,20 +82,33 @@ export class BackupService {
 
   /** Vuelca todas las colecciones principales a un solo objeto serializable a JSON. */
   async exportar(): Promise<Record<string, unknown>> {
-    const [empresas, contactos, tickets, cotizaciones, versiones, kb, usuarios, tickets_cfg, calculadora, avisos, acercaDe] =
-      await Promise.all([
-        this.empresas.list({}),
-        this.contactos.list({}),
-        this.ticketQueries.listar({}),
-        this.cotizaciones.list({}),
-        this.versiones.list(),
-        this.kb.list({}),
-        this.usuarios.list({}),
-        this.configuracion.obtenerTickets(),
-        this.configuracion.obtenerCalculadora(),
-        this.configuracion.obtenerAvisos(),
-        this.configuracion.obtenerAcercaDe(),
-      ]);
+    const [
+      empresas,
+      contactos,
+      tickets,
+      cotizaciones,
+      versiones,
+      kb,
+      usuarios,
+      tickets_cfg,
+      calculadora,
+      avisos,
+      acercaDe,
+      cotizaciones_cfg,
+    ] = await Promise.all([
+      this.empresas.list({}),
+      this.contactos.list({}),
+      this.ticketQueries.listar({}),
+      this.cotizaciones.list({}),
+      this.versiones.list(),
+      this.kb.list({}),
+      this.usuarios.list({}),
+      this.configuracion.obtenerTickets(),
+      this.configuracion.obtenerCalculadora(),
+      this.configuracion.obtenerAvisos(),
+      this.configuracion.obtenerAcercaDe(),
+      this.configuracion.obtenerCotizaciones(),
+    ]);
 
     return {
       version: VERSION_BACKUP,
@@ -108,7 +122,7 @@ export class BackupService {
       // Las cuentas se listan sin nada sensible de Auth (no hay contraseñas que respaldar
       // aquí — eso vive en Firebase Auth, fuera de Firestore).
       usuarios: usuarios.map((u) => ({ ...u, email: u.email.value })),
-      configuracion: { tickets: tickets_cfg, calculadora, avisos, acercaDe },
+      configuracion: { tickets: tickets_cfg, calculadora, avisos, acercaDe, cotizaciones: cotizaciones_cfg },
     };
   }
 
@@ -195,6 +209,9 @@ export class BackupService {
     if (cfg.calculadora) await this.configuracion.guardarCalculadora(cfg.calculadora as never);
     if (cfg.avisos) await this.configuracion.guardarAvisos(cfg.avisos as never);
     if (cfg.acercaDe) await this.configuracion.guardarAcercaDe(sanearAcercaDe(cfg.acercaDe));
+    if (cfg.cotizaciones) {
+      await this.configuracion.guardarCotizaciones(sanearConfigCotizaciones(cfg.cotizaciones));
+    }
 
     return resumen;
   }

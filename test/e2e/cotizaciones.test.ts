@@ -121,6 +121,53 @@ describe('cotizaciones', () => {
     expect(t.emailSender.enviados).toHaveLength(0);
   });
 
+  it('captura datos generales y aplica las condiciones por defecto de la config', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    t.empresaRepo.items.set('e1', new Empresa({ id: 'e1', nombre: 'ACME', rfc: 'ACM010101AA1' }));
+    const { agent, csrf } = await login(t.app, ADMIN.email, ADMIN.password);
+
+    await agent.post('/app/cotizaciones').type('form').send({
+      _csrf: csrf,
+      empresaId: 'e1',
+      emisorNombre: 'Erick',
+      emisorCargo: 'Ejecutivo de Ventas',
+      contactoNombre: 'Ana',
+      contactoCorreo: 'ana@acme.mx',
+      concepto_descripcion: 'Licencia',
+      concepto_cantidad: '1',
+      concepto_precio: '5000',
+    });
+    const cot = [...t.cotizacionRepo.items.values()][0]!;
+    expect(cot.emisorNombre).toBe('Erick');
+    expect(cot.emisorCargo).toBe('Ejecutivo de Ventas');
+    expect(cot.contactoNombre).toBe('Ana');
+    expect(cot.rfc).toBe('ACM010101AA1'); // heredado de la empresa
+    expect(cot.condiciones).toContain('pesos mexicanos'); // default de la config
+
+    const p = await agent.get(`/app/cotizaciones/${cot.id}/imprimir`);
+    expect(p.text).toContain('ACM010101AA1');
+    expect(p.text).toContain('Ejecutivo de Ventas');
+
+    // enviar por correo usa el contacto de la cotización
+    const r = await agent.post(`/app/cotizaciones/${cot.id}/enviar`).type('form').send({ _csrf: csrf });
+    expect(r.status).toBe(302);
+    expect(t.emailSender.ultimo?.para[0]?.email).toBe('ana@acme.mx');
+    expect(t.emailSender.ultimo?.html).toContain('pesos mexicanos');
+  });
+
+  it('config de cotizaciones: guarda las condiciones por defecto (solo con permiso)', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    const { agent, csrf } = await login(t.app, ADMIN.email, ADMIN.password);
+    const r = await agent.post('/app/configuracion/cotizaciones').type('form').send({
+      _csrf: csrf,
+      condicionesPorDefecto: 'Pago a 30 días.',
+      emisorCargoPorDefecto: 'Consultor',
+      emisorTelefonoPorDefecto: '9990001122',
+    });
+    expect(r.status).toBe(200);
+    expect((await t.configuracionRepo.obtenerCotizaciones()).condicionesPorDefecto).toBe('Pago a 30 días.');
+  });
+
   it('crea un ticket de seguimiento desde la cotización', async () => {
     const t = makeTestApp({ usuarios: [ADMIN] });
     t.empresaRepo.items.set('e1', new Empresa({ id: 'e1', nombre: 'ACME' }));

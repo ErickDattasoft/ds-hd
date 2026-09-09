@@ -1,0 +1,38 @@
+{% extends "layouts/backoffice.njk" %}
+{% block title %}Configuración de cotizaciones{% endblock %}
+{% block content %}
+  <div class="page-head">
+    <h1>Configuración de cotizaciones</h1>
+    <div class="page-head__actions">
+      <a class="btn btn--ghost btn--sm" href="/app/configuracion/tickets">Configuración de tickets</a>
+      <a class="btn btn--ghost btn--sm" href="/app/configuracion/integraciones">Integraciones</a>
+      <a class="btn btn--ghost btn--sm" href="/app/configuracion/backup">Backup</a>
+    </div>
+  </div>
+  {% if guardado %}<p class="alert alert--ok">Configuración guardada.</p>{% endif %}
+  {% if errores.general %}<p class="alert alert--error">{{ errores.general }}</p>{% endif %}
+
+  <form method="post" action="/app/configuracion/cotizaciones" class="form form--wide">
+    <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+
+    <label class="field"><span>Condiciones / términos por defecto</span>
+      <textarea name="condicionesPorDefecto" rows="4">{{ config.condicionesPorDefecto }}</textarea>
+      <em class="field__hint">Se precargan al crear una cotización. El usuario puede editarlas en cada una.</em>
+    </label>
+
+    <fieldset class="field">
+      <legend>Emisor por defecto (quien cotiza)</legend>
+      <em class="field__hint">El nombre y el correo se toman de la cuenta del usuario. Aquí defines el cargo y el teléfono sugeridos.</em>
+      <label class="field"><span>Cargo</span>
+        <input name="emisorCargoPorDefecto" value="{{ config.emisorCargoPorDefecto }}" placeholder="Ej: Ejecutivo de Ventas" />
+      </label>
+      <label class="field"><span>Teléfono</span>
+        <input name="emisorTelefonoPorDefecto" value="{{ config.emisorTelefonoPorDefecto }}" placeholder="Ej: 9991234567" />
+      </label>
+    </fieldset>
+
+    <div class="page-head__actions">
+      <button class="btn" type="submit">Guardar</button>
+    </div>
+  </form>
+{% endblock %}

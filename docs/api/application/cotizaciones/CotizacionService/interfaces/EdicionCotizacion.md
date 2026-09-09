@@ -2,11 +2,11 @@
 
 ***
 
-[ds-hd](../../../../README.md) / [application/cotizaciones/CotizacionService](../README.md) / DatosCotizacion
+[ds-hd](../../../../README.md) / [application/cotizaciones/CotizacionService](../README.md) / EdicionCotizacion
 
-# Interface: DatosCotizacion
+# Interface: EdicionCotizacion
 
-Datos para crear una cotización (folio y montos se calculan en el servicio).
+Cambios a los datos generales / condiciones de una cotización existente.
 
 ## Extends
 
@@ -14,21 +14,9 @@ Datos para crear una cotización (folio y montos se calculan en el servicio).
 
 ## Properties
 
-### empresaId
+### conceptos
 
-> **empresaId**: `string`
-
-***
-
-### contactoId?
-
-> `optional` **contactoId?**: `string`
-
-***
-
-### vigenciaDias?
-
-> `optional` **vigenciaDias?**: `number`
+> **conceptos**: [`ConceptoCotizacion`](../../../../core/entities/Cotizacion/interfaces/ConceptoCotizacion.md)[]
 
 ***
 
@@ -41,24 +29,6 @@ Datos para crear una cotización (folio y montos se calculan en el servicio).
 ### condiciones?
 
 > `optional` **condiciones?**: `string`
-
-***
-
-### conceptos
-
-> **conceptos**: [`ConceptoCotizacion`](../../../../core/entities/Cotizacion/interfaces/ConceptoCotizacion.md)[]
-
-***
-
-### origenCalculadora?
-
-> `optional` **origenCalculadora?**: `boolean`
-
-***
-
-### parametrosCompac?
-
-> `optional` **parametrosCompac?**: `Record`\<`string`, `unknown`\> \| `null`
 
 ***
 

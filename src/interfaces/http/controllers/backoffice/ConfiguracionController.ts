@@ -3,6 +3,7 @@ import type { ConfiguracionTicketsService } from '../../../../application/config
 import { ConfiguracionIntegracionesService } from '../../../../application/configuracion/ConfiguracionIntegracionesService.js';
 import type { BackupService } from '../../../../application/configuracion/BackupService.js';
 import type { AcercaDeService } from '../../../../application/configuracion/AcercaDeService.js';
+import type { ConfiguracionCotizacionesService } from '../../../../application/configuracion/ConfiguracionCotizacionesService.js';
 import { ETIQUETAS_EVENTOS } from '../../../../core/entities/ConfiguracionIntegraciones.js';
 import { INFO_APP } from '../../../../core/entities/AcercaDe.js';
 import { camposDeError } from '../../support/errores.js';
@@ -16,7 +17,42 @@ export class ConfiguracionController {
     private readonly configIntegraciones: ConfiguracionIntegracionesService,
     private readonly backup: BackupService,
     private readonly acercaDe: AcercaDeService,
+    private readonly configCotizaciones: ConfiguracionCotizacionesService,
   ) {}
+
+  cotizacionesView = async (_req: Request, res: Response): Promise<void> => {
+    res.render('pages/backoffice/configuracion/cotizaciones', {
+      titulo: 'Configuración de cotizaciones',
+      config: await this.configCotizaciones.obtener(),
+      errores: {},
+      guardado: false,
+    });
+  };
+
+  cotizacionesPost = async (req: Request, res: Response): Promise<void> => {
+    const b = req.body ?? {};
+    try {
+      await this.configCotizaciones.actualizar({
+        actor: req.user!,
+        condicionesPorDefecto: str(b.condicionesPorDefecto),
+        emisorCargoPorDefecto: str(b.emisorCargoPorDefecto),
+        emisorTelefonoPorDefecto: str(b.emisorTelefonoPorDefecto),
+      });
+      res.render('pages/backoffice/configuracion/cotizaciones', {
+        titulo: 'Configuración de cotizaciones',
+        config: await this.configCotizaciones.obtener(),
+        errores: {},
+        guardado: true,
+      });
+    } catch (err) {
+      res.status(422).render('pages/backoffice/configuracion/cotizaciones', {
+        titulo: 'Configuración de cotizaciones',
+        config: await this.configCotizaciones.obtener(),
+        errores: camposDeError(err),
+        guardado: false,
+      });
+    }
+  };
 
   acercaDeView = async (req: Request, res: Response): Promise<void> => {
     const config = await this.acercaDe.obtener();

@@ -21,6 +21,26 @@
       <p class="muted">{{ cotizacion.folio }} · {{ cotizacion.empresaNombre }}</p>
     {% endif %}
 
+    <details class="disclosure"{{ ' open' if valores.emisorNombre or valores.rfc or valores.contactoNombre }}>
+      <summary class="disclosure__summary">Datos generales <span class="disclosure__hint">— emisor y receptor</span></summary>
+      <div class="disclosure__body form">
+        <fieldset class="field">
+          <legend>Emisor (quien cotiza)</legend>
+          <label class="field"><span>Nombre</span><input name="emisorNombre" value="{{ valores.emisorNombre }}" /></label>
+          <label class="field"><span>Cargo</span><input name="emisorCargo" value="{{ valores.emisorCargo }}" placeholder="Ej: Ejecutivo de Ventas" /></label>
+          <label class="field"><span>Teléfono</span><input name="emisorTelefono" value="{{ valores.emisorTelefono }}" /></label>
+          <label class="field"><span>Correo</span><input type="email" name="emisorCorreo" value="{{ valores.emisorCorreo }}" /></label>
+        </fieldset>
+        <fieldset class="field">
+          <legend>Receptor</legend>
+          <label class="field"><span>RFC</span><input name="rfc" value="{{ valores.rfc }}" placeholder="Ej: XAXX010101000" /></label>
+          <label class="field"><span>Contacto</span><input name="contactoNombre" value="{{ valores.contactoNombre }}" /></label>
+          <label class="field"><span>Correo del contacto</span><input type="email" name="contactoCorreo" value="{{ valores.contactoCorreo }}" /></label>
+          <label class="field"><span>Teléfono del contacto</span><input name="contactoTelefono" value="{{ valores.contactoTelefono }}" /></label>
+        </fieldset>
+      </div>
+    </details>
+
     <h2>Conceptos</h2>
     <table class="data-table">
       <thead><tr><th>Descripción</th><th>Cantidad</th><th>Precio unitario</th></tr></thead>
@@ -42,12 +62,16 @@
       </tbody>
     </table>
 
-    <details class="disclosure"{{ ' open' if valores.notas or (modo != 'editar' and valores.vigenciaDias) }}>
-      <summary class="disclosure__summary">Opciones <span class="disclosure__hint">— vigencia y notas</span></summary>
+    <details class="disclosure" open>
+      <summary class="disclosure__summary">Condiciones y notas <span class="disclosure__hint">— términos, vigencia</span></summary>
       <div class="disclosure__body form">
         {% if modo != 'editar' %}
           <label class="field"><span>Vigencia (días)</span><input type="number" name="vigenciaDias" value="{{ valores.vigenciaDias or 15 }}" min="1" /></label>
         {% endif %}
+        <label class="field"><span>Condiciones / términos</span>
+          <textarea name="condiciones" rows="4">{{ valores.condiciones }}</textarea>
+          <em class="field__hint">Forma de pago, tiempos de entrega, validez… Se muestran en el PDF y el correo.</em>
+        </label>
         <label class="field"><span>Notas</span><textarea name="notas" rows="3">{{ valores.notas }}</textarea></label>
       </div>
     </details>
