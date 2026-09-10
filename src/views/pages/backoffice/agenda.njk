@@ -1,0 +1,52 @@
+{% extends "layouts/backoffice.njk" %}
+{% block title %}Calendario{% endblock %}
+{% block content %}
+  <div class="page-head">
+    <h1>Calendario</h1>
+    <div class="page-head__actions">
+      <a class="btn btn--sm btn--ghost" href="/app">Dashboard</a>
+    </div>
+  </div>
+
+  <div class="cal-head">
+    <a class="btn btn--sm btn--ghost" href="/app/calendario?mes={{ cal.prev.anio }}-{{ cal.prev.mes + 1 }}">← Anterior</a>
+    <h2>{{ cal.etiqueta }}</h2>
+    <a class="btn btn--sm btn--ghost" href="/app/calendario?mes={{ cal.next.anio }}-{{ cal.next.mes + 1 }}">Siguiente →</a>
+    <a class="btn btn--sm btn--ghost" href="/app/calendario">Hoy</a>
+    <span class="muted">
+      {{ cal.totales.tickets }} ticket(s) · {{ cal.totales.eventos }} evento(s) · {{ cal.totales.tareas }} tarea(s)
+    </span>
+  </div>
+
+  <div style="overflow-x:auto">
+    <table class="cal-grid">
+      <thead>
+        <tr>
+          {% for d in ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'] %}<th>{{ d }}</th>{% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for semana in cal.semanas %}
+          <tr>
+            {% for dia in semana %}
+              <td class="{{ 'cal-day--out' if not dia.delMes }} {{ 'cal-day--today' if dia.esHoy }}">
+                <span class="cal-day__num">{{ dia.dia }}</span>
+                {% for it in dia.items %}
+                  <a class="cal-ev cal-ev--{{ it.tipo }}" href="{{ it.href }}" title="{{ it.titulo }}">
+                    {% if it.hora %}{{ it.hora }} {% endif %}{{ it.titulo }}
+                  </a>
+                {% endfor %}
+              </td>
+            {% endfor %}
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <p class="muted" style="margin-top:0.75rem">
+    <span class="cal-ev cal-ev--ticket" style="display:inline-block">Tickets programados</span>
+    <span class="cal-ev cal-ev--evento" style="display:inline-block">Eventos</span>
+    <span class="cal-ev cal-ev--tarea" style="display:inline-block">Tus tareas con fecha límite</span>
+  </p>
+{% endblock %}

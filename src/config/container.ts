@@ -88,6 +88,7 @@ import { CalculadoraCompacService } from '../application/cotizaciones/Calculador
 import { SeguimientoService } from '../application/seguimiento/SeguimientoService.js';
 import { EventoService } from '../application/eventos/EventoService.js';
 import { ObtenerMetricasService } from '../application/dashboard/ObtenerMetricasService.js';
+import { AgendaService } from '../application/dashboard/AgendaService.js';
 import { AuthController } from '../interfaces/http/controllers/public/AuthController.js';
 import { UsuarioController } from '../interfaces/http/controllers/backoffice/UsuarioController.js';
 import { PortalPerfilController } from '../interfaces/http/controllers/portal/PortalPerfilController.js';
@@ -244,6 +245,7 @@ export interface Cradle {
   seguimientoService: SeguimientoService;
   eventoService: EventoService;
   obtenerMetricasService: ObtenerMetricasService;
+  agendaService: AgendaService;
 
   // Controllers
   authController: AuthController;
@@ -774,7 +776,11 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
           c.clock,
           c.empresaRepo,
           c.versionRepo,
+          c.ticketPublicoRepo,
         ),
+    ).singleton(),
+    agendaService: asFunction(
+      (c: Cradle) => new AgendaService(c.ticketQueries, c.eventoRepo, c.tareaRepo, c.clock),
     ).singleton(),
 
     authController: asFunction(
@@ -944,7 +950,7 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
     ).singleton(),
     eventoController: asFunction((c: Cradle) => new EventoController(c.eventoService)).singleton(),
     dashboardController: asFunction(
-      (c: Cradle) => new DashboardController(c.obtenerMetricasService),
+      (c: Cradle) => new DashboardController(c.obtenerMetricasService, c.agendaService),
     ).singleton(),
     eventoPublicoController: asFunction(
       (c: Cradle) => new EventoPublicoController(c.eventoService, c.config.turnstile.siteKey),

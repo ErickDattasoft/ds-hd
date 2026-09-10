@@ -47,6 +47,9 @@ export function backofficeRoutes(container: Container): Router {
   r.get('/', requirePermission('dashboard:ver'), (req, res) =>
     container.resolve('dashboardController').ver(req, res),
   );
+  r.get('/calendario', requirePermission('dashboard:ver'), (req, res) =>
+    container.resolve('dashboardController').calendario(req, res),
+  );
 
   r.get('/buscar', (req, res) => container.resolve('busquedaController').buscar(req, res));
 

@@ -43,6 +43,7 @@ export interface NavSeccion {
 /** Navegación del back-office (`/app`). El orden es el de aparición en el menú. */
 export const NAV_BACKOFFICE: readonly NavItem[] = [
   { etiqueta: 'Dashboard', href: '/app', icono: '📊', permiso: 'dashboard:ver', grupo: 'principal' },
+  { etiqueta: 'Calendario', href: '/app/calendario', icono: '📅', permiso: 'dashboard:ver', grupo: 'principal' },
   { etiqueta: 'Base de conocimiento', href: '/app/kb', icono: '📚', permiso: 'kb:leer', grupo: 'principal' },
   { etiqueta: 'Versiones', href: '/app/versiones', icono: '🧩', permiso: 'versiones:leer', grupo: 'principal' },
   { etiqueta: 'Eventos', href: '/app/eventos', icono: '📅', permiso: 'eventos:leer', grupo: 'principal' },

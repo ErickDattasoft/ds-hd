@@ -39,4 +39,25 @@ describe('dashboard', () => {
     expect(dash.status).toBe(200);
     expect(dash.text).toContain('Hola, Agente');
   });
+
+  it('el dashboard muestra la tarea recién creada y el calendario la agenda', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    const { agent, csrf } = await login(t.app, ADMIN.email, ADMIN.password);
+
+    await agent.post('/app/tareas').type('form').send({
+      _csrf: csrf, titulo: 'Llamar al cliente', vence: '2026-09-15', volverA: '/app',
+    });
+
+    const dash = await agent.get('/app');
+    expect(dash.status).toBe(200);
+
+    const cal = await agent.get('/app/calendario?mes=2026-9');
+    expect(cal.status).toBe(200);
+    expect(cal.text).toContain('Calendario');
+    expect(cal.text).toContain('Llamar al cliente');
+    expect(cal.text).toMatch(/1 tarea/);
+
+    const otroMes = await agent.get('/app/calendario');
+    expect(otroMes.status).toBe(200);
+  });
 });

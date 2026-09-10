@@ -12,9 +12,34 @@
   </div>
 {% endmacro %}
 {% block content %}
-  <h1>Hola, {{ user.nombre }}</h1>
+  <div class="page-head">
+    <h1>Hola, {{ user.nombre }}</h1>
+    <div class="page-head__actions">
+      <a class="btn btn--sm btn--secondary" href="/app/calendario">📅 Calendario</a>
+      {% if can('seguimiento:gestionar') %}
+        <details class="disclosure" style="display:inline-block">
+          <summary class="btn btn--sm">➕ Nueva tarea</summary>
+          <form method="post" action="/app/tareas" class="form card" style="margin-top:0.5rem;min-width:16rem">
+            <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+            <input type="hidden" name="volverA" value="/app" />
+            <label class="field"><span>Título</span><input name="titulo" required /></label>
+            <label class="field"><span>Vence</span><input type="date" name="vence" /></label>
+            <button class="btn btn--sm" type="submit">Crear</button>
+          </form>
+        </details>
+      {% endif %}
+    </div>
+  </div>
 
   {% if m %}
+
+  {% if m.ticketsPublicosPendientes %}
+  <div class="alert alert--warn" role="alert">
+    <p><strong>{{ m.ticketsPublicosPendientes }}</strong> ticket{{ 's' if m.ticketsPublicosPendientes != 1 }} público{{ 's' if m.ticketsPublicosPendientes != 1 }} esperando revisión.
+    <a class="btn btn--secondary btn--sm" href="/app/tickets/buzon">Ir al buzón</a></p>
+  </div>
+  {% endif %}
+
   {% if m.licencias and m.licencias.banner | length %}
   <div class="alert alert--warn" role="alert">
     <p><strong>Licencias por vencer</strong> — {{ m.licencias.empresasEnRiesgo }}

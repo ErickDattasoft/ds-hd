@@ -4,7 +4,11 @@ import { Empresa } from '../../src/core/entities/Empresa.js';
 import { VersionSistema } from '../../src/core/entities/VersionSistema.js';
 import { Ticket } from '../../src/core/entities/Ticket.js';
 import type { SessionUser } from '../../src/application/shared/SessionUser.js';
-import { InMemoryTicketStore, InMemoryTicketQueries } from '../fakes/tickets.js';
+import {
+  InMemoryTicketStore,
+  InMemoryTicketQueries,
+  InMemoryTicketPublicoRepository,
+} from '../fakes/tickets.js';
 import { InMemoryEmpresaRepository } from '../fakes/crm.js';
 import { InMemoryVersionRepository } from '../fakes/kb.js';
 import { InMemoryCotizacionRepository } from '../fakes/cotizaciones.js';
@@ -51,6 +55,7 @@ describe('ObtenerMetricasService', () => {
       new FixedClock(HOY),
       empresas,
       versiones,
+      new InMemoryTicketPublicoRepository(),
     );
   });
 

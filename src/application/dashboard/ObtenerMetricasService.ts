@@ -5,6 +5,7 @@ import type { ITareaRepository } from '../../core/ports/repositories/ISeguimient
 import type { IBitacoraRepository } from '../../core/ports/repositories/IBitacoraRepository.js';
 import type { IEmpresaRepository } from '../../core/ports/repositories/IEmpresaRepository.js';
 import type { IVersionRepository } from '../../core/ports/repositories/IVersionRepository.js';
+import type { ITicketPublicoRepository } from '../../core/ports/repositories/ITicketPublicoRepository.js';
 import type { IClock } from '../../core/ports/services/IClock.js';
 import type { SessionUser } from '../shared/SessionUser.js';
 import { estadoActualizacion } from '../../core/entities/value-objects/version.js';
@@ -45,6 +46,8 @@ export interface Metricas {
   };
   cotizaciones: { porEstado: { etiqueta: string; valor: number }[]; totalAbiertas: number };
   misTareasPendientes: number;
+  /** Tickets del buzón público a la espera de aceptar/rechazar (`0` si el actor no ve el buzón). */
+  ticketsPublicosPendientes: number;
   proximosEventos: { id: string; titulo: string; fechaHora: Date }[];
   actividadReciente: { at: Date; resumen: string; actorNombre: string | null; modulo: string }[];
   /** `null` si el actor no puede leer empresas. */
@@ -81,6 +84,7 @@ export class ObtenerMetricasService {
     private readonly clock: IClock,
     private readonly empresas: IEmpresaRepository,
     private readonly versiones: IVersionRepository,
+    private readonly ticketsPublicos: ITicketPublicoRepository,
   ) {}
 
   async ejecutar(actor: SessionUser): Promise<Metricas> {
@@ -91,7 +95,9 @@ export class ObtenerMetricasService {
       : { agenteAsignadoUid: actor.uid };
     const puedeVerEmpresas = actor.permisos.includes('empresas:leer');
 
-    const [abiertos, todos, contarPorEstado, proximos, misTareas, bita, licencias] =
+    const puedeVerBuzon = actor.permisos.includes('tickets:crear');
+
+    const [abiertos, todos, contarPorEstado, proximos, misTareas, bita, licencias, publicos] =
       await Promise.all([
         this.ticketQueries.listar({ ...alcance, soloAbiertos: true }),
         this.ticketQueries.listar({ ...alcance, archivado: false }),
@@ -102,6 +108,7 @@ export class ObtenerMetricasService {
           ? this.bitacora.listar({ limite: 12 })
           : Promise.resolve([]),
         puedeVerEmpresas ? this.calcularLicencias(ahora) : Promise.resolve(null),
+        puedeVerBuzon ? this.ticketsPublicos.listPendientes() : Promise.resolve([]),
       ]);
 
     const porEstado = new Map<string, number>();
@@ -130,6 +137,7 @@ export class ObtenerMetricasService {
           (contarPorEstado.borrador ?? 0) + (contarPorEstado.enviada ?? 0),
       },
       misTareasPendientes: misTareas.filter((t) => !t.completada).length,
+      ticketsPublicosPendientes: publicos.length,
       proximosEventos: proximos
         .sort((a, b) => a.fechaHora.getTime() - b.fechaHora.getTime())
         .slice(0, 5)
