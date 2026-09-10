@@ -17,6 +17,7 @@
 - [application/contactos/ContactoService](application/contactos/ContactoService/README.md)
 - [application/cotizaciones/CalculadoraCompacService](application/cotizaciones/CalculadoraCompacService/README.md)
 - [application/cotizaciones/CotizacionService](application/cotizaciones/CotizacionService/README.md)
+- [application/dashboard/AgendaService](application/dashboard/AgendaService/README.md)
 - [application/dashboard/ObtenerMetricasService](application/dashboard/ObtenerMetricasService/README.md)
 - [application/empresas/AvisarEmpresasService](application/empresas/AvisarEmpresasService/README.md)
 - [application/empresas/EmpresaExcelService](application/empresas/EmpresaExcelService/README.md)

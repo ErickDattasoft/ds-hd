@@ -64,6 +64,14 @@ Snapshot de métricas del dashboard, ya acotado al alcance de permisos del actor
 
 ***
 
+### ticketsPublicosPendientes
+
+> **ticketsPublicosPendientes**: `number`
+
+Tickets del buzón público a la espera de aceptar/rechazar (`0` si el actor no ve el buzón).
+
+***
+
 ### proximosEventos
 
 > **proximosEventos**: `object`[]

@@ -12,7 +12,7 @@ Caso de uso: métricas del dashboard, acotadas al alcance del actor.
 
 ### Constructor
 
-> **new ObtenerMetricasService**(`ticketQueries`, `cotizaciones`, `eventos`, `tareas`, `bitacora`, `clock`, `empresas`, `versiones`): `ObtenerMetricasService`
+> **new ObtenerMetricasService**(`ticketQueries`, `cotizaciones`, `eventos`, `tareas`, `bitacora`, `clock`, `empresas`, `versiones`, `ticketsPublicos`): `ObtenerMetricasService`
 
 #### Parameters
 
@@ -47,6 +47,10 @@ Caso de uso: métricas del dashboard, acotadas al alcance del actor.
 ##### versiones
 
 [`IVersionRepository`](../../../../core/ports/repositories/IVersionRepository/interfaces/IVersionRepository.md)
+
+##### ticketsPublicos
+
+[`ITicketPublicoRepository`](../../../../core/ports/repositories/ITicketPublicoRepository/interfaces/ITicketPublicoRepository.md)
 
 #### Returns
 
