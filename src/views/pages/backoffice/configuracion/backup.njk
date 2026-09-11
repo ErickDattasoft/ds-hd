@@ -1,18 +1,15 @@
 {% extends "layouts/backoffice.njk" %}
+{% import "components/configuracion.njk" as cfgnav %}
 {% block title %}Backup{% endblock %}
 {% block content %}
   <div class="page-head">
     <h1>Backup</h1>
-    <div class="page-head__actions">
-      <a class="btn btn--ghost btn--sm" href="/app/configuracion/tickets">Configuración de tickets</a>
-      <a class="btn btn--ghost btn--sm" href="/app/configuracion/cotizaciones">Cotizaciones</a>
-      <a class="btn btn--ghost btn--sm" href="/app/configuracion/integraciones">Integraciones</a>
-    </div>
+    <div class="page-head__actions">{{ cfgnav.nav('backup') }}</div>
   </div>
   <p class="muted">
     Descarga un respaldo completo en JSON: empresas, contactos, tickets, cotizaciones,
     versiones de sistemas, base de conocimiento, usuarios (sin contraseñas — esas viven en
-    Firebase Auth, no aquí) y la configuración de tickets/calculadora/avisos.
+    Firebase Auth, no aquí) y la configuración de tickets/calculadora/avisos/logo/resumen diario.
   </p>
   <a class="btn" href="/app/configuracion/backup/descargar">Descargar backup completo (JSON)</a>
 

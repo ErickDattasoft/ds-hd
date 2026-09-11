@@ -1,0 +1,10 @@
+{# Links entre las subpáginas de Configuración. `activo` oculta el link a la página actual. #}
+{% macro nav(activo) %}
+  {% if activo != 'tickets' %}<a class="btn btn--ghost btn--sm" href="/app/configuracion/tickets">Tickets</a>{% endif %}
+  {% if activo != 'cotizaciones' %}<a class="btn btn--ghost btn--sm" href="/app/configuracion/cotizaciones">Cotizaciones</a>{% endif %}
+  {% if activo != 'calculadora' %}<a class="btn btn--ghost btn--sm" href="/app/configuracion/calculadora">Calculadora</a>{% endif %}
+  {% if activo != 'apariencia' %}<a class="btn btn--ghost btn--sm" href="/app/configuracion/apariencia">Apariencia</a>{% endif %}
+  {% if activo != 'resumen' %}<a class="btn btn--ghost btn--sm" href="/app/configuracion/resumen">Resumen diario</a>{% endif %}
+  {% if activo != 'integraciones' %}<a class="btn btn--ghost btn--sm" href="/app/configuracion/integraciones">Integraciones</a>{% endif %}
+  {% if activo != 'backup' %}<a class="btn btn--ghost btn--sm" href="/app/configuracion/backup">Backup</a>{% endif %}
+{% endmacro %}

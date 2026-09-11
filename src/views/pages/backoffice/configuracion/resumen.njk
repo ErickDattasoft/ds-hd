@@ -1,0 +1,46 @@
+{% extends "layouts/backoffice.njk" %}
+{% import "components/configuracion.njk" as cfgnav %}
+{% block title %}Resumen diario{% endblock %}
+{% block content %}
+  <div class="page-head">
+    <h1>Resumen diario</h1>
+    <div class="page-head__actions">{{ cfgnav.nav('resumen') }}</div>
+  </div>
+  {% if guardado %}<p class="alert alert--ok">Configuración guardada.</p>{% endif %}
+  {% if enviadoA %}<p class="alert alert--ok">Resumen enviado a: {{ enviadoA | join(', ') }}.</p>{% endif %}
+  {% if errores.general %}<p class="alert alert--error">{{ errores.general }}</p>{% endif %}
+  <p class="muted">
+    Correo con las mismas métricas del dashboard (tickets, cotizaciones, licencias por vencer,
+    próximos eventos). Se puede enviar manualmente o dejar que el cron lo mande solo, una vez
+    al día a la hora que definas.
+  </p>
+
+  <form method="post" action="/app/configuracion/resumen" class="form form--wide">
+    <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+
+    <label class="field--check">
+      <input type="checkbox" name="habilitado" {{ 'checked' if config.habilitado }} />
+      Enviar automáticamente todos los días
+    </label>
+
+    <label class="field"><span>Hora de envío (America/Mexico_City)</span>
+      <input type="number" min="0" max="23" name="horaEnvio" value="{{ config.horaEnvio }}" />
+      {% if errores.horaEnvio %}<em class="field__error">{{ errores.horaEnvio }}</em>{% endif %}
+    </label>
+
+    <label class="field"><span>Destinatarios</span>
+      <textarea name="destinatarios" rows="4">{{ config.destinatarios | join('\n') }}</textarea>
+      {% if errores.destinatarios %}<em class="field__error">{{ errores.destinatarios }}</em>{% endif %}
+      <em class="field__hint">Uno por línea.</em>
+    </label>
+
+    {% if config.ultimoEnvio %}
+      <p class="muted">Último envío automático: {{ config.ultimoEnvio }}.</p>
+    {% endif %}
+
+    <div class="page-head__actions">
+      <button class="btn" type="submit">Guardar</button>
+      <button class="btn btn--ghost" type="submit" formaction="/app/configuracion/resumen/enviar">Enviar resumen ahora</button>
+    </div>
+  </form>
+{% endblock %}

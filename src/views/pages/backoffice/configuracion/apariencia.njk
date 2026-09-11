@@ -1,0 +1,39 @@
+{% extends "layouts/backoffice.njk" %}
+{% import "components/configuracion.njk" as cfgnav %}
+{% block title %}Apariencia{% endblock %}
+{% block content %}
+  <div class="page-head">
+    <h1>Apariencia</h1>
+    <div class="page-head__actions">{{ cfgnav.nav('apariencia') }}</div>
+  </div>
+  {% if errores.general %}<p class="alert alert--error">{{ errores.general }}</p>{% endif %}
+
+  <h2>Logo de empresa</h2>
+  <p class="muted">Se usa en el encabezado de los correos salientes, las vistas de impresión y el portal de cliente. PNG, JPG o WebP, máx. 300 KB.</p>
+
+  <div id="logo-preview">
+    {% if logo %}
+      <img src="/logo?v={{ logo.tamano }}" alt="Logo actual" style="max-height:80px;max-width:280px" />
+    {% else %}
+      <p class="muted">Sin logo configurado.</p>
+    {% endif %}
+  </div>
+
+  <form class="form" data-logo-form>
+    <label class="field"><span>Archivo</span>
+      <input type="file" accept="image/png,image/jpeg,image/webp" name="archivo" required />
+    </label>
+    <button class="btn" type="submit">Subir logo</button>
+    <p id="logo-mensaje"></p>
+  </form>
+
+  {% if logo %}
+    <form method="post" action="/app/configuracion/apariencia/logo/eliminar" data-confirm="¿Quitar el logo actual?">
+      <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+      <button class="btn btn--danger" type="submit">Quitar logo</button>
+    </form>
+  {% endif %}
+
+  <h2>Tema</h2>
+  <p class="muted">El cambio de tema claro/oscuro está en el botón ◐ de la barra superior — aplica al instante, no necesita guardarse aquí.</p>
+{% endblock %}

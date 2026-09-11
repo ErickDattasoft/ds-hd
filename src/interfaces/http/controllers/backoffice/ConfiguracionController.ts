@@ -4,6 +4,9 @@ import { ConfiguracionIntegracionesService } from '../../../../application/confi
 import type { BackupService } from '../../../../application/configuracion/BackupService.js';
 import type { AcercaDeService } from '../../../../application/configuracion/AcercaDeService.js';
 import type { ConfiguracionCotizacionesService } from '../../../../application/configuracion/ConfiguracionCotizacionesService.js';
+import type { ConfiguracionCalculadoraService } from '../../../../application/configuracion/ConfiguracionCalculadoraService.js';
+import type { ConfiguracionLogoService } from '../../../../application/configuracion/ConfiguracionLogoService.js';
+import type { ResumenDiarioService } from '../../../../application/dashboard/ResumenDiarioService.js';
 import { ETIQUETAS_EVENTOS } from '../../../../core/entities/ConfiguracionIntegraciones.js';
 import { INFO_APP } from '../../../../core/entities/AcercaDe.js';
 import { camposDeError } from '../../support/errores.js';
@@ -18,6 +21,9 @@ export class ConfiguracionController {
     private readonly backup: BackupService,
     private readonly acercaDe: AcercaDeService,
     private readonly configCotizaciones: ConfiguracionCotizacionesService,
+    private readonly configCalculadora: ConfiguracionCalculadoraService,
+    private readonly configLogo: ConfiguracionLogoService,
+    private readonly configResumen: ResumenDiarioService,
   ) {}
 
   cotizacionesView = async (_req: Request, res: Response): Promise<void> => {
@@ -229,6 +235,142 @@ export class ConfiguracionController {
       res.json(resultado);
     } catch (err) {
       res.status(422).json({ ok: false, detalle: err instanceof Error ? err.message : 'No se pudo probar' });
+    }
+  };
+
+  calculadoraView = async (_req: Request, res: Response): Promise<void> => {
+    res.render('pages/backoffice/configuracion/calculadora', {
+      titulo: 'Configuración de la calculadora',
+      config: await this.configCalculadora.obtener(),
+      errores: {},
+      guardado: false,
+    });
+  };
+
+  calculadoraPost = async (req: Request, res: Response): Promise<void> => {
+    const b = req.body ?? {};
+    const precios: Record<string, { precioPrimero?: unknown; precioAdicional?: unknown }> = {};
+    for (const [k, v] of Object.entries(b)) {
+      if (k.startsWith('precioPrimero_')) {
+        const clave = k.slice('precioPrimero_'.length);
+        precios[clave] = { ...precios[clave], precioPrimero: v };
+      }
+      if (k.startsWith('precioAdicional_')) {
+        const clave = k.slice('precioAdicional_'.length);
+        precios[clave] = { ...precios[clave], precioAdicional: v };
+      }
+    }
+    try {
+      await this.configCalculadora.actualizar({
+        actor: req.user!,
+        precios,
+        sqlPrecioServidor: b.sqlPrecioServidor,
+        sqlPrecioTerminal: b.sqlPrecioTerminal,
+        ivaTasa: b.ivaTasa,
+        moneda: str(b.moneda),
+      });
+      res.render('pages/backoffice/configuracion/calculadora', {
+        titulo: 'Configuración de la calculadora',
+        config: await this.configCalculadora.obtener(),
+        errores: {},
+        guardado: true,
+      });
+    } catch (err) {
+      res.status(422).render('pages/backoffice/configuracion/calculadora', {
+        titulo: 'Configuración de la calculadora',
+        config: await this.configCalculadora.obtener(),
+        errores: camposDeError(err),
+        guardado: false,
+      });
+    }
+  };
+
+  private async renderApariencia(
+    res: Response,
+    opts: { status?: number; errores?: Record<string, string> } = {},
+  ): Promise<void> {
+    const logo = await this.configLogo.obtener();
+    res.status(opts.status ?? 200).render('pages/backoffice/configuracion/apariencia', {
+      titulo: 'Apariencia',
+      logo,
+      errores: opts.errores ?? {},
+    });
+  }
+
+  aparienciaView = async (_req: Request, res: Response): Promise<void> => {
+    await this.renderApariencia(res);
+  };
+
+  /** Sube el logo: el navegador manda `{contentType, base64}` como JSON (igual que los
+   * adjuntos de tickets), sin multer. */
+  logoSubirPost = async (req: Request, res: Response): Promise<void> => {
+    try {
+      await this.configLogo.actualizar(req.user!, {
+        contentType: str(req.body?.contentType),
+        base64: str(req.body?.base64),
+      });
+      res.json({ ok: true });
+    } catch (err) {
+      res.status(422).json({ ok: false, error: err instanceof Error ? err.message : 'No se pudo subir el logo' });
+    }
+  };
+
+  logoEliminarPost = async (req: Request, res: Response): Promise<void> => {
+    await this.configLogo.eliminar(req.user!);
+    res.redirect('/app/configuracion/apariencia');
+  };
+
+  /** Ruta pública (sin sesión): así los correos y el portal pueden mostrar el logo. */
+  logoArchivoGet = async (_req: Request, res: Response): Promise<void> => {
+    const logo = await this.configLogo.obtener();
+    if (!logo) {
+      res.status(404).end();
+      return;
+    }
+    const base64 = logo.data.slice(logo.data.indexOf(',') + 1);
+    res.setHeader('Content-Type', logo.contentType);
+    res.setHeader('Cache-Control', 'public, max-age=300');
+    res.send(Buffer.from(base64, 'base64'));
+  };
+
+  private async renderResumen(
+    res: Response,
+    opts: { status?: number; errores?: Record<string, string>; guardado?: boolean; enviadoA?: string[] } = {},
+  ): Promise<void> {
+    res.status(opts.status ?? 200).render('pages/backoffice/configuracion/resumen', {
+      titulo: 'Resumen diario',
+      config: await this.configResumen.obtenerConfig(),
+      errores: opts.errores ?? {},
+      guardado: opts.guardado ?? false,
+      enviadoA: opts.enviadoA ?? null,
+    });
+  }
+
+  resumenView = async (_req: Request, res: Response): Promise<void> => {
+    await this.renderResumen(res);
+  };
+
+  resumenPost = async (req: Request, res: Response): Promise<void> => {
+    const b = req.body ?? {};
+    try {
+      await this.configResumen.actualizarConfig({
+        actor: req.user!,
+        habilitado: b.habilitado === 'on' || b.habilitado === 'true',
+        destinatarios: str(b.destinatarios),
+        horaEnvio: b.horaEnvio,
+      });
+      await this.renderResumen(res, { guardado: true });
+    } catch (err) {
+      await this.renderResumen(res, { status: 422, errores: camposDeError(err) });
+    }
+  };
+
+  resumenEnviarPost = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { enviadoA } = await this.configResumen.enviarAhora(req.user!);
+      await this.renderResumen(res, { enviadoA });
+    } catch (err) {
+      await this.renderResumen(res, { status: 422, errores: camposDeError(err) });
     }
   };
 }

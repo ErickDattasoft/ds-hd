@@ -18,6 +18,7 @@ import { ArticuloKB, type ArticuloKBProps } from '../../core/entities/ArticuloKB
 import { Usuario, type UsuarioProps } from '../../core/entities/Usuario.js';
 import { sanearAcercaDe } from '../../core/entities/AcercaDe.js';
 import { sanearConfigCotizaciones } from '../../core/entities/ConfiguracionCotizaciones.js';
+import { sanearConfigResumen } from '../../core/entities/ConfiguracionResumen.js';
 import { CONTADOR_TICKETS } from '../tickets/constantes.js';
 import { ForbiddenError } from '../../core/errors/DomainError.js';
 import type { SessionUser } from '../shared/SessionUser.js';
@@ -95,6 +96,8 @@ export class BackupService {
       avisos,
       acercaDe,
       cotizaciones_cfg,
+      logo,
+      resumen,
     ] = await Promise.all([
       this.empresas.list({}),
       this.contactos.list({}),
@@ -108,6 +111,8 @@ export class BackupService {
       this.configuracion.obtenerAvisos(),
       this.configuracion.obtenerAcercaDe(),
       this.configuracion.obtenerCotizaciones(),
+      this.configuracion.obtenerLogo(),
+      this.configuracion.obtenerResumen(),
     ]);
 
     return {
@@ -122,7 +127,15 @@ export class BackupService {
       // Las cuentas se listan sin nada sensible de Auth (no hay contraseñas que respaldar
       // aquí — eso vive en Firebase Auth, fuera de Firestore).
       usuarios: usuarios.map((u) => ({ ...u, email: u.email.value })),
-      configuracion: { tickets: tickets_cfg, calculadora, avisos, acercaDe, cotizaciones: cotizaciones_cfg },
+      configuracion: {
+        tickets: tickets_cfg,
+        calculadora,
+        avisos,
+        acercaDe,
+        cotizaciones: cotizaciones_cfg,
+        logo,
+        resumen,
+      },
     };
   }
 
@@ -212,6 +225,8 @@ export class BackupService {
     if (cfg.cotizaciones) {
       await this.configuracion.guardarCotizaciones(sanearConfigCotizaciones(cfg.cotizaciones));
     }
+    if (cfg.logo) await this.configuracion.guardarLogo(cfg.logo as never);
+    if (cfg.resumen) await this.configuracion.guardarResumen(sanearConfigResumen(cfg.resumen));
 
     return resumen;
   }

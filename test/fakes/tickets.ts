@@ -34,6 +34,11 @@ import {
   type ConfiguracionCotizaciones,
 } from '../../src/core/entities/ConfiguracionCotizaciones.js';
 import { ACERCA_DE_POR_DEFECTO, type AcercaDe } from '../../src/core/entities/AcercaDe.js';
+import type { ConfiguracionLogo } from '../../src/core/entities/ConfiguracionLogo.js';
+import {
+  CONFIG_RESUMEN_POR_DEFECTO,
+  type ConfiguracionResumen,
+} from '../../src/core/entities/ConfiguracionResumen.js';
 import { esEstadoFinal, slugEstado } from '../../src/core/entities/value-objects/EstadoTicket.js';
 
 /** Almacén compartido por el repo y las queries en memoria. */
@@ -205,6 +210,20 @@ export class InMemoryConfiguracionRepository implements IConfiguracionRepository
   }
   async guardarAcercaDe(config: AcercaDe): Promise<void> {
     this.acercaDe = config;
+  }
+  logo: ConfiguracionLogo | null = null;
+  async obtenerLogo(): Promise<ConfiguracionLogo | null> {
+    return this.logo;
+  }
+  async guardarLogo(config: ConfiguracionLogo | null): Promise<void> {
+    this.logo = config;
+  }
+  resumen: ConfiguracionResumen = { ...CONFIG_RESUMEN_POR_DEFECTO };
+  async obtenerResumen(): Promise<ConfiguracionResumen> {
+    return this.resumen;
+  }
+  async guardarResumen(config: ConfiguracionResumen): Promise<void> {
+    this.resumen = config;
   }
 }
 

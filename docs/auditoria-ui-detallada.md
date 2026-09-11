@@ -131,7 +131,7 @@ Leyenda: ✅ existe · ◐ parcial · ❌ falta · ➖ no aplica (decisión de d
 |---|---|---|
 | Tipo de equipo + cantidad | ✅ | — |
 | **Servidores / terminales esperados** (opcional) | ◐ verificar | revisar |
-| **⚙️ Editar precios** (por tipo de equipo + precio SQL) | ◐ (config en `configuracion/calculadora`) | verificar que se pueda editar desde la UI |
+| **⚙️ Editar precios** (por tipo de equipo + precio SQL) | ✅ (`/app/configuracion/calculadora`) | — |
 | Enviar al cotizador | ✅ | — |
 
 ## 9. Versiones CONTPAQi (`/app/versiones`)
@@ -155,9 +155,9 @@ Leyenda: ✅ existe · ◐ parcial · ❌ falta · ➖ no aplica (decisión de d
 | Avisos pendientes (stat) | ✅ | — |
 | Tickets por estado / prioridad, cotizaciones por estado | ✅ | — |
 | Próximos eventos / actividad reciente | ✅ | — |
-| **📅 Calendario** (vista de calendario de agenda de tickets/eventos) | ❌ | agregar vista calendario |
-| **➕ Nueva Tarea** (rápida, desde el dashboard) | ◐ (existe `/app/tareas`, sin acceso rápido) | agregar botón |
-| 👁️ Revisar tickets públicos (acceso rápido) | ◐ (existe el buzón) | agregar al dashboard si hay pendientes |
+| **📅 Calendario** (vista de calendario de agenda de tickets/eventos) | ✅ (`8795344`, `/app/calendario`) | — |
+| **➕ Nueva Tarea** (rápida, desde el dashboard) | ✅ (`8795344`) | — |
+| 👁️ Revisar tickets públicos (acceso rápido) | ✅ (`8795344`, aviso cuando hay pendientes) | — |
 
 ## 11. Seguimiento comercial (interacciones + tareas)
 
@@ -199,15 +199,15 @@ cruzado. **Revisar**: "Ordenar" (por fecha) en la lista, ícono del evento.
 | Backup descargar / restaurar | ✅ (`3819213`/`97f2daa`) | — |
 | Import/Export Excel | ✅ (`376275a`) | — |
 | Prueba de envío de correo | ✅ (`3142db1`) | — |
-| **🏷️ Logo de empresa** (para correos / impresión / portal) | ❌ | agregar config de logo |
+| **🏷️ Logo de empresa** (para correos / impresión / portal) | ✅ (`/app/configuracion/apariencia`, base64 en Firestore) | — |
 | **🔖 GitHub PAT** + "ver puntos en GitHub" | ➖ (era para el roadmap del viejo — no aplica) | descartar |
 | **🔄 Sincronizar contactos** (con fuente externa) | ➖ (el viejo sincronizaba con una hoja; ds-hd es la fuente) | descartar |
-| **🎨 Apariencia** (tema en config) | ◐ (ds-hd tiene toggle en la topbar) | ok, quizá duplicar en config |
+| **🎨 Apariencia** (tema en config) | ➖ (el toggle de la topbar ya cubre esto; `/app/configuracion/apariencia` lo explica, sin duplicar dato) | — |
 | 👥 Usuarios (alta/edición) | ✅ (`/app/usuarios`) | — |
 | Solicitudes de acceso pendientes | ✅ | — |
-| **📊 "Enviar resumen ahora"** (resumen diario por correo) | ❌ | evaluar — agregar job + botón |
+| **📊 "Enviar resumen ahora"** (resumen diario por correo) | ✅ (`/app/configuracion/resumen`, botón manual + job de cron una vez al día) | — |
 | Contactos de soporte (Licencias / Versiones) | ✅ (dentro de avisos) | — |
-| Calculadora Compac — precios | ◐ | ver punto 8 |
+| Calculadora Compac — precios | ✅ (`/app/configuracion/calculadora`) | — |
 | Cotizaciones — datos generales / condiciones por defecto | ✅ (`/app/configuracion/cotizaciones`) | — |
 
 ## 15. Bitácora (`/app/bitacora`)
@@ -268,7 +268,24 @@ contraseña. ds-hd nace con cuentas reales de Firebase Auth por invitación.
    y `?desde=hoy|semana`. Filtros de categoría / recientes / orden A→Z en la
    lista y en gestión. Migración: mapea `sourcePath` → `rutaDestino`. Vista
    dividida: diferida (no aporta sobre lista + detalle a página completa).
-6. **Dashboard**: calendario, nueva tarea rápida.
-7. **Configuración**: logo de empresa, resumen diario, precios de calculadora
-   editables, apariencia.
-8. **Repaso final**: revisar cada `◐` de esta tabla contra el viejo.
+6. ✅ **HECHO** (`8795344`) — **Dashboard**: vista `/app/calendario` (tickets
+   programados, eventos y tareas del mes, acotada al alcance del actor), aviso
+   de buzón público pendiente y tarea rápida sin salir del dashboard.
+7. ✅ **HECHO** — **Configuración**: logo de empresa (`/app/configuracion/apariencia`,
+   base64 en Firestore — mismo patrón que los adjuntos de tickets, sin depender de
+   Firebase Storage; se sirve en `GET /logo`, sin sesión, para correos/impresión/portal);
+   resumen diario por correo (`/app/configuracion/resumen`, reusa las métricas del
+   dashboard vía `ResumenDiarioService`, botón "Enviar ahora" + job `/jobs/resumen-diario`
+   que corre cada hora pero solo envía una vez al día a la hora configurada,
+   `America/Mexico_City`); precios de la calculadora Compac editables
+   (`/app/configuracion/calculadora`, por sistema + complemento SQL + IVA/moneda).
+   Apariencia (tema): se dejó como está — el toggle de la topbar ya cubre esto, la
+   página solo lo explica, sin duplicar el dato en Firestore.
+8. **Repaso final**: revisar cada `◐` que queda en esta tabla contra el viejo — al
+   cierre del bloque 7 son: tickets → alta "Sistema: otro" y "Agente" (línea 24, 29),
+   ticket → detalle "Notas internas" como caja fija (línea 48), empresas → "Vigencia +
+   versión por sistema" también al crear y "Avisar por WhatsApp" masivo (línea 92, 98),
+   contactos → RFC (línea 108), calculadora → "Servidores/terminales esperados" (línea 133),
+   seguimiento → "Nueva tarea con empresa (autocompletar)" (línea 168). Nota: la narrativa
+   de los bloques 1-2 dice "HECHO" para varias de estas — antes de tocar código, confirmar
+   en el código actual cuál de las dos fuentes (la tabla o la narrativa) quedó desactualizada.

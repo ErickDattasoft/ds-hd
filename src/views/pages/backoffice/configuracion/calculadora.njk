@@ -1,0 +1,56 @@
+{% extends "layouts/backoffice.njk" %}
+{% import "components/configuracion.njk" as cfgnav %}
+{% block title %}Configuración de la calculadora{% endblock %}
+{% block content %}
+  <div class="page-head">
+    <h1>Configuración de la calculadora</h1>
+    <div class="page-head__actions">{{ cfgnav.nav('calculadora') }}</div>
+  </div>
+  {% if guardado %}<p class="alert alert--ok">Configuración guardada.</p>{% endif %}
+  {% if errores.general %}<p class="alert alert--error">{{ errores.general }}</p>{% endif %}
+  <p class="muted">
+    Precios que usa la <a href="/app/cotizaciones/calculadora">calculadora Compac/CONTPAQi</a> al
+    armar una cotización. En cada equipo, el sistema más caro se cobra a "1er sistema" y los
+    demás a "adicional".
+  </p>
+
+  <form method="post" action="/app/configuracion/calculadora" class="form form--wide">
+    <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+
+    <fieldset class="field">
+      <legend>Sistemas</legend>
+      {% for s in config.sistemas %}
+        <div class="field">
+          <span>{{ s.nombre }}</span>
+          <label class="field">1er sistema
+            <input type="number" min="0" step="0.01" name="precioPrimero_{{ s.clave }}" value="{{ s.precioPrimero }}" />
+          </label>
+          <label class="field">Adicional
+            <input type="number" min="0" step="0.01" name="precioAdicional_{{ s.clave }}" value="{{ s.precioAdicional }}" />
+          </label>
+        </div>
+      {% endfor %}
+    </fieldset>
+
+    <fieldset class="field">
+      <legend>{{ config.sql.nombre }}</legend>
+      <em class="field__hint">Complemento aparte por equipo (no participa en la regla "1º + adicionales").</em>
+      <label class="field">Precio por Servidor
+        <input type="number" min="0" step="0.01" name="sqlPrecioServidor" value="{{ config.sql.precioServidor }}" />
+      </label>
+      <label class="field">Precio por Terminal
+        <input type="number" min="0" step="0.01" name="sqlPrecioTerminal" value="{{ config.sql.precioTerminal }}" />
+      </label>
+    </fieldset>
+
+    <label class="field"><span>Tasa de IVA</span>
+      <input type="number" min="0" max="1" step="0.01" name="ivaTasa" value="{{ config.ivaTasa }}" />
+      <em class="field__hint">Como fracción, ej. 0.16 = 16%.</em>
+    </label>
+    <label class="field"><span>Moneda</span>
+      <input name="moneda" value="{{ config.moneda }}" maxlength="6" />
+    </label>
+
+    <button class="btn" type="submit">Guardar</button>
+  </form>
+{% endblock %}

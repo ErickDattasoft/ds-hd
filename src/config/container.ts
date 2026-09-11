@@ -74,6 +74,9 @@ import { ConfiguracionTicketsService } from '../application/configuracion/Config
 import { ConfiguracionCotizacionesService } from '../application/configuracion/ConfiguracionCotizacionesService.js';
 import { AcercaDeService } from '../application/configuracion/AcercaDeService.js';
 import { ConfiguracionIntegracionesService } from '../application/configuracion/ConfiguracionIntegracionesService.js';
+import { ConfiguracionCalculadoraService } from '../application/configuracion/ConfiguracionCalculadoraService.js';
+import { ConfiguracionLogoService } from '../application/configuracion/ConfiguracionLogoService.js';
+import { ResumenDiarioService } from '../application/dashboard/ResumenDiarioService.js';
 import { BitacoraService } from '../application/shared/BitacoraService.js';
 import { EmpresaService } from '../application/empresas/EmpresaService.js';
 import { EmpresaExcelService } from '../application/empresas/EmpresaExcelService.js';
@@ -229,6 +232,9 @@ export interface Cradle {
   configuracionTicketsService: ConfiguracionTicketsService;
   configuracionCotizacionesService: ConfiguracionCotizacionesService;
   configuracionIntegracionesService: ConfiguracionIntegracionesService;
+  configuracionCalculadoraService: ConfiguracionCalculadoraService;
+  configuracionLogoService: ConfiguracionLogoService;
+  resumenDiarioService: ResumenDiarioService;
   acercaDeService: AcercaDeService;
   bitacoraService: BitacoraService;
   empresaService: EmpresaService;
@@ -673,6 +679,12 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
           remitente: c.config.brevo.senderEmail,
         }, c.logger),
     ).singleton(),
+    configuracionCalculadoraService: asFunction(
+      (c: Cradle) => new ConfiguracionCalculadoraService(c.configuracionRepo, c.logger),
+    ).singleton(),
+    configuracionLogoService: asFunction(
+      (c: Cradle) => new ConfiguracionLogoService(c.configuracionRepo, c.logger),
+    ).singleton(),
     acercaDeService: asFunction(
       (c: Cradle) => new AcercaDeService(c.configuracionRepo, c.logger),
     ).singleton(),
@@ -782,6 +794,17 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
     agendaService: asFunction(
       (c: Cradle) => new AgendaService(c.ticketQueries, c.eventoRepo, c.tareaRepo, c.clock),
     ).singleton(),
+    resumenDiarioService: asFunction(
+      (c: Cradle) =>
+        new ResumenDiarioService(
+          c.obtenerMetricasService,
+          c.configuracionRepo,
+          c.emailSender,
+          c.bitacoraService,
+          c.clock,
+          c.logger,
+        ),
+    ).singleton(),
 
     authController: asFunction(
       (c: Cradle) =>
@@ -867,6 +890,9 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
           c.backupService,
           c.acercaDeService,
           c.configuracionCotizacionesService,
+          c.configuracionCalculadoraService,
+          c.configuracionLogoService,
+          c.resumenDiarioService,
         ),
     ).singleton(),
     ticketPublicoController: asFunction(
@@ -966,6 +992,7 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
           c.logger,
           c.config.jobs.secret,
           c.bitacoraService,
+          c.resumenDiarioService,
         ),
     ).singleton(),
   });

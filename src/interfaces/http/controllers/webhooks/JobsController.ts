@@ -6,6 +6,7 @@ import type { IIdGenerator } from '../../../../core/ports/services/IIdGenerator.
 import type { IClock } from '../../../../core/ports/services/IClock.js';
 import type { ILogger } from '../../../../core/ports/services/ILogger.js';
 import type { BitacoraService } from '../../../../application/shared/BitacoraService.js';
+import type { ResumenDiarioService } from '../../../../application/dashboard/ResumenDiarioService.js';
 
 /**
  * Endpoints invocados por el cron (GitHub Actions). Protegidos por bearer `JOBS_SECRET`.
@@ -20,6 +21,7 @@ export class JobsController {
     private readonly logger: ILogger,
     private readonly secret: string,
     private readonly bitacora: BitacoraService,
+    private readonly resumen: ResumenDiarioService,
   ) {}
 
   private autorizado(req: Request): boolean {
@@ -63,5 +65,12 @@ export class JobsController {
     if (!this.autorizado(req)) return void res.status(401).json({ error: 'no autorizado' });
     const r = await this.bitacora.aplicarRetencion();
     res.json({ ok: true, borradas: r.borradas, hayMas: r.hayMas, corte: r.corte.toISOString() });
+  };
+
+  /** Corre cada hora; solo envía si está habilitado y coincide la hora local configurada. */
+  resumenDiario = async (req: Request, res: Response): Promise<void> => {
+    if (!this.autorizado(req)) return void res.status(401).json({ error: 'no autorizado' });
+    const resultado = await this.resumen.enviarSiCorresponde();
+    res.json({ ok: true, ...resultado });
   };
 }

@@ -293,6 +293,30 @@ export function backofficeRoutes(container: Container): Router {
   r.post('/configuracion/backup/restaurar', requirePermission('configuracion:integraciones'), (req, res) =>
     configuracion().backupRestaurarPost(req, res),
   );
+  r.get('/configuracion/calculadora', requirePermission('configuracion:catalogos'), (req, res) =>
+    configuracion().calculadoraView(req, res),
+  );
+  r.post('/configuracion/calculadora', requirePermission('configuracion:catalogos'), (req, res) =>
+    configuracion().calculadoraPost(req, res),
+  );
+  r.get('/configuracion/apariencia', requirePermission('configuracion:catalogos'), (req, res) =>
+    configuracion().aparienciaView(req, res),
+  );
+  r.post('/configuracion/apariencia/logo', requirePermission('configuracion:catalogos'), (req, res) =>
+    configuracion().logoSubirPost(req, res),
+  );
+  r.post('/configuracion/apariencia/logo/eliminar', requirePermission('configuracion:catalogos'), (req, res) =>
+    configuracion().logoEliminarPost(req, res),
+  );
+  r.get('/configuracion/resumen', requirePermission('configuracion:catalogos'), (req, res) =>
+    configuracion().resumenView(req, res),
+  );
+  r.post('/configuracion/resumen', requirePermission('configuracion:catalogos'), (req, res) =>
+    configuracion().resumenPost(req, res),
+  );
+  r.post('/configuracion/resumen/enviar', requirePermission('configuracion:catalogos'), (req, res) =>
+    configuracion().resumenEnviarPost(req, res),
+  );
 
   return r;
 }

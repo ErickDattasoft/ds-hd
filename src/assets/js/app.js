@@ -707,6 +707,31 @@
     caja.focus();
   });
 
+  // ── Configuración → Apariencia: subir logo ──────────────────────────────
+  document.addEventListener('submit', function (e) {
+    var form = e.target.closest('[data-logo-form]');
+    if (!form) return;
+    e.preventDefault();
+    var input = form.querySelector('input[type=file]');
+    var file = input.files[0];
+    var msg = document.getElementById('logo-mensaje');
+    if (!file) return;
+    if (msg) msg.textContent = 'Subiendo…';
+    leerBase64(file, function (b64) {
+      fetch('/app/configuracion/apariencia/logo', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'x-csrf-token': cookie('x-csrf-token') },
+        body: JSON.stringify({ contentType: file.type, base64: b64 }),
+      })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          if (data.ok) window.location.reload();
+          else if (msg) msg.textContent = '❌ ' + (data.error || 'No se pudo subir el logo');
+        })
+        .catch(function () { if (msg) msg.textContent = '❌ No se pudo subir. Revisa tu conexión.'; });
+    });
+  });
+
   document.addEventListener('DOMContentLoaded', function () {
     updateToggle();
     initKanban();

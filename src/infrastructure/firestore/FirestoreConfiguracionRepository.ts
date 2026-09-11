@@ -23,6 +23,8 @@ import {
   type ConfiguracionCotizaciones,
 } from '../../core/entities/ConfiguracionCotizaciones.js';
 import { sanearAcercaDe, type AcercaDe } from '../../core/entities/AcercaDe.js';
+import type { ConfiguracionLogo } from '../../core/entities/ConfiguracionLogo.js';
+import { sanearConfigResumen, type ConfiguracionResumen } from '../../core/entities/ConfiguracionResumen.js';
 
 const COL = 'configuracion';
 
@@ -117,6 +119,32 @@ export class FirestoreConfiguracionRepository implements IConfiguracionRepositor
 
   async guardarAcercaDe(config: AcercaDe): Promise<void> {
     await this.db.collection(COL).doc('acercaDe').set(config, { merge: true });
+  }
+
+  async obtenerLogo(): Promise<ConfiguracionLogo | null> {
+    const snap = await this.db.collection(COL).doc('logo').get();
+    if (!snap.exists) return null;
+    const d = snap.data()!;
+    if (typeof d.data !== 'string' || !d.data) return null;
+    return { contentType: String(d.contentType ?? ''), tamano: Number(d.tamano ?? 0), data: d.data };
+  }
+
+  async guardarLogo(config: ConfiguracionLogo | null): Promise<void> {
+    const ref = this.db.collection(COL).doc('logo');
+    if (!config) {
+      await ref.delete();
+      return;
+    }
+    await ref.set(config);
+  }
+
+  async obtenerResumen(): Promise<ConfiguracionResumen> {
+    const snap = await this.db.collection(COL).doc('resumen').get();
+    return sanearConfigResumen(snap.exists ? snap.data() : null);
+  }
+
+  async guardarResumen(config: ConfiguracionResumen): Promise<void> {
+    await this.db.collection(COL).doc('resumen').set(config, { merge: true });
   }
 }
 

@@ -163,3 +163,55 @@ Documentos singleton de configuración (`configuracion/{seccion}`).
 #### Returns
 
 `Promise`\<`void`\>
+
+***
+
+### obtenerLogo()
+
+> **obtenerLogo**(): `Promise`\<[`ConfiguracionLogo`](../../../../entities/ConfiguracionLogo/interfaces/ConfiguracionLogo.md) \| `null`\>
+
+#### Returns
+
+`Promise`\<[`ConfiguracionLogo`](../../../../entities/ConfiguracionLogo/interfaces/ConfiguracionLogo.md) \| `null`\>
+
+***
+
+### guardarLogo()
+
+> **guardarLogo**(`config`): `Promise`\<`void`\>
+
+#### Parameters
+
+##### config
+
+[`ConfiguracionLogo`](../../../../entities/ConfiguracionLogo/interfaces/ConfiguracionLogo.md) \| `null`
+
+#### Returns
+
+`Promise`\<`void`\>
+
+***
+
+### obtenerResumen()
+
+> **obtenerResumen**(): `Promise`\<[`ConfiguracionResumen`](../../../../entities/ConfiguracionResumen/interfaces/ConfiguracionResumen.md)\>
+
+#### Returns
+
+`Promise`\<[`ConfiguracionResumen`](../../../../entities/ConfiguracionResumen/interfaces/ConfiguracionResumen.md)\>
+
+***
+
+### guardarResumen()
+
+> **guardarResumen**(`config`): `Promise`\<`void`\>
+
+#### Parameters
+
+##### config
+
+[`ConfiguracionResumen`](../../../../entities/ConfiguracionResumen/interfaces/ConfiguracionResumen.md)
+
+#### Returns
+
+`Promise`\<`void`\>

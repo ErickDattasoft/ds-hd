@@ -30,5 +30,9 @@ export function publicRoutes(container: Container): Router {
   r.get('/eventos/:id', (req, res) => eventos().detalle(req, res));
   r.post('/eventos/:id', (req, res) => eventos().registrarPost(req, res));
 
+  // Sin sesión: lo consumen los correos salientes, las vistas de impresión y el portal.
+  const configuracion = () => container.resolve('configuracionController');
+  r.get('/logo', (req, res) => configuracion().logoArchivoGet(req, res));
+
   return r;
 }
