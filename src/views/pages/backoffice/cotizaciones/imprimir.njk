@@ -1,4 +1,5 @@
 {% extends "layouts/base.njk" %}
+{% import "components/marca.njk" as marca %}
 {% block title %}{{ cotizacion.folio }}{% endblock %}
 
 {% block head %}
@@ -30,7 +31,7 @@
 <article class="doc" id="contenido">
   <div class="doc__head">
     <div>
-      <div class="doc__brand">DATTASOFT</div>
+      {{ marca.brand() }}
       <div class="muted">Cotización</div>
     </div>
     <div class="doc__meta">

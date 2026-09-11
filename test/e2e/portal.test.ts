@@ -20,7 +20,9 @@ describe('portal de cliente', () => {
     const t = makeTestApp({ usuarios: [CLI] });
     const { agent, csrf } = await login(t.app, CLI.email, CLI.password);
 
-    expect((await agent.get('/portal')).status).toBe(200);
+    const portal = await agent.get('/portal');
+    expect(portal.status).toBe(200);
+    expect(portal.text).toContain('data-logo-img'); // logo de empresa en el sidebar del portal
     expect((await agent.get('/portal/tickets/nuevo')).status).toBe(200);
 
     const crear = await agent.post('/portal/tickets').type('form').send({

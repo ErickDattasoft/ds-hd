@@ -1,4 +1,5 @@
 {% extends "layouts/base.njk" %}
+{% import "components/marca.njk" as marca %}
 {% block title %}Ticket #{{ ticket.numero }}{% endblock %}
 
 {% block head %}
@@ -29,7 +30,7 @@
 {% if auto %}<span data-print-auto hidden></span>{% endif %}
 
 <article class="doc" id="contenido">
-  {% if conLogo %}<div class="doc__brand">DATTASOFT <span class="muted" style="font-weight:400;font-size:0.8rem">— Sistema de tickets</span></div>{% endif %}
+  {% if conLogo %}{{ marca.brand() }}{% endif %}
   <h1>Ticket #{{ ticket.numero }} — {{ ticket.asunto }}</h1>
 
   <table class="datos">

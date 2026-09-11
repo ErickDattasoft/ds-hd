@@ -70,6 +70,11 @@ describe('versiones de sistemas', () => {
     expect(xlsx.status).toBe(200);
     expect(xlsx.headers['content-disposition']).toContain('desactualizadas-');
 
+    const imprimir = await agent.get('/app/versiones/reporte/imprimir');
+    expect(imprimir.status).toBe(200);
+    expect(imprimir.text).toContain('Rezagada SA');
+    expect(imprimir.text).toContain('data-logo-img');
+
     // filtro a otra empresa → la fila de Rezagada (su versión 17.0.0) ya no sale
     // ("Rezagada SA" seguiría en el <select> de empresas, por eso comparamos la versión)
     const vacio = await agent.get('/app/versiones/reporte?empresa=otra');

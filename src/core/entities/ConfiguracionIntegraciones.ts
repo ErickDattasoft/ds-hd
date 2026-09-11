@@ -43,6 +43,10 @@ export interface ConfiguracionIntegraciones {
   n8nWebhookTickets: string;
   /** Si viene vacío, `N8nWebhookPublisher` usa el env var `N8N_WEBHOOK_COTIZACIONES` como respaldo. */
   n8nWebhookCotizaciones: string;
+  /** Webhook para "Avisar por WhatsApp" desde Empresas — CallMeBot no sirve para esto (solo
+   * manda al número propio dado de alta), así que este evento se manda tal cual a n8n para
+   * que ahí se enrute a un proveedor real de WhatsApp Business. */
+  n8nWebhookEmpresas: string;
   whatsappHabilitado: boolean;
   whatsappTelefono: string;
   whatsappApiKey: string;
@@ -59,6 +63,7 @@ function reglasPorDefecto(): MatrizReglas {
 export const CONFIG_INTEGRACIONES_POR_DEFECTO: ConfiguracionIntegraciones = {
   n8nWebhookTickets: '',
   n8nWebhookCotizaciones: '',
+  n8nWebhookEmpresas: '',
   whatsappHabilitado: false,
   whatsappTelefono: '',
   whatsappApiKey: '',

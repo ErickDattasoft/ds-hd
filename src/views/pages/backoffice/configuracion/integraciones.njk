@@ -29,6 +29,17 @@
         <button type="button" class="btn btn--ghost btn--sm" data-probar-webhook="cotizaciones">Probar conexión</button>
         <span class="muted" data-resultado-webhook="cotizaciones"></span>
         <p class="muted">Si se deja vacío, se usa la variable de entorno del servidor como respaldo (compatibilidad).</p>
+
+        <label class="field"><span>Webhook de empresas (avisos por WhatsApp)</span>
+          <input type="url" name="n8nWebhookEmpresas" value="{{ config.n8nWebhookEmpresas }}" placeholder="https://..." data-n8n-url="empresas" />
+          {% if errores.n8nWebhookEmpresas %}<em class="field__error">{{ errores.n8nWebhookEmpresas }}</em>{% endif %}
+        </label>
+        <button type="button" class="btn btn--ghost btn--sm" data-probar-webhook="empresas">Probar conexión</button>
+        <span class="muted" data-resultado-webhook="empresas"></span>
+        <p class="muted">Lo usa el botón "Avisar por WhatsApp" de Empresas. CallMeBot (abajo) no sirve para avisar a
+          clientes — solo manda al número propio dado de alta. Este evento (<code>empresa.avisar_whatsapp</code>,
+          con teléfono y mensaje) se manda tal cual a n8n; de ese lado se debe enrutar a un proveedor real de
+          WhatsApp Business.</p>
       </div>
     </details>
 

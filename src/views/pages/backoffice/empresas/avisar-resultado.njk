@@ -2,7 +2,7 @@
 {% block title %}Resultado del aviso{% endblock %}
 {% block content %}
   <div class="page-head">
-    <h1>Resultado del aviso de {{ 'versiones' if tipo == 'versiones' else 'licencias' }}</h1>
+    <h1>Resultado del aviso de {{ 'versiones' if tipo == 'versiones' else 'licencias' }} ({{ 'WhatsApp' if canal == 'whatsapp' else 'correo' }})</h1>
     <a class="btn btn--sm btn--ghost" href="/app/empresas">Volver a empresas</a>
   </div>
   <table class="data-table">
@@ -18,6 +18,10 @@
               <span class="badge">Sin pendientes, no se envió</span>
             {% elif r.motivo == 'sin_contacto_correo' %}
               <span class="badge badge--warning">Sin contacto con correo</span>
+            {% elif r.motivo == 'sin_contacto_telefono' %}
+              <span class="badge badge--warning">Sin contacto con teléfono</span>
+            {% elif r.motivo == 'sin_webhook_configurado' %}
+              <span class="badge badge--warning">Falta configurar el webhook de empresas</span>
             {% else %}
               <span class="badge badge--danger">No encontrada</span>
             {% endif %}

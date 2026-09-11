@@ -25,12 +25,16 @@ describe('seguimiento comercial', () => {
     expect(inter.status).toBe(302);
     expect(t.interaccionRepo.items[0]?.tipo).toBe('llamada');
 
+    const formTarea = await agent.get('/app/tareas');
+    expect(formTarea.text).toContain('ACME'); // el <select> de empresa lista la cartera
+
     const tarea = await agent.post('/app/tareas').type('form').send({
-      _csrf: csrf, titulo: 'Enviar propuesta a ACME', asignadoAUid: ADMIN.uid, vence: '2026-09-05',
+      _csrf: csrf, titulo: 'Enviar propuesta a ACME', empresaId: 'e1', asignadoAUid: ADMIN.uid, vence: '2026-09-05',
     });
     expect(tarea.status).toBe(302);
     const [tar] = [...t.tareaRepo.items.values()];
     expect(tar!.titulo).toBe('Enviar propuesta a ACME');
+    expect(tar!.empresaId).toBe('e1');
 
     // marcar completada
     await agent.post(`/app/tareas/${tar!.id}/marcar`).type('form').send({ _csrf: csrf, completada: 'true' });
@@ -38,6 +42,7 @@ describe('seguimiento comercial', () => {
 
     const mias = await agent.get('/app/tareas');
     expect(mias.text).toContain('Enviar propuesta a ACME');
+    expect(mias.text).toContain('href="/app/empresas/e1"');
   });
 });
 

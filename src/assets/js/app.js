@@ -707,6 +707,15 @@
     caja.focus();
   });
 
+  // ── Logo de empresa: si no hay uno configurado, oculta el <img> roto ────
+  document.addEventListener(
+    'error',
+    function (e) {
+      if (e.target && e.target.matches && e.target.matches('[data-logo-img]')) e.target.hidden = true;
+    },
+    true,
+  );
+
   // ── Configuración → Apariencia: subir logo ──────────────────────────────
   document.addEventListener('submit', function (e) {
     var form = e.target.closest('[data-logo-form]');

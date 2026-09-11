@@ -92,6 +92,7 @@ export class FirestoreConfiguracionRepository implements IConfiguracionRepositor
     return {
       n8nWebhookTickets: String(d.n8nWebhookTickets ?? ''),
       n8nWebhookCotizaciones: String(d.n8nWebhookCotizaciones ?? ''),
+      n8nWebhookEmpresas: String(d.n8nWebhookEmpresas ?? ''),
       whatsappHabilitado: Boolean(d.whatsappHabilitado),
       whatsappTelefono: String(d.whatsappTelefono ?? ''),
       whatsappApiKey: String(d.whatsappApiKey ?? ''),

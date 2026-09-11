@@ -28,6 +28,12 @@ Entrada de actualización de la config de integraciones (viene del form).
 
 ***
 
+### n8nWebhookEmpresas
+
+> **n8nWebhookEmpresas**: `string`
+
+***
+
 ### whatsappHabilitado
 
 > **whatsappHabilitado**: `boolean`

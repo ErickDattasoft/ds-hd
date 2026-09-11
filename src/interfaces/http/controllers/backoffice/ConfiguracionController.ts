@@ -196,6 +196,7 @@ export class ConfiguracionController {
         actor: req.user!,
         n8nWebhookTickets: str(b.n8nWebhookTickets),
         n8nWebhookCotizaciones: str(b.n8nWebhookCotizaciones),
+        n8nWebhookEmpresas: str(b.n8nWebhookEmpresas),
         whatsappHabilitado: b.whatsappHabilitado === 'on' || b.whatsappHabilitado === 'true',
         whatsappTelefono: str(b.whatsappTelefono),
         whatsappApiKey: str(b.whatsappApiKey),

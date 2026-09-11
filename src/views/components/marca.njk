@@ -1,0 +1,8 @@
+{# Encabezado de marca para documentos imprimibles (tickets/cotizaciones/reportes). El
+   logo real (si hay uno configurado en Configuración → Apariencia) se agrega junto al
+   nombre de la empresa; si no carga, app.js lo oculta (ver [data-logo-img]). #}
+{% macro brand() %}
+  <div class="doc__brand">
+    <img data-logo-img src="/logo" alt="" style="max-height:40px;vertical-align:middle;margin-right:8px" />DATTASOFT
+  </div>
+{% endmacro %}

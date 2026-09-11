@@ -6,14 +6,17 @@
 
 # Class: AvisarEmpresasService
 
-Caso de uso: avisar por correo a un lote de empresas sobre versiones desactualizadas o
-licencias por vencer/vencidas, con la plantilla y contactos de soporte configurados.
+Caso de uso: avisar (por correo o WhatsApp) a un lote de empresas sobre versiones
+desactualizadas o licencias por vencer/vencidas, con la plantilla y contactos de soporte
+configurados. WhatsApp no usa CallMeBot (solo manda al número propio dado de alta) — manda
+el evento `empresa.avisar_whatsapp` al webhook n8n dedicado, para que se enrute ahí a un
+proveedor real de WhatsApp Business.
 
 ## Constructors
 
 ### Constructor
 
-> **new AvisarEmpresasService**(`empresas`, `contactos`, `versiones`, `configuracion`, `email`, `bitacora`, `clock`): `AvisarEmpresasService`
+> **new AvisarEmpresasService**(`empresas`, `contactos`, `versiones`, `configuracion`, `email`, `gateway`, `bitacora`, `clock`): `AvisarEmpresasService`
 
 #### Parameters
 
@@ -36,6 +39,10 @@ licencias por vencer/vencidas, con la plantilla y contactos de soporte configura
 ##### email
 
 [`IEmailSender`](../../../../core/ports/services/IEmailSender/interfaces/IEmailSender.md)
+
+##### gateway
+
+[`IIntegracionesGateway`](../../../../core/ports/services/IIntegracionesGateway/interfaces/IIntegracionesGateway.md)
 
 ##### bitacora
 
@@ -70,6 +77,10 @@ licencias por vencer/vencidas, con la plantilla y contactos de soporte configura
 ###### tipo
 
 [`TipoAviso`](../type-aliases/TipoAviso.md)
+
+###### canal?
+
+[`CanalAviso`](../type-aliases/CanalAviso.md)
 
 #### Returns
 

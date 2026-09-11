@@ -17,6 +17,7 @@ export interface DatosIntegraciones {
   actor: SessionUser;
   n8nWebhookTickets: string;
   n8nWebhookCotizaciones: string;
+  n8nWebhookEmpresas: string;
   whatsappHabilitado: boolean;
   whatsappTelefono: string;
   whatsappApiKey: string;
@@ -73,10 +74,16 @@ export class ConfiguracionIntegracionesService {
         n8nWebhookCotizaciones: 'No es una URL http(s) válida',
       });
     }
+    if (!urlValida(input.n8nWebhookEmpresas)) {
+      throw new ValidationError('URL de webhook de empresas no válida', {
+        n8nWebhookEmpresas: 'No es una URL http(s) válida',
+      });
+    }
 
     const config: ConfiguracionIntegraciones = {
       n8nWebhookTickets: input.n8nWebhookTickets.trim(),
       n8nWebhookCotizaciones: input.n8nWebhookCotizaciones.trim(),
+      n8nWebhookEmpresas: input.n8nWebhookEmpresas.trim(),
       whatsappHabilitado: input.whatsappHabilitado,
       whatsappTelefono: input.whatsappTelefono.trim(),
       whatsappApiKey: input.whatsappApiKey.trim(),

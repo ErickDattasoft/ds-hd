@@ -101,14 +101,17 @@ export class EmpresaController {
   };
 
   avisarPost = async (req: Request, res: Response): Promise<void> => {
-    const tipo = req.body?.tipo === 'licencias' ? 'licencias' : 'versiones';
+    const [tipoRaw, canalRaw] = str(req.body?.accion).split('-');
+    const tipo = tipoRaw === 'licencias' ? 'licencias' : 'versiones';
+    const canal = canalRaw === 'whatsapp' ? 'whatsapp' : 'correo';
     const empresaIds = ([] as string[]).concat(req.body?.empresaIds ?? []).filter(Boolean);
     const resultados = empresaIds.length
-      ? await this.avisar.ejecutar({ actor: req.user!, empresaIds, tipo })
+      ? await this.avisar.ejecutar({ actor: req.user!, empresaIds, tipo, canal })
       : [];
     res.render('pages/backoffice/empresas/avisar-resultado', {
       titulo: 'Resultado del aviso',
       tipo,
+      canal,
       resultados,
     });
   };

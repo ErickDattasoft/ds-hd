@@ -86,6 +86,7 @@ describe('flujo de tickets', () => {
     expect(imp.status).toBe(200);
     expect(imp.text).toContain('Timbrado fallido');
     expect(imp.text).toContain('María');
+    expect(imp.text).toContain('data-logo-img');
   });
 
   it('adjuntar un archivo al ticket, verlo y quitarlo', async () => {

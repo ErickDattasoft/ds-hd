@@ -82,12 +82,14 @@
   </table>
 
   {% if can('empresas:editar') %}
-    <form id="avisar-form" method="post" action="/app/empresas/avisar" data-confirm="¿Enviar el aviso por correo a las empresas seleccionadas?">
+    <form id="avisar-form" method="post" action="/app/empresas/avisar" data-confirm="¿Enviar el aviso a las empresas seleccionadas?">
       <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
       {% if filas | length %}
         <div class="page-head__actions">
-          <button class="btn btn--sm btn--secondary" type="submit" name="tipo" value="versiones">Avisar versiones a seleccionadas</button>
-          <button class="btn btn--sm btn--secondary" type="submit" name="tipo" value="licencias">Avisar licencias a seleccionadas</button>
+          <button class="btn btn--sm btn--secondary" type="submit" name="accion" value="versiones-correo">Avisar versiones (correo)</button>
+          <button class="btn btn--sm btn--secondary" type="submit" name="accion" value="licencias-correo">Avisar licencias (correo)</button>
+          <button class="btn btn--sm btn--ghost" type="submit" name="accion" value="versiones-whatsapp">Avisar versiones (WhatsApp)</button>
+          <button class="btn btn--sm btn--ghost" type="submit" name="accion" value="licencias-whatsapp">Avisar licencias (WhatsApp)</button>
         </div>
       {% endif %}
     </form>

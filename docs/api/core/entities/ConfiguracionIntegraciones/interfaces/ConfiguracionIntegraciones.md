@@ -26,6 +26,16 @@ Si viene vacío, `N8nWebhookPublisher` usa el env var `N8N_WEBHOOK_COTIZACIONES`
 
 ***
 
+### n8nWebhookEmpresas
+
+> **n8nWebhookEmpresas**: `string`
+
+Webhook para "Avisar por WhatsApp" desde Empresas — CallMeBot no sirve para esto (solo
+manda al número propio dado de alta), así que este evento se manda tal cual a n8n para
+que ahí se enrute a un proveedor real de WhatsApp Business.
+
+***
+
 ### whatsappHabilitado
 
 > **whatsappHabilitado**: `boolean`

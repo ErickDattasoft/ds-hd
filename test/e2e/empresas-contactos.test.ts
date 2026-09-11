@@ -204,4 +204,28 @@ describe('empresas y contactos', () => {
     expect(borrar.status).toBe(302);
     expect(t.filtroGuardadoRepo.items.size).toBe(0);
   });
+
+  it('avisa por correo a una empresa con licencia por vencer (botón "Avisar licencias")', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    const empresa = new Empresa({
+      id: 'e1',
+      nombre: 'Con Licencia Vencida',
+      sistemasContratados: ['Contabilidad'],
+      vigencias: { Contabilidad: '2026-01-01' },
+    });
+    t.empresaRepo.items.set('e1', empresa);
+    const { agent, csrf } = await login(t.app, ADMIN.email, ADMIN.password);
+    await agent.post('/app/contactos').type('form').send({
+      _csrf: csrf, nombre: 'Contacto Uno', empresaId: 'e1', email: 'contacto@e1.com',
+    });
+
+    const res = await agent.post('/app/empresas/avisar').type('form').send({
+      _csrf: csrf, accion: 'licencias-correo', empresaIds: 'e1',
+    });
+    expect(res.status).toBe(200);
+    expect(res.text).toContain('correo');
+    expect(res.text).toContain('Enviado');
+    expect(t.emailSender.enviados).toHaveLength(1);
+    expect(t.emailSender.enviados[0]!.para).toEqual([{ email: 'contacto@e1.com', nombre: 'Contacto Uno' }]);
+  });
 });

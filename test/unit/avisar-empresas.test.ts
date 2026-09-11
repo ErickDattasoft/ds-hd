@@ -11,6 +11,18 @@ import { InMemoryVersionRepository } from '../fakes/kb.js';
 import { InMemoryConfiguracionRepository } from '../fakes/tickets.js';
 import { FakeEmailSender } from '../fakes/FakeEmailSender.js';
 import { FixedClock, silentLogger } from '../fakes/support.js';
+import type { IIntegracionesGateway, ResultadoPrueba } from '../../src/core/ports/services/IIntegracionesGateway.js';
+
+class FakeIntegracionesGateway implements IIntegracionesGateway {
+  readonly webhooksLlamados: { url: string; payload: Record<string, unknown> }[] = [];
+  async postWebhook(url: string, payload: Record<string, unknown>): Promise<ResultadoPrueba> {
+    this.webhooksLlamados.push({ url, payload });
+    return { ok: true, detalle: 'HTTP 200' };
+  }
+  async enviarWhatsApp(): Promise<ResultadoPrueba> {
+    return { ok: true, detalle: 'no usado en estos tests' };
+  }
+}
 
 let seq = 0;
 const ids = { newId: () => `id-${++seq}`, newToken: () => `tok-${++seq}` };
@@ -36,6 +48,7 @@ describe('AvisarEmpresasService', () => {
   let versiones: InMemoryVersionRepository;
   let config: InMemoryConfiguracionRepository;
   let email: FakeEmailSender;
+  let gateway: FakeIntegracionesGateway;
   let bitacora: InMemoryBitacoraRepository;
   let clock: FixedClock;
   let service: AvisarEmpresasService;
@@ -47,6 +60,7 @@ describe('AvisarEmpresasService', () => {
     versiones = new InMemoryVersionRepository();
     config = new InMemoryConfiguracionRepository();
     email = new FakeEmailSender();
+    gateway = new FakeIntegracionesGateway();
     bitacora = new InMemoryBitacoraRepository();
     clock = new FixedClock(new Date('2026-09-01T12:00:00Z'));
     service = new AvisarEmpresasService(
@@ -55,6 +69,7 @@ describe('AvisarEmpresasService', () => {
       versiones,
       config,
       email,
+      gateway,
       new BitacoraService(bitacora, ids, clock, silentLogger),
       clock,
     );
@@ -127,5 +142,85 @@ describe('AvisarEmpresasService', () => {
     await expect(
       service.ejecutar({ actor: actor({ permisos: [] }), empresaIds: ['e1'], tipo: 'versiones' }),
     ).rejects.toThrow(ForbiddenError);
+  });
+
+  it('avisa por WhatsApp (webhook n8n) cuando el canal es whatsapp y hay teléfono', async () => {
+    await versiones.save(new VersionSistema({ id: 'v1', sistema: 'Contabilidad', versionActual: '19.1.0' }));
+    await empresas.save(
+      new Empresa({
+        id: 'e4',
+        nombre: 'Empresa WhatsApp',
+        sistemasContratados: ['Contabilidad'],
+        versionesInstaladas: { Contabilidad: '18.0.0' },
+      }),
+    );
+    await contactos.save(new Contacto({ id: 'c4', nombre: 'Cliente Cuatro', empresaId: 'e4', celular: '9991234567' }));
+    const integraciones = await config.obtenerIntegraciones();
+    await config.guardarIntegraciones({ ...integraciones, n8nWebhookEmpresas: 'https://n8n.example.com/wh' });
+
+    const resultados = await service.ejecutar({
+      actor: actor(),
+      empresaIds: ['e4'],
+      tipo: 'versiones',
+      canal: 'whatsapp',
+    });
+
+    expect(resultados).toEqual([{ empresaId: 'e4', empresaNombre: 'Empresa WhatsApp', enviado: true }]);
+    expect(email.enviados).toHaveLength(0);
+    expect(gateway.webhooksLlamados).toHaveLength(1);
+    expect(gateway.webhooksLlamados[0]!.url).toBe('https://n8n.example.com/wh');
+    expect(gateway.webhooksLlamados[0]!.payload).toMatchObject({
+      evento: 'empresa.avisar_whatsapp',
+      empresaId: 'e4',
+      telefono: '9991234567',
+    });
+    expect((await empresas.findById('e4'))?.ultimoAvisoVersionesEn).toEqual(clock.now());
+  });
+
+  it('WhatsApp sin webhook configurado reporta sin_webhook_configurado', async () => {
+    await versiones.save(new VersionSistema({ id: 'v1', sistema: 'Contabilidad', versionActual: '19.1.0' }));
+    await empresas.save(
+      new Empresa({
+        id: 'e5',
+        nombre: 'Sin Webhook',
+        sistemasContratados: ['Contabilidad'],
+        versionesInstaladas: { Contabilidad: '18.0.0' },
+      }),
+    );
+    await contactos.save(new Contacto({ id: 'c5', nombre: 'Cliente Cinco', empresaId: 'e5', celular: '9991234567' }));
+
+    const resultados = await service.ejecutar({
+      actor: actor(),
+      empresaIds: ['e5'],
+      tipo: 'versiones',
+      canal: 'whatsapp',
+    });
+
+    expect(resultados[0]).toMatchObject({ enviado: false, motivo: 'sin_webhook_configurado' });
+    expect(gateway.webhooksLlamados).toHaveLength(0);
+  });
+
+  it('WhatsApp sin ningún contacto con teléfono reporta sin_contacto_telefono', async () => {
+    await versiones.save(new VersionSistema({ id: 'v1', sistema: 'Contabilidad', versionActual: '19.1.0' }));
+    await empresas.save(
+      new Empresa({
+        id: 'e6',
+        nombre: 'Sin Telefono',
+        sistemasContratados: ['Contabilidad'],
+        versionesInstaladas: { Contabilidad: '18.0.0' },
+      }),
+    );
+    await contactos.save(new Contacto({ id: 'c6', nombre: 'Cliente Seis', empresaId: 'e6', email: 'c6@x.com' }));
+    const integraciones = await config.obtenerIntegraciones();
+    await config.guardarIntegraciones({ ...integraciones, n8nWebhookEmpresas: 'https://n8n.example.com/wh' });
+
+    const resultados = await service.ejecutar({
+      actor: actor(),
+      empresaIds: ['e6'],
+      tipo: 'versiones',
+      canal: 'whatsapp',
+    });
+
+    expect(resultados[0]).toMatchObject({ enviado: false, motivo: 'sin_contacto_telefono' });
   });
 });

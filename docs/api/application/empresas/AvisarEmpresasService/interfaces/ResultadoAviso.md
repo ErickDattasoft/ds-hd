@@ -30,4 +30,4 @@ Qué pasó al intentar avisar a una empresa (enviado, o por qué no).
 
 ### motivo?
 
-> `optional` **motivo?**: `"sin_pendientes"` \| `"sin_contacto_correo"` \| `"no_encontrada"`
+> `optional` **motivo?**: `"sin_pendientes"` \| `"sin_contacto_correo"` \| `"sin_contacto_telefono"` \| `"sin_webhook_configurado"` \| `"no_encontrada"`

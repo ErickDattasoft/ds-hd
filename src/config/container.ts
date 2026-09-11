@@ -14,6 +14,7 @@ import { FirestoreInvitacionRepository } from '../infrastructure/firestore/Fires
 import { BrevoEmailSender } from '../infrastructure/email/BrevoEmailSender.js';
 import { LoggingEmailSender } from '../infrastructure/email/LoggingEmailSender.js';
 import { SmtpEmailSender } from '../infrastructure/email/SmtpEmailSender.js';
+import { LogoEmailSender } from '../infrastructure/email/LogoEmailSender.js';
 import { FirestoreTicketRepository } from '../infrastructure/firestore/FirestoreTicketRepository.js';
 import { FirestoreTicketQueries } from '../infrastructure/firestore/FirestoreTicketQueries.js';
 import { FirestoreContadorRepository } from '../infrastructure/firestore/FirestoreContadorRepository.js';
@@ -350,28 +351,28 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
         ),
     ).singleton(),
 
-    emailSender: asFunction(({ config: c, logger: l }: Cradle): IEmailSender => {
-      if (c.smtp.host) {
-        return new SmtpEmailSender(
-          {
-            host: c.smtp.host,
-            port: c.smtp.port,
-            secure: c.smtp.secure,
-            user: c.smtp.user,
-            pass: c.smtp.pass,
-            senderName: c.brevo.senderName,
-            senderEmail: c.brevo.senderEmail,
-          },
-          l,
-        );
-      }
-      if (c.brevo.apiKey) {
-        return new BrevoEmailSender(
-          { apiKey: c.brevo.apiKey, senderName: c.brevo.senderName, senderEmail: c.brevo.senderEmail },
-          l,
-        );
-      }
-      return new LoggingEmailSender(l);
+    emailSender: asFunction((c: Cradle): IEmailSender => {
+      const { config: cfg, logger: l } = c;
+      const base: IEmailSender = cfg.smtp.host
+        ? new SmtpEmailSender(
+            {
+              host: cfg.smtp.host,
+              port: cfg.smtp.port,
+              secure: cfg.smtp.secure,
+              user: cfg.smtp.user,
+              pass: cfg.smtp.pass,
+              senderName: cfg.brevo.senderName,
+              senderEmail: cfg.brevo.senderEmail,
+            },
+            l,
+          )
+        : cfg.brevo.apiKey
+          ? new BrevoEmailSender(
+              { apiKey: cfg.brevo.apiKey, senderName: cfg.brevo.senderName, senderEmail: cfg.brevo.senderEmail },
+              l,
+            )
+          : new LoggingEmailSender(l);
+      return new LogoEmailSender(base, c.configuracionRepo, cfg.baseUrl);
     }).singleton(),
 
     usuarioRepo: asFunction(
@@ -702,6 +703,7 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
           c.versionRepo,
           c.configuracionRepo,
           c.emailSender,
+          c.integracionesGateway,
           c.bitacoraService,
           c.clock,
         ),
@@ -948,7 +950,7 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
         new CotizacionController(c.cotizacionService, c.calculadoraCompacService, c.empresaService),
     ).singleton(),
     seguimientoController: asFunction(
-      (c: Cradle) => new SeguimientoController(c.seguimientoService, c.usuarioRepo),
+      (c: Cradle) => new SeguimientoController(c.seguimientoService, c.usuarioRepo, c.empresaService),
     ).singleton(),
     papeleraService: asFunction(
       (c: Cradle) =>

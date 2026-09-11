@@ -88,6 +88,7 @@ describe('cotizaciones', () => {
     expect(p.status).toBe(200);
     expect(p.text).toContain('Licencia');
     expect(p.text).toContain('DATTASOFT');
+    expect(p.text).toContain('data-logo-img');
     expect(p.text).not.toContain('class="sidebar"');
   });
 

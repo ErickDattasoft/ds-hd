@@ -1,5 +1,6 @@
 import type { Request, Response } from 'express';
 import type { SeguimientoService } from '../../../../application/seguimiento/SeguimientoService.js';
+import type { EmpresaService } from '../../../../application/empresas/EmpresaService.js';
 import type { IUsuarioRepository } from '../../../../core/ports/repositories/IUsuarioRepository.js';
 import type { TipoInteraccion } from '../../../../core/entities/Interaccion.js';
 import { camposDeError } from '../../support/errores.js';
@@ -11,21 +12,25 @@ export class SeguimientoController {
   constructor(
     private readonly seguimiento: SeguimientoService,
     private readonly usuarios: IUsuarioRepository,
+    private readonly empresas: EmpresaService,
   ) {}
 
   // ── Tareas ───────────────────────────────────────────────────────────────
   tareas = async (req: Request, res: Response): Promise<void> => {
     const soloMias = req.query.todas !== '1';
     const filtro = soloMias ? { asignadoAUid: req.user!.uid } : {};
-    const [tareas, staff] = await Promise.all([
+    const [tareas, staff, empresas] = await Promise.all([
       this.seguimiento.listarTareas(filtro),
       this.usuarios.list({ activo: true }),
+      this.empresas.listar({ activa: true }),
     ]);
     res.render('pages/backoffice/seguimiento/tareas', {
       titulo: 'Tareas',
       tareas,
       soloMias,
       staff: staff.filter((u) => u.esStaff),
+      empresas,
+      nombreEmpresa: Object.fromEntries(empresas.map((e) => [e.id, e.nombre])),
       errores: {},
     });
   };
@@ -47,13 +52,18 @@ export class SeguimientoController {
       });
       res.redirect(str(b.volverA) || '/app/tareas');
     } catch (err) {
-      const staff = (await this.usuarios.list({ activo: true })).filter((u) => u.esStaff);
-      const tareas = await this.seguimiento.listarTareas({ asignadoAUid: req.user!.uid });
+      const [staff, empresas, tareas] = await Promise.all([
+        this.usuarios.list({ activo: true }),
+        this.empresas.listar({ activa: true }),
+        this.seguimiento.listarTareas({ asignadoAUid: req.user!.uid }),
+      ]);
       res.status(422).render('pages/backoffice/seguimiento/tareas', {
         titulo: 'Tareas',
         tareas,
         soloMias: true,
-        staff,
+        staff: staff.filter((u) => u.esStaff),
+        empresas,
+        nombreEmpresa: Object.fromEntries(empresas.map((e) => [e.id, e.nombre])),
         errores: camposDeError(err),
       });
     }

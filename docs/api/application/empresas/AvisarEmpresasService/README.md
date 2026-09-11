@@ -17,3 +17,4 @@
 ## Type Aliases
 
 - [TipoAviso](type-aliases/TipoAviso.md)
+- [CanalAviso](type-aliases/CanalAviso.md)
