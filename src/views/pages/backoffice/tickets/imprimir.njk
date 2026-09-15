@@ -11,6 +11,7 @@
   .doc table.datos th { background: var(--color-surface-2); width: 8rem; }
   .doc h2 { font-size: 1.05rem; margin: 1.4rem 0 0.4rem; }
   .doc .bloque { white-space: pre-wrap; background: var(--color-surface-2); border: 1px solid var(--color-border); border-radius: 6px; padding: 0.8rem; }
+  .doc .bloque img { max-width: 100%; }
   .doc .nota { border-left: 3px solid var(--color-border); padding: 0.2rem 0 0.2rem 0.7rem; margin: 0.6rem 0; }
   .doc .nota div { white-space: pre-wrap; }
   .doc__actions { margin: 1.5rem auto; max-width: 800px; padding: 0 1rem; }
@@ -45,7 +46,7 @@
   </table>
 
   <h2>Descripción</h2>
-  <div class="bloque">{{ ticket.descripcion }}</div>
+  <div class="bloque">{{ descripcionHtml | safe }}</div>
 
   {% if notas | length %}
     <h2>Conversación</h2>

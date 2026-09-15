@@ -1,6 +1,7 @@
 import type { ITicketRepository } from '../../core/ports/repositories/ITicketRepository.js';
 import type { IContadorRepository } from '../../core/ports/repositories/IContadorRepository.js';
 import type { IConfiguracionRepository } from '../../core/ports/repositories/IConfiguracionRepository.js';
+import type { IAdjuntoTicketRepository } from '../../core/ports/repositories/IAdjuntoTicketRepository.js';
 import type { IClock } from '../../core/ports/services/IClock.js';
 import type { IIdGenerator } from '../../core/ports/services/IIdGenerator.js';
 import type { ILogger } from '../../core/ports/services/ILogger.js';
@@ -11,6 +12,7 @@ import { parsePrioridad } from '../../core/entities/value-objects/Prioridad.js';
 import { ValidationError } from '../../core/errors/DomainError.js';
 import { CONTADOR_TICKETS } from './constantes.js';
 import { registrarEvento } from './efectos.js';
+import { desinflarImagenesDescripcion } from './desinflarImagenesDescripcion.js';
 import type { CrearTicketInput } from './dto.js';
 
 /** Caso de uso: crear un ticket (interno, portal o al aceptar uno público). */
@@ -19,6 +21,7 @@ export class CrearTicketService {
     private readonly tickets: ITicketRepository,
     private readonly contadores: IContadorRepository,
     private readonly config: IConfiguracionRepository,
+    private readonly adjuntos: IAdjuntoTicketRepository,
     private readonly ids: IIdGenerator,
     private readonly clock: IClock,
     private readonly webhooks: IWebhookPublisher,
@@ -37,12 +40,25 @@ export class CrearTicketService {
 
     const ahora = this.clock.now();
     const numero = await this.contadores.siguiente(CONTADOR_TICKETS);
+    // El id se genera aquí (no dentro de Ticket.crear) para poder "desinflar" las imágenes
+    // pegadas en la descripción — cada una se sube como adjunto de ESTE ticket antes de
+    // construir la entidad, que ya nunca confía en un `src` embebido (ver el porqué en
+    // desinflarImagenesDescripcion.ts).
+    const id = this.ids.newId();
+    const descripcion = await desinflarImagenesDescripcion(
+      input.descripcion,
+      id,
+      { uid: input.actor.uid, nombre: input.actor.nombre },
+      this.adjuntos,
+      this.ids,
+      ahora,
+    );
 
     const ticket = Ticket.crear({
-      id: this.ids.newId(),
+      id,
       numero,
       asunto: input.asunto,
-      descripcion: input.descripcion,
+      descripcion,
       tipo: input.tipo || cfg.tipos[0]!,
       prioridad,
       estadoInicial,

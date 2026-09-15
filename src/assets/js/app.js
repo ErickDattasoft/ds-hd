@@ -400,14 +400,196 @@
       if (it.kind === 'file') { var f = it.getAsFile(); if (f) { f.__cont = cont; agregarAdjunto(f); } }
     });
   });
-  // Botón 🖼️ Imagen del editor → abre el selector de adjuntos
+  // Botón 🖼️ Imagen del editor: si el destino es el editor enriquecido de la descripción,
+  // inserta la imagen INLINE (ver rteImagenes abajo); si no (p. ej. "Agregar nota"), abre el
+  // selector de adjuntos normal como antes.
   document.addEventListener('click', function (e) {
-    if (!e.target.closest('[data-insertar-imagen]')) return;
+    var btn = e.target.closest('[data-insertar-imagen]');
+    if (!btn) return;
     e.preventDefault();
+    var destino = btn.getAttribute('data-destino') && document.querySelector(btn.getAttribute('data-destino'));
+    if (destino && destino.hasAttribute('data-descripcion-editor')) {
+      var input = destino.parentElement.querySelector('[data-descripcion-img-input]');
+      if (input) input.click();
+      return;
+    }
     var f = document.querySelector('[data-adjuntos] [data-adjunto-file]');
     if (f) f.click();
     else toast('Abre la sección "Adjuntos" para agregar imágenes');
   });
+
+  // ── Editor enriquecido de descripción: pegar/insertar imágenes inline ────
+  // Las imágenes se comprimen en el navegador (canvas) e insertan como
+  // data: URI para verse al instante; el servidor las "desinfla" a adjuntos
+  // reales al crear el ticket (ver desinflarImagenesDescripcion en el backend).
+  (function () {
+    var RTE_MAX_DIM = 1400;
+    var RTE_MAX_BYTES = 680 * 1024;
+
+    function comprimirImagen(file, maxDim, calidad) {
+      return new Promise(function (resolve, reject) {
+        var img = new Image();
+        var url = URL.createObjectURL(file);
+        img.onload = function () {
+          URL.revokeObjectURL(url);
+          var w = img.naturalWidth || 1;
+          var h = img.naturalHeight || 1;
+          var escala = Math.min(1, maxDim / Math.max(w, h));
+          var cv = document.createElement('canvas');
+          cv.width = Math.max(1, Math.round(w * escala));
+          cv.height = Math.max(1, Math.round(h * escala));
+          var ctx = cv.getContext('2d');
+          if (!ctx) { reject(new Error('sin canvas')); return; }
+          ctx.drawImage(img, 0, 0, cv.width, cv.height);
+          resolve(cv.toDataURL('image/jpeg', calidad));
+        };
+        img.onerror = function () { URL.revokeObjectURL(url); reject(new Error('No se pudo leer la imagen')); };
+        img.src = url;
+      });
+    }
+
+    function tamanoDataUri(d) {
+      var i = d.indexOf(',');
+      var b64 = i >= 0 ? d.slice(i + 1) : d;
+      return Math.ceil((b64.length * 3) / 4);
+    }
+
+    function insertarNodoEnEditor(editor, nodo) {
+      editor.focus();
+      var sel = window.getSelection();
+      var range = sel && sel.rangeCount ? sel.getRangeAt(0) : null;
+      if (range && editor.contains(range.commonAncestorContainer)) {
+        range.deleteContents();
+        range.insertNode(nodo);
+        range.setStartAfter(nodo);
+        range.collapse(true);
+        sel.removeAllRanges();
+        sel.addRange(range);
+      } else {
+        editor.appendChild(nodo);
+      }
+    }
+
+    function insertarImagenEnEditor(editor, file) {
+      if (!file || file.type.indexOf('image/') !== 0) { toast('Solo se pueden insertar imágenes'); return; }
+      comprimirImagen(file, RTE_MAX_DIM, 0.72)
+        .then(function (d) {
+          if (tamanoDataUri(d) <= RTE_MAX_BYTES) return d;
+          return comprimirImagen(file, 1000, 0.55);
+        })
+        .then(function (d) {
+          if (tamanoDataUri(d) > RTE_MAX_BYTES) { toast('La imagen es muy grande, incluso comprimida'); return; }
+          var img = document.createElement('img');
+          img.src = d;
+          insertarNodoEnEditor(editor, img);
+        })
+        .catch(function () { toast('No se pudo procesar la imagen'); });
+    }
+
+    document.addEventListener('paste', function (e) {
+      var editor = e.target.closest('[data-descripcion-editor]');
+      if (!editor) return;
+      var items = (e.clipboardData && e.clipboardData.items) || [];
+      var archivo = null;
+      Array.prototype.forEach.call(items, function (it) {
+        if (!archivo && it.kind === 'file' && it.type.indexOf('image/') === 0) archivo = it.getAsFile();
+      });
+      if (archivo) { e.preventDefault(); insertarImagenEnEditor(editor, archivo); }
+    });
+
+    document.addEventListener('change', function (e) {
+      var input = e.target.closest('[data-descripcion-img-input]');
+      if (!input || !input.files || !input.files[0]) return;
+      var editor = input.parentElement.querySelector('[data-descripcion-editor]');
+      if (editor) insertarImagenEnEditor(editor, input.files[0]);
+      input.value = '';
+    });
+
+    // ── Selección de imagen dentro del editor: barra flotante (tamaño/flotar/quitar) ──
+    var toolbar = null;
+    var imgSeleccionada = null;
+
+    function quitarToolbar() {
+      if (toolbar) { toolbar.remove(); toolbar = null; }
+      if (imgSeleccionada) { imgSeleccionada.classList.remove('rte-img--seleccionada'); imgSeleccionada = null; }
+    }
+
+    function posicionarToolbar() {
+      if (!toolbar || !imgSeleccionada) return;
+      var r = imgSeleccionada.getBoundingClientRect();
+      toolbar.style.top = Math.max(4, r.top - toolbar.offsetHeight - 6) + 'px';
+      toolbar.style.left = Math.max(4, r.left) + 'px';
+    }
+
+    function mostrarToolbar(img) {
+      quitarToolbar();
+      imgSeleccionada = img;
+      img.classList.add('rte-img--seleccionada');
+      toolbar = document.createElement('div');
+      toolbar.className = 'rte-img-toolbar';
+      toolbar.innerHTML =
+        '<button type="button" data-rte-size="240px" title="Chica">S</button>' +
+        '<button type="button" data-rte-size="420px" title="Mediana">M</button>' +
+        '<button type="button" data-rte-size="100%" title="Grande">L</button>' +
+        '<button type="button" data-rte-float="none" title="Sin flotar">▭</button>' +
+        '<button type="button" data-rte-float="left" title="Flotar a la izquierda">◧</button>' +
+        '<button type="button" data-rte-float="right" title="Flotar a la derecha">◨</button>' +
+        '<button type="button" data-rte-quitar title="Quitar imagen">🗑️</button>';
+      document.body.appendChild(toolbar);
+      posicionarToolbar();
+    }
+
+    document.addEventListener('click', function (e) {
+      var img = e.target.closest('.rte-editor img');
+      if (img) { e.preventDefault(); mostrarToolbar(img); return; }
+      if (e.target.closest('.rte-img-toolbar')) return;
+      quitarToolbar();
+    });
+
+    document.addEventListener('click', function (e) {
+      if (!imgSeleccionada) return;
+      var tb = e.target.closest('.rte-img-toolbar');
+      if (!tb) return;
+      var tam = e.target.closest('[data-rte-size]');
+      var flot = e.target.closest('[data-rte-float]');
+      var quitar = e.target.closest('[data-rte-quitar]');
+      if (tam) {
+        imgSeleccionada.style.width = tam.getAttribute('data-rte-size');
+        imgSeleccionada.style.height = 'auto';
+      } else if (flot) {
+        var f = flot.getAttribute('data-rte-float');
+        if (f === 'none') { imgSeleccionada.style.float = ''; imgSeleccionada.style.margin = ''; }
+        else { imgSeleccionada.style.float = f; imgSeleccionada.style.margin = f === 'left' ? '0 0.75rem 0.5rem 0' : '0 0 0.5rem 0.75rem'; }
+      } else if (quitar) {
+        var img = imgSeleccionada;
+        quitarToolbar();
+        img.remove();
+        return;
+      }
+      posicionarToolbar();
+    });
+
+    window.addEventListener('scroll', function () { if (imgSeleccionada) posicionarToolbar(); }, true);
+    window.addEventListener('resize', function () { if (imgSeleccionada) posicionarToolbar(); });
+
+    // ── Sincroniza el HTML del editor al textarea oculto antes de enviar ────
+    document.addEventListener('submit', function (e) {
+      var form = e.target.closest('[data-form-ticket]');
+      if (!form) return;
+      var editor = form.querySelector('[data-descripcion-editor]');
+      var oculto = form.querySelector('#ticket-descripcion');
+      if (!editor || !oculto) return;
+      quitarToolbar();
+      var texto = editor.textContent || '';
+      if (!texto.trim() && !editor.querySelector('img')) {
+        e.preventDefault();
+        toast('Describe el problema antes de guardar');
+        editor.focus();
+        return;
+      }
+      oculto.value = editor.innerHTML;
+    });
+  })();
 
   // ── Form de ticket: buscador de contacto → autocompleta empresa y correo ──
   document.addEventListener('input', function (e) {
@@ -759,6 +941,9 @@
   }
 
   // ── Insertar encabezado / firma en el editor de tickets ──────────────────
+  function escHtmlTexto(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
   document.addEventListener('click', function (e) {
     var btn = e.target.closest('[data-insertar]');
     if (!btn) return;
@@ -770,9 +955,19 @@
     if (tipo === 'encabezado') {
       var hoy = new Date().toLocaleDateString('es-MX');
       texto = (texto || 'Fecha: [fecha]\n\nSíntoma:\n\nProblema:\n\nSolución:\n\nTiempo trabajado:\n').replace(/\[fecha\]/g, hoy);
+    } else if (!texto) {
+      toast('No tienes una firma configurada — ponla en "Mi perfil"');
+      return;
+    }
+    if (caja.isContentEditable) {
+      var html = texto.split('\n').map(escHtmlTexto).join('<br>');
+      var actual = caja.innerHTML;
+      caja.innerHTML = tipo === 'encabezado'
+        ? html + (actual ? '<br><br>' + actual : '')
+        : (actual ? actual.replace(/(<br\s*\/?>\s*)+$/i, '') + '<br><br>' : '') + html;
+    } else if (tipo === 'encabezado') {
       caja.value = texto + (caja.value ? '\n\n' + caja.value : '');
     } else {
-      if (!texto) { toast('No tienes una firma configurada — ponla en "Mi perfil"'); return; }
       caja.value = (caja.value ? caja.value.replace(/\s+$/, '') + '\n\n' : '') + texto;
     }
     caja.focus();

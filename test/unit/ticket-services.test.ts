@@ -16,6 +16,7 @@ import {
 } from '../fakes/tickets.js';
 import { InMemoryUsuarioRepository } from '../fakes/InMemoryUsuarioRepository.js';
 import { FakeEmailSender } from '../fakes/FakeEmailSender.js';
+import { InMemoryAdjuntoTicketRepository } from '../fakes/InMemoryAdjuntoTicketRepository.js';
 import { FixedClock, silentLogger } from '../fakes/support.js';
 
 let seq = 0;
@@ -54,6 +55,7 @@ describe('CrearTicketService', () => {
       new InMemoryTicketRepository(store),
       new InMemoryContadorRepository(),
       new InMemoryConfiguracionRepository(),
+      new InMemoryAdjuntoTicketRepository(),
       ids,
       clock,
       webhooks,
@@ -103,7 +105,7 @@ describe('AsignarAgenteService', () => {
     ]);
     const repo = new InMemoryTicketRepository(store);
     const queries = new InMemoryTicketQueries(store);
-    crear = new CrearTicketService(repo, new InMemoryContadorRepository(), new InMemoryConfiguracionRepository(), ids, clock, new FakeWebhookPublisher(), silentLogger);
+    crear = new CrearTicketService(repo, new InMemoryContadorRepository(), new InMemoryConfiguracionRepository(), new InMemoryAdjuntoTicketRepository(), ids, clock, new FakeWebhookPublisher(), silentLogger);
     service = new AsignarAgenteService(repo, queries, usuarios, ids, clock, new FakeEmailSender(), new FakeWebhookPublisher(), silentLogger);
   });
 
@@ -129,7 +131,7 @@ describe('ActualizarEstadoTicketService', () => {
     const repo = new InMemoryTicketRepository(store);
     const email = new FakeEmailSender();
     const webhooks = new FakeWebhookPublisher();
-    const crear = new CrearTicketService(repo, new InMemoryContadorRepository(), new InMemoryConfiguracionRepository(), ids, clock, new FakeWebhookPublisher(), silentLogger);
+    const crear = new CrearTicketService(repo, new InMemoryContadorRepository(), new InMemoryConfiguracionRepository(), new InMemoryAdjuntoTicketRepository(), ids, clock, new FakeWebhookPublisher(), silentLogger);
     const cambiar = new ActualizarEstadoTicketService(repo, new InMemoryConfiguracionRepository(), new InMemoryUsuarioRepository(), ids, clock, email, webhooks, silentLogger);
 
     const t = await crear.ejecutar({
@@ -157,7 +159,7 @@ describe('ActualizarEstadoTicketService', () => {
     const store = new InMemoryTicketStore();
     const clock = new FixedClock(new Date());
     const repo = new InMemoryTicketRepository(store);
-    const crear = new CrearTicketService(repo, new InMemoryContadorRepository(), new InMemoryConfiguracionRepository(), ids, clock, new FakeWebhookPublisher(), silentLogger);
+    const crear = new CrearTicketService(repo, new InMemoryContadorRepository(), new InMemoryConfiguracionRepository(), new InMemoryAdjuntoTicketRepository(), ids, clock, new FakeWebhookPublisher(), silentLogger);
     const cambiar = new ActualizarEstadoTicketService(repo, new InMemoryConfiguracionRepository(), new InMemoryUsuarioRepository(), ids, clock, new FakeEmailSender(), new FakeWebhookPublisher(), silentLogger);
     const t = await crear.ejecutar({ actor: actor(), asunto: 'Ajeno', descripcion: 'descripción', tipo: 'General', prioridad: 'Media' });
 
@@ -175,7 +177,7 @@ describe('ArchivarTicketService', () => {
     const clock = new FixedClock(new Date());
     const repo = new InMemoryTicketRepository(store);
     const queries = new InMemoryTicketQueries(store);
-    const crear = new CrearTicketService(repo, new InMemoryContadorRepository(), new InMemoryConfiguracionRepository(), ids, clock, new FakeWebhookPublisher(), silentLogger);
+    const crear = new CrearTicketService(repo, new InMemoryContadorRepository(), new InMemoryConfiguracionRepository(), new InMemoryAdjuntoTicketRepository(), ids, clock, new FakeWebhookPublisher(), silentLogger);
     const archivar = new ArchivarTicketService(repo, ids, clock);
     const t = await crear.ejecutar({ actor: actor(), asunto: 'Para archivar', descripcion: 'descripción larga', tipo: 'General', prioridad: 'Media' });
 
@@ -195,7 +197,7 @@ describe('ArchivarTicketService', () => {
     const store = new InMemoryTicketStore();
     const clock = new FixedClock(new Date());
     const repo = new InMemoryTicketRepository(store);
-    const crear = new CrearTicketService(repo, new InMemoryContadorRepository(), new InMemoryConfiguracionRepository(), ids, clock, new FakeWebhookPublisher(), silentLogger);
+    const crear = new CrearTicketService(repo, new InMemoryContadorRepository(), new InMemoryConfiguracionRepository(), new InMemoryAdjuntoTicketRepository(), ids, clock, new FakeWebhookPublisher(), silentLogger);
     const archivar = new ArchivarTicketService(repo, ids, clock);
     const t = await crear.ejecutar({ actor: actor(), asunto: 'Sin permiso', descripcion: 'descripción larga', tipo: 'General', prioridad: 'Media' });
 

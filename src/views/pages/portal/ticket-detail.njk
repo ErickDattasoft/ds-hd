@@ -14,7 +14,7 @@
 
   <div class="card">
     <p><strong>Tu solicitud</strong></p>
-    <p style="white-space:pre-wrap">{{ ticket.descripcion }}</p>
+    <div style="white-space:pre-wrap">{{ descripcionHtml | safe }}</div>
   </div>
 
   <div class="card">

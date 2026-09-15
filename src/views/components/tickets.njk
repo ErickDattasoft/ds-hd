@@ -73,7 +73,7 @@
     <button type="button" class="btn btn--ghost btn--sm"
       data-insertar="firma" data-destino="{{ destino }}" data-texto="{{ user.firma or '' }}"
       title="Inserta tu firma (configúrala en Mi perfil)">🖊️ Firma</button>
-    <button type="button" class="btn btn--ghost btn--sm" data-insertar-imagen title="Adjuntar una imagen">🖼️ Imagen</button>
+    <button type="button" class="btn btn--ghost btn--sm" data-insertar-imagen data-destino="{{ destino }}" title="Insertar/adjuntar una imagen">🖼️ Imagen</button>
   </div>
 {% endmacro %}
 

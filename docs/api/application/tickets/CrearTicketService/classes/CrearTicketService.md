@@ -12,7 +12,7 @@ Caso de uso: crear un ticket (interno, portal o al aceptar uno público).
 
 ### Constructor
 
-> **new CrearTicketService**(`tickets`, `contadores`, `config`, `ids`, `clock`, `webhooks`, `logger`): `CrearTicketService`
+> **new CrearTicketService**(`tickets`, `contadores`, `config`, `adjuntos`, `ids`, `clock`, `webhooks`, `logger`): `CrearTicketService`
 
 #### Parameters
 
@@ -27,6 +27,10 @@ Caso de uso: crear un ticket (interno, portal o al aceptar uno público).
 ##### config
 
 [`IConfiguracionRepository`](../../../../core/ports/repositories/IConfiguracionRepository/interfaces/IConfiguracionRepository.md)
+
+##### adjuntos
+
+[`IAdjuntoTicketRepository`](../../../../core/ports/repositories/IAdjuntoTicketRepository/interfaces/IAdjuntoTicketRepository.md)
 
 ##### ids
 

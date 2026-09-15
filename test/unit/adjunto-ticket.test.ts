@@ -74,6 +74,7 @@ describe('AdjuntoTicketService', () => {
       repo,
       new InMemoryContadorRepository(),
       new InMemoryConfiguracionRepository(),
+      adjRepo,
       ids,
       clock,
       new FakeWebhookPublisher(),

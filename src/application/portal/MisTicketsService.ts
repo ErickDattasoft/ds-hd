@@ -8,6 +8,7 @@ import type { AdjuntoTicketMeta } from '../../core/entities/AdjuntoTicket.js';
 import { NotFoundError } from '../../core/errors/DomainError.js';
 import type { ConfiguracionTickets } from '../../core/entities/ConfiguracionTickets.js';
 import type { SessionUser } from '../shared/SessionUser.js';
+import { resolverImagenesDescripcion } from '../tickets/descripcionImagenes.js';
 
 /** Detalle de ticket ya filtrado para el portal: sin notas ni eventos internos. */
 export interface MiTicketDetalle {
@@ -18,6 +19,8 @@ export interface MiTicketDetalle {
   eventos: EventoTicket[];
   /** Adjuntos del ticket (metadatos, sin el contenido). */
   adjuntos: AdjuntoTicketMeta[];
+  /** `ticket.descripcion` con las imágenes ya resueltas — lista para pintar. */
+  descripcionHtml: string;
 }
 
 /**
@@ -63,6 +66,7 @@ export class MisTicketsService {
       // Solo cambios de estado: los eventos de "nota" revelarían que existen notas internas.
       eventos: todosLosEventos.filter((e) => e.tipo === 'cambio_estado'),
       adjuntos,
+      descripcionHtml: await resolverImagenesDescripcion(ticket.descripcion, ticket.id, this.adjuntos),
     };
   }
 }

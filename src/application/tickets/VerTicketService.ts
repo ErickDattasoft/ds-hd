@@ -7,6 +7,7 @@ import type { AdjuntoTicketMeta } from '../../core/entities/AdjuntoTicket.js';
 import type { ConfiguracionTickets } from '../../core/entities/ConfiguracionTickets.js';
 import { ForbiddenError, NotFoundError } from '../../core/errors/DomainError.js';
 import type { SessionUser } from '../shared/SessionUser.js';
+import { resolverImagenesDescripcion } from './descripcionImagenes.js';
 
 /** Ticket con sus notas/eventos/adjuntos y los permisos del actor ya resueltos para la vista. */
 export interface DetalleTicket {
@@ -18,6 +19,8 @@ export interface DetalleTicket {
   puedeEditar: boolean;
   puedeAsignar: boolean;
   puedeCambiarEstado: boolean;
+  /** `ticket.descripcion` con las imágenes ya resueltas (`data-adj-id` → `src` real) — lista para pintar. */
+  descripcionHtml: string;
 }
 
 /** Caso de uso: cargar el detalle de un ticket para el back-office (notas internas filtradas). */
@@ -47,6 +50,7 @@ export class VerTicketService {
 
     const verInternas = actor.permisos.includes('tickets:ver_notas_internas');
     const notas = verInternas ? notasTodas : notasTodas.filter((n) => n.tipo === 'publica');
+    const descripcionHtml = await resolverImagenesDescripcion(ticket.descripcion, ticket.id, this.adjuntos);
 
     return {
       ticket,
@@ -54,6 +58,7 @@ export class VerTicketService {
       eventos,
       adjuntos,
       config,
+      descripcionHtml,
       puedeEditar: actor.permisos.includes('tickets:editar') && (puedeTodos || esSuyo),
       puedeAsignar: actor.permisos.includes('tickets:asignar'),
       puedeCambiarEstado:

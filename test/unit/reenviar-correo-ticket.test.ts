@@ -83,6 +83,7 @@ describe('ReenviarCorreoTicketService', () => {
       repo,
       new InMemoryContadorRepository(),
       cfg,
+      new InMemoryAdjuntoTicketRepository(),
       ids,
       clock,
       new FakeWebhookPublisher(),

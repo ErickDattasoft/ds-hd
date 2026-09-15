@@ -2,6 +2,7 @@ import type { Ticket } from '../../core/entities/Ticket.js';
 import type { EventoTicket } from '../../core/entities/NotaTicket.js';
 import type { AdjuntoTicketMeta } from '../../core/entities/AdjuntoTicket.js';
 import { escaparHtml as esc, historialActividadHtml } from './historialCorreo.js';
+import { quitarImagenesDescripcion } from './descripcionImagenes.js';
 
 /** Normaliza, valida (contiene `@`) y deduplica una lista de correos. */
 function correosValidos(lista: readonly string[]): string[] {
@@ -89,7 +90,7 @@ export function resumenTicketHtml(
       ${fila('Agente', ticket.agenteAsignadoNombre)}
     </table>
     <h3 style="font-family:sans-serif;margin-top:16px">Descripción</h3>
-    <div style="background:#f9fafb;padding:12px;border-radius:6px;font-family:sans-serif;white-space:pre-wrap">${esc(
+    <div style="background:#f9fafb;padding:12px;border-radius:6px;font-family:sans-serif;white-space:pre-wrap">${quitarImagenesDescripcion(
       ticket.descripcion,
     )}</div>
     ${

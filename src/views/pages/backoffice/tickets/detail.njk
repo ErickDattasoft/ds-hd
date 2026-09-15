@@ -23,7 +23,7 @@
     <section>
       <div class="card">
         <p><strong>Descripción</strong></p>
-        <p style="white-space:pre-wrap">{{ ticket.descripcion }}</p>
+        <div class="ticket-descripcion" style="white-space:pre-wrap">{{ descripcionHtml | safe }}</div>
       </div>
 
       <div class="card">

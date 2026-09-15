@@ -17,6 +17,7 @@ import {
 } from '../fakes/tickets.js';
 import { FixedClock, silentLogger } from '../fakes/support.js';
 import { FakeEmailSender } from '../fakes/FakeEmailSender.js';
+import { InMemoryAdjuntoTicketRepository } from '../fakes/InMemoryAdjuntoTicketRepository.js';
 
 let seq = 0;
 const ids = { newId: () => `id-${++seq}`, newToken: () => `tok-${++seq}` };
@@ -74,6 +75,7 @@ describe('alta y cambio de estado de facturación', () => {
       repo,
       new InMemoryContadorRepository(),
       new InMemoryConfiguracionRepository(),
+      new InMemoryAdjuntoTicketRepository(),
       ids,
       clock,
       webhooks,

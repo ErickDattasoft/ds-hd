@@ -30,6 +30,7 @@ import {
   parseEstadoFacturacion,
 } from '../../../../core/entities/value-objects/EstadoFacturacion.js';
 import { parseAgenda } from '../../../../core/entities/value-objects/AgendaTicket.js';
+import { sanitizarDescripcionHtml } from '../../../../core/entities/value-objects/descripcionHtml.js';
 import { ticketVM } from '../../presenters/TicketPresenter.js';
 import { camposDeError } from '../../support/errores.js';
 import { ValidationError } from '../../../../core/errors/DomainError.js';
@@ -220,7 +221,10 @@ export class TicketController {
       res.status(422).render('pages/backoffice/tickets/form', {
         titulo: 'Nuevo ticket',
         ...(await this.datosFormNuevo(req.user!)),
-        valores: b,
+        // Nunca se reinyecta la descripción tal cual venía del POST — puede no haber pasado
+        // por sanitizarDescripcionHtml todavía si el error fue en otro campo (p. ej. tipo
+        // inválido, antes de llegar a Ticket.crear). Se sanea aquí para el "reflejo" del form.
+        valores: { ...b, descripcion: sanitizarDescripcionHtml(str(b.descripcion)) },
         errores: camposDeError(err),
       });
     }
@@ -236,6 +240,7 @@ export class TicketController {
       titulo: `Ticket #${d.ticket.numero}`,
       vm: ticketVM(d.ticket, ahora),
       ticket: d.ticket,
+      descripcionHtml: d.descripcionHtml,
       notas: d.notas,
       eventos: d.eventos,
       adjuntos: d.adjuntos,
@@ -377,6 +382,7 @@ export class TicketController {
       titulo: `Ticket #${d.ticket.numero}`,
       vm: ticketVM(d.ticket, this.clock.now()),
       ticket: d.ticket,
+      descripcionHtml: d.descripcionHtml,
       notas: d.notas,
       adjuntos: d.adjuntos,
       conLogo: req.query.logo !== '0',

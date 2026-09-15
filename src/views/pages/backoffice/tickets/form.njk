@@ -72,8 +72,11 @@
 
     <div class="card">
       <p><strong>Descripción *</strong></p>
-      {{ tk.editorToolbar(user, '[name="descripcion"]') }}
-      <textarea name="descripcion" id="ticket-descripcion" rows="16" required placeholder="Describe el problema en detalle…">{{ valores.descripcion }}</textarea>
+      {{ tk.editorToolbar(user, '#ticket-descripcion-editor') }}
+      <div id="ticket-descripcion-editor" class="rte-editor" contenteditable="true" data-descripcion-editor
+           data-placeholder="Describe el problema en detalle… — puedes pegar imágenes (Ctrl+V)">{{ valores.descripcion | safe }}</div>
+      <textarea name="descripcion" id="ticket-descripcion" hidden>{{ valores.descripcion }}</textarea>
+      <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" hidden data-descripcion-img-input />
       {% if errores.descripcion %}<em class="field__error">{{ errores.descripcion }}</em>{% endif %}
     </div>
 

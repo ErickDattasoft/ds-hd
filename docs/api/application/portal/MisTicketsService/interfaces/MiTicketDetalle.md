@@ -37,3 +37,11 @@ Eventos "seguros" para el cliente (cambios de estado y respuestas).
 > **adjuntos**: [`AdjuntoTicketMeta`](../../../../core/entities/AdjuntoTicket/type-aliases/AdjuntoTicketMeta.md)[]
 
 Adjuntos del ticket (metadatos, sin el contenido).
+
+***
+
+### descripcionHtml
+
+> **descripcionHtml**: `string`
+
+`ticket.descripcion` con las imágenes ya resueltas — lista para pintar.

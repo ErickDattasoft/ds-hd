@@ -55,3 +55,11 @@ Ticket con sus notas/eventos/adjuntos y los permisos del actor ya resueltos para
 ### puedeCambiarEstado
 
 > **puedeCambiarEstado**: `boolean`
+
+***
+
+### descripcionHtml
+
+> **descripcionHtml**: `string`
+
+`ticket.descripcion` con las imágenes ya resueltas (`data-adj-id` → `src` real) — lista para pintar.
