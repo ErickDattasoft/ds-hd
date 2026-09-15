@@ -169,11 +169,17 @@ Leyenda: ✅ existe · ◐ parcial · ❌ falta · ➖ no aplica (decisión de d
 
 ## 12. Eventos / webinars (`/app/eventos`)
 
-Parece **completo** (`865421a`/`128e5a7`/`d7c37c3` + antiabuso `d774d51`):
+**Completo** (`865421a`/`128e5a7`/`d7c37c3` + antiabuso `d774d51`):
 invitación dirigida a empresas, invitados externos, respuesta/contactado/invitado
 por, lista negra, límite por IP, dominios desechables 🚩, recordatorio + mensaje
 de seguimiento, plantilla de confirmación, link registro/evento, badge historial
-cruzado. **Revisar**: "Ordenar" (por fecha) en la lista, ícono del evento.
+cruzado. "Ordenar" (por fecha) en la lista: ✅, cubierto por el `initTablas`
+genérico (toda `table.data-table` es ordenable por clic, incluida esta lista).
+**"Flayer del evento" ✅**: imagen promocional (poster) subible desde el detalle
+del evento (`Evento.flayer`, base64 en el propio doc — mismo patrón que el logo
+y los adjuntos de tickets, sin Firebase Storage), servida sin sesión en
+`GET /eventos/:id/flayer` y mostrada en la página pública de registro y en el
+listado público de eventos. PNG/JPG/WebP, máx. 700 KB.
 
 ## 13. Base de conocimiento / SOPORTE (`/app/kb`)
 

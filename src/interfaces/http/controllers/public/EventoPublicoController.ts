@@ -34,6 +34,19 @@ export class EventoPublicoController {
     });
   };
 
+  /** Ruta pública (sin sesión): así la página de registro y los correos pueden mostrar el flayer. */
+  flayerGet = async (req: Request, res: Response): Promise<void> => {
+    const evento = await this.eventos.obtener(str(req.params.id)).catch(() => null);
+    if (!evento?.flayer) {
+      res.status(404).end();
+      return;
+    }
+    const base64 = evento.flayer.data.slice(evento.flayer.data.indexOf(',') + 1);
+    res.setHeader('Content-Type', evento.flayer.contentType);
+    res.setHeader('Cache-Control', 'public, max-age=300');
+    res.send(Buffer.from(base64, 'base64'));
+  };
+
   registrarPost = async (req: Request, res: Response): Promise<void> => {
     const id = str(req.params.id);
     const b = req.body ?? {};

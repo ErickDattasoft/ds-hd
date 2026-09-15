@@ -28,6 +28,7 @@ export function publicRoutes(container: Container): Router {
   const eventos = () => container.resolve('eventoPublicoController');
   r.get('/eventos', (req, res) => eventos().listar(req, res));
   r.get('/eventos/:id', (req, res) => eventos().detalle(req, res));
+  r.get('/eventos/:id/flayer', (req, res) => eventos().flayerGet(req, res));
   r.post('/eventos/:id', (req, res) => eventos().registrarPost(req, res));
 
   // Sin sesión: lo consumen los correos salientes, las vistas de impresión y el portal.

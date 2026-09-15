@@ -11,6 +11,9 @@
     <p>Te enviamos un correo con los detalles de <strong>{{ evento.titulo }}</strong>.</p>
   {% else %}
     <h1>{{ evento.titulo }}</h1>
+    {% if evento.flayer %}
+      <img src="/eventos/{{ evento.id }}/flayer?v={{ evento.flayer.tamano }}" alt="{{ evento.titulo }}" style="max-width:100%" />
+    {% endif %}
     <p class="muted">{{ evento.fechaHora }}</p>
     {% if evento.descripcion %}<p>{{ evento.descripcion }}</p>{% endif %}
 

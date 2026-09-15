@@ -84,6 +84,14 @@ Invitados externos (redes sociales, referidos).
 
 ***
 
+### flayer?
+
+> `optional` **flayer?**: [`EventoFlayer`](EventoFlayer.md) \| `null`
+
+Imagen promocional (poster/flayer) del evento.
+
+***
+
 ### creadoPorUid?
 
 > `optional` **creadoPorUid?**: `string` \| `null`

@@ -407,6 +407,56 @@ participó y a cuántos asistió (respuesta `asistira`). Sirve para no reinvitar
 
 ***
 
+### actualizarFlayer()
+
+> **actualizarFlayer**(`actor`, `eventoId`, `input`): `Promise`\<`void`\>
+
+#### Parameters
+
+##### actor
+
+[`SessionUser`](../../../shared/SessionUser/interfaces/SessionUser.md)
+
+##### eventoId
+
+`string`
+
+##### input
+
+###### contentType
+
+`string`
+
+###### base64
+
+`string`
+
+#### Returns
+
+`Promise`\<`void`\>
+
+***
+
+### eliminarFlayer()
+
+> **eliminarFlayer**(`actor`, `eventoId`): `Promise`\<`void`\>
+
+#### Parameters
+
+##### actor
+
+[`SessionUser`](../../../shared/SessionUser/interfaces/SessionUser.md)
+
+##### eventoId
+
+`string`
+
+#### Returns
+
+`Promise`\<`void`\>
+
+***
+
 ### listaNegraTodos()
 
 > **listaNegraTodos**(): `Promise`\<[`EntradaListaNegra`](../../../../core/entities/Inscripcion/interfaces/EntradaListaNegra.md)[]\>

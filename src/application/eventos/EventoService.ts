@@ -12,6 +12,7 @@ import type { ICaptchaVerifier } from '../../core/ports/services/ICaptchaVerifie
 import {
   Evento,
   type EstadoEvento,
+  type EventoFlayer,
   type InvitacionEmpresa,
   type InvitadoExterno,
 } from '../../core/entities/Evento.js';
@@ -251,6 +252,26 @@ export class EventoService {
     const evento = await this.paraGestion(actor, eventoId);
     evento.quitarInvitadoExterno(extId);
     await this.persistirPanel(actor, evento);
+  }
+
+  // ── Flayer (imagen promocional) ─────────────────────────────────────────
+  async actualizarFlayer(
+    actor: SessionUser,
+    eventoId: string,
+    input: { contentType: string; base64: string },
+  ): Promise<void> {
+    const evento = await this.paraGestion(actor, eventoId);
+    const base64 = input.base64.replace(/\s/g, '');
+    const tamano = Math.floor((base64.length * 3) / 4) - (base64.endsWith('==') ? 2 : base64.endsWith('=') ? 1 : 0);
+    const flayer: EventoFlayer = { contentType: input.contentType, tamano, data: `data:${input.contentType};base64,${base64}` };
+    evento.actualizarFlayer(flayer);
+    await this.persistirPanel(actor, evento, 'flayer actualizado');
+  }
+
+  async eliminarFlayer(actor: SessionUser, eventoId: string): Promise<void> {
+    const evento = await this.paraGestion(actor, eventoId);
+    evento.actualizarFlayer(null);
+    await this.persistirPanel(actor, evento, 'flayer eliminado');
   }
 
   private async paraGestion(actor: SessionUser, eventoId: string): Promise<Evento> {

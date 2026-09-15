@@ -16,6 +16,10 @@ async function login(app: ReturnType<typeof makeTestApp>['app'], email: string, 
 
 const enUnaSemana = () => new Date(Date.now() + 7 * 86_400_000);
 
+// PNG 1x1 transparente, el fixture mínimo de siempre para probar subida de imágenes.
+const PNG_1X1 =
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=';
+
 describe('eventos / webinars', () => {
   it('registro público: crea inscripción, envía confirmación y bloquea duplicados', async () => {
     const t = makeTestApp({ usuarios: [ADMIN] });
@@ -210,5 +214,51 @@ describe('eventos / webinars', () => {
       .send({ _csrf: csrf, nombre: 'Juan Pérez', fuente: 'Referido', contactado: 'on', respuesta: 'no_asistira' });
     expect(upd.status).toBe(302);
     expect((await t.eventoRepo.findById('ev1'))!.invitadosExternos[0]!.nombre).toBe('Juan Pérez');
+  });
+
+  it('flayer: sin flayer da 404, tras subirlo se sirve público y aparece en el registro; se puede quitar', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    t.eventoRepo.items.set('ev1', new Evento({ id: 'ev1', titulo: 'Con flayer', fechaHora: enUnaSemana(), estado: 'publicado' }));
+    expect((await request(t.app).get('/eventos/ev1/flayer')).status).toBe(404);
+
+    const { agent, csrf } = await login(t.app, ADMIN.email, ADMIN.password);
+    const subir = await agent
+      .post('/app/eventos/ev1/flayer')
+      .set('x-csrf-token', csrf)
+      .send({ contentType: 'image/png', base64: PNG_1X1 });
+    expect(subir.body).toEqual({ ok: true });
+
+    const archivo = await request(t.app).get('/eventos/ev1/flayer');
+    expect(archivo.status).toBe(200);
+    expect(archivo.headers['content-type']).toContain('image/png');
+
+    const pagina = await request(t.app).get('/eventos/ev1');
+    expect(pagina.text).toContain('/eventos/ev1/flayer');
+
+    const eliminar = await agent
+      .post('/app/eventos/ev1/flayer/eliminar')
+      .type('form')
+      .send({ _csrf: csrf });
+    expect(eliminar.status).toBe(302);
+    expect((await request(t.app).get('/eventos/ev1/flayer')).status).toBe(404);
+  });
+
+  it('flayer: rechaza un tipo de archivo no permitido y un rol sin eventos:gestionar no puede subirlo', async () => {
+    const LECTURA = { uid: 'u-l2', email: 'lec2@dattasoft.mx', password: 'lectura12345', nombre: 'Lec', rol: 'lectura' as const };
+    const t = makeTestApp({ usuarios: [ADMIN, LECTURA] });
+    t.eventoRepo.items.set('ev1', new Evento({ id: 'ev1', titulo: 'Evento', fechaHora: enUnaSemana(), estado: 'publicado' }));
+    const admin = await login(t.app, ADMIN.email, ADMIN.password);
+    const tipoInvalido = await admin.agent
+      .post('/app/eventos/ev1/flayer')
+      .set('x-csrf-token', admin.csrf)
+      .send({ contentType: 'image/svg+xml', base64: PNG_1X1 });
+    expect(tipoInvalido.body.ok).toBe(false);
+
+    const lectura = await login(t.app, LECTURA.email, LECTURA.password);
+    const sinPermiso = await lectura.agent
+      .post('/app/eventos/ev1/flayer')
+      .set('x-csrf-token', lectura.csrf)
+      .send({ contentType: 'image/png', base64: PNG_1X1 });
+    expect(sinPermiso.status).toBe(403);
   });
 });

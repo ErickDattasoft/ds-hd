@@ -9,6 +9,7 @@ import type {
 import {
   Evento,
   type EstadoEvento,
+  type EventoFlayer,
   type InvitacionEmpresa,
   type InvitadoExterno,
 } from '../../core/entities/Evento.js';
@@ -31,6 +32,7 @@ const eventoToDomain = (id: string, d: DocumentData): Evento =>
     limiteRegistrosPorIp: typeof d.limiteRegistrosPorIp === 'number' ? d.limiteRegistrosPorIp : null,
     invitaciones: Array.isArray(d.invitaciones) ? (d.invitaciones as InvitacionEmpresa[]) : [],
     invitadosExternos: Array.isArray(d.invitadosExternos) ? (d.invitadosExternos as InvitadoExterno[]) : [],
+    flayer: (d.flayer as EventoFlayer | null | undefined) ?? null,
     creadoPorUid: d.creadoPorUid ?? null,
     createdAt: fecha(d.createdAt),
     updatedAt: fecha(d.updatedAt),
@@ -80,6 +82,7 @@ export class FirestoreEventoRepository implements IEventoRepository {
         limiteRegistrosPorIp: e.limiteRegistrosPorIp,
         invitaciones: e.invitaciones,
         invitadosExternos: e.invitadosExternos,
+        flayer: e.flayer,
         creadoPorUid: e.creadoPorUid,
         createdAt: Timestamp.fromDate(e.createdAt),
         updatedAt: Timestamp.fromDate(e.updatedAt),

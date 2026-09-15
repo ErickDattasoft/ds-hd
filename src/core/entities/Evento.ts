@@ -59,6 +59,35 @@ export interface ResumenInvitaciones {
   pendientes: number;
 }
 
+/** Imagen promocional del evento (poster/flayer), mostrada en la página pública de registro. */
+export interface EventoFlayer {
+  contentType: string;
+  /** Tamaño del archivo original en bytes (antes de base64). */
+  tamano: number;
+  /** `data:<contentType>;base64,<...>`. */
+  data: string;
+}
+
+/** Tipos MIME aceptados para el flayer. SVG queda fuera a propósito (puede llevar scripts). */
+export const TIPOS_FLAYER_PERMITIDOS: readonly string[] = ['image/png', 'image/jpeg', 'image/webp'];
+
+/** Tope de tamaño del flayer: un poster promocional, más grande que el logo de marca. */
+export const MAX_FLAYER_BYTES = 700 * 1024;
+
+/** Valida tipo y tamaño del flayer antes de guardarlo. Lanza `ValidationError` si algo falla. */
+function validarFlayer(contentType: string, tamano: number): void {
+  if (!TIPOS_FLAYER_PERMITIDOS.includes(contentType)) {
+    throw new ValidationError('Tipo de imagen no permitido (usa PNG, JPG o WebP)', { archivo: 'Tipo no permitido' });
+  }
+  if (!Number.isFinite(tamano) || tamano <= 0) {
+    throw new ValidationError('La imagen está vacía', { archivo: 'Vacío' });
+  }
+  if (tamano > MAX_FLAYER_BYTES) {
+    const kb = Math.round(MAX_FLAYER_BYTES / 1024);
+    throw new ValidationError(`La imagen supera el máximo de ${kb} KB`, { archivo: 'Muy grande' });
+  }
+}
+
 const esRespuesta = (v: unknown): v is RespuestaInvitacion =>
   typeof v === 'string' && (RESPUESTAS_INVITACION as readonly string[]).includes(v);
 
@@ -79,6 +108,8 @@ export interface EventoProps {
   invitaciones?: InvitacionEmpresa[];
   /** Invitados externos (redes sociales, referidos). */
   invitadosExternos?: InvitadoExterno[];
+  /** Imagen promocional (poster/flayer) del evento. */
+  flayer?: EventoFlayer | null;
   creadoPorUid?: string | null;
   createdAt?: Date;
   updatedAt?: Date;
@@ -97,6 +128,7 @@ export class Evento {
   limiteRegistrosPorIp: number | null;
   invitaciones: InvitacionEmpresa[];
   invitadosExternos: InvitadoExterno[];
+  flayer: EventoFlayer | null;
   readonly creadoPorUid: string | null;
   readonly createdAt: Date;
   updatedAt: Date;
@@ -119,6 +151,7 @@ export class Evento {
         : null;
     this.invitaciones = (props.invitaciones ?? []).map(sanearInvitacionEmpresa);
     this.invitadosExternos = (props.invitadosExternos ?? []).map(sanearInvitadoExterno);
+    this.flayer = props.flayer ?? null;
     this.creadoPorUid = props.creadoPorUid ?? null;
     this.createdAt = props.createdAt ?? new Date();
     this.updatedAt = props.updatedAt ?? this.createdAt;
@@ -223,6 +256,12 @@ export class Evento {
     const i = this.invitadosExternos.findIndex((x) => x.id === id);
     if (i < 0) throw new NotFoundError('Invitado externo', id);
     this.invitadosExternos.splice(i, 1);
+  }
+
+  /** Reemplaza el flayer del evento; `null` lo quita. */
+  actualizarFlayer(flayer: EventoFlayer | null): void {
+    if (flayer) validarFlayer(flayer.contentType, flayer.tamano);
+    this.flayer = flayer;
   }
 }
 

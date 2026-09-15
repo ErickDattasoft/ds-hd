@@ -92,6 +92,12 @@ Evento / webinar con registro público.
 
 ***
 
+### flayer
+
+> **flayer**: [`EventoFlayer`](../interfaces/EventoFlayer.md) \| `null`
+
+***
+
 ### creadoPorUid
 
 > `readonly` **creadoPorUid**: `string` \| `null`
@@ -287,6 +293,24 @@ Conteos combinados de empresas invitadas + invitados externos.
 ##### id
 
 `string`
+
+#### Returns
+
+`void`
+
+***
+
+### actualizarFlayer()
+
+> **actualizarFlayer**(`flayer`): `void`
+
+Reemplaza el flayer del evento; `null` lo quita.
+
+#### Parameters
+
+##### flayer
+
+[`EventoFlayer`](../interfaces/EventoFlayer.md) \| `null`
 
 #### Returns
 

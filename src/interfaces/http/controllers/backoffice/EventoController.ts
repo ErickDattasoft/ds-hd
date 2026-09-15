@@ -146,6 +146,26 @@ export class EventoController {
     res.redirect(`/app/eventos/${id}#invitaciones`);
   };
 
+  // ── Flayer (imagen promocional) ─────────────────────────────────────────
+  flayerSubirPost = async (req: Request, res: Response): Promise<void> => {
+    const b = req.body ?? {};
+    try {
+      await this.eventos.actualizarFlayer(req.user!, str(req.params.id), {
+        contentType: str(b.contentType),
+        base64: str(b.base64),
+      });
+      res.json({ ok: true });
+    } catch (err) {
+      res.status(422).json({ ok: false, error: err instanceof Error ? err.message : 'No se pudo subir el flayer' });
+    }
+  };
+
+  flayerEliminarPost = async (req: Request, res: Response): Promise<void> => {
+    const id = str(req.params.id);
+    await this.eventos.eliminarFlayer(req.user!, id);
+    res.redirect(`/app/eventos/${id}`);
+  };
+
   eliminarPost = async (req: Request, res: Response): Promise<void> => {
     await this.eventos.eliminar(req.user!, str(req.params.id));
     res.redirect('/app/eventos');

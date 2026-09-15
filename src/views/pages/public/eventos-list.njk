@@ -5,6 +5,7 @@
   <ul class="kb-list">
     {% for e in eventos %}
       <li>
+        {% if e.flayer %}<img src="/eventos/{{ e.id }}/flayer?v={{ e.flayer.tamano }}" alt="" style="max-height:40px;vertical-align:middle;margin-right:.5em" />{% endif %}
         <a href="/eventos/{{ e.id }}"><strong>{{ e.titulo }}</strong></a>
         <span class="muted">{{ e.fechaHora | fechahora }}</span>
       </li>

@@ -18,6 +18,31 @@
   <p class="muted">{{ evento.fechaHora }} · {{ inscritos | length }} inscritos{% if evento.cupo %} / {{ evento.cupo }}{% endif %} · límite {{ evento.limiteIpEfectivo }}/IP</p>
 
   {% set puedeGestionar = can('eventos:gestionar') %}
+
+  <h2>Flayer</h2>
+  <p class="muted">Imagen promocional del evento, se muestra en la página pública de registro. PNG, JPG o WebP, máx. 700 KB.</p>
+  <div id="flayer-preview">
+    {% if evento.flayer %}
+      <img src="/eventos/{{ evento.id }}/flayer?v={{ evento.flayer.tamano }}" alt="Flayer del evento" style="max-height:220px;max-width:100%" />
+    {% else %}
+      <p class="muted">Sin flayer configurado.</p>
+    {% endif %}
+  </div>
+  {% if puedeGestionar %}
+    <form class="form" data-flayer-form action="/app/eventos/{{ evento.id }}/flayer">
+      <label class="field"><span>Archivo</span>
+        <input type="file" accept="image/png,image/jpeg,image/webp" name="archivo" required />
+      </label>
+      <button class="btn btn--sm" type="submit">Subir flayer</button>
+      <p id="flayer-mensaje"></p>
+    </form>
+    {% if evento.flayer %}
+      <form method="post" action="/app/eventos/{{ evento.id }}/flayer/eliminar" data-confirm="¿Quitar el flayer actual?">
+        <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+        <button class="btn btn--sm btn--danger" type="submit">Quitar flayer</button>
+      </form>
+    {% endif %}
+  {% endif %}
   {% macro respuestaSelect(nombre, valor) %}
     <select name="{{ nombre }}">
       {% for r in RESPUESTAS_INVITACION %}
