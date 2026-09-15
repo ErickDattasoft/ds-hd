@@ -1,5 +1,6 @@
 import type { Request, Response } from 'express';
 import type { EventoService } from '../../../../application/eventos/EventoService.js';
+import { ConflictError } from '../../../../core/errors/DomainError.js';
 import { camposDeError } from '../../support/errores.js';
 
 const str = (v: unknown): string => (typeof v === 'string' ? v : '');
@@ -57,6 +58,10 @@ export class EventoPublicoController {
         email: str(b.email),
         telefono: str(b.telefono),
         empresa: str(b.empresa),
+        asistira: str(b.asistira),
+        usaSistema: str(b.usaSistema),
+        fuente: str(b.fuente),
+        deseaCanalWhatsapp: b.deseaCanalWhatsapp === 'on' || b.deseaCanalWhatsapp === 'true',
         captchaToken: str(b['cf-turnstile-response']),
         ip: clientIp(req),
       });
@@ -78,7 +83,20 @@ export class EventoPublicoController {
         valores: b,
         errores: camposDeError(err),
         registrado: false,
+        duplicado: err instanceof ConflictError,
       });
     }
+  };
+
+  /** Reenvía la confirmación si el correo ya está registrado — respuesta genérica siempre,
+   *  no revela si el correo existe (evita enumeración), igual que el CRM viejo. */
+  reenviarLinkPost = async (req: Request, res: Response): Promise<void> => {
+    const id = str(req.params.id);
+    const correo = str(req.body?.correo);
+    if (correo) await this.eventos.reenviarLinkPublico(id, correo).catch(() => {});
+    res.json({
+      ok: true,
+      mensaje: 'Si el correo está registrado en este evento, te reenviamos el acceso en unos segundos.',
+    });
   };
 }

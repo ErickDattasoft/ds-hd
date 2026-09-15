@@ -64,6 +64,10 @@ Casos de uso: leer y actualizar la config del módulo de cotizaciones.
 
 `string`
 
+###### catalogoConceptos
+
+[`ConceptoCatalogo`](../../../../core/entities/ConfiguracionCotizaciones/interfaces/ConceptoCatalogo.md)[]
+
 #### Returns
 
 `Promise`\<`void`\>

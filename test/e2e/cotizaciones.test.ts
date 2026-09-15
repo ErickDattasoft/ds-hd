@@ -169,6 +169,29 @@ describe('cotizaciones', () => {
     expect((await t.configuracionRepo.obtenerCotizaciones()).condicionesPorDefecto).toBe('Pago a 30 días.');
   });
 
+  it('catálogo de conceptos: se guarda desde Configuración y aparece como datalist al crear una cotización', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    const { agent, csrf } = await login(t.app, ADMIN.email, ADMIN.password);
+
+    const guardar = await agent.post('/app/configuracion/cotizaciones').type('form').send({
+      _csrf: csrf,
+      condicionesPorDefecto: 'Pago a 30 días.',
+      catDescripcion: ['Instalación remota', 'Capacitación (por hora)', ''],
+      catPrecio: ['1500', '800', '0'],
+    });
+    expect(guardar.status).toBe(200);
+    const cfg = await t.configuracionRepo.obtenerCotizaciones();
+    expect(cfg.catalogoConceptos).toEqual([
+      { descripcion: 'Instalación remota', precioUnitario: 1500 },
+      { descripcion: 'Capacitación (por hora)', precioUnitario: 800 },
+    ]);
+
+    const form = await agent.get('/app/cotizaciones/nueva');
+    expect(form.text).toContain('id="catalogo-conceptos"');
+    expect(form.text).toContain('value="Instalación remota" data-precio="1500"');
+    expect(form.text).toContain('list=catalogo-conceptos');
+  });
+
   it('crea un ticket de seguimiento desde la cotización', async () => {
     const t = makeTestApp({ usuarios: [ADMIN] });
     t.empresaRepo.items.set('e1', new Empresa({ id: 'e1', nombre: 'ACME' }));

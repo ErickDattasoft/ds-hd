@@ -8,6 +8,7 @@
 
 ## Interfaces
 
+- [ConceptoCatalogo](interfaces/ConceptoCatalogo.md)
 - [ConfiguracionCotizaciones](interfaces/ConfiguracionCotizaciones.md)
 
 ## Variables

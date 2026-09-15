@@ -42,19 +42,25 @@
     </details>
 
     <h2>Conceptos</h2>
-    <table class="data-table">
+    {% if catalogo | length %}
+      <datalist id="catalogo-conceptos">
+        {% for c in catalogo %}<option value="{{ c.descripcion }}" data-precio="{{ c.precioUnitario }}"></option>{% endfor %}
+      </datalist>
+      <p class="muted">💡 Escribe la descripción — si coincide con el ⚡ catálogo (Configuración → Cotizaciones), el precio se llena solo.</p>
+    {% endif %}
+    <table class="data-table" data-conceptos-catalogo>
       <thead><tr><th>Descripción</th><th>Cantidad</th><th>Precio unitario</th></tr></thead>
       <tbody>
         {% for c in valores.conceptos %}
           <tr>
-            <td><input name="concepto_descripcion" value="{{ c.descripcion }}" style="width:100%" /></td>
+            <td><input name="concepto_descripcion" value="{{ c.descripcion }}" style="width:100%" {{ 'list=catalogo-conceptos' if catalogo | length }} /></td>
             <td><input name="concepto_cantidad" type="number" step="1" value="{{ c.cantidad }}" /></td>
             <td><input name="concepto_precio" type="number" step="0.01" value="{{ c.precioUnitario }}" /></td>
           </tr>
         {% endfor %}
         {% for _ in [1,2,3,4,5] %}
           <tr>
-            <td><input name="concepto_descripcion" placeholder="Nuevo concepto" style="width:100%" /></td>
+            <td><input name="concepto_descripcion" placeholder="Nuevo concepto" style="width:100%" {{ 'list=catalogo-conceptos' if catalogo | length }} /></td>
             <td><input name="concepto_cantidad" type="number" step="1" value="1" /></td>
             <td><input name="concepto_precio" type="number" step="0.01" /></td>
           </tr>

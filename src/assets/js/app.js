@@ -484,6 +484,31 @@
     if (q) { var row = q.closest('tr'); if (row) row.remove(); }
   });
 
+  // ── Cotizaciones: al elegir un concepto del catálogo (datalist), llena el precio ─
+  document.addEventListener('input', function (e) {
+    if (!e.target.matches('[data-conceptos-catalogo] input[name="concepto_descripcion"]')) return;
+    var input = e.target;
+    var list = document.getElementById(input.getAttribute('list') || '');
+    if (!list) return;
+    var opt = list.querySelector('option[value="' + CSS.escape(input.value) + '"]');
+    if (!opt) return;
+    var row = input.closest('tr');
+    var precioInput = row && row.querySelector('input[name="concepto_precio"]');
+    if (precioInput) precioInput.value = opt.dataset.precio || '0';
+  });
+
+  // ── Configuración → Cotizaciones: catálogo de conceptos ─────────────────
+  document.addEventListener('click', function (e) {
+    if (!e.target.closest('[data-agregar-catalogo-concepto]')) return;
+    var tb = document.querySelector('[data-catalogo-conceptos-body]');
+    if (!tb) return;
+    var tr = document.createElement('tr');
+    tr.innerHTML = '<td><input name="catDescripcion" placeholder="Ej: Instalación remota" style="width:100%"></td>' +
+      '<td><input name="catPrecio" type="number" min="0" step="0.01" value="0"></td>' +
+      '<td><button type="button" class="btn btn--ghost btn--sm" data-quitar-fila>✕</button></td>';
+    tb.appendChild(tr);
+  });
+
   // ── Imprimir / guardar como PDF ────────────────────────────────────────
   document.addEventListener('click', function (e) {
     if (e.target.closest('[data-print]')) {
@@ -739,6 +764,30 @@
         })
         .catch(function () { if (msg) msg.textContent = '❌ No se pudo subir. Revisa tu conexión.'; });
     });
+  });
+
+  // ── Registro público de eventos: reenviar link si ya estás registrado ────
+  document.addEventListener('click', function (e) {
+    var btn = e.target.closest('[data-reenviar-link]');
+    if (!btn) return;
+    var msg = document.getElementById('reenviar-link-mensaje');
+    btn.disabled = true;
+    btn.textContent = 'Enviando…';
+    fetch('/eventos/' + btn.dataset.eventoId + '/reenviar-link', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'x-csrf-token': cookie('x-csrf-token') },
+      body: JSON.stringify({ correo: btn.dataset.correo }),
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (msg) msg.textContent = data.mensaje || 'Listo.';
+        btn.remove();
+      })
+      .catch(function () {
+        btn.disabled = false;
+        btn.textContent = '🔁 No encuentro el correo, reenviármelo';
+        if (msg) msg.textContent = 'No se pudo reenviar en este momento — intenta de nuevo en un rato.';
+      });
   });
 
   // ── Login / invitación: aviso de Bloq Mayús ──────────────────────────────

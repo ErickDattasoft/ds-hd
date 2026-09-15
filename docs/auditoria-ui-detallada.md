@@ -117,7 +117,9 @@ Leyenda: ✅ existe · ◐ parcial · ❌ falta · ➖ no aplica (decisión de d
 | Alta: empresa / conceptos / vigencia / notas | ✅ | — |
 | **Datos generales: contacto, RFC, teléfono, "quien cotiza"** | ✅ | — |
 | **Condiciones / términos por defecto** (config) | ✅ (`configuracion/cotizaciones`) | — |
-| Concepto: cant / precio unit / descuento % | ✅ | — |
+| Concepto: cant / precio unit | ✅ | — |
+| **Concepto: descuento %** | ❌ — corregido 2026-09-15: esta fila decía ✅ pero `ConceptoCotizacion` no tiene campo de descuento; no se implementó en esta sesión (fuera del alcance de los 13 gaps verificados), pendiente de decidir con el usuario | — |
+| **⚡ Catálogo de conceptos reutilizables** | ✅ (`configuracion/cotizaciones`, `catalogoConceptos`; datalist + autocompletar precio en el alta) | — |
 | Subtotal / IVA 16% / Total | ✅ | — |
 | Calculadora Compac → enviar al cotizador | ✅ | — |
 | Guardar borrador / generar PDF | ✅ (imprimir) | — |
@@ -180,6 +182,21 @@ del evento (`Evento.flayer`, base64 en el propio doc — mismo patrón que el lo
 y los adjuntos de tickets, sin Firebase Storage), servida sin sesión en
 `GET /eventos/:id/flayer` y mostrada en la página pública de registro y en el
 listado público de eventos. PNG/JPG/WebP, máx. 700 KB.
+
+**Corrección 2026-09-15**: "mensaje de seguimiento" y "plantilla de confirmación"
+decían ✅ pero NO existían — verificado contra el código real del CRM viejo
+(`/home/erick/proyectos/PROYECTO CRM DATTASOFT`), no solo contra este doc. Ahora
+sí están hechos: `Evento` gana `sistema`/`contactoNombre`/`contactoWhatsapp`/
+`plantilla`/`mensajeSeguimiento`/`horasSeguimiento` (campos en el form de staff);
+`resolverPlantillaEvento`/`resolverComodinesEvento` resuelven los comodines
+`[nombre][evento][fecha][hora][sistema][link][contacto_nombre][contacto_whatsapp]`,
+usados en el correo de confirmación, en el mensaje de seguimiento post-evento
+(job nuevo `/jobs/seguimiento-eventos`, opcional por evento, horas configurables)
+y en un botón manual 💬 WhatsApp por inscrito en el detalle de staff. El
+formulario público de registro (`evento.njk`) gana asistira/¿usas el sistema?/
+cómo te enteraste/canal de WhatsApp, y "reenviar link" si el registro sale
+duplicado (`POST /eventos/:id/reenviar-link`, respuesta genérica, no revela si
+el correo existe).
 
 ## 13. Base de conocimiento / SOPORTE (`/app/kb`)
 

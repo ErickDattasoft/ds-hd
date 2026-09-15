@@ -37,6 +37,14 @@ export class ConfiguracionController {
     });
   };
 
+  private catalogoConceptosDe(b: Record<string, unknown>): { descripcion: string; precioUnitario: number }[] {
+    const desc = ([] as unknown[]).concat(b.catDescripcion ?? []).map(String);
+    const precio = ([] as unknown[]).concat(b.catPrecio ?? []).map(String);
+    return desc
+      .map((descripcion, i) => ({ descripcion: descripcion.trim(), precioUnitario: Number(precio[i]) || 0 }))
+      .filter((c) => c.descripcion);
+  }
+
   cotizacionesPost = async (req: Request, res: Response): Promise<void> => {
     const b = req.body ?? {};
     try {
@@ -45,6 +53,7 @@ export class ConfiguracionController {
         condicionesPorDefecto: str(b.condicionesPorDefecto),
         emisorCargoPorDefecto: str(b.emisorCargoPorDefecto),
         emisorTelefonoPorDefecto: str(b.emisorTelefonoPorDefecto),
+        catalogoConceptos: this.catalogoConceptosDe(b),
       });
       res.render('pages/backoffice/configuracion/cotizaciones', {
         titulo: 'Configuración de cotizaciones',

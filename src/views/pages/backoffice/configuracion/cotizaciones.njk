@@ -28,6 +28,21 @@
       </label>
     </fieldset>
 
+    <h2>⚡ Catálogo de conceptos <span class="disclosure__hint">— para no volver a escribirlos en cada cotización</span></h2>
+    <table class="data-table">
+      <thead><tr><th data-no-ordenar>Descripción</th><th data-no-ordenar>Precio unitario</th><th data-no-ordenar></th></tr></thead>
+      <tbody data-catalogo-conceptos-body>
+        {% for c in config.catalogoConceptos %}
+          <tr>
+            <td><input name="catDescripcion" value="{{ c.descripcion }}" style="width:100%" /></td>
+            <td><input name="catPrecio" type="number" min="0" step="0.01" value="{{ c.precioUnitario }}" /></td>
+            <td><button type="button" class="btn btn--ghost btn--sm" data-quitar-fila>✕</button></td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <button type="button" class="btn btn--ghost btn--sm" data-agregar-catalogo-concepto>➕ Añadir concepto</button>
+
     <div class="page-head__actions">
       <button class="btn" type="submit">Guardar</button>
     </div>

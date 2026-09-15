@@ -4,6 +4,7 @@ import type { EstadoInscripcion } from '../../../../core/entities/Inscripcion.js
 import {
   RESPUESTAS_INVITACION,
   RESPUESTA_INVITACION_ETIQUETA,
+  PLANTILLA_EVENTO_DEFAULT,
   resolverPlantillaEvento,
   type EstadoEvento,
   type RespuestaInvitacion,
@@ -26,7 +27,13 @@ export class EventoController {
   };
 
   nuevo = (_req: Request, res: Response): void => {
-    res.render('pages/backoffice/eventos/form', { titulo: 'Nuevo evento', modo: 'crear', valores: { estado: 'borrador', horasRecordatorio: 24 }, errores: {} });
+    res.render('pages/backoffice/eventos/form', {
+      titulo: 'Nuevo evento',
+      modo: 'crear',
+      valores: { estado: 'borrador', horasRecordatorio: 24 },
+      plantillaPorDefecto: PLANTILLA_EVENTO_DEFAULT,
+      errores: {},
+    });
   };
 
   editar = async (req: Request, res: Response): Promise<void> => {
@@ -36,6 +43,7 @@ export class EventoController {
       modo: 'editar',
       evento,
       valores: { ...evento, fechaHora: evento.fechaHora.toISOString().slice(0, 16) },
+      plantillaPorDefecto: PLANTILLA_EVENTO_DEFAULT,
       errores: {},
     });
   };
@@ -71,6 +79,7 @@ export class EventoController {
         modo: id ? 'editar' : 'crear',
         evento: id ? { id } : null,
         valores: b,
+        plantillaPorDefecto: PLANTILLA_EVENTO_DEFAULT,
         errores: camposDeError(err),
       });
     }

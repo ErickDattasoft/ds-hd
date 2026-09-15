@@ -46,6 +46,7 @@ export class CotizacionController {
     res.render('pages/backoffice/cotizaciones/form', {
       titulo: 'Nueva cotización',
       empresas,
+      catalogo: cfg.catalogoConceptos,
       valores: {
         empresaId: str(req.query.empresa),
         conceptos: this.conceptosDesdeQuery(req),
@@ -90,6 +91,7 @@ export class CotizacionController {
       res.status(422).render('pages/backoffice/cotizaciones/form', {
         titulo: 'Nueva cotización',
         empresas,
+        catalogo: (await this.cotizaciones.configModulo()).catalogoConceptos,
         valores: { ...b, conceptos: this.conceptosDeBody(b) },
         errores: camposDeError(err),
       });
@@ -103,6 +105,7 @@ export class CotizacionController {
       modo: 'editar',
       cotizacion,
       empresas: [],
+      catalogo: (await this.cotizaciones.configModulo()).catalogoConceptos,
       valores: { ...cotizacion, conceptos: cotizacion.conceptos },
       errores: {},
     });
@@ -126,6 +129,7 @@ export class CotizacionController {
         modo: 'editar',
         cotizacion,
         empresas: [],
+        catalogo: (await this.cotizaciones.configModulo()).catalogoConceptos,
         valores: { ...b, conceptos: this.conceptosDeBody(b) },
         errores: camposDeError(err),
       });

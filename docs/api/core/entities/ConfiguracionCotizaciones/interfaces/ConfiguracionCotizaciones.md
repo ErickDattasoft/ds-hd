@@ -31,3 +31,11 @@ Cargo del emisor que se sugiere si el usuario no llena el campo.
 > **emisorTelefonoPorDefecto**: `string`
 
 Teléfono del emisor que se sugiere si el usuario no llena el campo.
+
+***
+
+### catalogoConceptos
+
+> **catalogoConceptos**: [`ConceptoCatalogo`](ConceptoCatalogo.md)[]
+
+Conceptos frecuentes (descripción + precio) para autocompletar al armar una cotización.

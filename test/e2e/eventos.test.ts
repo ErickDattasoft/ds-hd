@@ -262,3 +262,194 @@ describe('eventos / webinars', () => {
     expect(sinPermiso.status).toBe(403);
   });
 });
+
+describe('eventos — contacto, plantilla y seguimiento por evento', () => {
+  it('guarda sistema/contacto/plantilla/mensaje de seguimiento desde el form de staff', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    const { agent, csrf } = await login(t.app, ADMIN.email, ADMIN.password);
+    const crear = await agent.post('/app/eventos').type('form').send({
+      _csrf: csrf, titulo: 'Webinar CFDI', fechaHora: '2026-12-01T10:00', estado: 'publicado',
+      sistema: 'Contabilidad', contactoNombre: 'Erick', contactoWhatsapp: '5215512345678',
+      plantilla: 'Hola [nombre], nos vemos en [evento] el [fecha]. — [contacto_nombre]',
+      mensajeSeguimiento: 'Gracias por venir a [evento]', horasSeguimiento: '48',
+    });
+    expect(crear.status).toBe(302);
+    const id = String(crear.headers.location).split('/').pop()!;
+    const evento = await t.eventoRepo.findById(id);
+    expect(evento).toMatchObject({
+      sistema: 'Contabilidad', contactoNombre: 'Erick', contactoWhatsapp: '5215512345678',
+      mensajeSeguimiento: 'Gracias por venir a [evento]', horasSeguimiento: 48,
+    });
+    expect(evento!.plantilla).toContain('[contacto_nombre]');
+
+    // el form de edición precarga todos los campos (valores: {...evento}), así que un
+    // reenvío normal desde el navegador los manda de vuelta tal cual — solo cambia el título.
+    const editar = await agent.post(`/app/eventos/${id}`).type('form').send({
+      _csrf: csrf, titulo: 'Webinar CFDI 4.0', fechaHora: '2026-12-01T10:00', estado: 'publicado',
+      sistema: evento!.sistema, contactoNombre: evento!.contactoNombre, contactoWhatsapp: evento!.contactoWhatsapp,
+      plantilla: evento!.plantilla, mensajeSeguimiento: evento!.mensajeSeguimiento, horasSeguimiento: String(evento!.horasSeguimiento),
+    });
+    expect(editar.status).toBe(302);
+    const editado = await t.eventoRepo.findById(id);
+    expect(editado!.titulo).toBe('Webinar CFDI 4.0');
+    expect(editado!.sistema).toBe('Contabilidad');
+    expect(editado!.contactoNombre).toBe('Erick');
+    expect(editado!.plantilla).toContain('[contacto_nombre]');
+  });
+
+  it('editar solo el título (sin mandar los campos nuevos) sí los borra — coherente con el resto de campos opcionales del form', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    const { agent, csrf } = await login(t.app, ADMIN.email, ADMIN.password);
+    const crear = await agent.post('/app/eventos').type('form').send({
+      _csrf: csrf, titulo: 'Webinar', fechaHora: '2026-12-01T10:00', estado: 'publicado', sistema: 'Nóminas',
+    });
+    const id = String(crear.headers.location).split('/').pop()!;
+    await agent.post(`/app/eventos/${id}`).type('form').send({
+      _csrf: csrf, titulo: 'Webinar renombrado', fechaHora: '2026-12-01T10:00', estado: 'publicado',
+    });
+    const editado = await t.eventoRepo.findById(id);
+    expect(editado!.titulo).toBe('Webinar renombrado');
+    expect(editado!.sistema).toBeNull();
+  });
+
+  it('el detalle de staff arma el link de WhatsApp con la plantilla resuelta por inscrito', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    t.eventoRepo.items.set('ev1', new Evento({
+      id: 'ev1', titulo: 'Webinar', fechaHora: enUnaSemana(), estado: 'publicado',
+      contactoNombre: 'Erick', contactoWhatsapp: '5215500000000',
+      plantilla: 'Hola [nombre], te esperamos en [evento].',
+    }));
+    await t.inscripcionRepo.create({
+      id: 'i1', eventoId: 'ev1', nombre: 'Laura', email: 'laura@x.com', telefono: '5551234567', empresa: null,
+      estado: 'registrado', origen: 'publico', correoEstado: null, recordatoriosEnviados: [], ip: null,
+      correoSospechoso: false, asistira: 'Sí', usaSistema: null, fuente: '💼 LinkedIn', deseaCanalWhatsapp: true, createdAt: new Date(),
+    });
+    const { agent } = await login(t.app, ADMIN.email, ADMIN.password);
+    const detalle = await agent.get('/app/eventos/ev1');
+    expect(detalle.status).toBe(200);
+    expect(detalle.text).toContain('https://wa.me/525551234567');
+    expect(detalle.text).toContain(encodeURIComponent('Hola Laura, te esperamos en Webinar.'));
+    expect(detalle.text).toContain('¿Asistirá? Sí');
+    expect(detalle.text).toContain('Se enteró: 💼 LinkedIn');
+    expect(detalle.text).toContain('quiere el canal de WhatsApp');
+  });
+});
+
+describe('registro público — asistira/usaSistema/fuente/canal WhatsApp', () => {
+  it('captura los campos nuevos; "¿usas el sistema?" solo aparece si el evento tiene sistema', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    t.eventoRepo.items.set('ev1', new Evento({
+      id: 'ev1', titulo: 'Con sistema', fechaHora: enUnaSemana(), estado: 'publicado', sistema: 'Nóminas',
+    }));
+    const anon = request.agent(t.app);
+    const page = await anon.get('/eventos/ev1');
+    expect(page.text).toContain('¿Actualmente utilizas Nóminas?');
+    const csrf = cookieValor(page.headers['set-cookie'] as unknown as string[], 'x-csrf-token')!;
+
+    const reg = await anon.post('/eventos/ev1').type('form').send({
+      _csrf: csrf, nombre: 'Pedro', email: 'pedro@x.com', asistira: 'Sí', usaSistema: 'No',
+      fuente: '📘 Facebook', deseaCanalWhatsapp: 'on',
+    });
+    expect(reg.status).toBe(200);
+    const ins = t.inscripcionRepo.items[0]!;
+    expect(ins).toMatchObject({ asistira: 'Sí', usaSistema: 'No', fuente: '📘 Facebook', deseaCanalWhatsapp: true });
+  });
+
+  it('sin sistema en el evento, usaSistema se ignora aunque venga en el body', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    t.eventoRepo.items.set('ev1', new Evento({ id: 'ev1', titulo: 'Sin sistema', fechaHora: enUnaSemana(), estado: 'publicado' }));
+    const anon = request.agent(t.app);
+    const page = await anon.get('/eventos/ev1');
+    expect(page.text).not.toContain('¿Actualmente utilizas');
+    const csrf = cookieValor(page.headers['set-cookie'] as unknown as string[], 'x-csrf-token')!;
+    await anon.post('/eventos/ev1').type('form').send({
+      _csrf: csrf, nombre: 'Ana', email: 'ana@x.com', asistira: 'Tal vez', usaSistema: 'No',
+    });
+    expect(t.inscripcionRepo.items[0]!.usaSistema).toBeNull();
+  });
+
+  it('duplicado: ofrece reenviar el link, sin revelar si el correo existe o no', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    t.eventoRepo.items.set('ev1', new Evento({ id: 'ev1', titulo: 'Reenviar', fechaHora: enUnaSemana(), estado: 'publicado' }));
+    const anon = request.agent(t.app);
+    const page = await anon.get('/eventos/ev1');
+    const csrf = cookieValor(page.headers['set-cookie'] as unknown as string[], 'x-csrf-token')!;
+    await anon.post('/eventos/ev1').type('form').send({ _csrf: csrf, nombre: 'Laura', email: 'laura@x.com', asistira: 'Sí' });
+
+    const dup = await anon.post('/eventos/ev1').type('form').send({ _csrf: csrf, nombre: 'Laura', email: 'laura@x.com', asistira: 'Sí' });
+    expect(dup.status).toBe(422);
+    expect(dup.text).toContain('reenviármelo');
+
+    expect(t.emailSender.enviados.filter((c) => c.asunto.includes('Registro confirmado'))).toHaveLength(1);
+    const reenviar = await request(t.app)
+      .post('/eventos/ev1/reenviar-link')
+      .set('x-csrf-token', csrf)
+      .set('Cookie', `x-csrf-token=${csrf}`)
+      .send({ correo: 'laura@x.com' });
+    expect(reenviar.status).toBe(200);
+    expect(reenviar.body.mensaje).toContain('Si el correo está registrado');
+    expect(t.emailSender.enviados.filter((c) => c.asunto.includes('Registro confirmado'))).toHaveLength(2);
+
+    // correo inexistente: misma respuesta genérica, sin mandar nada
+    const reenviarInexistente = await request(t.app)
+      .post('/eventos/ev1/reenviar-link')
+      .set('x-csrf-token', csrf)
+      .set('Cookie', `x-csrf-token=${csrf}`)
+      .send({ correo: 'nadie@x.com' });
+    expect(reenviarInexistente.status).toBe(200);
+    expect(reenviarInexistente.body.mensaje).toBe(reenviar.body.mensaje);
+    expect(t.emailSender.enviados.filter((c) => c.asunto.includes('Registro confirmado'))).toHaveLength(2);
+  });
+});
+
+describe('seguimiento post-evento (job)', () => {
+  it('manda el mensaje de seguimiento solo si el evento lo tiene, ya pasaron las horas configuradas, y no lo repite', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    const haceDosDias = new Date(Date.now() - 48 * 3_600_000);
+    t.eventoRepo.items.set('ev1', new Evento({
+      id: 'ev1', titulo: 'Ya pasó', fechaHora: haceDosDias, estado: 'publicado',
+      mensajeSeguimiento: 'Gracias por venir a [evento], [nombre]', horasSeguimiento: 24,
+    }));
+    t.eventoRepo.items.set('ev2', new Evento({
+      id: 'ev2', titulo: 'Sin mensaje', fechaHora: haceDosDias, estado: 'publicado',
+    }));
+    await t.inscripcionRepo.create({
+      id: 'i1', eventoId: 'ev1', nombre: 'Laura', email: 'laura@x.com', telefono: null, empresa: null,
+      estado: 'asistio', origen: 'publico', correoEstado: null, recordatoriosEnviados: [], ip: null,
+      correoSospechoso: false, asistira: 'Sí', usaSistema: null, fuente: null, deseaCanalWhatsapp: false, createdAt: new Date(),
+    });
+    await t.inscripcionRepo.create({
+      id: 'i2', eventoId: 'ev2', nombre: 'Ana', email: 'ana@x.com', telefono: null, empresa: null,
+      estado: 'asistio', origen: 'publico', correoEstado: null, recordatoriosEnviados: [], ip: null,
+      correoSospechoso: false, asistira: 'Sí', usaSistema: null, fuente: null, deseaCanalWhatsapp: false, createdAt: new Date(),
+    });
+
+    const conAuth = await request(t.app).post('/jobs/seguimiento-eventos').set('authorization', 'Bearer dev-jobs-secret');
+    expect(conAuth.status).toBe(200);
+    expect(conAuth.body.eventos).toBe(1);
+    expect(conAuth.body.correos).toBe(1);
+    const enviados = t.emailSender.enviados.filter((c) => c.asunto.startsWith('Seguimiento'));
+    expect(enviados).toHaveLength(1);
+    expect(enviados[0]!.html).toContain('Gracias por venir a Ya pasó, Laura');
+
+    // segunda corrida: no repite
+    const segunda = await request(t.app).post('/jobs/seguimiento-eventos').set('authorization', 'Bearer dev-jobs-secret');
+    expect(segunda.body.correos).toBe(0);
+  });
+
+  it('no manda seguimiento si todavía no pasan las horas configuradas', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    const haceUnaHora = new Date(Date.now() - 3_600_000);
+    t.eventoRepo.items.set('ev1', new Evento({
+      id: 'ev1', titulo: 'Reciente', fechaHora: haceUnaHora, estado: 'publicado',
+      mensajeSeguimiento: 'Gracias', horasSeguimiento: 24,
+    }));
+    await t.inscripcionRepo.create({
+      id: 'i1', eventoId: 'ev1', nombre: 'Laura', email: 'laura@x.com', telefono: null, empresa: null,
+      estado: 'asistio', origen: 'publico', correoEstado: null, recordatoriosEnviados: [], ip: null,
+      correoSospechoso: false, asistira: 'Sí', usaSistema: null, fuente: null, deseaCanalWhatsapp: false, createdAt: new Date(),
+    });
+    const res = await request(t.app).post('/jobs/seguimiento-eventos').set('authorization', 'Bearer dev-jobs-secret');
+    expect(res.body.correos).toBe(0);
+  });
+});

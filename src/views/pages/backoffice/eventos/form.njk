@@ -20,10 +20,31 @@
       <summary class="disclosure__summary">Contenido y recordatorios</summary>
       <div class="disclosure__body form">
         <label class="field"><span>Descripción</span><textarea name="descripcion" rows="4">{{ valores.descripcion }}</textarea></label>
+        <label class="field"><span>Sistema <span class="muted">(opcional — agrega la pregunta "¿lo usas?" al registro público)</span></span>
+          <input name="sistema" value="{{ valores.sistema }}" placeholder="Ej. Contabilidad" />
+        </label>
         <label class="field"><span>URL del webinar</span><input name="urlWebinar" value="{{ valores.urlWebinar }}" /></label>
         <label class="field"><span>Horas antes para recordatorio</span><input type="number" name="horasRecordatorio" value="{{ valores.horasRecordatorio or 24 }}" min="1" /></label>
         <label class="field"><span>Límite de registros por IP <span class="muted">(vacío = 5 por defecto)</span></span>
           <input type="number" name="limiteRegistrosPorIp" value="{{ valores.limiteRegistrosPorIp }}" min="1" placeholder="5" />
+        </label>
+      </div>
+    </details>
+
+    <details class="disclosure"{{ ' open' if valores.contactoNombre or valores.plantilla or valores.mensajeSeguimiento }}>
+      <summary class="disclosure__summary">Contacto, plantilla y seguimiento <span class="disclosure__hint">— mensaje de confirmación y WhatsApp por inscrito</span></summary>
+      <div class="disclosure__body form">
+        <label class="field"><span>Contacto de este evento (nombre)</span><input name="contactoNombre" value="{{ valores.contactoNombre }}" /></label>
+        <label class="field"><span>WhatsApp del contacto</span><input type="tel" name="contactoWhatsapp" value="{{ valores.contactoWhatsapp }}" /></label>
+        <label class="field"><span>Plantilla de confirmación <span class="muted">(vacío = usa el texto por defecto)</span></span>
+          <textarea name="plantilla" rows="6" placeholder="{{ plantillaPorDefecto }}">{{ valores.plantilla }}</textarea>
+          <span class="muted">Comodines: [nombre] [evento] [fecha] [hora] [sistema] [link] [contacto_nombre] [contacto_whatsapp]. Se usa en el correo de confirmación y en el botón 💬 WhatsApp por inscrito (en Inscritos, dentro del detalle del evento).</span>
+        </label>
+        <label class="field"><span>Mensaje de seguimiento <span class="muted">(después del evento; vacío = no se manda)</span></span>
+          <textarea name="mensajeSeguimiento" rows="4" placeholder="Déjalo vacío si no quieres mandar seguimiento para este evento. Ej: Gracias por tu interés en [evento]. Aquí está la grabación: [link]...">{{ valores.mensajeSeguimiento }}</textarea>
+        </label>
+        <label class="field"><span>Horas después del evento para el seguimiento</span>
+          <input type="number" name="horasSeguimiento" value="{{ valores.horasSeguimiento }}" min="1" placeholder="24 (por defecto)" />
         </label>
       </div>
     </details>
