@@ -116,6 +116,9 @@ export function backofficeRoutes(container: Container): Router {
   r.post('/tickets/:id/tiempo', requirePermission('tickets:editar'), (req, res) =>
     tickets().tiempoPost(req, res),
   );
+  r.post('/tickets/:id/incluir-tiempo-descripcion', requirePermission('tickets:editar'), (req, res) =>
+    tickets().incluirTiempoDescripcionPost(req, res),
+  );
   r.post('/tickets/:id/facturar', requirePermission('tickets:editar'), (req, res) =>
     tickets().facturarPost(req, res),
   );

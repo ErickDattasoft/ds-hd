@@ -16,6 +16,7 @@ import {
   FakeWebhookPublisher,
 } from '../fakes/tickets.js';
 import { FixedClock, silentLogger } from '../fakes/support.js';
+import { FakeEmailSender } from '../fakes/FakeEmailSender.js';
 
 let seq = 0;
 const ids = { newId: () => `id-${++seq}`, newToken: () => `tok-${++seq}` };
@@ -78,7 +79,14 @@ describe('alta y cambio de estado de facturación', () => {
       webhooks,
       silentLogger,
     );
-    facturar = new MarcarFacturacionService(repo, ids, clock, webhooks);
+    facturar = new MarcarFacturacionService(
+      repo,
+      new InMemoryConfiguracionRepository(),
+      ids,
+      clock,
+      webhooks,
+      new FakeEmailSender(),
+    );
   });
 
   it('el alta captura el estado de facturación del catálogo', async () => {

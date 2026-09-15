@@ -55,6 +55,7 @@
 - [application/tickets/RegistrarNotaService](application/tickets/RegistrarNotaService/README.md)
 - [application/tickets/TicketExcelService](application/tickets/TicketExcelService/README.md)
 - [application/tickets/VerTicketService](application/tickets/VerTicketService/README.md)
+- [application/tickets/cerradoFacturado](application/tickets/cerradoFacturado/README.md)
 - [application/tickets/constantes](application/tickets/constantes/README.md)
 - [application/tickets/dto](application/tickets/dto/README.md)
 - [application/tickets/efectos](application/tickets/efectos/README.md)

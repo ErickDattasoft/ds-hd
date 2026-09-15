@@ -120,6 +120,20 @@ Tarea de seguimiento comercial / interna, asignada a un usuario.
 
 `boolean`
 
+***
+
+### urgencia
+
+#### Get Signature
+
+> **get** **urgencia**(): `"vencida"` \| `"hoy"` \| `"proxima"` \| `null`
+
+`null` si está completada o sin fecha; si no, qué tan urgente es su vencimiento.
+
+##### Returns
+
+`"vencida"` \| `"hoy"` \| `"proxima"` \| `null`
+
 ## Methods
 
 ### marcar()

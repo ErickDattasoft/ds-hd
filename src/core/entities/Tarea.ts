@@ -65,6 +65,17 @@ export class Tarea {
   }
 
   get vencida(): boolean {
-    return !this.completada && this.vence != null && new Date(this.vence + 'T23:59:59') < new Date();
+    return this.urgencia === 'vencida';
+  }
+
+  /** `null` si está completada o sin fecha; si no, qué tan urgente es su vencimiento. */
+  get urgencia(): 'vencida' | 'hoy' | 'proxima' | null {
+    if (this.completada || this.vence == null) return null;
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+    const fv = new Date(this.vence + 'T00:00:00');
+    if (fv.getTime() < hoy.getTime()) return 'vencida';
+    if (fv.getTime() === hoy.getTime()) return 'hoy';
+    return 'proxima';
   }
 }

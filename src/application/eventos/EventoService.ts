@@ -11,6 +11,8 @@ import type { IEmailSender } from '../../core/ports/services/IEmailSender.js';
 import type { ICaptchaVerifier } from '../../core/ports/services/ICaptchaVerifier.js';
 import {
   Evento,
+  resolverComodinesEvento,
+  resolverPlantillaEvento,
   type EstadoEvento,
   type EventoFlayer,
   type InvitacionEmpresa,
@@ -33,6 +35,12 @@ export interface DatosEvento {
   horasRecordatorio?: number;
   limiteRegistrosPorIp?: number | null;
   estado?: EstadoEvento;
+  sistema?: string;
+  contactoNombre?: string;
+  contactoWhatsapp?: string;
+  plantilla?: string;
+  mensajeSeguimiento?: string;
+  horasSeguimiento?: number | null;
 }
 
 /** Datos del formulario público de registro a un evento/webinar. */
@@ -42,6 +50,12 @@ export interface RegistroPublicoInput {
   email: string;
   telefono?: string;
   empresa?: string;
+  /** "Sí" / "No" / "Tal vez". */
+  asistira?: string;
+  /** Solo tiene sentido si el evento tiene `sistema`. */
+  usaSistema?: string;
+  fuente?: string;
+  deseaCanalWhatsapp?: boolean;
   captchaToken?: string;
   ip?: string;
 }
@@ -98,9 +112,17 @@ export class EventoService {
         datos.limiteRegistrosPorIp !== undefined
           ? datos.limiteRegistrosPorIp
           : (previo?.limiteRegistrosPorIp ?? null),
-      // La edición del evento (título/fecha/…) no toca la invitación dirigida: se conserva.
+      // La edición del evento (título/fecha/…) no toca la invitación dirigida ni el flayer: se conservan.
       invitaciones: previo?.invitaciones ?? [],
       invitadosExternos: previo?.invitadosExternos ?? [],
+      flayer: previo?.flayer ?? null,
+      sistema: datos.sistema ?? previo?.sistema ?? null,
+      contactoNombre: datos.contactoNombre ?? previo?.contactoNombre ?? null,
+      contactoWhatsapp: datos.contactoWhatsapp ?? previo?.contactoWhatsapp ?? null,
+      plantilla: datos.plantilla ?? previo?.plantilla ?? null,
+      mensajeSeguimiento: datos.mensajeSeguimiento ?? previo?.mensajeSeguimiento ?? null,
+      horasSeguimiento:
+        datos.horasSeguimiento !== undefined ? datos.horasSeguimiento : (previo?.horasSeguimiento ?? null),
       creadoPorUid: previo?.creadoPorUid ?? actor.uid,
       createdAt: previo?.createdAt ?? this.clock.now(),
       updatedAt: this.clock.now(),
@@ -364,12 +386,26 @@ export class EventoService {
       recordatoriosEnviados: [],
       ip,
       correoSospechoso: esCorreoDesechable(correo.value),
+      asistira: input.asistira?.trim() || null,
+      usaSistema: evento.sistema ? input.usaSistema?.trim() || null : null,
+      fuente: input.fuente?.trim() || null,
+      deseaCanalWhatsapp: Boolean(input.deseaCanalWhatsapp),
       createdAt: this.clock.now(),
     };
     await this.inscripciones.create(inscripcion);
     await this.enviarConfirmacion(evento, inscripcion);
     this.logger.info('Inscripción a evento', { evento: evento.id, email: correo.value });
     return inscripcion;
+  }
+
+  /** Reenvía la confirmación si el correo ya está registrado en el evento — respuesta genérica
+   *  a propósito (no revela si el correo existe o no, para no facilitar enumeración). */
+  async reenviarLinkPublico(eventoId: string, email: string): Promise<void> {
+    const evento = await this.obtener(eventoId);
+    const correo = Email.create(email);
+    const inscripcion = await this.inscripciones.findByEmail(evento.id, correo.value);
+    if (!inscripcion) return;
+    await this.enviarConfirmacion(evento, inscripcion);
   }
 
   // ── Webhook de Brevo (entregado / rebotado) ────────────────────────────
@@ -428,11 +464,49 @@ export class EventoService {
     return { eventos: eventos.length, correos };
   }
 
+  /**
+   * Mensaje de seguimiento por correo tras el evento — opcional a propósito (vacío = no se
+   * manda, evento por evento), horas configurables después de `fechaHora` (default 24h). Mismo
+   * patrón que {@link enviarRecordatorios} (marca `recordatoriosEnviados` para no repetir).
+   */
+  async enviarSeguimiento(): Promise<{ eventos: number; correos: number }> {
+    const ahora = this.clock.now();
+    const todos = await this.eventos.list();
+    let eventosProcesados = 0;
+    let correos = 0;
+    for (const evento of todos) {
+      if (!evento.mensajeSeguimiento) continue;
+      const disparo = new Date(evento.fechaHora.getTime() + (evento.horasSeguimiento ?? 24) * 3_600_000);
+      if (disparo.getTime() > ahora.getTime()) continue; // aún no toca
+      eventosProcesados++;
+      const inscritos = await this.inscripciones.listPorEvento(evento.id);
+      for (const ins of inscritos) {
+        if (ins.recordatoriosEnviados.includes('seguimiento') || ins.estado === 'no_asistio') continue;
+        const mensaje = resolverComodinesEvento(evento.mensajeSeguimiento, evento, ins);
+        await this.email.enviar({
+          para: [{ email: ins.email, nombre: ins.nombre }],
+          asunto: `Seguimiento: ${evento.titulo}`,
+          html: `<p style="white-space:pre-wrap">${mensaje.replace(/\n/g, '<br>')}</p>`,
+          tags: ['evento-seguimiento', `evento-${evento.id}`, `insc_${ins.id}`],
+        });
+        ins.recordatoriosEnviados.push('seguimiento');
+        await this.inscripciones.save(ins);
+        correos++;
+      }
+    }
+    this.logger.info('Seguimiento de eventos enviado', { eventos: eventosProcesados, correos });
+    return { eventos: eventosProcesados, correos };
+  }
+
   private async enviarConfirmacion(evento: Evento, ins: Inscripcion): Promise<void> {
+    const mensajePersonalizado = evento.plantilla
+      ? `<p style="white-space:pre-wrap">${resolverPlantillaEvento(evento, ins).replace(/\n/g, '<br>')}</p>`
+      : '';
     await this.email.enviar({
       para: [{ email: ins.email, nombre: ins.nombre }],
       asunto: `Registro confirmado: ${evento.titulo}`,
       html: `<p>Hola ${ins.nombre}, tu registro para <strong>${evento.titulo}</strong> (${evento.fechaHora.toLocaleString('es-MX')}) quedó confirmado.</p>
+             ${mensajePersonalizado}
              <p>Detalles: ${this.baseUrl}/eventos/${evento.id}</p>`,
       tags: ['evento-confirmacion', `evento-${evento.id}`, `insc_${ins.id}`],
     });

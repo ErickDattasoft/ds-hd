@@ -679,6 +679,24 @@ El tiempo trabajado que se muestra/factura: el ajuste manual si existe, si no el
 
 ***
 
+### agregarADescripcion()
+
+> **agregarADescripcion**(`texto`): `void`
+
+Agrega una línea al final de la descripción (p. ej. el tiempo trabajado antes de cerrar).
+
+#### Parameters
+
+##### texto
+
+`string`
+
+#### Returns
+
+`void`
+
+***
+
 ### ajustarTiempoManual()
 
 > **ajustarTiempoManual**(`ms`, `ahora`): `void`

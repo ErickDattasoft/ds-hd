@@ -164,6 +164,16 @@ export class TicketController {
     });
   };
 
+  /** Resuelve el id de la empresa por nombre EXACTO (case-insensitive) — el form solo manda el
+   *  nombre en texto libre (autocompletado desde el contacto o escrito a mano). Sin esto los
+   *  tickets creados desde el form de staff nunca quedaban ligados a la empresa por id, y
+   *  desaparecían de cualquier listado filtrado por `empresaId` (p. ej. el detalle de empresa). */
+  private async resolverEmpresaId(nombre: string): Promise<string | null> {
+    if (!nombre) return null;
+    const candidatas = await this.empresasRepo.list({ texto: nombre });
+    return candidatas.find((e) => e.nombre.toLowerCase() === nombre.toLowerCase())?.id ?? null;
+  }
+
   crearPost = async (req: Request, res: Response): Promise<void> => {
     const b = req.body ?? {};
     const lista = (v: unknown) =>
@@ -172,6 +182,7 @@ export class TicketController {
         .map((x) => x.trim())
         .filter(Boolean);
     try {
+      const empresaNombre = str(b.empresaNombre) || null;
       const ticket = await this.crear.ejecutar({
         actor: req.user!,
         asunto: str(b.asunto),
@@ -181,7 +192,8 @@ export class TicketController {
         sistema: (str(b.sistema) === '__otro__' ? str(b.sistemaOtro) : str(b.sistema)) || null,
         grupo: str(b.grupo) || null,
         estado: str(b.estado) || null,
-        empresaNombre: str(b.empresaNombre) || null,
+        empresaId: empresaNombre ? await this.resolverEmpresaId(empresaNombre) : null,
+        empresaNombre,
         contactoNombre: str(b.contactoNombre) || null,
         contactoCorreo: str(b.contactoCorreo) || null,
         solicitadoPor: str(b.solicitadoPor) || null,
@@ -401,6 +413,11 @@ export class TicketController {
       horas: Number(b.horas ?? 0),
       minutos: Number(b.minutos ?? 0),
     });
+    res.redirect(`/app/tickets/${str(req.params.id)}`);
+  };
+
+  incluirTiempoDescripcionPost = async (req: Request, res: Response): Promise<void> => {
+    await this.ajustarTiempo.incluirEnDescripcion(req.user!, str(req.params.id));
     res.redirect(`/app/tickets/${str(req.params.id)}`);
   };
 

@@ -12,4 +12,7 @@ export interface IAdjuntoTicketRepository {
   eliminar(id: string): Promise<void>;
   /** Borra todos los adjuntos de un ticket (al eliminar el ticket de la papelera). */
   eliminarPorTicket(ticketId: string): Promise<void>;
+  /** Suma de `tamano` (bytes del archivo original, antes de base64) de TODOS los adjuntos —
+   *  para estimar el uso de la cuota gratis de Firestore, ver `AdjuntoTicketService.cuotaEspacio`. */
+  sumarBytesTotal(): Promise<number>;
 }

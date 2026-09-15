@@ -17,13 +17,22 @@ export class ContactoController {
   listar = async (req: Request, res: Response): Promise<void> => {
     const texto = str(req.query.q);
     const empresaId = str(req.query.empresa);
-    const contactos = await this.contactos.listar({
-      activo: true,
-      ...(texto ? { texto } : {}),
-      ...(empresaId ? { empresaId } : {}),
-    });
-    const empresas = await this.empresas.listar({ activa: true });
+    const [todos, empresas] = await Promise.all([
+      this.contactos.listar({ activo: true, ...(empresaId ? { empresaId } : {}) }),
+      this.empresas.listar({ activa: true }),
+    ]);
     const nombreEmpresa = Object.fromEntries(empresas.map((e) => [e.id, e.nombre]));
+    // El texto libre busca en nombre/correo (repo) *y* en el nombre de la empresa — se resuelve
+    // aquí porque el repo de contactos no conoce nombres de empresa (no cruza colecciones).
+    const t = texto.toLowerCase();
+    const contactos = !texto
+      ? todos
+      : todos.filter(
+          (c) =>
+            c.nombre.toLowerCase().includes(t) ||
+            (c.email ?? '').toLowerCase().includes(t) ||
+            (nombreEmpresa[c.empresaId] ?? '').toLowerCase().includes(t),
+        );
     res.render('pages/backoffice/contactos/list', {
       titulo: 'Contactos',
       contactos,

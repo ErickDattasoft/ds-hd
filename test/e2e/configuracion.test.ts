@@ -125,3 +125,24 @@ describe('configuración → resumen diario', () => {
     expect(t.emailSender.enviados).toHaveLength(0);
   });
 });
+
+describe('configuración → backup: aviso de cuota de adjuntos', () => {
+  it('sin adjuntos grandes, no muestra el aviso', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    const { agent } = await login(t.app, ADMIN.email, ADMIN.password);
+    const res = await agent.get('/app/configuracion/backup');
+    expect(res.text).not.toContain('cuota gratis de Firestore');
+  });
+
+  it('con adjuntos que suman ≥80% de 1 GB (estimado), muestra el aviso', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    t.adjuntoTicketRepo.docs.set('a1', {
+      id: 'a1', ticketId: 'tk1', nombre: 'grande.pdf', contentType: 'application/pdf',
+      tamano: 700_000_000, data: 'data:application/pdf;base64,ZmFrZQ==',
+      subidoPorUid: null, subidoPorNombre: null, createdAt: new Date(),
+    });
+    const { agent } = await login(t.app, ADMIN.email, ADMIN.password);
+    const res = await agent.get('/app/configuracion/backup');
+    expect(res.text).toContain('cuota gratis de Firestore');
+  });
+});

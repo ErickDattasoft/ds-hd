@@ -4,6 +4,7 @@ import type { EstadoInscripcion } from '../../../../core/entities/Inscripcion.js
 import {
   RESPUESTAS_INVITACION,
   RESPUESTA_INVITACION_ETIQUETA,
+  resolverPlantillaEvento,
   type EstadoEvento,
   type RespuestaInvitacion,
 } from '../../../../core/entities/Evento.js';
@@ -54,6 +55,12 @@ export class EventoController {
           horasRecordatorio: n(b.horasRecordatorio) || 24,
           limiteRegistrosPorIp: str(b.limiteRegistrosPorIp) ? Math.max(1, n(b.limiteRegistrosPorIp)) : null,
           estado: (str(b.estado) || 'borrador') as EstadoEvento,
+          sistema: str(b.sistema),
+          contactoNombre: str(b.contactoNombre),
+          contactoWhatsapp: str(b.contactoWhatsapp),
+          plantilla: str(b.plantilla),
+          mensajeSeguimiento: str(b.mensajeSeguimiento),
+          horasSeguimiento: str(b.horasSeguimiento) ? Math.max(1, n(b.horasSeguimiento)) : null,
         },
         id,
       );
@@ -77,10 +84,18 @@ export class EventoController {
       this.eventos.empresasParaInvitar(),
       this.eventos.historialEmpresas(id),
     ]);
+    const inscritosVM = inscritos.map((i) => {
+      const tel = (i.telefono ?? '').replace(/[^\d]/g, '');
+      const mensaje = resolverPlantillaEvento(evento, i);
+      return {
+        ...i,
+        waLink: tel ? `https://wa.me/${tel.length === 10 ? '52' : ''}${tel}?text=${encodeURIComponent(mensaje)}` : null,
+      };
+    });
     res.render('pages/backoffice/eventos/detail', {
       titulo: evento.titulo,
       evento,
-      inscritos,
+      inscritos: inscritosVM,
       listaNegra,
       empresasCartera,
       historialEmpresas,

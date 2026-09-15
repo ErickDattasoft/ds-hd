@@ -741,6 +741,19 @@
     });
   });
 
+  // ── Login / invitación: aviso de Bloq Mayús ──────────────────────────────
+  document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('[data-capslock-check]').forEach(function (input) {
+      var aviso = input.parentElement && input.parentElement.querySelector('[data-capslock-aviso]');
+      if (!aviso) return;
+      var check = function (e) {
+        aviso.hidden = !(e.getModifierState && e.getModifierState('CapsLock'));
+      };
+      input.addEventListener('keyup', check);
+      input.addEventListener('keydown', check);
+    });
+  });
+
   // ── Eventos → Detalle: subir flayer ──────────────────────────────────────
   document.addEventListener('submit', function (e) {
     var form = e.target.closest('[data-flayer-form]');

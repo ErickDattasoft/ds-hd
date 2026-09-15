@@ -17,6 +17,14 @@ export interface Inscripcion {
   ip: string | null;
   /** `true` si el dominio del correo es de un servicio desechable conocido — solo se marca 🚩. */
   correoSospechoso: boolean;
+  /** Respuesta libre del formulario público — "Sí"/"No"/"Tal vez". `null` para altas de staff. */
+  asistira: string | null;
+  /** Respuesta a "¿usas [sistema]?" — solo si el evento tiene `sistema`; si no, `null`. */
+  usaSistema: string | null;
+  /** Cómo se enteró del evento (Facebook/Instagram/LinkedIn/...), texto libre. */
+  fuente: string | null;
+  /** Marcó que quiere unirse al canal de WhatsApp de avisos/novedades. */
+  deseaCanalWhatsapp: boolean;
   createdAt: Date;
 }
 

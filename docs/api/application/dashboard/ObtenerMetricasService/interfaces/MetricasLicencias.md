@@ -10,6 +10,14 @@ Resumen de licencias en riesgo para el banner y la tarjeta de "avisos pendientes
 
 ## Properties
 
+### totalEmpresas
+
+> **totalEmpresas**: `number`
+
+Total de empresas activas (para el stat del dashboard).
+
+***
+
 ### empresasEnRiesgo
 
 > **empresasEnRiesgo**: `number`

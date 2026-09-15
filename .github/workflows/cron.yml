@@ -13,6 +13,10 @@ jobs:
         run: |
           curl -fsS -X POST "${{ secrets.APP_BASE_URL }}/jobs/recordatorios-eventos" \
             -H "Authorization: Bearer ${{ secrets.JOBS_SECRET }}"
+      - name: Seguimiento de eventos (solo si el evento tiene mensaje configurado)
+        run: |
+          curl -fsS -X POST "${{ secrets.APP_BASE_URL }}/jobs/seguimiento-eventos" \
+            -H "Authorization: Bearer ${{ secrets.JOBS_SECRET }}"
       - name: Recalcular SLA de tickets
         run: |
           curl -fsS -X POST "${{ secrets.APP_BASE_URL }}/jobs/recalcular-sla" \

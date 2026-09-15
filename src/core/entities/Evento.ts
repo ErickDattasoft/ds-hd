@@ -5,6 +5,49 @@ export type EstadoEvento = 'borrador' | 'publicado' | 'finalizado' | 'cancelado'
 /** Tope de inscripciones por IP y evento cuando el evento no fija uno propio. */
 export const LIMITE_REGISTROS_POR_IP_DEFECTO = 5;
 
+/** Texto de partida al crear un evento — el staff lo completa con el link real, etc. */
+export const PLANTILLA_EVENTO_DEFAULT =
+  'Hola [nombre] 👋\n\nQuedaste registrado en [evento].\n📅 [fecha] [hora]\n🔗 Liga de acceso: [link]\n\n' +
+  'Para mayores informes, contáctanos por WhatsApp: [contacto_whatsapp]\n\n¡Nos vemos ahí!\n\n— [contacto_nombre]';
+
+/**
+ * Resuelve los comodines `[nombre] [evento] [fecha] [hora] [sistema] [link] [contacto_nombre]
+ * [contacto_whatsapp]` de un texto cualquiera (plantilla de confirmación o mensaje de
+ * seguimiento) contra los datos del evento y de un inscrito.
+ */
+export function resolverComodinesEvento(
+  texto: string,
+  evento: Pick<Evento, 'titulo' | 'fechaHora' | 'sistema' | 'urlWebinar' | 'contactoNombre' | 'contactoWhatsapp'>,
+  inscrito: { nombre: string },
+): string {
+  const fechaFmt = evento.fechaHora.toLocaleDateString('es-MX', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  });
+  const horaFmt = evento.fechaHora.toLocaleTimeString('es-MX', { hour: 'numeric', minute: '2-digit' });
+  return texto
+    .replace(/\[nombre\]/g, inscrito.nombre || '')
+    .replace(/\[evento\]/g, evento.titulo || '')
+    .replace(/\[fecha\]/g, fechaFmt)
+    .replace(/\[hora\]/g, horaFmt)
+    .replace(/\[sistema\]/g, evento.sistema || '')
+    .replace(/\[link\]/g, evento.urlWebinar || '')
+    .replace(/\[contacto_nombre\]/g, evento.contactoNombre || '')
+    .replace(/\[contacto_whatsapp\]/g, evento.contactoWhatsapp || '');
+}
+
+/** Resuelve la plantilla de CONFIRMACIÓN del evento (o {@link PLANTILLA_EVENTO_DEFAULT} si no
+ *  tiene una propia) — usada tanto por el correo automático como por el botón manual de
+ *  WhatsApp por inscrito. */
+export function resolverPlantillaEvento(
+  evento: Pick<Evento, 'titulo' | 'fechaHora' | 'sistema' | 'urlWebinar' | 'contactoNombre' | 'contactoWhatsapp' | 'plantilla'>,
+  inscrito: { nombre: string },
+): string {
+  return resolverComodinesEvento(evento.plantilla || PLANTILLA_EVENTO_DEFAULT, evento, inscrito);
+}
+
 /** Respuesta de una empresa/persona invitada de forma dirigida a un evento. */
 export type RespuestaInvitacion = 'pendiente' | 'asistira' | 'no_asistira' | 'no_localizado';
 
@@ -110,6 +153,18 @@ export interface EventoProps {
   invitadosExternos?: InvitadoExterno[];
   /** Imagen promocional (poster/flayer) del evento. */
   flayer?: EventoFlayer | null;
+  /** Sistema al que aplica el evento (p. ej. "Contabilidad"); dispara la pregunta "¿lo usas?"
+   *  en el registro público y alimenta el comodín `[sistema]` de la plantilla. */
+  sistema?: string | null;
+  /** Contacto de referencia de ESTE evento (distinto del "invitado por" de cada invitación). */
+  contactoNombre?: string | null;
+  contactoWhatsapp?: string | null;
+  /** Plantilla de mensaje con comodines, propia de este evento — ver {@link resolverPlantillaEvento}. */
+  plantilla?: string | null;
+  /** Mensaje de seguimiento por correo tras el evento; vacío = no se manda (opcional a propósito). */
+  mensajeSeguimiento?: string | null;
+  /** Horas después del evento para el seguimiento; `null` = usar el valor por defecto (24h). */
+  horasSeguimiento?: number | null;
   creadoPorUid?: string | null;
   createdAt?: Date;
   updatedAt?: Date;
@@ -129,6 +184,12 @@ export class Evento {
   invitaciones: InvitacionEmpresa[];
   invitadosExternos: InvitadoExterno[];
   flayer: EventoFlayer | null;
+  sistema: string | null;
+  contactoNombre: string | null;
+  contactoWhatsapp: string | null;
+  plantilla: string | null;
+  mensajeSeguimiento: string | null;
+  horasSeguimiento: number | null;
   readonly creadoPorUid: string | null;
   readonly createdAt: Date;
   updatedAt: Date;
@@ -152,6 +213,15 @@ export class Evento {
     this.invitaciones = (props.invitaciones ?? []).map(sanearInvitacionEmpresa);
     this.invitadosExternos = (props.invitadosExternos ?? []).map(sanearInvitadoExterno);
     this.flayer = props.flayer ?? null;
+    this.sistema = props.sistema?.trim() || null;
+    this.contactoNombre = props.contactoNombre?.trim() || null;
+    this.contactoWhatsapp = props.contactoWhatsapp?.trim() || null;
+    this.plantilla = props.plantilla?.trim() || null;
+    this.mensajeSeguimiento = props.mensajeSeguimiento?.trim() || null;
+    this.horasSeguimiento =
+      typeof props.horasSeguimiento === 'number' && props.horasSeguimiento > 0
+        ? Math.trunc(props.horasSeguimiento)
+        : null;
     this.creadoPorUid = props.creadoPorUid ?? null;
     this.createdAt = props.createdAt ?? new Date();
     this.updatedAt = props.updatedAt ?? this.createdAt;

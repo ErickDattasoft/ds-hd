@@ -161,7 +161,16 @@
     <tbody>
       {% for i in inscritos %}
         <tr>
-          <td>{{ i.nombre }}</td>
+          <td>{{ i.nombre }}
+            {% if i.asistira or i.usaSistema or i.fuente or i.deseaCanalWhatsapp %}
+              <div class="muted" style="font-size:.78em">
+                {% if i.asistira %}¿Asistirá? {{ i.asistira }}{% endif %}
+                {% if i.usaSistema %} · ¿Usa {{ evento.sistema }}? {{ i.usaSistema }}{% endif %}
+                {% if i.fuente %} · Se enteró: {{ i.fuente }}{% endif %}
+                {% if i.deseaCanalWhatsapp %} · 💬 quiere el canal de WhatsApp{% endif %}
+              </div>
+            {% endif %}
+          </td>
           <td>{{ i.email }}{% if i.correoSospechoso %} <span title="Dominio de correo temporal/desechable conocido — probablemente no es un prospecto real">🚩</span>{% endif %}</td>
           <td>{{ i.empresa or '—' }}</td>
           <td>{{ i.estado }}</td>
@@ -180,6 +189,7 @@
               <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
               <button class="btn btn--sm btn--ghost" type="submit">Reenviar correo</button>
             </form>
+            {% if i.waLink %}<a class="btn btn--sm btn--ghost" target="_blank" rel="noopener" href="{{ i.waLink }}" title="Manda el mensaje de la plantilla de este evento por WhatsApp">💬 WhatsApp</a>{% endif %}
             {% endif %}
           </td>
         </tr>

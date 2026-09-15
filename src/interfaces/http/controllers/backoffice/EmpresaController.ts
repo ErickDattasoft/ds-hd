@@ -7,8 +7,20 @@ import type { ContactoService } from '../../../../application/contactos/Contacto
 import type { SeguimientoService } from '../../../../application/seguimiento/SeguimientoService.js';
 import type { VersionService } from '../../../../application/versiones/VersionService.js';
 import type { ITicketQueries } from '../../../../core/ports/repositories/ITicketQueries.js';
+import type { Interaccion, TipoInteraccion } from '../../../../core/entities/Interaccion.js';
+import type { Ticket } from '../../../../core/entities/Ticket.js';
 import { estadoActualizacion } from '../../../../core/entities/value-objects/version.js';
 import { camposDeError } from '../../support/errores.js';
+
+/** Un renglón del historial combinado de la empresa (interacción o ticket). */
+interface ItemHistorial {
+  tipo: TipoInteraccion | 'ticket';
+  fecha: Date;
+  texto: string;
+  usuario: string | null;
+  ticketId?: string;
+  ticketEstado?: string;
+}
 
 const str = (v: unknown): string => (typeof v === 'string' ? v : '');
 const lista = (v: unknown): string[] =>
@@ -124,6 +136,24 @@ export class EmpresaController {
     const b = req.body ?? {};
     try {
       const e = await this.empresas.crear(req.user!, this.datos(b));
+      // Primer contacto opcional en el mismo paso — como el CRM viejo ("Contactos de esta
+      // empresa" en su form de alta). Si falla (p. ej. sin permiso contactos:crear), la empresa
+      // ya quedó creada; no se revierte por un campo secundario opcional.
+      const contactoNombre = str(b.contactoNombre).trim();
+      if (contactoNombre.length >= 2) {
+        try {
+          await this.contactos.crear(req.user!, {
+            nombre: contactoNombre,
+            empresaId: e.id,
+            puesto: str(b.contactoPuesto),
+            email: str(b.contactoEmail),
+            telefono: str(b.contactoTelefono),
+            celular: str(b.contactoCelular),
+          });
+        } catch {
+          // opcional — la empresa ya se creó, no se bloquea el flujo por esto.
+        }
+      }
       res.redirect(`/app/empresas/${e.id}`);
     } catch (err) {
       res.status(422).render('pages/backoffice/empresas/form', {
@@ -138,20 +168,27 @@ export class EmpresaController {
   ver = async (req: Request, res: Response): Promise<void> => {
     const id = str(req.params.id);
     const empresa = await this.empresas.obtener(id);
-    const [contactos, tickets, interacciones, versiones] = await Promise.all([
+    const filtroHistorial = { desde: str(req.query.hDesde), hasta: str(req.query.hHasta), tipo: str(req.query.hTipo) };
+    const [contactos, tickets, todosLosTickets, interacciones, versiones, tareas] = await Promise.all([
       this.contactos.listar({ empresaId: id }),
       this.ticketQueries.listar({ empresaId: id, limite: 20, archivado: false }),
+      this.ticketQueries.listar({ empresaId: id }),
       this.seguimiento.interaccionesDe(id),
       this.versiones.listar(),
+      this.seguimiento.listarTareas({ empresaId: id, completada: false }),
     ]);
     const oficial = this.mapaOficial(versiones);
     const hoy = new Date();
+    const { historial, resumenTickets } = this.construirHistorial(interacciones, todosLosTickets, filtroHistorial);
     res.render('pages/backoffice/empresas/detail', {
       titulo: empresa.nombre,
       empresa,
       contactos,
       tickets,
-      interacciones,
+      historial,
+      resumenTickets,
+      filtroHistorial,
+      tareas,
       sistemas: empresa.sistemasContratados.map((sistema) => ({
         sistema,
         vigencia: empresa.vigencias[sistema] ?? null,
@@ -162,6 +199,41 @@ export class EmpresaController {
       })),
     });
   };
+
+  /**
+   * Historial combinado (interacciones + una fila por ticket, no por cada evento de su
+   * actividad) con filtro de fecha/tipo, más un resumen por estado cuando se filtra
+   * tipo=ticket — mismo criterio que el CRM viejo.
+   */
+  private construirHistorial(
+    interacciones: Interaccion[],
+    tickets: Ticket[],
+    filtro: { desde: string; hasta: string; tipo: string },
+  ): { historial: ItemHistorial[]; resumenTickets: { estado: string; cantidad: number }[] | null } {
+    let items: ItemHistorial[] = [
+      ...interacciones.map((i) => ({ tipo: i.tipo, fecha: i.fecha, texto: i.resumen, usuario: i.creadoPorNombre })),
+      ...tickets.map((t) => ({
+        tipo: 'ticket' as const,
+        fecha: t.abiertoEn,
+        texto: `#${t.numero} ${t.asunto} — Estado: ${t.estado}`,
+        usuario: null,
+        ticketId: t.id,
+        ticketEstado: t.estado,
+      })),
+    ];
+    items.sort((a, b) => b.fecha.getTime() - a.fecha.getTime());
+    if (filtro.desde) items = items.filter((it) => it.fecha >= new Date(filtro.desde + 'T00:00:00'));
+    if (filtro.hasta) items = items.filter((it) => it.fecha <= new Date(filtro.hasta + 'T23:59:59'));
+    if (filtro.tipo) items = items.filter((it) => it.tipo === filtro.tipo);
+
+    let resumenTickets: { estado: string; cantidad: number }[] | null = null;
+    if (filtro.tipo === 'ticket' && items.length) {
+      const conteo = new Map<string, number>();
+      for (const it of items) conteo.set(it.ticketEstado ?? '—', (conteo.get(it.ticketEstado ?? '—') ?? 0) + 1);
+      resumenTickets = [...conteo].map(([estado, cantidad]) => ({ estado, cantidad }));
+    }
+    return { historial: items, resumenTickets };
+  }
 
   editar = async (req: Request, res: Response): Promise<void> => {
     const empresa = await this.empresas.obtener(str(req.params.id));

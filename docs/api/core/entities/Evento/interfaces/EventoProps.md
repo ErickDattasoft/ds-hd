@@ -92,6 +92,53 @@ Imagen promocional (poster/flayer) del evento.
 
 ***
 
+### sistema?
+
+> `optional` **sistema?**: `string` \| `null`
+
+Sistema al que aplica el evento (p. ej. "Contabilidad"); dispara la pregunta "¿lo usas?"
+ en el registro público y alimenta el comodín `[sistema]` de la plantilla.
+
+***
+
+### contactoNombre?
+
+> `optional` **contactoNombre?**: `string` \| `null`
+
+Contacto de referencia de ESTE evento (distinto del "invitado por" de cada invitación).
+
+***
+
+### contactoWhatsapp?
+
+> `optional` **contactoWhatsapp?**: `string` \| `null`
+
+***
+
+### plantilla?
+
+> `optional` **plantilla?**: `string` \| `null`
+
+Plantilla de mensaje con comodines, propia de este evento — ver [resolverPlantillaEvento](../functions/resolverPlantillaEvento.md).
+
+***
+
+### mensajeSeguimiento?
+
+> `optional` **mensajeSeguimiento?**: `string` \| `null`
+
+Mensaje de seguimiento por correo tras el evento; vacío = no se manda (opcional a propósito).
+
+***
+
+### horasSeguimiento?
+
+> `optional` **horasSeguimiento?**: `number` \| `null`
+
+Horas después del evento para el seguimiento; `null` = usar el valor por defecto (24h).
+
+***
+
 ### creadoPorUid?
 
 > `optional` **creadoPorUid?**: `string` \| `null`

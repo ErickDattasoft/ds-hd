@@ -200,3 +200,77 @@ describe('flujo de tickets', () => {
     expect(envio.status).toBe(422);
   });
 });
+
+describe('correo "cerrado y facturado"', () => {
+  it('se dispara una sola vez, sin importar cuál de los dos se marca primero (facturar → cerrar)', async () => {
+    const t = makeTestApp({ usuarios: [SUP] });
+    t.configuracionRepo.config = { ...t.configuracionRepo.config, correosNotificacion: ['soporte@dattasoft.mx'] };
+    const { agent, csrf } = await login(t.app, SUP.email, SUP.password);
+    const crear = await agent.post('/app/tickets').type('form').send({
+      _csrf: csrf, asunto: 'Facturar y cerrar', descripcion: 'descripción de prueba larga', tipo: 'General', prioridad: 'Media',
+    });
+    const id = String(crear.headers.location).split('/').pop()!;
+
+    await agent.post(`/app/tickets/${id}/facturar`).type('form').send({ _csrf: csrf, estado: 'facturado' });
+    expect(t.emailSender.enviados.some((c) => c.asunto.includes('FACTURADO'))).toBe(false);
+
+    await agent.post(`/app/tickets/${id}/estado`).type('form').send({ _csrf: csrf, estado: 'Cerrado' });
+    const correosFacturados = t.emailSender.enviados.filter((c) => c.asunto.includes('FACTURADO'));
+    expect(correosFacturados).toHaveLength(1);
+    expect(t.webhookPublisher.eventos).toContain('ticket.cerrado_facturado');
+
+    // re-marcar el mismo estado de facturación no debe repetir el aviso
+    await agent.post(`/app/tickets/${id}/facturar`).type('form').send({ _csrf: csrf, estado: 'facturado' });
+    expect(t.emailSender.enviados.filter((c) => c.asunto.includes('FACTURADO'))).toHaveLength(1);
+  });
+
+  it('también se dispara cuando se cierra primero y se factura después', async () => {
+    const t = makeTestApp({ usuarios: [SUP] });
+    t.configuracionRepo.config = { ...t.configuracionRepo.config, correosNotificacion: ['soporte@dattasoft.mx'] };
+    const { agent, csrf } = await login(t.app, SUP.email, SUP.password);
+    const crear = await agent.post('/app/tickets').type('form').send({
+      _csrf: csrf, asunto: 'Cerrar y facturar', descripcion: 'descripción de prueba larga', tipo: 'General', prioridad: 'Media',
+    });
+    const id = String(crear.headers.location).split('/').pop()!;
+
+    await agent.post(`/app/tickets/${id}/estado`).type('form').send({ _csrf: csrf, estado: 'Resuelto' });
+    await agent.post(`/app/tickets/${id}/estado`).type('form').send({ _csrf: csrf, estado: 'Cerrado' });
+    expect(t.emailSender.enviados.some((c) => c.asunto.includes('FACTURADO'))).toBe(false);
+
+    await agent.post(`/app/tickets/${id}/facturar`).type('form').send({ _csrf: csrf, estado: 'facturado' });
+    expect(t.emailSender.enviados.filter((c) => c.asunto.includes('FACTURADO'))).toHaveLength(1);
+    expect(t.webhookPublisher.eventos).toContain('ticket.cerrado_facturado');
+  });
+
+  it('sin correos de soporte configurados, no manda correo pero igual dispara el webhook', async () => {
+    const t = makeTestApp({ usuarios: [SUP] });
+    const { agent, csrf } = await login(t.app, SUP.email, SUP.password);
+    const crear = await agent.post('/app/tickets').type('form').send({
+      _csrf: csrf, asunto: 'Sin correo de soporte', descripcion: 'descripción de prueba larga', tipo: 'General', prioridad: 'Media',
+    });
+    const id = String(crear.headers.location).split('/').pop()!;
+    await agent.post(`/app/tickets/${id}/facturar`).type('form').send({ _csrf: csrf, estado: 'facturado' });
+    await agent.post(`/app/tickets/${id}/estado`).type('form').send({ _csrf: csrf, estado: 'Cerrado' });
+    expect(t.emailSender.enviados.some((c) => c.asunto.includes('FACTURADO'))).toBe(false);
+    expect(t.webhookPublisher.eventos).toContain('ticket.cerrado_facturado');
+  });
+});
+
+describe('incluir tiempo trabajado en la descripción', () => {
+  it('agrega el tiempo trabajado efectivo al final de la descripción', async () => {
+    const t = makeTestApp({ usuarios: [SUP] });
+    const { agent, csrf } = await login(t.app, SUP.email, SUP.password);
+    const crear = await agent.post('/app/tickets').type('form').send({
+      _csrf: csrf, asunto: 'Con tiempo', descripcion: 'Descripción original', tipo: 'General', prioridad: 'Media',
+    });
+    const id = String(crear.headers.location).split('/').pop()!;
+    await agent.post(`/app/tickets/${id}/tiempo`).type('form').send({ _csrf: csrf, horas: '1', minutos: '30' });
+
+    const res = await agent.post(`/app/tickets/${id}/incluir-tiempo-descripcion`).type('form').send({ _csrf: csrf });
+    expect(res.status).toBe(302);
+
+    const ticket = t.ticketStore.tickets.get(id)!;
+    expect(ticket.descripcion).toContain('Descripción original');
+    expect(ticket.descripcion).toContain('Tiempo trabajado: 1h 30m');
+  });
+});

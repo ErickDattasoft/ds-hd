@@ -68,4 +68,23 @@ export class AjustarTiempoService {
       at: ahora,
     });
   }
+
+  /** Agrega el tiempo trabajado (efectivo: manual si hay ajuste, si no el automático) al final
+   *  de la descripción del ticket — útil antes de cerrarlo/imprimirlo, como en el CRM viejo. */
+  async incluirEnDescripcion(actor: SessionUser, ticketId: string): Promise<void> {
+    if (!actor.permisos.includes('tickets:editar')) {
+      throw new ForbiddenError('No puedes editar tickets');
+    }
+    const ticket = await this.tickets.findById(ticketId);
+    if (!ticket) throw new NotFoundError('Ticket', ticketId);
+    const ahora = this.clock.now();
+    ticket.agregarADescripcion(`⏱️ Tiempo trabajado: ${duracionTexto(ticket.tiempoTrabajadoEfectivoMs(ahora))}`);
+    await this.tickets.save(ticket);
+    await registrarEvento(this.tickets, this.ids, ticket.id, {
+      tipo: 'nota',
+      resumen: 'Tiempo trabajado incluido en la descripción',
+      actor,
+      at: ahora,
+    });
+  }
 }

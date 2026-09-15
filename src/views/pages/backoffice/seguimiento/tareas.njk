@@ -54,7 +54,12 @@
           </td>
           <td>{% if t.empresaId %}<a href="/app/empresas/{{ t.empresaId }}">{{ nombreEmpresa[t.empresaId] or t.empresaId }}</a>{% else %}—{% endif %}</td>
           <td>{{ t.asignadoANombre or t.asignadoAUid }}</td>
-          <td>{% if t.vencida %}<span class="badge badge--danger">{{ t.vence }}</span>{% else %}{{ t.vence or '—' }}{% endif %}</td>
+          <td>
+            {% if t.urgencia == 'vencida' %}<span class="badge badge--danger">{{ t.vence }}</span>
+            {% elif t.urgencia == 'hoy' %}<span class="badge badge--warning">Hoy</span>
+            {% elif t.urgencia == 'proxima' %}<span class="badge badge--ok">{{ t.vence }}</span>
+            {% else %}{{ t.vence or '—' }}{% endif %}
+          </td>
           <td>{{ 'Hecha' if t.completada else '' }}</td>
         </tr>
       {% else %}<tr><td colspan="6" class="muted">Sin tareas.</td></tr>{% endfor %}

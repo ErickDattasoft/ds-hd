@@ -97,3 +97,16 @@ Borra todos los adjuntos de un ticket (al eliminar el ticket de la papelera).
 #### Returns
 
 `Promise`\<`void`\>
+
+***
+
+### sumarBytesTotal()
+
+> **sumarBytesTotal**(): `Promise`\<`number`\>
+
+Suma de `tamano` (bytes del archivo original, antes de base64) de TODOS los adjuntos —
+ para estimar el uso de la cuota gratis de Firestore, ver `AdjuntoTicketService.cuotaEspacio`.
+
+#### Returns
+
+`Promise`\<`number`\>

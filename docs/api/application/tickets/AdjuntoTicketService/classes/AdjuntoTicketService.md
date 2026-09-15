@@ -125,3 +125,20 @@ Devuelve el contenido de un adjunto para servirlo como descarga / imagen.
 #### Returns
 
 `Promise`\<`void`\>
+
+***
+
+### cuotaEspacio()
+
+> **cuotaEspacio**(): `Promise`\<\{ `bytesEstimados`: `number`; `porcentaje`: `number`; `enRiesgo`: `boolean`; \}\>
+
+Estimación del uso de la cuota gratis de Firestore por los adjuntos de tickets — mismo
+criterio que el CRM viejo (`checkEspacioAdjuntos`): no hay forma de consultar el uso real
+desde el cliente, así que se suma `tamano` de cada adjunto (bytes del archivo original) con
+el ~33 % de overhead que deja la codificación a base64, contra el límite de 1 GiB del plan
+Spark. Solo tiene sentido si ds-hd usa el mismo modelo (sin Firebase Storage, ver
+`AdjuntoTicket.ts`).
+
+#### Returns
+
+`Promise`\<\{ `bytesEstimados`: `number`; `porcentaje`: `number`; `enRiesgo`: `boolean`; \}\>

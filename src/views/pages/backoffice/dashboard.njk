@@ -68,6 +68,7 @@
     <div class="stat"><span class="stat__num">{{ m.cotizaciones.totalAbiertas }}</span><span class="stat__lbl">Cotizaciones abiertas</span></div>
     {% if m.licencias %}
     <a class="stat{{ ' stat--danger' if m.licencias.avisosPendientes }}" href="/app/empresas?pendientes=1"><span class="stat__num">{{ m.licencias.avisosPendientes }}</span><span class="stat__lbl">Avisos pendientes</span></a>
+    <a class="stat" href="/app/empresas"><span class="stat__num">{{ m.licencias.totalEmpresas }}</span><span class="stat__lbl">Empresas</span></a>
     {% endif %}
   </div>
 

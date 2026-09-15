@@ -527,6 +527,29 @@ participó y a cuántos asistió (respuesta `asistira`). Sirve para no reinvitar
 
 ***
 
+### reenviarLinkPublico()
+
+> **reenviarLinkPublico**(`eventoId`, `email`): `Promise`\<`void`\>
+
+Reenvía la confirmación si el correo ya está registrado en el evento — respuesta genérica
+ a propósito (no revela si el correo existe o no, para no facilitar enumeración).
+
+#### Parameters
+
+##### eventoId
+
+`string`
+
+##### email
+
+`string`
+
+#### Returns
+
+`Promise`\<`void`\>
+
+***
+
 ### procesarWebhookBrevo()
 
 > **procesarWebhookBrevo**(`payload`): `Promise`\<\{ `actualizada`: `boolean`; \}\>
@@ -560,6 +583,20 @@ participó y a cuántos asistió (respuesta `asistira`). Sirve para no reinvitar
 ### enviarRecordatorios()
 
 > **enviarRecordatorios**(): `Promise`\<\{ `eventos`: `number`; `correos`: `number`; \}\>
+
+#### Returns
+
+`Promise`\<\{ `eventos`: `number`; `correos`: `number`; \}\>
+
+***
+
+### enviarSeguimiento()
+
+> **enviarSeguimiento**(): `Promise`\<\{ `eventos`: `number`; `correos`: `number`; \}\>
+
+Mensaje de seguimiento por correo tras el evento — opcional a propósito (vacío = no se
+manda, evento por evento), horas configurables después de `fechaHora` (default 24h). Mismo
+patrón que [enviarRecordatorios](#enviarrecordatorios) (marca `recordatoriosEnviados` para no repetir).
 
 #### Returns
 

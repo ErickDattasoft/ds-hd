@@ -69,4 +69,9 @@ export class FirestoreAdjuntoTicketRepository implements IAdjuntoTicketRepositor
     const snap = await this.db.collection(COL).where('ticketId', '==', ticketId).get();
     await Promise.all(snap.docs.map((d) => this.db.collection(COL).doc(d.id).delete()));
   }
+
+  async sumarBytesTotal(): Promise<number> {
+    const snap = await this.db.collection(COL).get();
+    return snap.docs.reduce((total, d) => total + Number((d.data() as Doc).tamano ?? 0), 0);
+  }
 }

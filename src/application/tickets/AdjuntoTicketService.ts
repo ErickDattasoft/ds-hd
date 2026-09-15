@@ -119,6 +119,23 @@ export class AdjuntoTicketService {
     });
   }
 
+  /**
+   * Estimación del uso de la cuota gratis de Firestore por los adjuntos de tickets — mismo
+   * criterio que el CRM viejo (`checkEspacioAdjuntos`): no hay forma de consultar el uso real
+   * desde el cliente, así que se suma `tamano` de cada adjunto (bytes del archivo original) con
+   * el ~33 % de overhead que deja la codificación a base64, contra el límite de 1 GiB del plan
+   * Spark. Solo tiene sentido si ds-hd usa el mismo modelo (sin Firebase Storage, ver
+   * `AdjuntoTicket.ts`).
+   */
+  async cuotaEspacio(): Promise<{ bytesEstimados: number; porcentaje: number; enRiesgo: boolean }> {
+    const LIMITE_GRATIS_BYTES = 1024 * 1024 * 1024;
+    const UMBRAL_AVISO = 0.8;
+    const bytesOriginales = await this.adjuntos.sumarBytesTotal();
+    const bytesEstimados = Math.round(bytesOriginales * 1.33);
+    const porcentaje = bytesEstimados / LIMITE_GRATIS_BYTES;
+    return { bytesEstimados, porcentaje, enRiesgo: porcentaje >= UMBRAL_AVISO };
+  }
+
   /** Carga el ticket y verifica que `actor` pueda leerlo o escribirlo (staff o dueño del portal). */
   private async cargarConAcceso(
     actor: SessionUser,

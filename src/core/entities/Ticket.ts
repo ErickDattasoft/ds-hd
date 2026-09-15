@@ -415,6 +415,11 @@ export class Ticket {
     return this.tiempoTrabajadoManualMs ?? this.tiempoTrabajadoCalculadoMs(ahora);
   }
 
+  /** Agrega una línea al final de la descripción (p. ej. el tiempo trabajado antes de cerrar). */
+  agregarADescripcion(texto: string): void {
+    this.descripcion = `${this.descripcion}\n\n${texto}`.trim();
+  }
+
   /** Fija (o quita, con `null`) el ajuste manual del tiempo trabajado. */
   ajustarTiempoManual(ms: number | null, ahora: Date): void {
     this.tiempoTrabajadoManualMs = typeof ms === 'number' && ms >= 0 ? Math.round(ms) : null;

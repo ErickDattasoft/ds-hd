@@ -631,7 +631,14 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
     ).singleton(),
     marcarFacturacionService: asFunction(
       (c: Cradle) =>
-        new MarcarFacturacionService(c.ticketRepo, c.idGenerator, c.clock, c.webhookPublisher),
+        new MarcarFacturacionService(
+          c.ticketRepo,
+          c.configuracionRepo,
+          c.idGenerator,
+          c.clock,
+          c.webhookPublisher,
+          c.emailSender,
+        ),
     ).singleton(),
     programarAtencionService: asFunction(
       (c: Cradle) =>
@@ -895,6 +902,7 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
           c.configuracionCalculadoraService,
           c.configuracionLogoService,
           c.resumenDiarioService,
+          c.adjuntoTicketService,
         ),
     ).singleton(),
     ticketPublicoController: asFunction(

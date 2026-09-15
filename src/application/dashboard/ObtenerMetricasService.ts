@@ -15,6 +15,8 @@ const MESES_GRAFICA = 6;
 
 /** Resumen de licencias en riesgo para el banner y la tarjeta de "avisos pendientes". */
 export interface MetricasLicencias {
+  /** Total de empresas activas (para el stat del dashboard). */
+  totalEmpresas: number;
   /** Empresas activas con al menos una licencia vencida o por vencer. */
   empresasEnRiesgo: number;
   /** Total de licencias vencidas (todas las empresas). */
@@ -192,6 +194,7 @@ export class ObtenerMetricasService {
 
     candidatas.sort((a, b) => a.diasMin - b.diasMin);
     return {
+      totalEmpresas: empresas.length,
       empresasEnRiesgo,
       vencidas,
       porVencer,

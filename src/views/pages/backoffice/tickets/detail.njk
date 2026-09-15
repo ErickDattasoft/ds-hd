@@ -193,6 +193,10 @@
               <button class="btn btn--sm btn--ghost" type="submit">Quitar ajuste (volver al automático)</button>
             </form>
           {% endif %}
+          <form method="post" action="/app/tickets/{{ ticket.id }}/incluir-tiempo-descripcion" class="disclosure__body">
+            <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+            <button class="btn btn--sm btn--ghost" type="submit" title="Agrega '{{ vm.tiempoTrabajado }}' al final de la descripción">➕ Incluir en descripción</button>
+          </form>
         </details>
 
         <details class="disclosure">

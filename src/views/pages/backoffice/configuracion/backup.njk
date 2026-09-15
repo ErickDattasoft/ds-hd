@@ -13,6 +13,15 @@
   </p>
   <a class="btn" href="/app/configuracion/backup/descargar">Descargar backup completo (JSON)</a>
 
+  {% if cuotaAdjuntos.enRiesgo %}
+    <p class="alert alert--warning">
+      🟠 Los adjuntos de tickets ya usan ~{{ (cuotaAdjuntos.bytesEstimados / 1048576) | round }} MB
+      de la cuota gratis de Firestore (~{{ (cuotaAdjuntos.porcentaje * 100) | round }}% de 1 GB, plan
+      Spark). Es una estimación (tamaño de archivo + overhead de base64) — no hay forma de
+      consultar el uso real desde aquí. Elimina adjuntos de tickets cerrados que ya no necesites.
+    </p>
+  {% endif %}
+
   <h2>Restaurar</h2>
   <p class="alert alert--warning">
     Restaurar <strong>agrega o actualiza</strong> lo que traiga el archivo (por id) — nunca

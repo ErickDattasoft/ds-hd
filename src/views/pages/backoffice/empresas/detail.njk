@@ -110,7 +110,75 @@
   </table>
 
   {% if can('seguimiento:leer') %}
-    <h2>Seguimiento comercial</h2>
+    <h2 id="tareas">Tareas ({{ tareas | length }})</h2>
+    <ul class="timeline">
+      {% for t in tareas %}
+        <li>
+          {% if can('seguimiento:gestionar') %}
+            <form method="post" action="/app/tareas/{{ t.id }}/marcar" class="inline">
+              <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+              <input type="hidden" name="completada" value="true" />
+              <input type="hidden" name="volverA" value="/app/empresas/{{ empresa.id }}#tareas" />
+              <button class="btn btn--ghost btn--sm" type="submit" title="Marcar como hecha">✓</button>
+            </form>
+          {% endif %}
+          {{ t.titulo }}
+          {% if t.urgencia == 'vencida' %}<span class="badge badge--danger">{{ t.vence }}</span>
+          {% elif t.urgencia == 'hoy' %}<span class="badge badge--warning">Hoy</span>
+          {% elif t.urgencia == 'proxima' %}<span class="badge badge--ok">{{ t.vence }}</span>{% endif %}
+          <span class="muted">({{ t.asignadoANombre or t.asignadoAUid }})</span>
+        </li>
+      {% else %}<li class="muted">Sin tareas pendientes para esta empresa.</li>{% endfor %}
+    </ul>
+    {% if can('seguimiento:gestionar') %}
+      <details class="disclosure">
+        <summary class="disclosure__summary">➕ Nueva tarea</summary>
+        <form method="post" action="/app/tareas" class="form disclosure__body">
+          <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+          <input type="hidden" name="empresaId" value="{{ empresa.id }}" />
+          <input type="hidden" name="volverA" value="/app/empresas/{{ empresa.id }}#tareas" />
+          <div class="filterbar">
+            <input name="titulo" placeholder="Título de la tarea" required style="flex:1" />
+            <input type="date" name="vence" />
+            <button class="btn btn--sm" type="submit">Crear</button>
+          </div>
+        </form>
+      </details>
+    {% endif %}
+
+    <h2 id="historial">Historial ({{ historial | length }})</h2>
+    <form method="get" action="/app/empresas/{{ empresa.id }}" class="filterbar">
+      <input type="date" name="hDesde" value="{{ filtroHistorial.desde }}" />
+      <input type="date" name="hHasta" value="{{ filtroHistorial.hasta }}" />
+      <select name="hTipo">
+        <option value="">Todos los tipos</option>
+        {% for tp in ['llamada','correo','reunion','whatsapp','nota','ticket'] %}
+          <option value="{{ tp }}" {{ 'selected' if filtroHistorial.tipo == tp }}>{{ tp }}</option>
+        {% endfor %}
+      </select>
+      <button class="btn btn--sm btn--secondary" type="submit">Filtrar</button>
+      {% if filtroHistorial.desde or filtroHistorial.hasta or filtroHistorial.tipo %}
+        <a class="btn btn--sm btn--ghost" href="/app/empresas/{{ empresa.id }}#historial">Limpiar</a>
+      {% endif %}
+    </form>
+    {% if resumenTickets %}
+      <p class="muted">🎫 {{ historial | length }} ticket{{ '' if historial | length == 1 else 's' }} en este rango —
+        {% for r in resumenTickets %}{{ r.cantidad }} {{ r.estado }}{% if not loop.last %} · {% endif %}{% endfor %}</p>
+    {% endif %}
+    <ul class="timeline">
+      {% for i in historial %}
+        <li>
+          <span class="muted">{{ i.fecha | fecha }}</span> ·
+          {% if i.tipo == 'ticket' %}
+            🎫 <a href="/app/tickets/{{ i.ticketId }}">{{ i.texto }}</a>
+          {% else %}
+            <strong>{{ i.tipo }}</strong> — {{ i.texto }} <span class="muted">({{ i.usuario }})</span>
+          {% endif %}
+        </li>
+      {% else %}
+        <li class="muted">{{ 'Sin resultados con ese filtro.' if (filtroHistorial.desde or filtroHistorial.hasta or filtroHistorial.tipo) else 'Sin interacciones registradas.' }}</li>
+      {% endfor %}
+    </ul>
     {% if can('seguimiento:gestionar') %}
       <form method="post" action="/app/interacciones" class="form">
         <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
@@ -125,10 +193,5 @@
         </div>
       </form>
     {% endif %}
-    <ul class="timeline">
-      {% for i in interacciones %}
-        <li><span class="muted">{{ i.fecha | fecha }}</span> · <strong>{{ i.tipo }}</strong> — {{ i.resumen }} <span class="muted">({{ i.creadoPorNombre }})</span></li>
-      {% else %}<li class="muted">Sin interacciones registradas.</li>{% endfor %}
-    </ul>
   {% endif %}
 {% endblock %}

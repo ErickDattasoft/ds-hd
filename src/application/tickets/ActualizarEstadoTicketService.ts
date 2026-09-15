@@ -7,8 +7,10 @@ import type { ILogger } from '../../core/ports/services/ILogger.js';
 import type { IEmailSender } from '../../core/ports/services/IEmailSender.js';
 import type { IWebhookPublisher } from '../../core/ports/services/IWebhookPublisher.js';
 import type { Ticket } from '../../core/entities/Ticket.js';
+import { esFacturacionCompletada } from '../../core/entities/value-objects/EstadoFacturacion.js';
 import { ForbiddenError, NotFoundError } from '../../core/errors/DomainError.js';
 import { registrarEvento } from './efectos.js';
+import { avisarSiQuedoCerradoYFacturado } from './cerradoFacturado.js';
 import { historialActividadHtml } from './historialCorreo.js';
 import { destinatariosTicket } from './notificacionTicket.js';
 import type { CambiarEstadoInput } from './dto.js';
@@ -38,6 +40,7 @@ export class ActualizarEstadoTicketService {
     const cfg = await this.config.obtenerTickets();
     const ahora = this.clock.now();
 
+    const cumpliaAntes = ticket.esCerrado && esFacturacionCompletada(ticket.facturacion.estado);
     const resultado = ticket.cambiarEstado(input.nuevoEstado, cfg.estados, ahora);
     if (input.actor.esStaff) ticket.registrarPrimeraRespuesta(ahora);
 
@@ -47,6 +50,17 @@ export class ActualizarEstadoTicketService {
       resumen: `Estado: ${resultado.anterior} → ${resultado.nuevo}`,
       actor: input.actor,
       at: ahora,
+    });
+    await avisarSiQuedoCerradoYFacturado({
+      tickets: this.tickets,
+      ids: this.ids,
+      webhooks: this.webhooks,
+      email: this.email,
+      correosNotificacion: cfg.correosNotificacion,
+      ticket,
+      cumpliaAntes,
+      cumpleAhora: resultado.quedoCerrado && esFacturacionCompletada(ticket.facturacion.estado),
+      ahora,
     });
 
     if (input.nota?.trim()) {

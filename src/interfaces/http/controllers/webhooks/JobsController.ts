@@ -36,6 +36,12 @@ export class JobsController {
     res.json({ ok: true, ...resultado });
   };
 
+  seguimientoEventos = async (req: Request, res: Response): Promise<void> => {
+    if (!this.autorizado(req)) return void res.status(401).json({ error: 'no autorizado' });
+    const resultado = await this.eventos.enviarSeguimiento();
+    res.json({ ok: true, ...resultado });
+  };
+
   /** Recorre tickets abiertos y anota en su bitácora los que ya incumplieron el SLA. */
   recalcularSla = async (req: Request, res: Response): Promise<void> => {
     if (!this.autorizado(req)) return void res.status(401).json({ error: 'no autorizado' });

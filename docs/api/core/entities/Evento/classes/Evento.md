@@ -98,6 +98,42 @@ Evento / webinar con registro público.
 
 ***
 
+### sistema
+
+> **sistema**: `string` \| `null`
+
+***
+
+### contactoNombre
+
+> **contactoNombre**: `string` \| `null`
+
+***
+
+### contactoWhatsapp
+
+> **contactoWhatsapp**: `string` \| `null`
+
+***
+
+### plantilla
+
+> **plantilla**: `string` \| `null`
+
+***
+
+### mensajeSeguimiento
+
+> **mensajeSeguimiento**: `string` \| `null`
+
+***
+
+### horasSeguimiento
+
+> **horasSeguimiento**: `number` \| `null`
+
+***
+
 ### creadoPorUid
 
 > `readonly` **creadoPorUid**: `string` \| `null`

@@ -52,6 +52,19 @@
       </div>
     </details>
 
+    {% if modo == 'crear' and can('contactos:crear') %}
+    <details class="disclosure">
+      <summary class="disclosure__summary">Primer contacto <span class="disclosure__hint">— opcional, se puede agregar después</span></summary>
+      <div class="disclosure__body form">
+        <label class="field"><span>Nombre</span><input name="contactoNombre" value="{{ valores.contactoNombre }}" /></label>
+        <label class="field"><span>Puesto</span><input name="contactoPuesto" value="{{ valores.contactoPuesto }}" /></label>
+        <label class="field"><span>Correo</span><input type="email" name="contactoEmail" autocomplete="off" value="{{ valores.contactoEmail }}" /></label>
+        <label class="field"><span>Teléfono</span><input type="tel" name="contactoTelefono" value="{{ valores.contactoTelefono }}" /></label>
+        <label class="field"><span>Celular</span><input type="tel" name="contactoCelular" value="{{ valores.contactoCelular }}" /></label>
+      </div>
+    </details>
+    {% endif %}
+
     <details class="disclosure"{{ ' open' if (empresa.camposExtra | length) }}>
       <summary class="disclosure__summary">⚙️ Campos extra <span class="disclosure__hint">— datos personalizados de esta empresa</span></summary>
       <div class="disclosure__body" data-campos-extra>

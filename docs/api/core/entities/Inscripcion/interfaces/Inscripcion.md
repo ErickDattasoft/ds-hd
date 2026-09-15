@@ -88,6 +88,38 @@ IP desde la que se registró (forense + límite por IP); `null` para altas de st
 
 ***
 
+### asistira
+
+> **asistira**: `string` \| `null`
+
+Respuesta libre del formulario público — "Sí"/"No"/"Tal vez". `null` para altas de staff.
+
+***
+
+### usaSistema
+
+> **usaSistema**: `string` \| `null`
+
+Respuesta a "¿usas [sistema]?" — solo si el evento tiene `sistema`; si no, `null`.
+
+***
+
+### fuente
+
+> **fuente**: `string` \| `null`
+
+Cómo se enteró del evento (Facebook/Instagram/LinkedIn/...), texto libre.
+
+***
+
+### deseaCanalWhatsapp
+
+> **deseaCanalWhatsapp**: `boolean`
+
+Marcó que quiere unirse al canal de WhatsApp de avisos/novedades.
+
+***
+
 ### createdAt
 
 > **createdAt**: `Date`

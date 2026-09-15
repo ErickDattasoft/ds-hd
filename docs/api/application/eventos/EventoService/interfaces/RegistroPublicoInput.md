@@ -40,6 +40,34 @@ Datos del formulario público de registro a un evento/webinar.
 
 ***
 
+### asistira?
+
+> `optional` **asistira?**: `string`
+
+"Sí" / "No" / "Tal vez".
+
+***
+
+### usaSistema?
+
+> `optional` **usaSistema?**: `string`
+
+Solo tiene sentido si el evento tiene `sistema`.
+
+***
+
+### fuente?
+
+> `optional` **fuente?**: `string`
+
+***
+
+### deseaCanalWhatsapp?
+
+> `optional` **deseaCanalWhatsapp?**: `boolean`
+
+***
+
 ### captchaToken?
 
 > `optional` **captchaToken?**: `string`

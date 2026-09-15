@@ -1,7 +1,9 @@
 import type { ITicketRepository } from '../../core/ports/repositories/ITicketRepository.js';
+import type { IConfiguracionRepository } from '../../core/ports/repositories/IConfiguracionRepository.js';
 import type { IClock } from '../../core/ports/services/IClock.js';
 import type { IIdGenerator } from '../../core/ports/services/IIdGenerator.js';
 import type { IWebhookPublisher } from '../../core/ports/services/IWebhookPublisher.js';
+import type { IEmailSender } from '../../core/ports/services/IEmailSender.js';
 import {
   ETIQUETAS_FACTURACION,
   esFacturacionCompletada,
@@ -9,15 +11,18 @@ import {
 } from '../../core/entities/value-objects/EstadoFacturacion.js';
 import { ForbiddenError, NotFoundError } from '../../core/errors/DomainError.js';
 import { registrarEvento } from './efectos.js';
+import { avisarSiQuedoCerradoYFacturado } from './cerradoFacturado.js';
 import type { SessionUser } from '../shared/SessionUser.js';
 
 /** Caso de uso: cambiar el estado de facturación de un ticket (catálogo fijo). */
 export class MarcarFacturacionService {
   constructor(
     private readonly tickets: ITicketRepository,
+    private readonly config: IConfiguracionRepository,
     private readonly ids: IIdGenerator,
     private readonly clock: IClock,
     private readonly webhooks: IWebhookPublisher,
+    private readonly email: IEmailSender,
   ) {}
 
   async ejecutar(input: { actor: SessionUser; ticketId: string; estado: EstadoFacturacion }): Promise<void> {
@@ -31,6 +36,7 @@ export class MarcarFacturacionService {
     if (anterior === input.estado) return;
 
     const ahora = this.clock.now();
+    const cumpliaAntes = ticket.esCerrado && esFacturacionCompletada(anterior);
     ticket.cambiarEstadoFacturacion(input.estado, ahora);
     await this.tickets.save(ticket);
     await registrarEvento(this.tickets, this.ids, ticket.id, {
@@ -47,5 +53,18 @@ export class MarcarFacturacionService {
         payload: { id: ticket.id, numero: ticket.numero, tipo: ticket.tipo, empresaId: ticket.empresaId },
       });
     }
+
+    const cfg = await this.config.obtenerTickets();
+    await avisarSiQuedoCerradoYFacturado({
+      tickets: this.tickets,
+      ids: this.ids,
+      webhooks: this.webhooks,
+      email: this.email,
+      correosNotificacion: cfg.correosNotificacion,
+      ticket,
+      cumpliaAntes,
+      cumpleAhora: ticket.esCerrado && esFacturacionCompletada(input.estado),
+      ahora,
+    });
   }
 }

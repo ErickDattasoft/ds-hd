@@ -12,7 +12,8 @@
       <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
       <label class="field">
         <span>Contraseña (mínimo 8 caracteres)</span>
-        <input type="password" name="password" required minlength="8" autocomplete="new-password" />
+        <input type="password" name="password" required minlength="8" autocomplete="new-password" data-capslock-check />
+        <em class="field__error" data-capslock-aviso hidden>⚠️ Mayúsculas activadas (Bloq Mayús)</em>
         {% if errores.password %}<em class="field__error">{{ errores.password }}</em>{% endif %}
       </label>
       <label class="field">

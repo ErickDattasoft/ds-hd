@@ -67,3 +67,26 @@ Caso de uso: ajustar manualmente el tiempo trabajado de un ticket (o quitar el a
 #### Returns
 
 `Promise`\<`void`\>
+
+***
+
+### incluirEnDescripcion()
+
+> **incluirEnDescripcion**(`actor`, `ticketId`): `Promise`\<`void`\>
+
+Agrega el tiempo trabajado (efectivo: manual si hay ajuste, si no el automático) al final
+ de la descripción del ticket — útil antes de cerrarlo/imprimirlo, como en el CRM viejo.
+
+#### Parameters
+
+##### actor
+
+[`SessionUser`](../../../shared/SessionUser/interfaces/SessionUser.md)
+
+##### ticketId
+
+`string`
+
+#### Returns
+
+`Promise`\<`void`\>

@@ -55,3 +55,39 @@ Datos editables de un evento (alta o edición, uso staff).
 ### estado?
 
 > `optional` **estado?**: [`EstadoEvento`](../../../../core/entities/Evento/type-aliases/EstadoEvento.md)
+
+***
+
+### sistema?
+
+> `optional` **sistema?**: `string`
+
+***
+
+### contactoNombre?
+
+> `optional` **contactoNombre?**: `string`
+
+***
+
+### contactoWhatsapp?
+
+> `optional` **contactoWhatsapp?**: `string`
+
+***
+
+### plantilla?
+
+> `optional` **plantilla?**: `string`
+
+***
+
+### mensajeSeguimiento?
+
+> `optional` **mensajeSeguimiento?**: `string`
+
+***
+
+### horasSeguimiento?
+
+> `optional` **horasSeguimiento?**: `number` \| `null`

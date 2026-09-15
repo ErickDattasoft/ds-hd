@@ -12,13 +12,17 @@ Caso de uso: cambiar el estado de facturación de un ticket (catálogo fijo).
 
 ### Constructor
 
-> **new MarcarFacturacionService**(`tickets`, `ids`, `clock`, `webhooks`): `MarcarFacturacionService`
+> **new MarcarFacturacionService**(`tickets`, `config`, `ids`, `clock`, `webhooks`, `email`): `MarcarFacturacionService`
 
 #### Parameters
 
 ##### tickets
 
 [`ITicketRepository`](../../../../core/ports/repositories/ITicketRepository/interfaces/ITicketRepository.md)
+
+##### config
+
+[`IConfiguracionRepository`](../../../../core/ports/repositories/IConfiguracionRepository/interfaces/IConfiguracionRepository.md)
 
 ##### ids
 
@@ -31,6 +35,10 @@ Caso de uso: cambiar el estado de facturación de un ticket (catálogo fijo).
 ##### webhooks
 
 [`IWebhookPublisher`](../../../../core/ports/services/IWebhookPublisher/interfaces/IWebhookPublisher.md)
+
+##### email
+
+[`IEmailSender`](../../../../core/ports/services/IEmailSender/interfaces/IEmailSender.md)
 
 #### Returns
 

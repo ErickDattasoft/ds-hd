@@ -7,6 +7,7 @@ import type { ConfiguracionCotizacionesService } from '../../../../application/c
 import type { ConfiguracionCalculadoraService } from '../../../../application/configuracion/ConfiguracionCalculadoraService.js';
 import type { ConfiguracionLogoService } from '../../../../application/configuracion/ConfiguracionLogoService.js';
 import type { ResumenDiarioService } from '../../../../application/dashboard/ResumenDiarioService.js';
+import type { AdjuntoTicketService } from '../../../../application/tickets/AdjuntoTicketService.js';
 import { ETIQUETAS_EVENTOS } from '../../../../core/entities/ConfiguracionIntegraciones.js';
 import { INFO_APP } from '../../../../core/entities/AcercaDe.js';
 import { camposDeError } from '../../support/errores.js';
@@ -24,6 +25,7 @@ export class ConfiguracionController {
     private readonly configCalculadora: ConfiguracionCalculadoraService,
     private readonly configLogo: ConfiguracionLogoService,
     private readonly configResumen: ResumenDiarioService,
+    private readonly adjuntos: AdjuntoTicketService,
   ) {}
 
   cotizacionesView = async (_req: Request, res: Response): Promise<void> => {
@@ -101,8 +103,11 @@ export class ConfiguracionController {
     }
   };
 
-  backupView = (_req: Request, res: Response): void => {
-    res.render('pages/backoffice/configuracion/backup', { titulo: 'Backup' });
+  backupView = async (_req: Request, res: Response): Promise<void> => {
+    res.render('pages/backoffice/configuracion/backup', {
+      titulo: 'Backup',
+      cuotaAdjuntos: await this.adjuntos.cuotaEspacio(),
+    });
   };
 
   backupDescargar = async (_req: Request, res: Response): Promise<void> => {

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import request from 'supertest';
 import { makeTestApp, cookieValor } from '../helpers/app.js';
+import { Empresa } from '../../src/core/entities/Empresa.js';
 
 const ADMIN = { uid: 'u-a', email: 'admin@dattasoft.mx', password: 'admin12345', nombre: 'Admin', rol: 'admin' as const };
 const AGENTE = { uid: 'u-g', email: 'ag@dattasoft.mx', password: 'agente12345', nombre: 'Agente', rol: 'agente' as const };
@@ -61,5 +62,18 @@ describe('dashboard', () => {
 
     const otroMes = await agent.get('/app/calendario');
     expect(otroMes.status).toBe(200);
+  });
+
+  it('el stat "Empresas" cuenta las empresas activas', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    t.empresaRepo.items.set('e1', new Empresa({ id: 'e1', nombre: 'Activa Uno' }));
+    t.empresaRepo.items.set('e2', new Empresa({ id: 'e2', nombre: 'Activa Dos' }));
+    t.empresaRepo.items.set('e3', new Empresa({ id: 'e3', nombre: 'Archivada', activa: false }));
+    const { agent } = await login(t.app, ADMIN.email, ADMIN.password);
+
+    const dash = await agent.get('/app');
+    expect(dash.status).toBe(200);
+    expect(dash.text).toContain('Empresas');
+    expect(dash.text).toMatch(/stat__num">2<\/span><span class="stat__lbl">Empresas/);
   });
 });
