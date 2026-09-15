@@ -3,7 +3,7 @@ import type { SessionUser } from '../shared/SessionUser.js';
 import type { EmpresaService } from './EmpresaService.js';
 import type { ColumnaExcel, IExcelIO } from '../../core/ports/services/IExcelIO.js';
 
-const COLUMNAS: ColumnaExcel[] = [
+export const COLUMNAS_EMPRESAS: ColumnaExcel[] = [
   { header: 'Nombre', key: 'nombre', width: 30 },
   { header: 'RFC', key: 'rfc' },
   { header: 'Razón social', key: 'razonSocial', width: 30 },
@@ -30,8 +30,14 @@ export class EmpresaExcelService {
   ) {}
 
   async exportar(filtro?: ListarEmpresasFiltro): Promise<Buffer> {
+    const filas = await this.filasParaExportar(filtro);
+    return this.excel.escribir('Empresas', COLUMNAS_EMPRESAS, filas);
+  }
+
+  /** Filas listas para una hoja "Empresas" — reutilizado por el export unificado. */
+  async filasParaExportar(filtro?: ListarEmpresasFiltro): Promise<Record<string, string>[]> {
     const lista = await this.empresas.listar(filtro);
-    const filas = lista.map((e) => ({
+    return lista.map((e) => ({
       nombre: e.nombre,
       rfc: e.rfc ?? '',
       razonSocial: e.razonSocial ?? '',
@@ -41,11 +47,15 @@ export class EmpresaExcelService {
       sistemasContratados: e.sistemasContratados.join(', '),
       activa: e.activa ? 'Sí' : 'No',
     }));
-    return this.excel.escribir('Empresas', COLUMNAS, filas);
   }
 
   async importar(actor: SessionUser, buffer: Buffer): Promise<ResumenImportacionExcel> {
     const filas = await this.excel.leer(buffer);
+    return this.importarFilas(actor, filas);
+  }
+
+  /** Procesa filas ya leídas (de una hoja "Empresas") — reutilizado por el import unificado. */
+  async importarFilas(actor: SessionUser, filas: Record<string, string>[]): Promise<ResumenImportacionExcel> {
     const existentes = await this.empresas.listar();
     const porNombre = new Map(existentes.map((e) => [e.nombre.toLowerCase(), e]));
 

@@ -46,6 +46,24 @@ Import/export de Empresas en Excel (`.xlsx`).
 
 ***
 
+### filasParaExportar()
+
+> **filasParaExportar**(`filtro?`): `Promise`\<`Record`\<`string`, `string`\>[]\>
+
+Filas listas para una hoja "Empresas" — reutilizado por el export unificado.
+
+#### Parameters
+
+##### filtro?
+
+[`ListarEmpresasFiltro`](../../../../core/ports/repositories/IEmpresaRepository/interfaces/ListarEmpresasFiltro.md)
+
+#### Returns
+
+`Promise`\<`Record`\<`string`, `string`\>[]\>
+
+***
+
 ### importar()
 
 > **importar**(`actor`, `buffer`): `Promise`\<[`ResumenImportacionExcel`](../interfaces/ResumenImportacionExcel.md)\>
@@ -59,6 +77,28 @@ Import/export de Empresas en Excel (`.xlsx`).
 ##### buffer
 
 `Buffer`
+
+#### Returns
+
+`Promise`\<[`ResumenImportacionExcel`](../interfaces/ResumenImportacionExcel.md)\>
+
+***
+
+### importarFilas()
+
+> **importarFilas**(`actor`, `filas`): `Promise`\<[`ResumenImportacionExcel`](../interfaces/ResumenImportacionExcel.md)\>
+
+Procesa filas ya leídas (de una hoja "Empresas") — reutilizado por el import unificado.
+
+#### Parameters
+
+##### actor
+
+[`SessionUser`](../../../shared/SessionUser/interfaces/SessionUser.md)
+
+##### filas
+
+`Record`\<`string`, `string`\>[]
 
 #### Returns
 

@@ -9,3 +9,7 @@
 ## Classes
 
 - [ContactoExcelService](classes/ContactoExcelService.md)
+
+## Variables
+
+- [COLUMNAS\_CONTACTOS](variables/COLUMNAS_CONTACTOS.md)

@@ -308,6 +308,15 @@ export function backofficeRoutes(container: Container): Router {
   r.post('/configuracion/backup/restaurar', requirePermission('configuracion:integraciones'), (req, res) =>
     configuracion().backupRestaurarPost(req, res),
   );
+  r.get('/configuracion/excel', requirePermission('configuracion:integraciones'), (req, res) =>
+    configuracion().excelView(req, res),
+  );
+  r.post('/configuracion/excel', requirePermission('configuracion:integraciones'), (req, res) =>
+    configuracion().excelExportarPost(req, res),
+  );
+  r.post('/configuracion/excel/importar', requirePermission('configuracion:integraciones'), uploadExcel, (req, res) =>
+    configuracion().excelImportarPost(req, res),
+  );
   r.get('/configuracion/calculadora', requirePermission('configuracion:catalogos'), (req, res) =>
     configuracion().calculadoraView(req, res),
   );

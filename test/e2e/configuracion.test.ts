@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import request from 'supertest';
 import { makeTestApp, cookieValor } from '../helpers/app.js';
+import { Empresa } from '../../src/core/entities/Empresa.js';
+import { ExceljsExcelIO } from '../../src/infrastructure/excel/ExceljsExcelIO.js';
 
 const ADMIN = { uid: 'u-a', email: 'admin@dattasoft.mx', password: 'admin12345', nombre: 'Admin', rol: 'admin' as const };
 const LECTURA = { uid: 'u-l', email: 'l@d.com', password: 'lectura1234', nombre: 'Lec', rol: 'lectura' as const };
@@ -144,5 +146,67 @@ describe('configuración → backup: aviso de cuota de adjuntos', () => {
     const { agent } = await login(t.app, ADMIN.email, ADMIN.password);
     const res = await agent.get('/app/configuracion/backup');
     expect(res.text).toContain('cuota gratis de Firestore');
+  });
+});
+
+describe('configuración → Excel unificado', () => {
+  it('exporta un .xlsx con content-type y tamaño de archivo real', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    t.empresaRepo.items.set('e1', new Empresa({ id: 'e1', nombre: 'Unificada SA' }));
+    const { agent, csrf } = await login(t.app, ADMIN.email, ADMIN.password);
+
+    const vista = await agent.get('/app/configuracion/excel');
+    expect(vista.status).toBe(200);
+    expect(vista.text).toContain('Excel unificado');
+
+    const exportar = await agent.post('/app/configuracion/excel').type('form').send({
+      _csrf: csrf, empresas: 'on', contactos: 'on', tickets: 'on',
+    });
+    expect(exportar.status).toBe(200);
+    expect(exportar.headers['content-type']).toContain('spreadsheetml.sheet');
+    expect(exportar.headers['content-disposition']).toContain('ds-hd-excel-');
+    expect(Number(exportar.headers['content-length'])).toBeGreaterThan(1000);
+  });
+
+  it('importa un .xlsx unificado subido por multipart (Empresas + Contactos)', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    t.empresaRepo.items.set('e1', new Empresa({ id: 'e1', nombre: 'Unificada SA' }));
+    const { agent, csrf } = await login(t.app, ADMIN.email, ADMIN.password);
+
+    const buffer = await new ExceljsExcelIO().escribirVarias([
+      { nombre: 'Empresas', columnas: [{ header: 'Nombre', key: 'nombre' }], filas: [{ nombre: 'Unificada SA' }] },
+      {
+        nombre: 'Contactos',
+        columnas: [{ header: 'Nombre', key: 'nombre' }, { header: 'Empresa', key: 'empresa' }],
+        filas: [{ nombre: 'Laura', empresa: 'Unificada SA' }],
+      },
+    ]);
+
+    const importar = await agent
+      .post('/app/configuracion/excel/importar')
+      .set('x-csrf-token', csrf)
+      .attach('archivo', buffer, 'ds-hd-excel.xlsx');
+    expect(importar.status).toBe(200);
+    expect(importar.body.ok).toBe(true);
+    expect(importar.body.resultado.empresas).toMatchObject({ total: 1, actualizadas: 1 });
+    expect(importar.body.resultado.contactos).toMatchObject({ total: 1, creadas: 1 });
+    expect(importar.body.resultado.tickets).toBeUndefined();
+    expect([...t.contactoRepo.items.values()].some((c) => c.nombre === 'Laura')).toBe(true);
+  });
+
+  it('sin nada marcado, no exporta nada (422)', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    const { agent, csrf } = await login(t.app, ADMIN.email, ADMIN.password);
+    const res = await agent.post('/app/configuracion/excel').type('form').send({ _csrf: csrf });
+    expect(res.status).toBe(422);
+  });
+
+  it('un rol sin configuracion:integraciones no puede ver ni exportar', async () => {
+    const t = makeTestApp({ usuarios: [LECTURA] });
+    const { agent, csrf } = await login(t.app, LECTURA.email, LECTURA.password);
+    expect((await agent.get('/app/configuracion/excel')).status).toBe(403);
+    expect(
+      (await agent.post('/app/configuracion/excel').type('form').send({ _csrf: csrf, empresas: 'on' })).status,
+    ).toBe(403);
   });
 });

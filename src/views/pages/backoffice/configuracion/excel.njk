@@ -1,0 +1,34 @@
+{% extends "layouts/backoffice.njk" %}
+{% import "components/configuracion.njk" as cfgnav %}
+{% block title %}Excel unificado{% endblock %}
+{% block content %}
+  <div class="page-head">
+    <h1>Excel unificado</h1>
+    <div class="page-head__actions">{{ cfgnav.nav('excel') }}</div>
+  </div>
+  {% if errores.general %}<p class="alert alert--error">{{ errores.general }}</p>{% endif %}
+  <p class="muted">
+    Un solo archivo <code>.xlsx</code> con una hoja por tipo, en vez de exportar Empresas,
+    Contactos y Tickets por separado. Al importar, solo se procesan las hojas "Empresas" y
+    "Contactos" (Tickets es de solo exportación, igual que en el CRM viejo) — una fila cuyo
+    dato clave ya existe se actualiza, si no se crea.
+  </p>
+
+  <h2>Exportar</h2>
+  <form method="post" action="/app/configuracion/excel" class="form">
+    <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+    <label class="field--check"><input type="checkbox" name="empresas" checked /> Empresas</label>
+    <label class="field--check"><input type="checkbox" name="contactos" checked /> Contactos</label>
+    <label class="field--check"><input type="checkbox" name="tickets" checked /> Tickets</label>
+    <button class="btn" type="submit">Descargar .xlsx</button>
+  </form>
+
+  <h2>Importar</h2>
+  <form data-importar-excel-unificado action="/app/configuracion/excel/importar" class="form">
+    <label class="field"><span>Archivo (.xlsx)</span>
+      <input type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" required />
+    </label>
+    <button class="btn" type="submit">Importar</button>
+  </form>
+  <div id="resultado-importar-excel-unificado"></div>
+{% endblock %}

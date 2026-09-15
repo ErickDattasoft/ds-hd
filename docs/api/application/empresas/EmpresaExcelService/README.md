@@ -13,3 +13,7 @@
 ## Interfaces
 
 - [ResumenImportacionExcel](interfaces/ResumenImportacionExcel.md)
+
+## Variables
+
+- [COLUMNAS\_EMPRESAS](variables/COLUMNAS_EMPRESAS.md)

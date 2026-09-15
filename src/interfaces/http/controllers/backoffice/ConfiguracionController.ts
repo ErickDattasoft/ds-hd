@@ -8,6 +8,7 @@ import type { ConfiguracionCalculadoraService } from '../../../../application/co
 import type { ConfiguracionLogoService } from '../../../../application/configuracion/ConfiguracionLogoService.js';
 import type { ResumenDiarioService } from '../../../../application/dashboard/ResumenDiarioService.js';
 import type { AdjuntoTicketService } from '../../../../application/tickets/AdjuntoTicketService.js';
+import type { ExcelUnificadoService } from '../../../../application/excel/ExcelUnificadoService.js';
 import { ETIQUETAS_EVENTOS } from '../../../../core/entities/ConfiguracionIntegraciones.js';
 import { INFO_APP } from '../../../../core/entities/AcercaDe.js';
 import { camposDeError } from '../../support/errores.js';
@@ -26,6 +27,7 @@ export class ConfiguracionController {
     private readonly configLogo: ConfiguracionLogoService,
     private readonly configResumen: ResumenDiarioService,
     private readonly adjuntos: AdjuntoTicketService,
+    private readonly excelUnificado: ExcelUnificadoService,
   ) {}
 
   cotizacionesView = async (_req: Request, res: Response): Promise<void> => {
@@ -139,6 +141,44 @@ export class ConfiguracionController {
       res.json({ ok: true, resumen });
     } catch (err) {
       res.status(422).json({ ok: false, error: err instanceof Error ? err.message : 'No se pudo restaurar' });
+    }
+  };
+
+  excelView = (_req: Request, res: Response): void => {
+    res.render('pages/backoffice/configuracion/excel', { titulo: 'Excel unificado' });
+  };
+
+  excelExportarPost = async (req: Request, res: Response): Promise<void> => {
+    const b = req.body ?? {};
+    try {
+      const buffer = await this.excelUnificado.exportar(req.user!, {
+        empresas: b.empresas === 'on',
+        contactos: b.contactos === 'on',
+        tickets: b.tickets === 'on',
+      });
+      const fecha = new Date().toISOString().slice(0, 10);
+      res.setHeader('Content-Disposition', `attachment; filename="ds-hd-excel-${fecha}.xlsx"`);
+      res.type('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet').send(buffer);
+    } catch (err) {
+      res.status(422).render('pages/backoffice/configuracion/excel', {
+        titulo: 'Excel unificado',
+        errores: camposDeError(err),
+      });
+    }
+  };
+
+  /** El archivo llega por `fetch` con `FormData` — mismo patrón que empresas/contactos. */
+  excelImportarPost = async (req: Request, res: Response): Promise<void> => {
+    const archivo = req.file;
+    if (!archivo) {
+      res.status(422).json({ ok: false, error: 'Selecciona un archivo .xlsx' });
+      return;
+    }
+    try {
+      const resultado = await this.excelUnificado.importar(req.user!, archivo.buffer);
+      res.json({ ok: true, resultado });
+    } catch (err) {
+      res.status(422).json({ ok: false, error: err instanceof Error ? err.message : 'No se pudo importar el archivo' });
     }
   };
 

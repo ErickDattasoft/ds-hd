@@ -28,6 +28,7 @@
 - [application/empresas/EmpresaService](application/empresas/EmpresaService/README.md)
 - [application/empresas/avisos](application/empresas/avisos/README.md)
 - [application/eventos/EventoService](application/eventos/EventoService/README.md)
+- [application/excel/ExcelUnificadoService](application/excel/ExcelUnificadoService/README.md)
 - [application/knowledge/KnowledgeService](application/knowledge/KnowledgeService/README.md)
 - [application/papelera/PapeleraService](application/papelera/PapeleraService/README.md)
 - [application/portal/ActualizarMiPerfilService](application/portal/ActualizarMiPerfilService/README.md)

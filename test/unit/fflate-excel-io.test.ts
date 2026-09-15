@@ -43,4 +43,48 @@ describe('FflateExcelIO', () => {
     const filas = await new ExceljsExcelIO().leer(escrito);
     expect(filas).toEqual([{ Nombre: 'Desde fflate', Correo: 'z@w.com' }]);
   });
+
+  const HOJAS = [
+    { nombre: 'Empresas', columnas: COLUMNAS, filas: [{ nombre: 'ACME', email: 'a@acme.com' }] },
+    {
+      nombre: 'Contactos',
+      columnas: [{ header: 'Nombre', key: 'nombre' }, { header: 'Empresa', key: 'empresa' }],
+      filas: [{ nombre: 'Juan', empresa: 'ACME' }, { nombre: 'Ana & Cía', empresa: '<ACME>' }],
+    },
+    { nombre: 'Tickets', columnas: [{ header: 'Folio', key: 'folio' }], filas: [] },
+  ];
+
+  it('escribirVarias/leerVarias: roundtrip con varias hojas, cada una con su nombre y filas', async () => {
+    const io = new FflateExcelIO();
+    const buffer = await io.escribirVarias(HOJAS);
+    const leidas = await io.leerVarias(buffer);
+    expect(Object.keys(leidas)).toEqual(['Empresas', 'Contactos', 'Tickets']);
+    expect(leidas.Empresas).toEqual([{ Nombre: 'ACME', Correo: 'a@acme.com' }]);
+    expect(leidas.Contactos).toEqual([
+      { Nombre: 'Juan', Empresa: 'ACME' },
+      { Nombre: 'Ana & Cía', Empresa: '<ACME>' },
+    ]);
+    expect(leidas.Tickets).toEqual([]);
+  });
+
+  it('leer() de un archivo multi-hoja regresa solo la primera hoja (compatibilidad hacia atrás)', async () => {
+    const io = new FflateExcelIO();
+    const buffer = await io.escribirVarias(HOJAS);
+    expect(await io.leer(buffer)).toEqual([{ Nombre: 'ACME', Correo: 'a@acme.com' }]);
+  });
+
+  it('multi-hoja: un archivo de FflateExcelIO lo lee ExceljsExcelIO y viceversa', async () => {
+    const deFflate = await new FflateExcelIO().escribirVarias(HOJAS);
+    const leidoPorExceljs = await new ExceljsExcelIO().leerVarias(deFflate);
+    expect(Object.keys(leidoPorExceljs)).toEqual(['Empresas', 'Contactos', 'Tickets']);
+    expect(leidoPorExceljs.Contactos).toEqual([
+      { Nombre: 'Juan', Empresa: 'ACME' },
+      { Nombre: 'Ana & Cía', Empresa: '<ACME>' },
+    ]);
+
+    const deExceljs = await new ExceljsExcelIO().escribirVarias(HOJAS);
+    const leidoPorFflate = await new FflateExcelIO().leerVarias(deExceljs);
+    expect(Object.keys(leidoPorFflate)).toEqual(['Empresas', 'Contactos', 'Tickets']);
+    expect(leidoPorFflate.Empresas).toEqual([{ Nombre: 'ACME', Correo: 'a@acme.com' }]);
+  });
 });

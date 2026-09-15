@@ -9,4 +9,5 @@
 ## Interfaces
 
 - [ColumnaExcel](interfaces/ColumnaExcel.md)
+- [HojaExcel](interfaces/HojaExcel.md)
 - [IExcelIO](interfaces/IExcelIO.md)

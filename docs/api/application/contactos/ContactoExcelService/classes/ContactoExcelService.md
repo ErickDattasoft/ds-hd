@@ -50,6 +50,24 @@ Import/export de Contactos en Excel (`.xlsx`). La empresa se referencia por nomb
 
 ***
 
+### filasParaExportar()
+
+> **filasParaExportar**(`filtro?`): `Promise`\<`Record`\<`string`, `string`\>[]\>
+
+Filas listas para una hoja "Contactos" — reutilizado por el export unificado.
+
+#### Parameters
+
+##### filtro?
+
+[`ListarContactosFiltro`](../../../../core/ports/repositories/IContactoRepository/interfaces/ListarContactosFiltro.md)
+
+#### Returns
+
+`Promise`\<`Record`\<`string`, `string`\>[]\>
+
+***
+
 ### importar()
 
 > **importar**(`actor`, `buffer`): `Promise`\<[`ResumenImportacionExcel`](../../../empresas/EmpresaExcelService/interfaces/ResumenImportacionExcel.md)\>
@@ -63,6 +81,28 @@ Import/export de Contactos en Excel (`.xlsx`). La empresa se referencia por nomb
 ##### buffer
 
 `Buffer`
+
+#### Returns
+
+`Promise`\<[`ResumenImportacionExcel`](../../../empresas/EmpresaExcelService/interfaces/ResumenImportacionExcel.md)\>
+
+***
+
+### importarFilas()
+
+> **importarFilas**(`actor`, `filas`): `Promise`\<[`ResumenImportacionExcel`](../../../empresas/EmpresaExcelService/interfaces/ResumenImportacionExcel.md)\>
+
+Procesa filas ya leídas (de una hoja "Contactos") — reutilizado por el import unificado.
+
+#### Parameters
+
+##### actor
+
+[`SessionUser`](../../../shared/SessionUser/interfaces/SessionUser.md)
+
+##### filas
+
+`Record`\<`string`, `string`\>[]
 
 #### Returns
 

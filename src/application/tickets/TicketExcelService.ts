@@ -2,7 +2,7 @@ import type { FiltroTickets, ITicketQueries } from '../../core/ports/repositorie
 import type { ColumnaExcel, IExcelIO } from '../../core/ports/services/IExcelIO.js';
 import { ETIQUETAS_FACTURACION } from '../../core/entities/value-objects/EstadoFacturacion.js';
 
-const COLUMNAS: ColumnaExcel[] = [
+export const COLUMNAS_TICKETS: ColumnaExcel[] = [
   { header: 'Número', key: 'numero' },
   { header: 'Asunto', key: 'asunto', width: 34 },
   { header: 'Empresa', key: 'empresa', width: 26 },
@@ -25,8 +25,14 @@ export class TicketExcelService {
   ) {}
 
   async exportar(filtro: FiltroTickets): Promise<Buffer> {
+    const filas = await this.filasParaExportar(filtro);
+    return this.excel.escribir('Tickets', COLUMNAS_TICKETS, filas);
+  }
+
+  /** Filas listas para una hoja "Tickets" — reutilizado por el export unificado. */
+  async filasParaExportar(filtro: FiltroTickets): Promise<Record<string, string>[]> {
     const tickets = await this.queries.listar(filtro);
-    const filas = tickets.map((t) => ({
+    return tickets.map((t) => ({
       numero: String(t.numero),
       asunto: t.asunto,
       empresa: t.empresaNombre ?? '',
@@ -40,6 +46,5 @@ export class TicketExcelService {
       facturado: ETIQUETAS_FACTURACION[t.facturacion.estado],
       creado: t.createdAt.toISOString().slice(0, 10),
     }));
-    return this.excel.escribir('Tickets', COLUMNAS, filas);
   }
 }

@@ -6,7 +6,7 @@
 
 # Interface: IExcelIO
 
-Lectura/escritura de hojas `.xlsx` planas (fila = objeto `{ encabezado: texto }`).
+Lectura/escritura de archivos `.xlsx`, de una sola hoja o de varias (un archivo unificado).
 
 ## Methods
 
@@ -47,3 +47,39 @@ Lectura/escritura de hojas `.xlsx` planas (fila = objeto `{ encabezado: texto }`
 #### Returns
 
 `Promise`\<`Record`\<`string`, `string`\>[]\>
+
+***
+
+### escribirVarias()
+
+> **escribirVarias**(`hojas`): `Promise`\<`Buffer`\<`ArrayBufferLike`\>\>
+
+Varias hojas en un solo archivo `.xlsx` — para el export/import unificado.
+
+#### Parameters
+
+##### hojas
+
+[`HojaExcel`](HojaExcel.md)[]
+
+#### Returns
+
+`Promise`\<`Buffer`\<`ArrayBufferLike`\>\>
+
+***
+
+### leerVarias()
+
+> **leerVarias**(`buffer`): `Promise`\<`Record`\<`string`, `Record`\<`string`, `string`\>[]\>\>
+
+Todas las hojas del archivo, indexadas por nombre.
+
+#### Parameters
+
+##### buffer
+
+`Buffer`
+
+#### Returns
+
+`Promise`\<`Record`\<`string`, `Record`\<`string`, `string`\>[]\>\>

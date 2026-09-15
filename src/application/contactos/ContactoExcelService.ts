@@ -5,7 +5,7 @@ import type { EmpresaService } from '../empresas/EmpresaService.js';
 import type { ColumnaExcel, IExcelIO } from '../../core/ports/services/IExcelIO.js';
 import type { ResumenImportacionExcel } from '../empresas/EmpresaExcelService.js';
 
-const COLUMNAS: ColumnaExcel[] = [
+export const COLUMNAS_CONTACTOS: ColumnaExcel[] = [
   { header: 'Nombre', key: 'nombre', width: 26 },
   { header: 'Empresa', key: 'empresa', width: 30 },
   { header: 'Puesto', key: 'puesto', width: 20 },
@@ -24,9 +24,15 @@ export class ContactoExcelService {
   ) {}
 
   async exportar(filtro?: ListarContactosFiltro): Promise<Buffer> {
+    const filas = await this.filasParaExportar(filtro);
+    return this.excel.escribir('Contactos', COLUMNAS_CONTACTOS, filas);
+  }
+
+  /** Filas listas para una hoja "Contactos" — reutilizado por el export unificado. */
+  async filasParaExportar(filtro?: ListarContactosFiltro): Promise<Record<string, string>[]> {
     const [lista, empresas] = await Promise.all([this.contactos.listar(filtro), this.empresas.listar()]);
     const nombreEmpresa = new Map(empresas.map((e) => [e.id, e.nombre]));
-    const filas = lista.map((c) => ({
+    return lista.map((c) => ({
       nombre: c.nombre,
       empresa: nombreEmpresa.get(c.empresaId) ?? '',
       puesto: c.puesto ?? '',
@@ -35,11 +41,15 @@ export class ContactoExcelService {
       celular: c.celular ?? '',
       activo: c.activo ? 'Sí' : 'No',
     }));
-    return this.excel.escribir('Contactos', COLUMNAS, filas);
   }
 
   async importar(actor: SessionUser, buffer: Buffer): Promise<ResumenImportacionExcel> {
     const filas = await this.excel.leer(buffer);
+    return this.importarFilas(actor, filas);
+  }
+
+  /** Procesa filas ya leídas (de una hoja "Contactos") — reutilizado por el import unificado. */
+  async importarFilas(actor: SessionUser, filas: Record<string, string>[]): Promise<ResumenImportacionExcel> {
     const [existentes, empresas] = await Promise.all([this.contactos.listar(), this.empresas.listar()]);
     const empresaPorNombre = new Map(empresas.map((e) => [e.nombre.toLowerCase(), e]));
 

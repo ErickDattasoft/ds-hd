@@ -1,5 +1,5 @@
 import { strFromU8, strToU8, unzipSync, zipSync } from 'fflate';
-import type { ColumnaExcel, IExcelIO } from '../../core/ports/services/IExcelIO.js';
+import type { ColumnaExcel, HojaExcel, IExcelIO } from '../../core/ports/services/IExcelIO.js';
 
 /**
  * Implementación de {@link IExcelIO} sin dependencias de Node (zip vía `fflate`, XML
@@ -11,53 +11,107 @@ import type { ColumnaExcel, IExcelIO } from '../../core/ports/services/IExcelIO.
  *
  * Escribe con "inline strings" (sin `sharedStrings.xml`); al leer soporta también el
  * formato de `exceljs` (`t="s"` + `xl/sharedStrings.xml`) para que un archivo exportado en
- * un entorno se pueda importar en el otro sin problema.
+ * un entorno se pueda importar en el otro sin problema. Soporta varias hojas en un mismo
+ * archivo (`escribirVarias`/`leerVarias`) — `escribir`/`leer` son el caso de una sola hoja.
  */
 export class FflateExcelIO implements IExcelIO {
   async escribir(hoja: string, columnas: ColumnaExcel[], filas: Record<string, string>[]): Promise<Buffer> {
-    const encabezados = filaXml(1, columnas.map((c) => c.header), true);
-    const cuerpo = filas.map((fila, i) => filaXml(i + 2, columnas.map((c) => fila[c.key] ?? ''), false));
-    const sheetXml =
-      '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
-      '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' +
-      `<sheetData>${encabezados}${cuerpo.join('')}</sheetData></worksheet>`;
-
-    const archivos = {
-      '[Content_Types].xml': strToU8(CONTENT_TYPES_XML),
-      '_rels/.rels': strToU8(PACKAGE_RELS_XML),
-      'xl/workbook.xml': strToU8(workbookXml(hoja)),
-      'xl/_rels/workbook.xml.rels': strToU8(WORKBOOK_RELS_XML),
-      'xl/styles.xml': strToU8(STYLES_XML),
-      'xl/worksheets/sheet1.xml': strToU8(sheetXml),
-    };
-    return Buffer.from(zipSync(archivos, { level: 6 }));
+    return this.escribirVarias([{ nombre: hoja, columnas, filas }]);
   }
 
   async leer(buffer: Buffer): Promise<Record<string, string>[]> {
-    const archivos = unzipSync(new Uint8Array(buffer));
-    const hojaKey =
-      Object.keys(archivos).find((k) => /^xl\/worksheets\/sheet1\.xml$/i.test(k)) ??
-      Object.keys(archivos).find((k) => /^xl\/worksheets\/.*\.xml$/i.test(k));
-    if (!hojaKey) return [];
+    const hojas = await this.leerVarias(buffer);
+    return Object.values(hojas)[0] ?? [];
+  }
 
+  async escribirVarias(hojas: HojaExcel[]): Promise<Buffer> {
+    const n = hojas.length;
+    const archivos: Record<string, Uint8Array> = {
+      '[Content_Types].xml': strToU8(contentTypesXml(n)),
+      '_rels/.rels': strToU8(PACKAGE_RELS_XML),
+      'xl/workbook.xml': strToU8(workbookXml(hojas.map((h) => h.nombre))),
+      'xl/_rels/workbook.xml.rels': strToU8(workbookRelsXml(n)),
+      'xl/styles.xml': strToU8(STYLES_XML),
+    };
+    hojas.forEach((h, i) => {
+      const encabezados = filaXml(1, h.columnas.map((c) => c.header), true);
+      const cuerpo = h.filas.map((fila, r) => filaXml(r + 2, h.columnas.map((c) => fila[c.key] ?? ''), false));
+      const sheetXml =
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+        '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' +
+        `<sheetData>${encabezados}${cuerpo.join('')}</sheetData></worksheet>`;
+      archivos[`xl/worksheets/sheet${i + 1}.xml`] = strToU8(sheetXml);
+    });
+    return Buffer.from(zipSync(archivos, { level: 6 }));
+  }
+
+  async leerVarias(buffer: Buffer): Promise<Record<string, Record<string, string>[]>> {
+    const archivos = unzipSync(new Uint8Array(buffer));
     const sharedStrings = archivos['xl/sharedStrings.xml']
       ? parseSharedStrings(strFromU8(archivos['xl/sharedStrings.xml']))
       : [];
-    return parseFilas(strFromU8(archivos[hojaKey]!), sharedStrings);
+
+    const workbookXmlStr = archivos['xl/workbook.xml'] ? strFromU8(archivos['xl/workbook.xml']) : '';
+    const relsXmlStr = archivos['xl/_rels/workbook.xml.rels']
+      ? strFromU8(archivos['xl/_rels/workbook.xml.rels'])
+      : '';
+    const relMap = new Map<string, string>();
+    const relRe = /<Relationship\s+Id="([^"]+)"[^>]*Target="([^"]+)"/g;
+    let rm: RegExpExecArray | null;
+    while ((rm = relRe.exec(relsXmlStr))) relMap.set(rm[1]!, rm[2]!);
+
+    // Atributos de `<sheet .../>` en cualquier orden — exceljs pone `sheetId` antes que
+    // `name`, y usa r:id no consecutivos (rId3, rId4…), así que no se puede asumir ni
+    // orden de atributos ni numeración.
+    const resultado: Record<string, Record<string, string>[]> = {};
+    const sheetTagRe = /<sheet\b[^>]*\/>/g;
+    let tagMatch: RegExpExecArray | null;
+    let orden = 0;
+    while ((tagMatch = sheetTagRe.exec(workbookXmlStr))) {
+      orden++;
+      const tag = tagMatch[0];
+      const nombre = unescXml(/\bname="([^"]*)"/.exec(tag)?.[1] ?? `Hoja${orden}`);
+      const rid = /\br:id="([^"]+)"/.exec(tag)?.[1];
+      const target = rid ? relMap.get(rid) : undefined;
+      const key = target ? `xl/${target}` : `xl/worksheets/sheet${orden}.xml`;
+      const sheetFile = archivos[key] ?? archivos[`xl/worksheets/sheet${orden}.xml`];
+      if (!sheetFile) continue;
+      resultado[nombre] = parseFilas(strFromU8(sheetFile), sharedStrings);
+    }
+
+    // Respaldo si el workbook.xml no se pudo leer (archivo ajeno/raro): toma cada
+    // xl/worksheets/sheetN.xml en orden con un nombre genérico.
+    if (Object.keys(resultado).length === 0) {
+      const keys = Object.keys(archivos)
+        .filter((k) => /^xl\/worksheets\/sheet\d+\.xml$/i.test(k))
+        .sort();
+      keys.forEach((k, i) => {
+        resultado[`Hoja${i + 1}`] = parseFilas(strFromU8(archivos[k]!), sharedStrings);
+      });
+    }
+    return resultado;
   }
 }
 
 // ── Escritura: plantillas OOXML mínimas ──────────────────────────────────────
 
-const CONTENT_TYPES_XML =
-  '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
-  '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
-  '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>' +
-  '<Default Extension="xml" ContentType="application/xml"/>' +
-  '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>' +
-  '<Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>' +
-  '<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>' +
-  '</Types>';
+function contentTypesXml(n: number): string {
+  const overrides = Array.from(
+    { length: n },
+    (_, i) =>
+      `<Override PartName="/xl/worksheets/sheet${i + 1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`,
+  ).join('');
+  return (
+    '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+    '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
+    '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>' +
+    '<Default Extension="xml" ContentType="application/xml"/>' +
+    '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>' +
+    `${overrides}` +
+    '<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>' +
+    '</Types>'
+  );
+}
 
 const PACKAGE_RELS_XML =
   '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
@@ -65,12 +119,20 @@ const PACKAGE_RELS_XML =
   '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>' +
   '</Relationships>';
 
-const WORKBOOK_RELS_XML =
-  '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
-  '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
-  '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>' +
-  '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>' +
-  '</Relationships>';
+function workbookRelsXml(n: number): string {
+  const sheetRels = Array.from(
+    { length: n },
+    (_, i) =>
+      `<Relationship Id="rId${i + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${i + 1}.xml"/>`,
+  ).join('');
+  return (
+    '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+    '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+    `${sheetRels}` +
+    `<Relationship Id="rId${n + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>` +
+    '</Relationships>'
+  );
+}
 
 // fontId 0 = normal, 1 = negritas (para el encabezado); cellXfs 0 = normal, 1 = negritas.
 const STYLES_XML =
@@ -86,12 +148,15 @@ const STYLES_XML =
   '</cellXfs>' +
   '</styleSheet>';
 
-function workbookXml(hoja: string): string {
+function workbookXml(nombres: string[]): string {
+  const sheets = nombres
+    .map((nombre, i) => `<sheet name="${escXml(nombre)}" sheetId="${i + 1}" r:id="rId${i + 1}"/>`)
+    .join('');
   return (
     '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
     '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" ' +
     'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">' +
-    `<sheets><sheet name="${escXml(hoja)}" sheetId="1" r:id="rId1"/></sheets></workbook>`
+    `<sheets>${sheets}</sheets></workbook>`
   );
 }
 

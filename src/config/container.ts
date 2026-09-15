@@ -85,6 +85,7 @@ import { EmpresaExcelService } from '../application/empresas/EmpresaExcelService
 import { ContactoService } from '../application/contactos/ContactoService.js';
 import { ContactoExcelService } from '../application/contactos/ContactoExcelService.js';
 import { TicketExcelService } from '../application/tickets/TicketExcelService.js';
+import { ExcelUnificadoService } from '../application/excel/ExcelUnificadoService.js';
 import { VersionService } from '../application/versiones/VersionService.js';
 import { ReporteVersionesService } from '../application/versiones/ReporteVersionesService.js';
 import { KnowledgeService } from '../application/knowledge/KnowledgeService.js';
@@ -247,6 +248,7 @@ export interface Cradle {
   contactoService: ContactoService;
   contactoExcelService: ContactoExcelService;
   ticketExcelService: TicketExcelService;
+  excelUnificadoService: ExcelUnificadoService;
   versionService: VersionService;
   reporteVersionesService: ReporteVersionesService;
   knowledgeService: KnowledgeService;
@@ -735,6 +737,10 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
     ticketExcelService: asFunction(
       (c: Cradle) => new TicketExcelService(c.ticketQueries, c.excelIO),
     ).singleton(),
+    excelUnificadoService: asFunction(
+      (c: Cradle) =>
+        new ExcelUnificadoService(c.empresaExcelService, c.contactoExcelService, c.ticketExcelService, c.excelIO),
+    ).singleton(),
     versionService: asFunction(
       (c: Cradle) => new VersionService(c.versionRepo, c.idGenerator, c.clock, c.bitacoraService),
     ).singleton(),
@@ -913,6 +919,7 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
           c.configuracionLogoService,
           c.resumenDiarioService,
           c.adjuntoTicketService,
+          c.excelUnificadoService,
         ),
     ).singleton(),
     ticketPublicoController: asFunction(

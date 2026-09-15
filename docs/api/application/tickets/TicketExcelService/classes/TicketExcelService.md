@@ -43,3 +43,21 @@ Export de Tickets a Excel (`.xlsx`) — solo lectura, no hay import (paridad con
 #### Returns
 
 `Promise`\<`Buffer`\<`ArrayBufferLike`\>\>
+
+***
+
+### filasParaExportar()
+
+> **filasParaExportar**(`filtro`): `Promise`\<`Record`\<`string`, `string`\>[]\>
+
+Filas listas para una hoja "Tickets" — reutilizado por el export unificado.
+
+#### Parameters
+
+##### filtro
+
+[`FiltroTickets`](../../../../core/ports/repositories/ITicketQueries/interfaces/FiltroTickets.md)
+
+#### Returns
+
+`Promise`\<`Record`\<`string`, `string`\>[]\>
