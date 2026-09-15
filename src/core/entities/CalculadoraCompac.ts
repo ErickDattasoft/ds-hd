@@ -87,6 +87,7 @@ export class CalculadoraCompac {
             descripcion: `${s.nombre} — ${etiquetaEquipo}${idx === 0 ? ' (principal)' : ' (adicional)'}`,
             cantidad: 1,
             precioUnitario: precio,
+            descuento: 0,
             importe: precio,
           });
         });
@@ -99,6 +100,7 @@ export class CalculadoraCompac {
             descripcion: `${config.sql.nombre} — ${etiquetaEquipo}`,
             cantidad: 1,
             precioUnitario: precio,
+            descuento: 0,
             importe: precio,
           });
         }

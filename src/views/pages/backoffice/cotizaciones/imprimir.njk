@@ -59,7 +59,7 @@
 
   <table>
     <thead>
-      <tr><th>Concepto</th><th class="num">Cant.</th><th class="num">P. unitario</th><th class="num">Importe</th></tr>
+      <tr><th>Concepto</th><th class="num">Cant.</th><th class="num">P. unitario</th><th class="num">Dto.</th><th class="num">Importe</th></tr>
     </thead>
     <tbody>
       {% for c in cotizacion.conceptos %}
@@ -67,14 +67,15 @@
           <td>{{ c.descripcion }}</td>
           <td class="num">{{ c.cantidad }}</td>
           <td class="num">{{ c.precioUnitario | moneda(cotizacion.moneda) }}</td>
+          <td class="num">{{ (c.descuento or 0) + '%' if c.descuento }}</td>
           <td class="num">{{ c.importe | moneda(cotizacion.moneda) }}</td>
         </tr>
       {% endfor %}
     </tbody>
     <tfoot>
-      <tr><td colspan="3">Subtotal</td><td class="num">{{ cotizacion.subtotal | moneda(cotizacion.moneda) }}</td></tr>
-      <tr><td colspan="3">IVA</td><td class="num">{{ cotizacion.iva | moneda(cotizacion.moneda) }}</td></tr>
-      <tr><td colspan="3"><strong>Total</strong></td><td class="num"><strong>{{ cotizacion.total | moneda(cotizacion.moneda) }}</strong></td></tr>
+      <tr><td colspan="4">Subtotal</td><td class="num">{{ cotizacion.subtotal | moneda(cotizacion.moneda) }}</td></tr>
+      <tr><td colspan="4">IVA</td><td class="num">{{ cotizacion.iva | moneda(cotizacion.moneda) }}</td></tr>
+      <tr><td colspan="4"><strong>Total</strong></td><td class="num"><strong>{{ cotizacion.total | moneda(cotizacion.moneda) }}</strong></td></tr>
     </tfoot>
   </table>
 

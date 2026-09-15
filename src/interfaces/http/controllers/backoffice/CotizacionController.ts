@@ -204,11 +204,13 @@ export class CotizacionController {
     const desc = arr(b['concepto_descripcion']);
     const cant = arr(b['concepto_cantidad']);
     const precio = arr(b['concepto_precio']);
+    const descuento = arr(b['concepto_descuento']);
     return desc
       .map((d, i) => ({
         descripcion: d.trim(),
         cantidad: num(cant[i]) || 1,
         precioUnitario: num(precio[i]),
+        descuento: Math.min(100, Math.max(0, num(descuento[i]))),
         importe: 0,
       }))
       .filter((c) => c.descripcion.length > 0);

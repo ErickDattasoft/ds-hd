@@ -28,8 +28,16 @@ Una línea/renglón de una cotización.
 
 ***
 
+### descuento
+
+> **descuento**: `number`
+
+Descuento de la línea, en porcentaje (0-100).
+
+***
+
 ### importe
 
 > **importe**: `number`
 
-cantidad * precioUnitario (se recalcula al guardar).
+cantidad * precioUnitario * (1 - descuento/100) (se recalcula al guardar).

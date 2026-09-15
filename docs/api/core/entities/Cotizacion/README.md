@@ -19,3 +19,7 @@
 ## Type Aliases
 
 - [EstadoCotizacion](type-aliases/EstadoCotizacion.md)
+
+## Functions
+
+- [importeBruto](functions/importeBruto.md)

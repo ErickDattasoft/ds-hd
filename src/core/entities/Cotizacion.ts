@@ -7,8 +7,33 @@ export interface ConceptoCotizacion {
   descripcion: string;
   cantidad: number;
   precioUnitario: number;
-  /** cantidad * precioUnitario (se recalcula al guardar). */
+  /** Descuento de la línea, en porcentaje (0-100). */
+  descuento: number;
+  /** cantidad * precioUnitario * (1 - descuento/100) (se recalcula al guardar). */
   importe: number;
+}
+
+/** `cantidad * precioUnitario` sin descuento — para mostrar el precio tachado cuando hay descuento. */
+export function importeBruto(c: Pick<ConceptoCotizacion, 'cantidad' | 'precioUnitario'>): number {
+  return Math.round(c.cantidad * c.precioUnitario * 100) / 100;
+}
+
+/** Normaliza un concepto de entrada (form/API) a uno con `importe` recalculado. */
+function normalizarConcepto(c: {
+  descripcion: string;
+  cantidad: number;
+  precioUnitario: number;
+  descuento?: number;
+}): ConceptoCotizacion {
+  const descuento = Math.min(100, Math.max(0, Number(c.descuento) || 0));
+  const bruto = importeBruto(c);
+  return {
+    descripcion: c.descripcion.trim(),
+    cantidad: c.cantidad,
+    precioUnitario: c.precioUnitario,
+    descuento,
+    importe: Math.round(bruto * (1 - descuento / 100) * 100) / 100,
+  };
 }
 
 /** Datos del emisor (quien cotiza) y del receptor (empresa/contacto) de una cotización. */
@@ -96,12 +121,7 @@ export class Cotizacion {
     this.estado = props.estado ?? 'borrador';
     this.moneda = props.moneda ?? 'MXN';
     this.ivaTasa = props.ivaTasa ?? 0.16;
-    this.conceptos = (props.conceptos ?? []).map((c) => ({
-      descripcion: c.descripcion,
-      cantidad: c.cantidad,
-      precioUnitario: c.precioUnitario,
-      importe: Math.round(c.cantidad * c.precioUnitario * 100) / 100,
-    }));
+    this.conceptos = (props.conceptos ?? []).map(normalizarConcepto);
     this.notas = props.notas ?? null;
     this.condiciones = props.condiciones ?? null;
     this.emisorNombre = props.emisorNombre ?? null;
@@ -144,12 +164,7 @@ export class Cotizacion {
   reemplazarConceptos(conceptos: ConceptoCotizacion[], ahora: Date): void {
     if (this.estado === 'aceptada') throw new ValidationError('Una cotización aceptada no se edita');
     if (conceptos.length === 0) throw new ValidationError('Agrega al menos un concepto', { conceptos: 'Requerido' });
-    this.conceptos = conceptos.map((c) => ({
-      descripcion: c.descripcion.trim(),
-      cantidad: c.cantidad,
-      precioUnitario: c.precioUnitario,
-      importe: Math.round(c.cantidad * c.precioUnitario * 100) / 100,
-    }));
+    this.conceptos = conceptos.map(normalizarConcepto);
     this.updatedAt = ahora;
   }
 

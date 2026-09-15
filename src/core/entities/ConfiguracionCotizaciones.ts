@@ -2,6 +2,8 @@
 export interface ConceptoCatalogo {
   descripcion: string;
   precioUnitario: number;
+  /** Descuento (%) que se precarga al elegir este concepto; 0 = ninguno. */
+  descuentoPorDefecto: number;
 }
 
 /** Config del módulo de cotizaciones (documento `configuracion/cotizaciones`). */
@@ -34,7 +36,11 @@ export function sanearConfigCotizaciones(d: unknown): ConfiguracionCotizaciones 
           const r = it as Record<string, unknown>;
           const descripcion = typeof r.descripcion === 'string' ? r.descripcion.trim() : '';
           if (!descripcion) return null;
-          return { descripcion, precioUnitario: Number(r.precioUnitario) || 0 };
+          return {
+            descripcion,
+            precioUnitario: Number(r.precioUnitario) || 0,
+            descuentoPorDefecto: Math.min(100, Math.max(0, Number(r.descuentoPorDefecto) || 0)),
+          };
         })
         .filter((it): it is ConceptoCatalogo => it !== null)
     : [];

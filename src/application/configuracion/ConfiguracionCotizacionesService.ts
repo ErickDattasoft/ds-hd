@@ -30,7 +30,11 @@ export class ConfiguracionCotizacionesService {
       emisorCargoPorDefecto: input.emisorCargoPorDefecto.trim(),
       emisorTelefonoPorDefecto: input.emisorTelefonoPorDefecto.trim(),
       catalogoConceptos: input.catalogoConceptos
-        .map((c) => ({ descripcion: c.descripcion.trim(), precioUnitario: Number(c.precioUnitario) || 0 }))
+        .map((c) => ({
+          descripcion: c.descripcion.trim(),
+          precioUnitario: Number(c.precioUnitario) || 0,
+          descuentoPorDefecto: Math.min(100, Math.max(0, Number(c.descuentoPorDefecto) || 0)),
+        }))
         .filter((c) => c.descripcion),
     };
     await this.repo.guardarCotizaciones(config);

@@ -24,16 +24,25 @@
   {% if errorEnvio %}<div class="alert alert--error" role="alert">{{ errorEnvio }}</div>{% endif %}
 
   <table class="data-table">
-    <thead><tr><th>Descripción</th><th>Cant.</th><th>P. Unit.</th><th>Importe</th></tr></thead>
+    <thead><tr><th>Descripción</th><th>Cant.</th><th>P. Unit.</th><th>Dto.</th><th>Importe</th></tr></thead>
     <tbody>
       {% for c in cotizacion.conceptos %}
-        <tr><td>{{ c.descripcion }}</td><td>{{ c.cantidad }}</td><td>{{ c.precioUnitario | moneda(cotizacion.moneda) }}</td><td>{{ c.importe | moneda(cotizacion.moneda) }}</td></tr>
+        <tr>
+          <td>{{ c.descripcion }}</td>
+          <td>{{ c.cantidad }}</td>
+          <td>{{ c.precioUnitario | moneda(cotizacion.moneda) }}</td>
+          <td>{{ (c.descuento or 0) + '%' if c.descuento }}</td>
+          <td>
+            {% if c.descuento %}<span class="muted" style="text-decoration:line-through;font-size:.85em;display:block">{{ (c.cantidad * c.precioUnitario) | moneda(cotizacion.moneda) }}</span>{% endif %}
+            {{ c.importe | moneda(cotizacion.moneda) }}
+          </td>
+        </tr>
       {% endfor %}
     </tbody>
     <tfoot>
-      <tr><td colspan="3" style="text-align:right"><strong>Subtotal</strong></td><td>{{ cotizacion.subtotal | moneda(cotizacion.moneda) }}</td></tr>
-      <tr><td colspan="3" style="text-align:right">IVA</td><td>{{ cotizacion.iva | moneda(cotizacion.moneda) }}</td></tr>
-      <tr><td colspan="3" style="text-align:right"><strong>Total</strong></td><td><strong>{{ cotizacion.total | moneda(cotizacion.moneda) }}</strong></td></tr>
+      <tr><td colspan="4" style="text-align:right"><strong>Subtotal</strong></td><td>{{ cotizacion.subtotal | moneda(cotizacion.moneda) }}</td></tr>
+      <tr><td colspan="4" style="text-align:right">IVA</td><td>{{ cotizacion.iva | moneda(cotizacion.moneda) }}</td></tr>
+      <tr><td colspan="4" style="text-align:right"><strong>Total</strong></td><td><strong>{{ cotizacion.total | moneda(cotizacion.moneda) }}</strong></td></tr>
     </tfoot>
   </table>
 

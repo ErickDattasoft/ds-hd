@@ -495,6 +495,8 @@
     var row = input.closest('tr');
     var precioInput = row && row.querySelector('input[name="concepto_precio"]');
     if (precioInput) precioInput.value = opt.dataset.precio || '0';
+    var descuentoInput = row && row.querySelector('input[name="concepto_descuento"]');
+    if (descuentoInput) descuentoInput.value = opt.dataset.descuento || '0';
   });
 
   // ── Configuración → Cotizaciones: catálogo de conceptos ─────────────────
@@ -505,6 +507,7 @@
     var tr = document.createElement('tr');
     tr.innerHTML = '<td><input name="catDescripcion" placeholder="Ej: Instalación remota" style="width:100%"></td>' +
       '<td><input name="catPrecio" type="number" min="0" step="0.01" value="0"></td>' +
+      '<td><input name="catDescuento" type="number" min="0" max="100" step="1" value="0"></td>' +
       '<td><button type="button" class="btn btn--ghost btn--sm" data-quitar-fila>✕</button></td>';
     tb.appendChild(tr);
   });

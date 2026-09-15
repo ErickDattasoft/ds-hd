@@ -37,11 +37,16 @@ export class ConfiguracionController {
     });
   };
 
-  private catalogoConceptosDe(b: Record<string, unknown>): { descripcion: string; precioUnitario: number }[] {
+  private catalogoConceptosDe(b: Record<string, unknown>): { descripcion: string; precioUnitario: number; descuentoPorDefecto: number }[] {
     const desc = ([] as unknown[]).concat(b.catDescripcion ?? []).map(String);
     const precio = ([] as unknown[]).concat(b.catPrecio ?? []).map(String);
+    const descuento = ([] as unknown[]).concat(b.catDescuento ?? []).map(String);
     return desc
-      .map((descripcion, i) => ({ descripcion: descripcion.trim(), precioUnitario: Number(precio[i]) || 0 }))
+      .map((descripcion, i) => ({
+        descripcion: descripcion.trim(),
+        precioUnitario: Number(precio[i]) || 0,
+        descuentoPorDefecto: Number(descuento[i]) || 0,
+      }))
       .filter((c) => c.descripcion);
   }
 

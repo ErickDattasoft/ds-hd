@@ -268,6 +268,7 @@ export class CotizacionService {
         (x) =>
           `<tr><td>${escaparHtml(x.descripcion)}</td><td align="right">${x.cantidad}</td>` +
           `<td align="right">${this.fmt(x.precioUnitario, c.moneda)}</td>` +
+          `<td align="right">${x.descuento ? `${x.descuento}%` : ''}</td>` +
           `<td align="right">${this.fmt(x.importe, c.moneda)}</td></tr>`,
       )
       .join('');
@@ -280,12 +281,12 @@ export class CotizacionService {
     return `
       <p>Adjuntamos la cotización <strong>${c.folio}</strong>.</p>
       <table border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse">
-        <thead><tr><th align="left">Concepto</th><th>Cant.</th><th>P. unitario</th><th>Importe</th></tr></thead>
+        <thead><tr><th align="left">Concepto</th><th>Cant.</th><th>P. unitario</th><th>Dto.</th><th>Importe</th></tr></thead>
         <tbody>${filas}</tbody>
         <tfoot>
-          <tr><td colspan="3" align="right">Subtotal</td><td align="right">${this.fmt(c.subtotal, c.moneda)}</td></tr>
-          <tr><td colspan="3" align="right">IVA</td><td align="right">${this.fmt(c.iva, c.moneda)}</td></tr>
-          <tr><td colspan="3" align="right"><strong>Total</strong></td><td align="right"><strong>${this.fmt(c.total, c.moneda)}</strong></td></tr>
+          <tr><td colspan="4" align="right">Subtotal</td><td align="right">${this.fmt(c.subtotal, c.moneda)}</td></tr>
+          <tr><td colspan="4" align="right">IVA</td><td align="right">${this.fmt(c.iva, c.moneda)}</td></tr>
+          <tr><td colspan="4" align="right"><strong>Total</strong></td><td align="right"><strong>${this.fmt(c.total, c.moneda)}</strong></td></tr>
         </tfoot>
       </table>
       <p>Vigencia: ${c.vigenciaDias} días.</p>

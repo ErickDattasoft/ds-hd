@@ -117,8 +117,7 @@ Leyenda: ✅ existe · ◐ parcial · ❌ falta · ➖ no aplica (decisión de d
 | Alta: empresa / conceptos / vigencia / notas | ✅ | — |
 | **Datos generales: contacto, RFC, teléfono, "quien cotiza"** | ✅ | — |
 | **Condiciones / términos por defecto** (config) | ✅ (`configuracion/cotizaciones`) | — |
-| Concepto: cant / precio unit | ✅ | — |
-| **Concepto: descuento %** | ❌ — corregido 2026-09-15: esta fila decía ✅ pero `ConceptoCotizacion` no tiene campo de descuento; no se implementó en esta sesión (fuera del alcance de los 13 gaps verificados), pendiente de decidir con el usuario | — |
+| Concepto: cant / precio unit / descuento % | ✅ (`ConceptoCotizacion.descuento`, 0-100%, precio bruto tachado cuando hay descuento — detalle/imprimir/correo) | — |
 | **⚡ Catálogo de conceptos reutilizables** | ✅ (`configuracion/cotizaciones`, `catalogoConceptos`; datalist + autocompletar precio en el alta) | — |
 | Subtotal / IVA 16% / Total | ✅ | — |
 | Calculadora Compac → enviar al cotizador | ✅ | — |

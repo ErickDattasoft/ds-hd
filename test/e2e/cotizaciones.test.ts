@@ -169,6 +169,30 @@ describe('cotizaciones', () => {
     expect((await t.configuracionRepo.obtenerCotizaciones()).condicionesPorDefecto).toBe('Pago a 30 días.');
   });
 
+  it('descuento por línea: se aplica al importe, al subtotal y se muestra en el detalle', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    t.empresaRepo.items.set('e1', new Empresa({ id: 'e1', nombre: 'Con Descuento SA' }));
+    const { agent, csrf } = await login(t.app, ADMIN.email, ADMIN.password);
+
+    const res = await agent.post('/app/cotizaciones').type('form').send({
+      _csrf: csrf,
+      empresaId: 'e1',
+      concepto_descripcion: ['Instalación', 'Sin descuento'],
+      concepto_cantidad: ['2', '1'],
+      concepto_precio: ['1000', '500'],
+      concepto_descuento: ['10', ''],
+    });
+    expect(res.status).toBe(302);
+    const [cot] = [...t.cotizacionRepo.items.values()];
+    expect(cot!.conceptos[0]).toMatchObject({ descuento: 10, importe: 1800 });
+    expect(cot!.conceptos[1]).toMatchObject({ descuento: 0, importe: 500 });
+    expect(cot!.subtotal).toBe(2300);
+
+    const detalle = await agent.get(`/app/cotizaciones/${cot!.id}`);
+    expect(detalle.text).toContain('10%');
+    expect(detalle.text).toContain('text-decoration:line-through'); // precio bruto tachado
+  });
+
   it('catálogo de conceptos: se guarda desde Configuración y aparece como datalist al crear una cotización', async () => {
     const t = makeTestApp({ usuarios: [ADMIN] });
     const { agent, csrf } = await login(t.app, ADMIN.email, ADMIN.password);
@@ -178,17 +202,18 @@ describe('cotizaciones', () => {
       condicionesPorDefecto: 'Pago a 30 días.',
       catDescripcion: ['Instalación remota', 'Capacitación (por hora)', ''],
       catPrecio: ['1500', '800', '0'],
+      catDescuento: ['10', '0', '0'],
     });
     expect(guardar.status).toBe(200);
     const cfg = await t.configuracionRepo.obtenerCotizaciones();
     expect(cfg.catalogoConceptos).toEqual([
-      { descripcion: 'Instalación remota', precioUnitario: 1500 },
-      { descripcion: 'Capacitación (por hora)', precioUnitario: 800 },
+      { descripcion: 'Instalación remota', precioUnitario: 1500, descuentoPorDefecto: 10 },
+      { descripcion: 'Capacitación (por hora)', precioUnitario: 800, descuentoPorDefecto: 0 },
     ]);
 
     const form = await agent.get('/app/cotizaciones/nueva');
     expect(form.text).toContain('id="catalogo-conceptos"');
-    expect(form.text).toContain('value="Instalación remota" data-precio="1500"');
+    expect(form.text).toContain('value="Instalación remota" data-precio="1500" data-descuento="10"');
     expect(form.text).toContain('list=catalogo-conceptos');
   });
 

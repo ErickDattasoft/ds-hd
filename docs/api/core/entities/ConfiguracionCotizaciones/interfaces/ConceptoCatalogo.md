@@ -19,3 +19,11 @@ Un concepto reutilizable del catálogo — evita reescribir descripción/precio 
 ### precioUnitario
 
 > **precioUnitario**: `number`
+
+***
+
+### descuentoPorDefecto
+
+> **descuentoPorDefecto**: `number`
+
+Descuento (%) que se precarga al elegir este concepto; 0 = ninguno.
