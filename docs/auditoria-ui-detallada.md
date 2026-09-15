@@ -109,6 +109,7 @@ Leyenda: ✅ existe · ◐ parcial · ❌ falta · ➖ no aplica (decisión de d
 | **🏢 Nueva Empresa inline** (crear empresa desde el form) | ✅ (`empresaNueva`) | — |
 | Importar / Exportar | ✅ | — |
 | Papelera | ✅ | — |
+| **Buscar por nombre / empresa / correo / puesto** | ✅ (2026-09-15, la búsqueda incluía solo nombre/correo; se agregaron empresa y puesto) | — |
 
 ## 7. Cotizaciones (`/app/cotizaciones`)
 
@@ -226,7 +227,7 @@ el correo existe).
 | **🔄 Sincronizar contactos** (con fuente externa) | ➖ (el viejo sincronizaba con una hoja; ds-hd es la fuente) | descartar |
 | **🎨 Apariencia** (tema en config) | ➖ (el toggle de la topbar ya cubre esto; `/app/configuracion/apariencia` lo explica, sin duplicar dato) | — |
 | 👥 Usuarios (alta/edición) | ✅ (`/app/usuarios`) | — |
-| Solicitudes de acceso pendientes | ✅ | — |
+| Solicitudes de acceso pendientes | ✅ (corregido 2026-09-15: decía ✅ pero no existía ninguna UI de staff — el backend `ISolicitudAccesoRepository.listPendientes/updateEstado` nunca se invocaba desde ningún controller. Ahora `/app/solicitudes-acceso` — listar, aprobar [abre el alta de usuario precargada], rechazar; badge de conteo en el sidebar) | — |
 | **📊 "Enviar resumen ahora"** (resumen diario por correo) | ✅ (`/app/configuracion/resumen`, botón manual + job de cron una vez al día) | — |
 | Contactos de soporte (Licencias / Versiones) | ✅ (dentro de avisos) | — |
 | Calculadora Compac — precios | ✅ (`/app/configuracion/calculadora`) | — |

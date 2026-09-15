@@ -793,6 +793,18 @@
       });
   });
 
+  // ── Login / invitación: mostrar/ocultar contraseña ───────────────────────
+  document.addEventListener('click', function (e) {
+    var btn = e.target.closest('[data-toggle-password]');
+    if (!btn) return;
+    var input = btn.previousElementSibling;
+    if (!input || input.tagName !== 'INPUT') return;
+    var mostrar = input.type === 'password';
+    input.type = mostrar ? 'text' : 'password';
+    btn.textContent = mostrar ? '🙈' : '👁';
+    btn.setAttribute('aria-label', mostrar ? 'Ocultar contraseña' : 'Mostrar contraseña');
+  });
+
   // ── Login / invitación: aviso de Bloq Mayús ──────────────────────────────
   document.addEventListener('DOMContentLoaded', function () {
     document.querySelectorAll('[data-capslock-check]').forEach(function (input) {

@@ -39,6 +39,11 @@ export function backofficeRoutes(container: Container): Router {
       const porEstado = await container.resolve('cotizacionRepo').contarPorEstado();
       contadores.cotizacionesBorrador = porEstado.borrador ?? 0;
     }
+    if (claves.includes('solicitudesAccesoPendientes')) {
+      contadores.solicitudesAccesoPendientes = (
+        await container.resolve('solicitudAccesoService').listarPendientes(req.user!)
+      ).length;
+    }
     res.locals.navSecciones = conContadores(secciones, contadores);
     res.locals.area = 'backoffice';
     next();
@@ -70,6 +75,11 @@ export function backofficeRoutes(container: Container): Router {
   r.post('/usuarios/invitar-cliente', gestUsuarios, (req, res) => usuarios().invitarClientePost(req, res));
   r.get('/usuarios/:uid', gestUsuarios, (req, res) => usuarios().editar(req, res));
   r.post('/usuarios/:uid', gestUsuarios, (req, res) => usuarios().actualizarPost(req, res));
+
+  const solicitudesAcceso = () => container.resolve('solicitudAccesoController');
+  r.get('/solicitudes-acceso', gestUsuarios, (req, res) => solicitudesAcceso().listar(req, res));
+  r.post('/solicitudes-acceso/:id/aprobar', gestUsuarios, (req, res) => solicitudesAcceso().aprobarPost(req, res));
+  r.post('/solicitudes-acceso/:id/rechazar', gestUsuarios, (req, res) => solicitudesAcceso().rechazarPost(req, res));
 
   // ── Tickets ────────────────────────────────────────────────────────────────
   r.get('/tickets', leerTickets, (req, res) => tickets().listarView(req, res));

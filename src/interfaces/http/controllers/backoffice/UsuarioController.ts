@@ -55,14 +55,16 @@ export class UsuarioController {
     });
   };
 
-  nuevo = (_req: Request, res: Response): void => {
+  nuevo = (req: Request, res: Response): void => {
+    const email = typeof req.query.email === 'string' ? req.query.email : '';
+    const nombre = typeof req.query.nombre === 'string' ? req.query.nombre : '';
     res.render('pages/backoffice/usuarios/form', {
       titulo: 'Nuevo usuario',
       modo: 'crear',
       rolesStaff: ROLES_STAFF,
       ROL_ETIQUETA,
       ROL_GRUPOS,
-      valores: { roles: ['soporte'], esCliente: false },
+      valores: { roles: ['soporte'], esCliente: false, email, nombre },
       errores: {},
     });
   };

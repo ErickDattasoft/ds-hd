@@ -60,6 +60,7 @@ export interface TestApp {
   listaNegraRepo: InMemoryListaNegraRepository;
   filtroGuardadoRepo: InMemoryFiltroGuardadoRepository;
   adjuntoTicketRepo: InMemoryAdjuntoTicketRepository;
+  solicitudAccesoRepo: InMemorySolicitudAccesoRepository;
 }
 
 /**
@@ -159,6 +160,7 @@ export function makeTestApp(opts: { usuarios?: { uid: string; email: string; pas
     listaNegraRepo,
     filtroGuardadoRepo: overrides.filtroGuardadoRepo as InMemoryFiltroGuardadoRepository,
     adjuntoTicketRepo,
+    solicitudAccesoRepo: overrides.solicitudAccesoRepo as InMemorySolicitudAccesoRepository,
   };
 }
 

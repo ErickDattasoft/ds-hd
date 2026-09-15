@@ -47,6 +47,7 @@ import { ExceljsExcelIO } from '../infrastructure/excel/ExceljsExcelIO.js';
 import { TurnstileVerifier, NullCaptchaVerifier } from '../infrastructure/captcha/TurnstileVerifier.js';
 import { LoginService } from '../application/auth/LoginService.js';
 import { SolicitarAccesoService } from '../application/auth/SolicitarAccesoService.js';
+import { SolicitudAccesoService } from '../application/auth/SolicitudAccesoService.js';
 import { CrearUsuarioService } from '../application/usuarios/CrearUsuarioService.js';
 import { ActualizarUsuarioService } from '../application/usuarios/ActualizarUsuarioService.js';
 import { ActualizarMiFirmaService } from '../application/usuarios/ActualizarMiFirmaService.js';
@@ -95,6 +96,7 @@ import { ObtenerMetricasService } from '../application/dashboard/ObtenerMetricas
 import { AgendaService } from '../application/dashboard/AgendaService.js';
 import { AuthController } from '../interfaces/http/controllers/public/AuthController.js';
 import { UsuarioController } from '../interfaces/http/controllers/backoffice/UsuarioController.js';
+import { SolicitudAccesoController } from '../interfaces/http/controllers/backoffice/SolicitudAccesoController.js';
 import { PortalPerfilController } from '../interfaces/http/controllers/portal/PortalPerfilController.js';
 import { PortalTicketController } from '../interfaces/http/controllers/portal/PortalTicketController.js';
 import { TicketController } from '../interfaces/http/controllers/backoffice/TicketController.js';
@@ -206,6 +208,7 @@ export interface Cradle {
   // Casos de uso
   loginService: LoginService;
   solicitarAccesoService: SolicitarAccesoService;
+  solicitudAccesoService: SolicitudAccesoService;
   crearUsuarioService: CrearUsuarioService;
   actualizarUsuarioService: ActualizarUsuarioService;
   actualizarMiFirmaService: ActualizarMiFirmaService;
@@ -257,6 +260,7 @@ export interface Cradle {
   // Controllers
   authController: AuthController;
   usuarioController: UsuarioController;
+  solicitudAccesoController: SolicitudAccesoController;
   portalPerfilController: PortalPerfilController;
   portalTicketController: PortalTicketController;
   ticketController: TicketController;
@@ -500,6 +504,9 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
     solicitarAccesoService: asFunction(
       (c: Cradle) =>
         new SolicitarAccesoService(c.solicitudAccesoRepo, c.usuarioRepo, c.emailSender, c.logger),
+    ).singleton(),
+    solicitudAccesoService: asFunction(
+      (c: Cradle) => new SolicitudAccesoService(c.solicitudAccesoRepo, c.bitacoraService),
     ).singleton(),
     crearUsuarioService: asFunction(
       (c: Cradle) =>
@@ -835,6 +842,9 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
           c.empresaRepo,
           c.actualizarMiFirmaService,
         ),
+    ).singleton(),
+    solicitudAccesoController: asFunction(
+      (c: Cradle) => new SolicitudAccesoController(c.solicitudAccesoService),
     ).singleton(),
     portalPerfilController: asFunction(
       (c: Cradle) => new PortalPerfilController(c.usuarioRepo, c.actualizarMiPerfilService),

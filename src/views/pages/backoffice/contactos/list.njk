@@ -10,7 +10,7 @@
     </div>
   </div>
   <form method="get" class="filterbar">
-    <input type="search" name="q" value="{{ q }}" placeholder="Buscar por nombre, correo o empresa…" autocomplete="off" spellcheck="false" />
+    <input type="search" name="q" value="{{ q }}" placeholder="Buscar por nombre, correo, puesto o empresa…" autocomplete="off" spellcheck="false" />
     <select name="empresa">
       <option value="">Todas las empresas</option>
       {% for e in empresas %}<option value="{{ e.id }}" {{ 'selected' if empresaId == e.id }}>{{ e.nombre }}</option>{% endfor %}

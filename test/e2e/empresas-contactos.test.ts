@@ -331,4 +331,16 @@ describe('empresas y contactos', () => {
     const res = await agent.get('/app/contactos?q=Refaccionaria');
     expect(res.text).toContain('Pedro Ruiz');
   });
+
+  it('la búsqueda de contactos también encuentra por puesto/cargo', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    t.empresaRepo.items.set('e1', new Empresa({ id: 'e1', nombre: 'Comercial X' }));
+    const { agent, csrf } = await login(t.app, ADMIN.email, ADMIN.password);
+    await agent.post('/app/contactos').type('form').send({
+      _csrf: csrf, nombre: 'Marta Solís', empresaId: 'e1', email: 'marta@x.com', puesto: 'Gerente de Compras',
+    });
+
+    const res = await agent.get('/app/contactos?q=Gerente de Compras');
+    expect(res.text).toContain('Marta Solís');
+  });
 });

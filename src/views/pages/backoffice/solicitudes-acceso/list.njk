@@ -1,0 +1,31 @@
+{% extends "layouts/backoffice.njk" %}
+{% block title %}Solicitudes de acceso{% endblock %}
+{% block content %}
+  <div class="page-head">
+    <h1>Solicitudes de acceso</h1>
+    <p class="muted"><a href="/app/usuarios">Ver usuarios</a></p>
+  </div>
+  <table class="data-table">
+    <thead><tr><th>Nombre</th><th>Correo</th><th>Mensaje</th><th>Fecha</th><th></th></tr></thead>
+    <tbody>
+      {% for s in pendientes %}
+        <tr>
+          <td>{{ s.nombre }}</td>
+          <td>{{ s.email }}</td>
+          <td class="muted">{{ s.mensaje or '—' }}</td>
+          <td>{{ s.createdAt | fechahora }}</td>
+          <td>
+            <form method="post" action="/app/solicitudes-acceso/{{ s.id }}/aprobar" class="inline">
+              <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+              <button class="btn btn--sm" type="submit" title="Abre el alta de usuario con el correo y nombre precargados">✓ Aprobar</button>
+            </form>
+            <form method="post" action="/app/solicitudes-acceso/{{ s.id }}/rechazar" class="inline" data-confirm="¿Rechazar la solicitud de «{{ s.nombre }}»?">
+              <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+              <button class="btn btn--sm btn--ghost" type="submit">✕ Rechazar</button>
+            </form>
+          </td>
+        </tr>
+      {% else %}<tr><td colspan="5" class="muted">Sin solicitudes pendientes.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+{% endblock %}

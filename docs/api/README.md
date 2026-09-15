@@ -8,6 +8,7 @@
 
 - [application/auth/LoginService](application/auth/LoginService/README.md)
 - [application/auth/SolicitarAccesoService](application/auth/SolicitarAccesoService/README.md)
+- [application/auth/SolicitudAccesoService](application/auth/SolicitudAccesoService/README.md)
 - [application/configuracion/AcercaDeService](application/configuracion/AcercaDeService/README.md)
 - [application/configuracion/BackupService](application/configuracion/BackupService/README.md)
 - [application/configuracion/ConfiguracionCalculadoraService](application/configuracion/ConfiguracionCalculadoraService/README.md)

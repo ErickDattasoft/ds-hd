@@ -14,7 +14,7 @@ export const NAV_GRUPO_ETIQUETA: Record<NavGrupo, string> = {
 const ORDEN_GRUPOS: readonly NavGrupo[] = ['principal', 'soporte', 'comercial', 'admin'];
 
 /** Claves de los contadores de la barra lateral (ver `ContadoresNav`). */
-export type ContadorNavKey = 'ticketsAbiertos' | 'cotizacionesBorrador';
+export type ContadorNavKey = 'ticketsAbiertos' | 'cotizacionesBorrador' | 'solicitudesAccesoPendientes';
 
 export interface NavItem {
   etiqueta: string;
@@ -56,6 +56,7 @@ export const NAV_BACKOFFICE: readonly NavItem[] = [
   { etiqueta: 'Tareas', href: '/app/tareas', icono: '✅', permiso: 'seguimiento:leer', grupo: 'comercial' },
 
   { etiqueta: 'Usuarios', href: '/app/usuarios', icono: '🔑', permiso: 'usuarios:gestionar', grupo: 'admin' },
+  { etiqueta: 'Solicitudes de acceso', href: '/app/solicitudes-acceso', icono: '📨', permiso: 'usuarios:gestionar', grupo: 'admin', contadorKey: 'solicitudesAccesoPendientes' },
   { etiqueta: 'Configuración', href: '/app/configuracion', icono: '⚙️', permiso: 'configuracion:catalogos', grupo: 'admin' },
   { etiqueta: 'Bitácora', href: '/app/bitacora', icono: '📓', permiso: 'bitacora:leer', grupo: 'admin' },
   { etiqueta: 'Papelera', href: '/app/papelera', icono: '🗑️', permiso: 'papelera:gestionar', grupo: 'admin' },

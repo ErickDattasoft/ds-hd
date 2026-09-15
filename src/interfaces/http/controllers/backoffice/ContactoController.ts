@@ -31,6 +31,7 @@ export class ContactoController {
           (c) =>
             c.nombre.toLowerCase().includes(t) ||
             (c.email ?? '').toLowerCase().includes(t) ||
+            (c.puesto ?? '').toLowerCase().includes(t) ||
             (nombreEmpresa[c.empresaId] ?? '').toLowerCase().includes(t),
         );
     res.render('pages/backoffice/contactos/list', {
