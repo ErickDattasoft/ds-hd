@@ -26,7 +26,7 @@
       {% for p in config.prioridades %}<option value="{{ p }}" {{ 'selected' if filtro.prioridad == p }}>{{ p }}</option>{% endfor %}
     </select>
     <label class="field--check"><input type="checkbox" name="abiertos" value="0" data-filtro-recordar="tickets-abiertos" {{ 'checked' if filtro.abiertos == '0' }} /> incluir cerrados</label>
-    <label class="field--check"><input type="checkbox" data-toggle-columna="SLA" checked /> mostrar SLA</label>
+    <label class="field--check"><input type="checkbox" data-toggle-columna="SLA" /> mostrar SLA</label>
     <button class="btn btn--sm" type="submit">Filtrar</button>
     <button class="btn btn--sm btn--ghost" type="submit" formaction="/app/tickets/exportar">Exportar Excel</button>
   </form>
