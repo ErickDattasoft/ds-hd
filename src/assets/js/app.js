@@ -107,7 +107,14 @@
     var contenedor = document.querySelector('[data-gh-punto]');
     if (!contenedor) return;
     var patInput = contenedor.querySelector('[data-gh-pat]');
-    if (patInput) patInput.value = localStorage.getItem(GH_PAT_KEY) || '';
+    if (patInput) {
+      patInput.value = localStorage.getItem(GH_PAT_KEY) || '';
+      // Se guarda apenas lo escribes, no solo al crear un punto — si no, un campo "Nombre"
+      // vacío al hacer clic en "Crear" perdía el token ya tecleado (nunca llegaba a guardarse).
+      patInput.addEventListener('input', function () {
+        try { localStorage.setItem(GH_PAT_KEY, patInput.value.trim()); } catch (e) { void e; }
+      });
+    }
     contenedor.querySelector('[data-gh-crear]').addEventListener('click', function () {
       var pat = (patInput.value || '').trim();
       var nombre = contenedor.querySelector('[data-gh-nombre]').value.trim().replace(/\s+/g, '-');
@@ -116,7 +123,6 @@
       var btn = contenedor.querySelector('[data-gh-crear]');
       if (!pat) { toast('Falta el Personal Access Token de GitHub'); return; }
       if (!nombre) { toast('El nombre del punto no puede estar vacío'); return; }
-      try { localStorage.setItem(GH_PAT_KEY, pat); } catch (e) { void e; }
 
       var headers = { Authorization: 'Bearer ' + pat, Accept: 'application/vnd.github+json' };
       btn.disabled = true;
