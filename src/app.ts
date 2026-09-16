@@ -75,6 +75,32 @@ function installViewEngine(app: Express, config: AppConfig, precompiled: boolean
   env.addFilter('moneda', (v: unknown, moneda = 'MXN') =>
     new Intl.NumberFormat('es-MX', { style: 'currency', currency: String(moneda) }).format(Number(v) || 0),
   );
+
+  // Clases de color para badges de estado/prioridad (tickets, cotizaciones, eventos). Los
+  // catálogos son configurables por texto libre, así que se detecta por palabra clave
+  // (normalizada, sin acentos) en vez de comparar contra una lista cerrada de valores.
+  const slug = (v: unknown): string =>
+    String(v ?? '')
+      .normalize('NFD')
+      .replace(/[̀-ͯ]/g, '')
+      .trim()
+      .toLowerCase();
+  env.addFilter('estadoClase', (v: unknown) => {
+    const s = slug(v);
+    if (/cerrad/.test(s)) return 'badge';
+    if (/cancelad|rechazad|vencid/.test(s)) return 'badge badge--danger';
+    if (/resuelt|aceptad|finalizad/.test(s)) return 'badge badge--ok';
+    if (/pendient/.test(s)) return 'badge badge--warning';
+    if (/proces|enviad|public|abiert/.test(s)) return 'badge badge--info';
+    return 'badge badge--estado';
+  });
+  env.addFilter('prioridadClase', (v: unknown) => {
+    const s = slug(v);
+    if (s === 'urgente') return 'badge badge--danger badge--pulse';
+    if (s === 'alta') return 'badge badge--warning';
+    if (s === 'media') return 'badge badge--info';
+    return 'badge';
+  });
 }
 
 /**

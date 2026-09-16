@@ -12,10 +12,10 @@
         <tr>
           <td><a href="/app/eventos/{{ e.id }}">{{ e.titulo }}</a></td>
           <td>{{ e.fechaHora | fechahora }}</td>
-          <td><span class="badge badge--estado">{{ e.estado }}</span></td>
+          <td><span class="{{ e.estado | estadoClase }}">{{ e.estado }}</span></td>
           <td>{{ e.cupo if e.cupo else 'sin límite' }}</td>
         </tr>
-      {% else %}<tr><td colspan="4" class="muted">Sin eventos.</td></tr>{% endfor %}
+      {% else %}<tr><td colspan="4" class="muted">📭 Sin eventos todavía.{% if can('eventos:gestionar') %} <a href="/app/eventos/nuevo">Crea el primero</a>.{% endif %}</td></tr>{% endfor %}
     </tbody>
   </table>
 {% endblock %}

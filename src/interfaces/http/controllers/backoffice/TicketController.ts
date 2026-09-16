@@ -387,6 +387,7 @@ export class TicketController {
       adjuntos: d.adjuntos,
       conLogo: req.query.logo !== '0',
       auto: req.query.auto === '1',
+      impresoEl: this.clock.now(),
     });
   };
 

@@ -2,7 +2,7 @@
 {% block title %}{{ evento.titulo }}{% endblock %}
 {% block content %}
   <div class="page-head">
-    <h1>{{ evento.titulo }} <span class="badge badge--estado">{{ evento.estado }}</span></h1>
+    <h1>{{ evento.titulo }} <span class="{{ evento.estado | estadoClase }}">{{ evento.estado }}</span></h1>
     <div class="page-head__actions">
       {% if can('eventos:gestionar') %}<a class="btn btn--sm" href="/app/eventos/{{ evento.id }}/editar">Editar</a>{% endif %}
       <a class="btn btn--sm btn--secondary" href="/eventos/{{ evento.id }}">Ver página pública</a>

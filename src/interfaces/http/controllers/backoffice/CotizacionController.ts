@@ -147,6 +147,8 @@ export class CotizacionController {
       titulo: cotizacion.folio,
       cotizacion,
       auto: req.query.auto === '1',
+      conLogo: req.query.logo !== '0',
+      impresoEl: new Date(),
     });
   };
 

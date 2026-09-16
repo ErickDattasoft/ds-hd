@@ -16,7 +16,7 @@
           <tr>
             <td><a href="/portal/tickets/{{ vm.id }}">#{{ vm.numero }}</a></td>
             <td>{{ vm.asunto }}</td>
-            <td><span class="badge badge--estado">{{ vm.estado }}</span></td>
+            <td><span class="{{ vm.estado | estadoClase }}">{{ vm.estado }}</span></td>
             <td class="muted">{{ vm.slaTexto }}</td>
           </tr>
         {% endfor %}

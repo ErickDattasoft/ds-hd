@@ -169,6 +169,7 @@
       {% for i in historial %}
         <li>
           <span class="muted">{{ i.fecha | fecha }}</span> ·
+          <span class="timeline__dot timeline__dot--{{ i.tipo }}"></span>
           {% if i.tipo == 'ticket' %}
             🎫 <a href="/app/tickets/{{ i.ticketId }}">{{ i.texto }}</a>
           {% else %}

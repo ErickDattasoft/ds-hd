@@ -12,10 +12,12 @@
   .doc th, .doc td { border: 1px solid var(--color-border); padding: 0.5rem 0.65rem; text-align: left; }
   .doc td.num, .doc th.num { text-align: right; }
   .doc tfoot td { border: none; text-align: right; }
-  .doc__actions { margin: 1.5rem auto; max-width: 800px; padding: 0 1rem; }
+  .doc__actions { margin: 1.5rem auto; max-width: 800px; padding: 0 1rem; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+  .doc__footer { display: none; }
   @media print {
     .doc__actions, .skip-link { display: none !important; }
     .doc { margin: 0; }
+    .doc__footer { display: block; margin-top: 2rem; font-size: 0.8rem; color: var(--color-text-muted); }
     a[href]::after { content: none !important; }
   }
 </style>
@@ -25,13 +27,14 @@
 <div class="doc__actions">
   <button type="button" class="btn btn--sm" data-print>Imprimir / Guardar como PDF</button>
   <a class="btn btn--sm btn--ghost" href="/app/cotizaciones/{{ cotizacion.id }}">Volver</a>
+  <label class="field--check"><input type="checkbox" data-toggle-logo {{ 'checked' if conLogo }} /> Incluir logo</label>
 </div>
 {% if auto %}<span data-print-auto hidden></span>{% endif %}
 
 <article class="doc" id="contenido">
   <div class="doc__head">
     <div>
-      {{ marca.brand() }}
+      {% if conLogo %}{{ marca.brand() }}{% endif %}
       <div class="muted">Cotización</div>
     </div>
     <div class="doc__meta">
@@ -83,5 +86,6 @@
 {{ cotizacion.condiciones }}</p>{% endif %}
   {% if cotizacion.notas %}<p style="white-space:pre-line"><strong>Notas:</strong>
 {{ cotizacion.notas }}</p>{% endif %}
+  <footer class="doc__footer">Impreso el {{ impresoEl | fechahora }}</footer>
 </article>
 {% endblock %}

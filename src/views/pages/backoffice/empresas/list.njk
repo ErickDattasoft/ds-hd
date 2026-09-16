@@ -55,7 +55,7 @@
     <tbody>
       {% for fila in filas %}
         {% set e = fila.empresa %}
-        <tr>
+        <tr class="{{ 'tr-danger' if fila.vencidas }}">
           {% if can('empresas:editar') %}
             <td><input type="checkbox" form="avisar-form" name="empresaIds" value="{{ e.id }}" aria-label="Seleccionar {{ e.nombre }}" /></td>
             <td>
@@ -67,7 +67,7 @@
           <td>{{ e.rfc or '—' }}</td>
           <td>{{ e.telefono or '—' }}</td>
           <td>{{ e.sistemasContratados | length }}</td>
-          <td>
+          <td{% if fila.detalleLicencias %} title="{{ fila.detalleLicencias }}"{% endif %}>
             {% if fila.vencidas %}<span class="badge badge--danger">{{ fila.vencidas }} vencida{{ 's' if fila.vencidas != 1 }}</span>{% endif %}
             {% if fila.porVencer %}<span class="badge badge--warning">{{ fila.porVencer }} por vencer</span>{% endif %}
             {% if not fila.vencidas and not fila.porVencer %}<span class="muted">—</span>{% endif %}
@@ -77,7 +77,7 @@
           </td>
           <td>{{ 'Activa' if e.activa else 'Archivada' }}</td>
         </tr>
-      {% else %}<tr><td colspan="9" class="muted">Sin empresas.</td></tr>{% endfor %}
+      {% else %}<tr><td colspan="9" class="muted">📭 Sin empresas que coincidan.{% if can('empresas:crear') %} Ajusta la búsqueda o <a href="/app/empresas/nueva">crea una nueva</a>.{% endif %}</td></tr>{% endfor %}
     </tbody>
   </table>
 

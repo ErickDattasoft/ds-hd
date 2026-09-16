@@ -14,10 +14,12 @@
   .doc .bloque img { max-width: 100%; }
   .doc .nota { border-left: 3px solid var(--color-border); padding: 0.2rem 0 0.2rem 0.7rem; margin: 0.6rem 0; }
   .doc .nota div { white-space: pre-wrap; }
-  .doc__actions { margin: 1.5rem auto; max-width: 800px; padding: 0 1rem; }
+  .doc__actions { margin: 1.5rem auto; max-width: 800px; padding: 0 1rem; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+  .doc__footer { display: none; }
   @media print {
     .doc__actions, .skip-link { display: none !important; }
     .doc { margin: 0; }
+    .doc__footer { display: block; margin-top: 2rem; font-size: 0.8rem; color: var(--color-text-muted); }
     a[href]::after { content: none !important; }
   }
 </style>
@@ -27,6 +29,7 @@
 <div class="doc__actions">
   <button type="button" class="btn btn--sm" data-print>Imprimir / Guardar como PDF</button>
   <a class="btn btn--sm btn--ghost" href="/app/tickets/{{ ticket.id }}">Volver</a>
+  <label class="field--check"><input type="checkbox" data-toggle-logo {{ 'checked' if conLogo }} /> Incluir logo</label>
 </div>
 {% if auto %}<span data-print-auto hidden></span>{% endif %}
 
@@ -37,7 +40,7 @@
   <table class="datos">
     <tr><th>Empresa</th><td>{{ ticket.empresaNombre or '—' }}</td><th>Contacto</th><td>{{ ticket.contactoNombre or '—' }}</td></tr>
     <tr><th>Tipo</th><td>{{ ticket.tipo }}</td><th>Sistema</th><td>{{ ticket.sistema or '—' }}</td></tr>
-    <tr><th>Prioridad</th><td>{{ ticket.prioridad }}</td><th>Estado</th><td>{{ ticket.estado }}</td></tr>
+    <tr><th>Prioridad</th><td><span class="{{ ticket.prioridad | prioridadClase }}">{{ ticket.prioridad }}</span></td><th>Estado</th><td><span class="{{ ticket.estado | estadoClase }}">{{ ticket.estado }}</span></td></tr>
     <tr><th>Agente</th><td>{{ ticket.agenteAsignadoNombre or 'Sin asignar' }}</td><th>Grupo</th><td>{{ ticket.grupo or '—' }}</td></tr>
     {% if ticket.solicitadoPor or ticket.canalizadoA %}
       <tr><th>Solicitado por</th><td>{{ ticket.solicitadoPor or '—' }}</td><th>Canalizado a</th><td>{{ ticket.canalizadoA or '—' }}</td></tr>
@@ -65,5 +68,6 @@
       <img src="/app/tickets/{{ ticket.id }}/adjuntos/{{ a.id }}" alt="{{ a.nombre }}" style="max-width:100%;margin-top:8px" />
     {% endif %}{% endfor %}
   {% endif %}
+  <footer class="doc__footer">Impreso el {{ impresoEl | fechahora }}</footer>
 </article>
 {% endblock %}

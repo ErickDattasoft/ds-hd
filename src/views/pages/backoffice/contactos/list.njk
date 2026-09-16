@@ -28,7 +28,7 @@
           <td>{{ c.email or '—' }}</td>
           <td>{{ c.telefono or '—' }}</td>
         </tr>
-      {% else %}<tr><td colspan="5" class="muted">Sin contactos.</td></tr>{% endfor %}
+      {% else %}<tr><td colspan="5" class="muted">📭 Sin contactos que coincidan.{% if can('contactos:crear') %} <a href="/app/contactos/nuevo">Crea uno nuevo</a>.{% endif %}</td></tr>{% endfor %}
     </tbody>
   </table>
 {% endblock %}

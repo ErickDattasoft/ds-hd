@@ -8,8 +8,8 @@
   </div>
 
   <p>
-    <span class="badge badge--estado">{{ ticket.estado }}</span>
-    <span class="muted">Prioridad {{ ticket.prioridad }}</span>
+    <span class="{{ ticket.estado | estadoClase }}">{{ ticket.estado }}</span>
+    <span class="muted">Prioridad</span> <span class="{{ ticket.prioridad | prioridadClase }}">{{ ticket.prioridad }}</span>
   </p>
 
   <div class="card">

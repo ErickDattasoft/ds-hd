@@ -2,7 +2,7 @@
 {% block title %}{{ cotizacion.folio }}{% endblock %}
 {% block content %}
   <div class="page-head">
-    <h1>{{ cotizacion.folio }} <span class="badge badge--estado">{{ cotizacion.estado }}</span></h1>
+    <h1>{{ cotizacion.folio }} <span class="{{ cotizacion.estado | estadoClase }}">{{ cotizacion.estado }}</span></h1>
     <div class="page-head__actions">
       <a class="btn btn--sm btn--ghost" href="/app/cotizaciones/{{ cotizacion.id }}/imprimir?auto=1" target="_blank" rel="noopener">PDF / Imprimir</a>
       {% if can('cotizaciones:editar') and cotizacion.estado != 'aceptada' %}

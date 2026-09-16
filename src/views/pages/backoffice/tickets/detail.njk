@@ -120,8 +120,8 @@
 
     <aside class="ticket-side">
       <div class="card">
-        <p><strong>Estado:</strong> <span class="badge badge--estado">{{ ticket.estado }}</span></p>
-        <p><strong>Prioridad:</strong> {{ ticket.prioridad }}</p>
+        <p><strong>Estado:</strong> <span class="{{ ticket.estado | estadoClase }}">{{ ticket.estado }}</span></p>
+        <p><strong>Prioridad:</strong> <span class="{{ ticket.prioridad | prioridadClase }}">{{ ticket.prioridad }}</span></p>
         <p><strong>SLA:</strong> {{ tk.slaBadge(vm) }}</p>
         <p><strong>Tiempo trabajado:</strong> {{ vm.tiempoTrabajado }}
           {% if vm.tiempoEsManual %}<span class="badge" title="Ajustado a mano">✏️</span> <span class="muted">(auto: {{ vm.tiempoTrabajadoAuto }})</span>{% endif %}

@@ -10,6 +10,7 @@ import type { ITicketQueries } from '../../../../core/ports/repositories/ITicket
 import type { Interaccion, TipoInteraccion } from '../../../../core/entities/Interaccion.js';
 import type { Ticket } from '../../../../core/entities/Ticket.js';
 import { estadoActualizacion } from '../../../../core/entities/value-objects/version.js';
+import { formatearLicenciasPendientes } from '../../../../application/empresas/avisos.js';
 import { camposDeError } from '../../support/errores.js';
 
 /** Un renglón del historial combinado de la empresa (interacción o ticket). */
@@ -86,6 +87,7 @@ export class EmpresaController {
         desactualizadas: empresa.sistemasContratados.filter(
           (s) => estadoActualizacion(empresa.versionesInstaladas[s], oficial[s]) === 'desactualizada',
         ).length,
+        detalleLicencias: riesgo.length ? formatearLicenciasPendientes(empresa, hoy) : '',
       };
     });
     if (soloPendientes) {

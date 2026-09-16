@@ -4,7 +4,7 @@
   <h1>Tickets del portal <span class="muted">({{ pendientes | length }} pendientes)</span></h1>
   {% for t in pendientes %}
     <div class="card">
-      <p><strong>{{ t.asunto }}</strong> — {{ t.prioridad }}</p>
+      <p><strong>{{ t.asunto }}</strong> — <span class="{{ t.prioridad | prioridadClase }}">{{ t.prioridad }}</span></p>
       <p class="muted">{{ t.nombre }} ({{ t.correo }}){% if t.empresa %} · {{ t.empresa }}{% endif %} · folio {{ t.folio }}</p>
       <p>{{ t.descripcion }}</p>
       <div class="page-head__actions">

@@ -33,6 +33,30 @@
 .btn:hover { --_bg: var(--brand-hover); text-decoration: none; }
 .btn:active { transform: translateY(1px); }
 .btn:disabled { opacity: 0.55; cursor: not-allowed; }
+.btn.is-loading {
+  opacity: 0.75;
+  cursor: wait;
+  position: relative;
+  color: transparent !important;
+}
+.btn.is-loading::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 1rem;
+  height: 1rem;
+  border-radius: 50%;
+  border: 2px solid color-mix(in srgb, var(--_fg, var(--color-text)) 35%, transparent);
+  border-top-color: var(--_fg, var(--color-text));
+  animation: btn-spin 0.6s linear infinite;
+}
+@keyframes btn-spin {
+  to { transform: rotate(360deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .btn.is-loading::after { animation: none; }
+}
 .btn--secondary {
   --_bg: transparent;
   --_fg: var(--brand);
@@ -348,6 +372,8 @@ fieldset.field {
   z-index: 3;
 }
 .data-table tbody tr:hover { background: var(--color-surface-2); }
+.data-table tbody tr.tr-danger { background: color-mix(in srgb, var(--danger) 7%, var(--color-surface)); }
+.data-table tbody tr.tr-danger:hover { background: color-mix(in srgb, var(--danger) 13%, var(--color-surface)); }
 .data-table td { max-width: 22rem; overflow: hidden; text-overflow: ellipsis; }
 
 /* Mejoras aplicadas por app.js (initTablas): ordenar por columna + ancho ajustable.
@@ -389,6 +415,15 @@ fieldset.field {
 .badge--danger { background: var(--danger-weak); color: var(--danger); border-color: transparent; }
 .badge--warning { background: var(--warning-weak); color: var(--warning); border-color: transparent; }
 .badge--ok { background: var(--success-weak); color: var(--success); border-color: transparent; }
+.badge--info { background: var(--info-weak); color: var(--info); border-color: transparent; }
+.badge--pulse { animation: badge-pulse 1.6s ease-in-out infinite; }
+@keyframes badge-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--danger) 45%, transparent); }
+  50% { box-shadow: 0 0 0 4px color-mix(in srgb, var(--danger) 0%, transparent); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .badge--pulse { animation: none; }
+}
 
 /* ── Alertas ───────────────────────────────────────────────────────────── */
 .alert {
@@ -526,6 +561,19 @@ fieldset.field {
 .timeline { list-style: none; padding: 0; font-size: var(--text-sm); }
 .timeline li { padding: var(--space-2) 0; border-bottom: 1px solid var(--color-border); }
 .timeline li:last-child { border-bottom: none; }
+.timeline__dot {
+  display: inline-block;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  margin-right: 0.4em;
+  background: var(--color-text-subtle);
+}
+.timeline__dot--nota { background: var(--accent); }
+.timeline__dot--llamada { background: var(--success); }
+.timeline__dot--correo { background: var(--warning); }
+.timeline__dot--whatsapp { background: var(--success); }
+.timeline__dot--reunion { background: var(--accent); }
+.timeline__dot--ticket { background: var(--danger); }
 
 /* Línea de tiempo visual del ticket (tramos por estado). */
 .tl { list-style: none; padding: 0; margin: 0; font-size: var(--text-sm); }

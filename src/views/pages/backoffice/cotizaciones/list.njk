@@ -27,9 +27,9 @@
           <td>{{ c.empresaNombre or '—' }}</td>
           <td>{{ c.fecha | fecha }}</td>
           <td>{{ c.total | moneda(c.moneda) }}</td>
-          <td><span class="badge badge--estado">{{ c.estado }}</span></td>
+          <td><span class="{{ c.estado | estadoClase }}">{{ c.estado }}</span></td>
         </tr>
-      {% else %}<tr><td colspan="5" class="muted">Sin cotizaciones.</td></tr>{% endfor %}
+      {% else %}<tr><td colspan="5" class="muted">📭 Sin cotizaciones que coincidan.{% if can('cotizaciones:crear') %} <a href="/app/cotizaciones/nueva">Crea la primera</a>.{% endif %}</td></tr>{% endfor %}
     </tbody>
   </table>
 {% endblock %}

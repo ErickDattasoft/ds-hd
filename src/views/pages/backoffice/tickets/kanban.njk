@@ -17,7 +17,7 @@
           <a class="kanban__card" href="/app/tickets/{{ vm.id }}" data-ticket-id="{{ vm.id }}">
             <strong>#{{ vm.numero }}</strong> {{ vm.asunto }}
             <div class="kanban__meta">
-              <span>{{ vm.prioridad }}</span>
+              <span class="{{ vm.prioridad | prioridadClase }}">{{ vm.prioridad }}</span>
               <span>{{ vm.agenteAsignadoNombre or 'sin asignar' }}</span>
             </div>
             {{ tk.slaBadge(vm) }}

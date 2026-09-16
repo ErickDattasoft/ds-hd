@@ -13,8 +13,8 @@
   <tr>
     <td><a href="/app/tickets/{{ vm.id }}">#{{ vm.numero }}</a></td>
     <td>{{ vm.asunto }}{% if vm.agenda %}<br>{{ agendaBadge(vm) }}{% endif %}</td>
-    <td><span class="badge badge--estado">{{ vm.estado }}</span></td>
-    <td>{{ vm.prioridad }}</td>
+    <td><span class="{{ vm.estado | estadoClase }}">{{ vm.estado }}</span></td>
+    <td><span class="{{ vm.prioridad | prioridadClase }}">{{ vm.prioridad }}</span></td>
     <td>{{ vm.empresaNombre or '—' }}</td>
     <td>{{ vm.agenteAsignadoNombre or 'Sin asignar' }}</td>
     <td>{{ slaBadge(vm) }}</td>
@@ -84,7 +84,7 @@
     </thead>
     <tbody>
       {% for vm in tickets %}{{ filaTicket(vm) }}{% else %}
-        <tr><td colspan="7" class="muted">Sin tickets.</td></tr>
+        <tr><td colspan="7" class="muted">📭 No hay tickets que mostrar.</td></tr>
       {% endfor %}
     </tbody>
   </table>

@@ -182,6 +182,8 @@
     var salida = document.getElementById('resultado-restaurar-backup');
     if (!file || !salida) return;
     if (!window.confirm('¿Restaurar este backup? Se agregará o actualizará lo que traiga el archivo — no se borra nada existente.')) return;
+    var btn = e.submitter || form.querySelector('button[type="submit"]');
+    if (btn) { btn.disabled = true; btn.classList.add('is-loading'); }
     var reader = new FileReader();
     reader.onload = function () {
       salida.innerHTML = '<p class="muted">Restaurando…</p>';
@@ -210,6 +212,9 @@
         })
         .catch(function () {
           salida.innerHTML = '<p class="alert alert--error">No se pudo restaurar. Revisa tu conexión e inténtalo de nuevo.</p>';
+        })
+        .finally(function () {
+          if (btn) { btn.disabled = false; btn.classList.remove('is-loading'); }
         });
     };
     reader.readAsText(file);
@@ -224,6 +229,8 @@
     var file = input && input.files[0];
     var salida = document.getElementById('resultado-importar-excel');
     if (!file || !salida) return;
+    var btn = e.submitter || form.querySelector('button[type="submit"]');
+    if (btn) { btn.disabled = true; btn.classList.add('is-loading'); }
     salida.innerHTML = '<p class="muted">Importando…</p>';
     var fd = new FormData();
     fd.append('archivo', file);
@@ -255,6 +262,9 @@
       })
       .catch(function () {
         salida.innerHTML = '<p class="alert alert--error">No se pudo importar. Revisa tu conexión e inténtalo de nuevo.</p>';
+      })
+      .finally(function () {
+        if (btn) { btn.disabled = false; btn.classList.remove('is-loading'); }
       });
   });
 
@@ -267,6 +277,8 @@
     var files = input && input.files ? Array.prototype.slice.call(input.files) : [];
     var salida = document.getElementById('resultado-kb-subir');
     if (!files.length || !salida) return;
+    var btn = e.submitter || form.querySelector('button[type="submit"]');
+    if (btn) { btn.disabled = true; btn.classList.add('is-loading'); }
     salida.innerHTML = '<p class="muted">Leyendo ' + files.length + ' archivo(s)…</p>';
     Promise.all(
       files.map(function (file) {
@@ -306,6 +318,9 @@
         })
         .catch(function () {
           salida.innerHTML = '<p class="alert alert--error">No se pudo subir. Revisa tu conexión e inténtalo de nuevo.</p>';
+        })
+        .finally(function () {
+          if (btn) { btn.disabled = false; btn.classList.remove('is-loading'); }
         });
     });
   });
@@ -322,6 +337,8 @@
         salida.textContent = 'Escribe una URL primero.';
         return;
       }
+      btnWebhook.disabled = true;
+      btnWebhook.classList.add('is-loading');
       salida.textContent = 'Probando…';
       fetch('/app/configuracion/integraciones/probar-webhook', {
         method: 'POST',
@@ -334,6 +351,10 @@
         })
         .catch(function () {
           salida.textContent = '❌ No se pudo probar. Revisa tu conexión.';
+        })
+        .finally(function () {
+          btnWebhook.disabled = false;
+          btnWebhook.classList.remove('is-loading');
         });
       return;
     }
@@ -348,6 +369,8 @@
         salidaWa.textContent = 'Completa teléfono y API key primero.';
         return;
       }
+      btnWhatsapp.disabled = true;
+      btnWhatsapp.classList.add('is-loading');
       salidaWa.textContent = 'Probando…';
       fetch('/app/configuracion/integraciones/probar-whatsapp', {
         method: 'POST',
@@ -360,6 +383,10 @@
         })
         .catch(function () {
           salidaWa.textContent = '❌ No se pudo probar. Revisa tu conexión.';
+        })
+        .finally(function () {
+          btnWhatsapp.disabled = false;
+          btnWhatsapp.classList.remove('is-loading');
         });
       return;
     }
@@ -373,6 +400,8 @@
         salidaCorreo.textContent = 'Escribe un correo de destino primero.';
         return;
       }
+      btnCorreo.disabled = true;
+      btnCorreo.classList.add('is-loading');
       salidaCorreo.textContent = 'Enviando…';
       fetch('/app/configuracion/integraciones/probar-correo', {
         method: 'POST',
@@ -385,6 +414,10 @@
         })
         .catch(function () {
           salidaCorreo.textContent = '❌ No se pudo probar. Revisa tu conexión.';
+        })
+        .finally(function () {
+          btnCorreo.disabled = false;
+          btnCorreo.classList.remove('is-loading');
         });
     }
   });
@@ -765,6 +798,8 @@
     var file = input && input.files[0];
     var salida = document.getElementById('resultado-importar-excel-unificado');
     if (!file || !salida) return;
+    var btn = e.submitter || form.querySelector('button[type="submit"]');
+    if (btn) { btn.disabled = true; btn.classList.add('is-loading'); }
     salida.innerHTML = '<p class="muted">Importando…</p>';
     var fd = new FormData();
     fd.append('archivo', file);
@@ -796,6 +831,9 @@
       })
       .catch(function () {
         salida.innerHTML = '<p class="alert alert--error">No se pudo importar. Revisa tu conexión e inténtalo de nuevo.</p>';
+      })
+      .finally(function () {
+        if (btn) { btn.disabled = false; btn.classList.remove('is-loading'); }
       });
   });
 
@@ -821,6 +859,28 @@
   });
   document.addEventListener('DOMContentLoaded', function () {
     if (document.querySelector('[data-print-auto]')) setTimeout(function () { window.print(); }, 150);
+  });
+
+  // ── Impresión: checkbox de "incluir logo", recordado entre documentos ───
+  document.addEventListener('DOMContentLoaded', function () {
+    var chk = document.querySelector('[data-toggle-logo]');
+    if (!chk) return;
+    var clave = 'ds_hd_imprimir_logo';
+    var url = new URL(location.href);
+    if (!url.searchParams.has('logo')) {
+      var guardado = lee(clave);
+      if (guardado === false) {
+        url.searchParams.set('logo', '0');
+        location.replace(url.toString());
+        return;
+      }
+    }
+    chk.addEventListener('change', function () {
+      guarda(clave, chk.checked);
+      var u = new URL(location.href);
+      u.searchParams.set('logo', chk.checked ? '1' : '0');
+      location.href = u.toString();
+    });
   });
 
   // ── Doble clic en una fila de tabla → abrir el primer enlace de la fila ──
@@ -1066,6 +1126,8 @@
     var file = input.files[0];
     var msg = document.getElementById('logo-mensaje');
     if (!file) return;
+    var btn = e.submitter || form.querySelector('button[type="submit"]');
+    if (btn) { btn.disabled = true; btn.classList.add('is-loading'); }
     if (msg) msg.textContent = 'Subiendo…';
     leerBase64(file, function (b64) {
       fetch('/app/configuracion/apariencia/logo', {
@@ -1078,7 +1140,10 @@
           if (data.ok) window.location.reload();
           else if (msg) msg.textContent = '❌ ' + (data.error || 'No se pudo subir el logo');
         })
-        .catch(function () { if (msg) msg.textContent = '❌ No se pudo subir. Revisa tu conexión.'; });
+        .catch(function () { if (msg) msg.textContent = '❌ No se pudo subir. Revisa tu conexión.'; })
+        .finally(function () {
+          if (btn) { btn.disabled = false; btn.classList.remove('is-loading'); }
+        });
     });
   });
 
@@ -1165,6 +1230,8 @@
     var file = input.files[0];
     var msg = document.getElementById('flayer-mensaje');
     if (!file) return;
+    var btn = e.submitter || form.querySelector('button[type="submit"]');
+    if (btn) { btn.disabled = true; btn.classList.add('is-loading'); }
     if (msg) msg.textContent = 'Subiendo…';
     leerBase64(file, function (b64) {
       fetch(form.action, {
@@ -1177,7 +1244,10 @@
           if (data.ok) window.location.reload();
           else if (msg) msg.textContent = '❌ ' + (data.error || 'No se pudo subir el flayer');
         })
-        .catch(function () { if (msg) msg.textContent = '❌ No se pudo subir. Revisa tu conexión.'; });
+        .catch(function () { if (msg) msg.textContent = '❌ No se pudo subir. Revisa tu conexión.'; })
+        .finally(function () {
+          if (btn) { btn.disabled = false; btn.classList.remove('is-loading'); }
+        });
     });
   });
 
@@ -1263,6 +1333,21 @@
       cb.addEventListener('change', function () { guarda(clave, cb.checked); });
     });
   }
+
+  // ── Feedback de envío: deshabilita el botón mientras un form normal viaja ──
+  // Se registra AL FINAL a propósito: si algún listener anterior (confirm(), o un
+  // handler que intercepta el submit para mandar fetch a mano) ya llamó
+  // preventDefault(), no hay que tocar el botón aquí — esos casos manejan su
+  // propio disabled/enabled porque solo ellos saben cuándo termina la petición.
+  document.addEventListener('submit', function (e) {
+    if (e.defaultPrevented) return;
+    var form = e.target;
+    if (!(form instanceof HTMLFormElement) || form.hasAttribute('data-no-loading')) return;
+    var btn = e.submitter || form.querySelector('button[type="submit"], input[type="submit"]');
+    if (!btn || btn.hasAttribute('data-no-loading')) return;
+    btn.disabled = true;
+    btn.classList.add('is-loading');
+  });
 
   document.addEventListener('DOMContentLoaded', function () {
     updateToggle();
