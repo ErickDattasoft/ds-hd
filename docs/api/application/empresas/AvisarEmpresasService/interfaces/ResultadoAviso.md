@@ -30,4 +30,21 @@ Qué pasó al intentar avisar a una empresa (enviado, o por qué no).
 
 ### motivo?
 
-> `optional` **motivo?**: `"sin_pendientes"` \| `"sin_contacto_correo"` \| `"sin_contacto_telefono"` \| `"sin_webhook_configurado"` \| `"no_encontrada"`
+> `optional` **motivo?**: `"sin_pendientes"` \| `"sin_contacto_correo"` \| `"sin_contacto_telefono"` \| `"no_encontrada"`
+
+***
+
+### whatsappManual?
+
+> `optional` **whatsappManual?**: `object`
+
+Solo cuando enviado=true por WhatsApp sin webhook n8n: el cliente debe abrir
+wa.me con este teléfono/mensaje (mismo respaldo "WhatsApp Web" del CRM viejo).
+
+#### telefono
+
+> **telefono**: `string`
+
+#### mensaje
+
+> **mensaje**: `string`

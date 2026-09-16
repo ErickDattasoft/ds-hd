@@ -1076,6 +1076,31 @@
     });
   });
 
+  // ── KB: pizarra personal con autoguardado (debounce, guarda en el servidor) ──
+  (function () {
+    var caja = document.querySelector('[data-pizarra-texto]');
+    if (!caja) return;
+    var estado = document.querySelector('[data-pizarra-estado]');
+    var timer = null;
+    function guardar() {
+      fetch(window.location.pathname, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'x-csrf-token': cookie('x-csrf-token') },
+        body: JSON.stringify({ contenido: caja.value }),
+      })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          if (estado) estado.textContent = data.ok ? '✓ Guardado' : '✗ ' + (data.error || 'No se pudo guardar');
+        })
+        .catch(function () { if (estado) estado.textContent = '✗ No se pudo guardar. Revisa tu conexión.'; });
+    }
+    caja.addEventListener('input', function () {
+      if (estado) estado.textContent = 'Guardando…';
+      clearTimeout(timer);
+      timer = setTimeout(guardar, 800);
+    });
+  })();
+
   // ── Registro público de eventos: reenviar link si ya estás registrado ────
   document.addEventListener('click', function (e) {
     var btn = e.target.closest('[data-reenviar-link]');

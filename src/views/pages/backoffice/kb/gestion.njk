@@ -5,6 +5,7 @@
   <div class="page-head">
     <h1>Base de conocimiento</h1>
     <div class="page-head__actions">
+      <a class="btn btn--sm btn--ghost" href="/app/kb/pizarra">📝 Pizarra</a>
       <a class="btn btn--sm btn--secondary" href="/app/kb/subir">Subir archivos</a>
       <a class="btn btn--sm btn--ghost" href="/app/kb/export.json{{ qs(categoria, orden, desde) }}">Exportar JSON</a>
       <a class="btn btn--sm btn--ghost" href="/app/kb/export.zip{{ qs(categoria, orden, desde) }}">Exportar ZIP</a>
@@ -12,6 +13,13 @@
     </div>
   </div>
   {% if aviso %}<div class="alert alert--ok" role="status">{{ aviso }}</div>{% endif %}
+  {% if tags | length %}
+    <div class="kb-tags">
+      {% for t in tags %}
+        <a class="kb-tag {{ 'is-active' if tag == t.nombre }}" href="?categoria={{ categoria }}&orden={{ orden }}&desde={{ desde }}&tag={{ '' if tag == t.nombre else t.nombre }}">{{ t.nombre }} ({{ t.total }})</a>
+      {% endfor %}
+    </div>
+  {% endif %}
 
   <form method="get" class="filterbar">
     <label class="field"><span>Categoría</span>

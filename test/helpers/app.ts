@@ -28,7 +28,12 @@ import {
 import { InMemoryIntentosLoginRepository } from '../fakes/InMemoryIntentosLoginRepository.js';
 import { InMemoryFiltroGuardadoRepository } from '../fakes/InMemoryFiltroGuardadoRepository.js';
 import { InMemoryAdjuntoTicketRepository } from '../fakes/InMemoryAdjuntoTicketRepository.js';
-import { InMemoryVersionRepository, InMemoryKnowledgeRepository } from '../fakes/kb.js';
+import {
+  InMemoryVersionRepository,
+  InMemoryKnowledgeRepository,
+  InMemoryPizarraKBRepository,
+  InMemoryBusquedaKBRepository,
+} from '../fakes/kb.js';
 import { InMemoryCotizacionRepository } from '../fakes/cotizaciones.js';
 import { InMemoryInteraccionRepository, InMemoryTareaRepository } from '../fakes/seguimiento.js';
 import {
@@ -52,6 +57,8 @@ export interface TestApp {
   bitacoraRepo: InMemoryBitacoraRepository;
   versionRepo: InMemoryVersionRepository;
   knowledgeRepo: InMemoryKnowledgeRepository;
+  pizarraKBRepo: InMemoryPizarraKBRepository;
+  busquedaKBRepo: InMemoryBusquedaKBRepository;
   cotizacionRepo: InMemoryCotizacionRepository;
   interaccionRepo: InMemoryInteraccionRepository;
   tareaRepo: InMemoryTareaRepository;
@@ -94,6 +101,8 @@ export function makeTestApp(opts: { usuarios?: { uid: string; email: string; pas
   const bitacoraRepo = new InMemoryBitacoraRepository();
   const versionRepo = new InMemoryVersionRepository();
   const knowledgeRepo = new InMemoryKnowledgeRepository();
+  const pizarraKBRepo = new InMemoryPizarraKBRepository();
+  const busquedaKBRepo = new InMemoryBusquedaKBRepository();
   const cotizacionRepo = new InMemoryCotizacionRepository();
   const interaccionRepo = new InMemoryInteraccionRepository();
   const tareaRepo = new InMemoryTareaRepository();
@@ -128,6 +137,8 @@ export function makeTestApp(opts: { usuarios?: { uid: string; email: string; pas
     bitacoraRepo,
     versionRepo,
     knowledgeRepo,
+    pizarraKBRepo,
+    busquedaKBRepo,
     cotizacionRepo,
     interaccionRepo,
     tareaRepo,
@@ -152,6 +163,8 @@ export function makeTestApp(opts: { usuarios?: { uid: string; email: string; pas
     bitacoraRepo,
     versionRepo,
     knowledgeRepo,
+    pizarraKBRepo,
+    busquedaKBRepo,
     cotizacionRepo,
     interaccionRepo,
     tareaRepo,

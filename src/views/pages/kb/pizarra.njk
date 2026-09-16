@@ -1,0 +1,15 @@
+{% extends kbLayout %}
+{% block title %}Pizarra{% endblock %}
+{% block content %}
+  <div class="page-head">
+    <h1>📝 Pizarra</h1>
+    <a class="btn btn--sm btn--ghost" href="{{ kbBase }}">← Base de conocimiento</a>
+  </div>
+  <p class="muted">Notas libres, solo para ti — se guardan solas mientras escribes.</p>
+  <div data-pizarra>
+    <label class="field" style="width: 100%">
+      <textarea data-pizarra-texto rows="18" style="width: 100%" spellcheck="false" placeholder="Escribe aquí…">{{ contenido }}</textarea>
+    </label>
+    <p class="muted" data-pizarra-estado></p>
+  </div>
+{% endblock %}

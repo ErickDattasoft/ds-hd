@@ -96,3 +96,18 @@ export class ArticuloKB {
     return contexto.esStaff;
   }
 }
+
+/**
+ * ¿El artículo coincide con una búsqueda de texto? Busca en título, cuerpo y tags.
+ * Por defecto (`fraseExacta=false`) exige que CADA palabra de `texto` aparezca en algún lado
+ * (más laxo, mejor recall); con `fraseExacta=true` exige la frase completa como substring
+ * contiguo en un solo campo (más estricto).
+ */
+export function coincideTexto(articulo: ArticuloKB, texto: string, fraseExacta: boolean): boolean {
+  const t = texto.trim().toLowerCase();
+  if (!t) return true;
+  const campos = [articulo.titulo.toLowerCase(), articulo.cuerpoMarkdown.toLowerCase(), ...articulo.tags];
+  if (fraseExacta) return campos.some((c) => c.includes(t));
+  const palabras = t.split(/\s+/).filter(Boolean);
+  return palabras.every((p) => campos.some((c) => c.includes(p)));
+}

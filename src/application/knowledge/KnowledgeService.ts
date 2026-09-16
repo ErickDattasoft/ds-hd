@@ -50,6 +50,19 @@ export class KnowledgeService {
     return articulo;
   }
 
+  /** Otros artículos visibles que comparten al menos un tag con `articulo`, más compartidos primero. */
+  async relacionados(ctx: Contexto, articulo: ArticuloKB, limite = 5): Promise<ArticuloKB[]> {
+    if (!articulo.tags.length) return [];
+    const candidatos = await this.listarVisibles(ctx);
+    return candidatos
+      .filter((a) => a.id !== articulo.id)
+      .map((a) => ({ a, compartidos: a.tags.filter((t) => articulo.tags.includes(t)).length }))
+      .filter((x) => x.compartidos > 0)
+      .sort((x, y) => y.compartidos - x.compartidos || y.a.updatedAt.getTime() - x.a.updatedAt.getTime())
+      .slice(0, limite)
+      .map((x) => x.a);
+  }
+
   async obtenerParaEditar(actor: SessionUser, id: string): Promise<ArticuloKB> {
     if (!actor.permisos.includes('kb:escribir')) throw new ForbiddenError('No puedes editar la base de conocimiento');
     const a = await this.repo.findById(id);

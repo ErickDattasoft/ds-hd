@@ -23,6 +23,7 @@ export function publicRoutes(container: Container): Router {
 
   const kb = () => container.resolve('knowledgeController');
   r.get('/kb', (req, res) => kb().listar(req, res));
+  r.get('/kb/comparar', (req, res) => kb().comparar(req, res));
   r.get('/kb/:idOrSlug', (req, res) => kb().ver(req, res));
 
   const eventos = () => container.resolve('eventoPublicoController');

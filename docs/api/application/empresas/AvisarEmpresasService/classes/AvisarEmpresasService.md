@@ -10,7 +10,8 @@ Caso de uso: avisar (por correo o WhatsApp) a un lote de empresas sobre versione
 desactualizadas o licencias por vencer/vencidas, con la plantilla y contactos de soporte
 configurados. WhatsApp no usa CallMeBot (solo manda al número propio dado de alta) — manda
 el evento `empresa.avisar_whatsapp` al webhook n8n dedicado, para que se enrute ahí a un
-proveedor real de WhatsApp Business.
+proveedor real de WhatsApp Business. Si no hay webhook configurado, cae al mismo respaldo
+que el CRM viejo: el cliente abre wa.me/WhatsApp Web con el mensaje ya redactado.
 
 ## Constructors
 

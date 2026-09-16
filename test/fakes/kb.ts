@@ -1,7 +1,11 @@
 import type { IVersionRepository } from '../../src/core/ports/repositories/IVersionRepository.js';
 import type { IKnowledgeRepository, ListarKBFiltro } from '../../src/core/ports/repositories/IKnowledgeRepository.js';
+import type { IPizarraKBRepository } from '../../src/core/ports/repositories/IPizarraKBRepository.js';
+import type { IBusquedaKBRepository } from '../../src/core/ports/repositories/IBusquedaKBRepository.js';
 import type { VersionSistema } from '../../src/core/entities/VersionSistema.js';
-import type { ArticuloKB } from '../../src/core/entities/ArticuloKB.js';
+import { coincideTexto, type ArticuloKB } from '../../src/core/entities/ArticuloKB.js';
+import type { PizarraKB } from '../../src/core/entities/PizarraKB.js';
+import type { BusquedaKB } from '../../src/core/entities/BusquedaKB.js';
 
 export class InMemoryVersionRepository implements IVersionRepository {
   readonly items = new Map<string, VersionSistema>();
@@ -31,10 +35,8 @@ export class InMemoryKnowledgeRepository implements IKnowledgeRepository {
     let out = [...this.items.values()];
     if (f.publicado !== undefined) out = out.filter((a) => a.publicado === f.publicado);
     if (f.categoria) out = out.filter((a) => a.categoria === f.categoria);
-    if (f.texto) {
-      const t = f.texto.toLowerCase();
-      out = out.filter((a) => a.titulo.toLowerCase().includes(t) || a.tags.some((x) => x.includes(t)));
-    }
+    if (f.tag) out = out.filter((a) => a.tags.includes(f.tag!));
+    if (f.texto) out = out.filter((a) => coincideTexto(a, f.texto!, f.fraseExacta ?? false));
     return out.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
   }
   async save(a: ArticuloKB): Promise<void> {
@@ -42,5 +44,33 @@ export class InMemoryKnowledgeRepository implements IKnowledgeRepository {
   }
   async eliminar(id: string): Promise<void> {
     this.items.delete(id);
+  }
+}
+
+export class InMemoryPizarraKBRepository implements IPizarraKBRepository {
+  readonly items = new Map<string, PizarraKB>();
+  async obtener(uid: string): Promise<PizarraKB | null> {
+    return this.items.get(uid) ?? null;
+  }
+  async guardar(p: PizarraKB): Promise<void> {
+    this.items.set(p.uid, p);
+  }
+}
+
+export class InMemoryBusquedaKBRepository implements IBusquedaKBRepository {
+  readonly items = new Map<string, BusquedaKB>();
+  async listar(uid: string): Promise<BusquedaKB[]> {
+    return [...this.items.values()]
+      .filter((b) => b.uid === uid)
+      .sort((a, b) => b.creadoEn.getTime() - a.creadoEn.getTime());
+  }
+  async guardar(b: BusquedaKB): Promise<void> {
+    this.items.set(b.id, b);
+  }
+  async eliminar(id: string): Promise<void> {
+    this.items.delete(id);
+  }
+  async limpiar(uid: string): Promise<void> {
+    for (const [id, b] of this.items) if (b.uid === uid) this.items.delete(id);
   }
 }

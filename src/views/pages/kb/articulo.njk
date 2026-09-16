@@ -7,8 +7,24 @@
     <p class="muted">
       {% if articulo.categoria %}{{ articulo.categoria }} · {% endif %}
       Actualizado {{ articulo.updatedAt | fecha }}
+      · <a href="{{ kbBase }}/comparar?a={{ articulo.slug or articulo.id }}">🔀 comparar con otro</a>
       {% if puedeEditar %} · <a href="/app/kb/{{ articulo.id }}/editar">editar</a>{% endif %}
     </p>
+    {% if articulo.tags | length %}
+      <div class="kb-tags">
+        {% for t in articulo.tags %}<a class="kb-tag" href="{{ kbBase }}?tag={{ t }}">{{ t }}</a>{% endfor %}
+      </div>
+    {% endif %}
     <div class="prose">{{ cuerpoHtml | safe }}</div>
   </article>
+  {% if relacionados | length %}
+    <aside class="kb-relacionados">
+      <h2>Ver también</h2>
+      <ul class="kb-list">
+        {% for a in relacionados %}
+          <li><a href="{{ kbBase }}/{{ a.slug or a.id }}">{{ a.titulo }}</a></li>
+        {% endfor %}
+      </ul>
+    </aside>
+  {% endif %}
 {% endblock %}

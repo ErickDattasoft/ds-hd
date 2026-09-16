@@ -26,3 +26,4 @@
 
 - [adivinarCategoriaKB](functions/adivinarCategoriaKB.md)
 - [slugify](functions/slugify.md)
+- [coincideTexto](functions/coincideTexto.md)

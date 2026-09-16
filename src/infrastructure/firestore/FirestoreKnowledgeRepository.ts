@@ -1,7 +1,7 @@
 import { type DocumentData, type Firestore, type Query } from 'firebase-admin/firestore';
 import { Timestamp } from '../../core/entities/value-objects/Timestamp.js';
 import type { IKnowledgeRepository, ListarKBFiltro } from '../../core/ports/repositories/IKnowledgeRepository.js';
-import { ArticuloKB, type VisibilidadKB } from '../../core/entities/ArticuloKB.js';
+import { ArticuloKB, coincideTexto, type VisibilidadKB } from '../../core/entities/ArticuloKB.js';
 
 const COL = 'knowledge_base';
 const fecha = (v: unknown): Date | undefined => (v instanceof Timestamp ? v.toDate() : undefined);
@@ -43,11 +43,14 @@ export class FirestoreKnowledgeRepository implements IKnowledgeRepository {
     if (filtro.categoria) q = q.where('categoria', '==', filtro.categoria);
     const snap = await q.get();
     let arts = snap.docs.map((d) => toDomain(d.id, d.data()));
+    if (filtro.tag) {
+      const tag = filtro.tag.toLowerCase();
+      arts = arts.filter((a) => a.tags.includes(tag));
+    }
     if (filtro.texto) {
-      const t = filtro.texto.toLowerCase();
-      arts = arts.filter(
-        (a) => a.titulo.toLowerCase().includes(t) || a.tags.some((tag) => tag.includes(t)),
-      );
+      const texto = filtro.texto;
+      const fraseExacta = filtro.fraseExacta ?? false;
+      arts = arts.filter((a) => coincideTexto(a, texto, fraseExacta));
     }
     return arts.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
   }

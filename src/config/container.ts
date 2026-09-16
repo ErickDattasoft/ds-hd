@@ -31,6 +31,8 @@ import { FirestoreContactoRepository } from '../infrastructure/firestore/Firesto
 import { FirestoreBitacoraRepository } from '../infrastructure/firestore/FirestoreBitacoraRepository.js';
 import { FirestoreVersionRepository } from '../infrastructure/firestore/FirestoreVersionRepository.js';
 import { FirestoreKnowledgeRepository } from '../infrastructure/firestore/FirestoreKnowledgeRepository.js';
+import { FirestorePizarraKBRepository } from '../infrastructure/firestore/FirestorePizarraKBRepository.js';
+import { FirestoreBusquedaKBRepository } from '../infrastructure/firestore/FirestoreBusquedaKBRepository.js';
 import { FirestoreCotizacionRepository } from '../infrastructure/firestore/FirestoreCotizacionRepository.js';
 import {
   FirestoreInteraccionRepository,
@@ -89,6 +91,8 @@ import { ExcelUnificadoService } from '../application/excel/ExcelUnificadoServic
 import { VersionService } from '../application/versiones/VersionService.js';
 import { ReporteVersionesService } from '../application/versiones/ReporteVersionesService.js';
 import { KnowledgeService } from '../application/knowledge/KnowledgeService.js';
+import { PizarraKBService } from '../application/knowledge/PizarraKBService.js';
+import { HistorialBusquedaKBService } from '../application/knowledge/HistorialBusquedaKBService.js';
 import { CotizacionService } from '../application/cotizaciones/CotizacionService.js';
 import { CalculadoraCompacService } from '../application/cotizaciones/CalculadoraCompacService.js';
 import { SeguimientoService } from '../application/seguimiento/SeguimientoService.js';
@@ -111,6 +115,7 @@ import { ContactoController } from '../interfaces/http/controllers/backoffice/Co
 import { BitacoraController } from '../interfaces/http/controllers/backoffice/BitacoraController.js';
 import { VersionController } from '../interfaces/http/controllers/backoffice/VersionController.js';
 import { KnowledgeController } from '../interfaces/http/controllers/KnowledgeController.js';
+import { PizarraKBController } from '../interfaces/http/controllers/PizarraKBController.js';
 import { ManualController } from '../interfaces/http/controllers/ManualController.js';
 import { BusquedaGlobalService } from '../application/shared/BusquedaGlobalService.js';
 import { BusquedaController } from '../interfaces/http/controllers/backoffice/BusquedaController.js';
@@ -149,6 +154,8 @@ import type { IContactoRepository } from '../core/ports/repositories/IContactoRe
 import type { IBitacoraRepository } from '../core/ports/repositories/IBitacoraRepository.js';
 import type { IVersionRepository } from '../core/ports/repositories/IVersionRepository.js';
 import type { IKnowledgeRepository } from '../core/ports/repositories/IKnowledgeRepository.js';
+import type { IPizarraKBRepository } from '../core/ports/repositories/IPizarraKBRepository.js';
+import type { IBusquedaKBRepository } from '../core/ports/repositories/IBusquedaKBRepository.js';
 import type { ICotizacionRepository } from '../core/ports/repositories/ICotizacionRepository.js';
 import type {
   IInteraccionRepository,
@@ -200,6 +207,8 @@ export interface Cradle {
   bitacoraRepo: IBitacoraRepository;
   versionRepo: IVersionRepository;
   knowledgeRepo: IKnowledgeRepository;
+  pizarraKBRepo: IPizarraKBRepository;
+  busquedaKBRepo: IBusquedaKBRepository;
   cotizacionRepo: ICotizacionRepository;
   interaccionRepo: IInteraccionRepository;
   tareaRepo: ITareaRepository;
@@ -253,6 +262,8 @@ export interface Cradle {
   versionService: VersionService;
   reporteVersionesService: ReporteVersionesService;
   knowledgeService: KnowledgeService;
+  pizarraKBService: PizarraKBService;
+  historialBusquedaKBService: HistorialBusquedaKBService;
   cotizacionService: CotizacionService;
   calculadoraCompacService: CalculadoraCompacService;
   seguimientoService: SeguimientoService;
@@ -276,6 +287,7 @@ export interface Cradle {
   bitacoraController: BitacoraController;
   versionController: VersionController;
   knowledgeController: KnowledgeController;
+  pizarraKBController: PizarraKBController;
   manualController: ManualController;
   busquedaGlobalService: BusquedaGlobalService;
   busquedaController: BusquedaController;
@@ -468,6 +480,14 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
     knowledgeRepo: asFunction(
       ({ firestoreDb }: Cradle): IKnowledgeRepository =>
         new FirestoreKnowledgeRepository(requireFirestore(firestoreDb)),
+    ).singleton(),
+    pizarraKBRepo: asFunction(
+      ({ firestoreDb }: Cradle): IPizarraKBRepository =>
+        new FirestorePizarraKBRepository(requireFirestore(firestoreDb)),
+    ).singleton(),
+    busquedaKBRepo: asFunction(
+      ({ firestoreDb }: Cradle): IBusquedaKBRepository =>
+        new FirestoreBusquedaKBRepository(requireFirestore(firestoreDb)),
     ).singleton(),
     cotizacionRepo: asFunction(
       ({ firestoreDb }: Cradle): ICotizacionRepository =>
@@ -762,6 +782,12 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
     knowledgeService: asFunction(
       (c: Cradle) => new KnowledgeService(c.knowledgeRepo, c.idGenerator, c.clock, c.bitacoraService),
     ).singleton(),
+    pizarraKBService: asFunction(
+      (c: Cradle) => new PizarraKBService(c.pizarraKBRepo, c.clock),
+    ).singleton(),
+    historialBusquedaKBService: asFunction(
+      (c: Cradle) => new HistorialBusquedaKBService(c.busquedaKBRepo, c.idGenerator, c.clock),
+    ).singleton(),
     cotizacionService: asFunction(
       (c: Cradle) =>
         new CotizacionService(
@@ -965,7 +991,10 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
         ),
     ).singleton(),
     knowledgeController: asFunction(
-      (c: Cradle) => new KnowledgeController(c.knowledgeService),
+      (c: Cradle) => new KnowledgeController(c.knowledgeService, c.historialBusquedaKBService),
+    ).singleton(),
+    pizarraKBController: asFunction(
+      (c: Cradle) => new PizarraKBController(c.pizarraKBService),
     ).singleton(),
     manualController: asFunction(() => new ManualController()).singleton(),
     busquedaGlobalService: asFunction(

@@ -1,5 +1,6 @@
 import type { Request, Response } from 'express';
 import type { ArchivoLote, KnowledgeService } from '../../../application/knowledge/KnowledgeService.js';
+import type { HistorialBusquedaKBService } from '../../../application/knowledge/HistorialBusquedaKBService.js';
 import type { ArticuloKB, VisibilidadKB } from '../../../core/entities/ArticuloKB.js';
 import { renderMarkdown } from '../view-helpers/markdown.js';
 import { camposDeError } from '../support/errores.js';
@@ -23,13 +24,14 @@ function corteDesde(valor: string): Date | null {
   return null;
 }
 
-/** Aplica categoría / recientes / orden a una lista ya filtrada por visibilidad. */
+/** Aplica categoría / tag / recientes / orden a una lista ya filtrada por visibilidad. */
 function filtrarYOrdenar(
   articulos: ArticuloKB[],
-  opts: { categoria: string; desde: string; orden: string },
+  opts: { categoria: string; tag: string; desde: string; orden: string },
 ): ArticuloKB[] {
   let out = articulos;
   if (opts.categoria) out = out.filter((a) => (a.categoria ?? '') === opts.categoria);
+  if (opts.tag) out = out.filter((a) => a.tags.includes(opts.tag));
   const corte = corteDesde(opts.desde);
   if (corte) out = out.filter((a) => a.updatedAt >= corte);
   const porTitulo = (a: ArticuloKB, b: ArticuloKB) => a.titulo.localeCompare(b.titulo, 'es');
@@ -38,12 +40,27 @@ function filtrarYOrdenar(
   return out;
 }
 
+/** Nube de tags con conteo, del total de artículos visibles (no del subconjunto ya filtrado). */
+function tagsDe(articulos: ArticuloKB[]): Array<{ nombre: string; total: number }> {
+  const cuenta = new Map<string, number>();
+  for (const a of articulos) {
+    for (const t of a.tags) cuenta.set(t, (cuenta.get(t) ?? 0) + 1);
+  }
+  return [...cuenta.entries()]
+    .map(([nombre, total]) => ({ nombre, total }))
+    .sort((a, b) => b.total - a.total || a.nombre.localeCompare(b.nombre, 'es'))
+    .slice(0, 40);
+}
+
 /**
  * Base de conocimiento. Sirve tres áreas con la misma lógica y distinta plantilla/contexto:
  *  - `/kb` público · `/portal/kb` clientes · `/app/kb` staff (+ CRUD).
  */
 export class KnowledgeController {
-  constructor(private readonly kb: KnowledgeService) {}
+  constructor(
+    private readonly kb: KnowledgeService,
+    private readonly historial: HistorialBusquedaKBService,
+  ) {}
 
   private layoutDe(req: Request): string {
     if (req.baseUrl.startsWith('/app')) return 'layouts/backoffice.njk';
@@ -60,20 +77,32 @@ export class KnowledgeController {
   listar = async (req: Request, res: Response): Promise<void> => {
     const texto = str(req.query.q);
     const categoria = str(req.query.categoria);
+    const tag = str(req.query.tag);
     const desde = str(req.query.desde);
     const orden = str(req.query.orden);
-    const todos = await this.kb.listarVisibles(contexto(req), texto ? { texto } : {});
+    const fraseExacta = str(req.query.frase) === '1';
+    const todos = await this.kb.listarVisibles(contexto(req), texto ? { texto, fraseExacta } : {});
+    if (texto.length >= 2 && req.user) await this.historial.registrar(req.user, texto);
     res.render('pages/kb/list', {
       titulo: 'Base de conocimiento',
-      articulos: filtrarYOrdenar(todos, { categoria, desde, orden }),
+      articulos: filtrarYOrdenar(todos, { categoria, tag, desde, orden }),
       categorias: this.categoriasDe(todos),
+      tags: tagsDe(todos),
+      historial: req.user ? await this.historial.listar(req.user) : [],
       q: texto,
       categoria,
+      tag,
       desde,
       orden,
+      fraseExacta,
       kbLayout: this.layoutDe(req),
       kbBase: this.baseDe(req),
     });
+  };
+
+  historialLimpiarPost = async (req: Request, res: Response): Promise<void> => {
+    await this.historial.limpiar(req.user!);
+    res.redirect(this.baseDe(req));
   };
 
   private categoriasDe(articulos: ArticuloKB[]): Array<{ nombre: string; total: number }> {
@@ -88,14 +117,40 @@ export class KnowledgeController {
   }
 
   ver = async (req: Request, res: Response): Promise<void> => {
-    const articulo = await this.kb.verVisible(contexto(req), str(req.params.idOrSlug));
+    const ctx = contexto(req);
+    const articulo = await this.kb.verVisible(ctx, str(req.params.idOrSlug));
     res.render('pages/kb/articulo', {
       titulo: articulo.titulo,
       articulo,
       cuerpoHtml: renderMarkdown(articulo.cuerpoMarkdown),
+      relacionados: await this.kb.relacionados(ctx, articulo),
       kbLayout: this.layoutDe(req),
       kbBase: this.baseDe(req),
       puedeEditar: req.user?.permisos.includes('kb:escribir') ?? false,
+    });
+  };
+
+  /** Vista dividida: dos artículos lado a lado (`?a=idOrSlug&b=idOrSlug`). */
+  comparar = async (req: Request, res: Response): Promise<void> => {
+    const ctx = contexto(req);
+    const idA = str(req.query.a);
+    const idB = str(req.query.b);
+    if (!idA) {
+      res.redirect(this.baseDe(req));
+      return;
+    }
+    const articuloA = await this.kb.verVisible(ctx, idA);
+    const articuloB = idB ? await this.kb.verVisible(ctx, idB) : null;
+    const todos = await this.kb.listarVisibles(ctx);
+    res.render('pages/kb/comparar', {
+      titulo: articuloB ? `${articuloA.titulo} · ${articuloB.titulo}` : `Comparar: ${articuloA.titulo}`,
+      articuloA,
+      articuloB,
+      cuerpoHtmlA: renderMarkdown(articuloA.cuerpoMarkdown),
+      cuerpoHtmlB: articuloB ? renderMarkdown(articuloB.cuerpoMarkdown) : null,
+      otros: todos.filter((a) => a.id !== articuloA.id && a.id !== articuloB?.id),
+      kbLayout: this.layoutDe(req),
+      kbBase: this.baseDe(req),
     });
   };
 
@@ -103,14 +158,17 @@ export class KnowledgeController {
   gestionar = async (req: Request, res: Response): Promise<void> => {
     const ctx = { esStaff: true, esCliente: false, anonimo: false };
     const categoria = str(req.query.categoria);
+    const tag = str(req.query.tag);
     const desde = str(req.query.desde);
     const orden = str(req.query.orden) || 'recientes';
     const todos = await this.kb.listarVisibles(ctx);
     res.render('pages/backoffice/kb/gestion', {
       titulo: 'Gestionar base de conocimiento',
-      articulos: filtrarYOrdenar(todos, { categoria, desde, orden }),
+      articulos: filtrarYOrdenar(todos, { categoria, tag, desde, orden }),
       categorias: this.categoriasDe(todos),
+      tags: tagsDe(todos),
       categoria,
+      tag,
       desde,
       orden,
       aviso: str(req.query.aviso) || null,

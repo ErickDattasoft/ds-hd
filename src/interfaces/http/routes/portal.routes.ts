@@ -35,6 +35,13 @@ export function portalRoutes(container: Container): Router {
 
   const kb = () => container.resolve('knowledgeController');
   r.get('/kb', (req, res) => kb().listar(req, res));
+  r.post('/kb/historial/limpiar', (req, res) => kb().historialLimpiarPost(req, res));
+  r.get('/kb/comparar', (req, res) => kb().comparar(req, res));
+
+  const pizarra = () => container.resolve('pizarraKBController');
+  r.get('/kb/pizarra', (req, res) => pizarra().ver(req, res));
+  r.post('/kb/pizarra', (req, res) => pizarra().guardarJson(req, res));
+
   r.get('/kb/:idOrSlug', (req, res) => kb().ver(req, res));
 
   r.get('/manual', (req, res) => container.resolve('manualController').ver(req, res));

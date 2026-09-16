@@ -80,6 +80,32 @@ Lista visible para un contexto dado (aplica publicado + visibilidad).
 
 ***
 
+### relacionados()
+
+> **relacionados**(`ctx`, `articulo`, `limite?`): `Promise`\<[`ArticuloKB`](../../../../core/entities/ArticuloKB/classes/ArticuloKB.md)[]\>
+
+Otros artículos visibles que comparten al menos un tag con `articulo`, más compartidos primero.
+
+#### Parameters
+
+##### ctx
+
+[`Contexto`](../type-aliases/Contexto.md)
+
+##### articulo
+
+[`ArticuloKB`](../../../../core/entities/ArticuloKB/classes/ArticuloKB.md)
+
+##### limite?
+
+`number` = `5`
+
+#### Returns
+
+`Promise`\<[`ArticuloKB`](../../../../core/entities/ArticuloKB/classes/ArticuloKB.md)[]\>
+
+***
+
 ### obtenerParaEditar()
 
 > **obtenerParaEditar**(`actor`, `id`): `Promise`\<[`ArticuloKB`](../../../../core/entities/ArticuloKB/classes/ArticuloKB.md)\>

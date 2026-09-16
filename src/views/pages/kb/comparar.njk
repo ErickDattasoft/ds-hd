@@ -1,0 +1,30 @@
+{% extends kbLayout %}
+{% block title %}{{ titulo }}{% endblock %}
+{% block content %}
+  <p><a href="{{ kbBase }}/{{ articuloA.slug or articuloA.id }}">← {{ articuloA.titulo }}</a></p>
+  {% if not articuloB %}
+    <h1>Comparar: {{ articuloA.titulo }}</h1>
+    <p class="muted">Elige el segundo artículo para verlos lado a lado.</p>
+    <form method="get" class="filterbar">
+      <input type="hidden" name="a" value="{{ articuloA.slug or articuloA.id }}" />
+      <label class="field"><span>Artículo B</span>
+        <select name="b" required>
+          <option value="">elige uno…</option>
+          {% for o in otros %}<option value="{{ o.slug or o.id }}">{{ o.titulo }}</option>{% endfor %}
+        </select>
+      </label>
+      <button class="btn btn--sm" type="submit">Comparar</button>
+    </form>
+  {% else %}
+    <div class="kb-comparar">
+      <article class="kb-article">
+        <h1>{{ articuloA.titulo }}</h1>
+        <div class="prose">{{ cuerpoHtmlA | safe }}</div>
+      </article>
+      <article class="kb-article">
+        <h1>{{ articuloB.titulo }}</h1>
+        <div class="prose">{{ cuerpoHtmlB | safe }}</div>
+      </article>
+    </div>
+  {% endif %}
+{% endblock %}

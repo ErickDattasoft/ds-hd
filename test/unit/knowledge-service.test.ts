@@ -85,4 +85,69 @@ describe('KnowledgeService — lote y export', () => {
     expect(Object.keys(archivos)).toEqual(['scripts/reinicio.bat']);
     expect(strFromU8(archivos['scripts/reinicio.bat']!)).toBe('net stop / net start');
   });
+
+  it('relacionados: artículos visibles que comparten tags, más compartidos primero, excluye el propio', async () => {
+    const base = { publicado: true, visibilidad: 'publico' as const };
+    const a = new ArticuloKB({ id: 'a', titulo: 'Art A', cuerpoMarkdown: 'contenido suficiente', tags: ['contpaqi', 'nomina'], ...base });
+    await repo.save(a);
+    await repo.save(new ArticuloKB({ id: 'b', titulo: 'Art B', cuerpoMarkdown: 'contenido suficiente', tags: ['contpaqi'], ...base }));
+    await repo.save(new ArticuloKB({ id: 'c', titulo: 'Art C', cuerpoMarkdown: 'contenido suficiente', tags: ['contpaqi', 'nomina'], ...base }));
+    await repo.save(new ArticuloKB({ id: 'd', titulo: 'Art D', cuerpoMarkdown: 'contenido suficiente', tags: ['bancos'], ...base }));
+
+    const relacionados = await service.relacionados(ctxStaff, a);
+    expect(relacionados.map((r) => r.id)).toEqual(['c', 'b']);
+  });
+
+  it('relacionados: sin tags no hay nada que relacionar', async () => {
+    const a = new ArticuloKB({ id: 'a', titulo: 'Art A', cuerpoMarkdown: 'contenido suficiente', publicado: true, visibilidad: 'publico' });
+    expect(await service.relacionados(ctxStaff, a)).toEqual([]);
+  });
+});
+
+describe('KnowledgeService — búsqueda: tag, frase exacta y cuerpo', () => {
+  let repo: InMemoryKnowledgeRepository;
+  let service: KnowledgeService;
+
+  beforeEach(async () => {
+    seq = 0;
+    repo = new InMemoryKnowledgeRepository();
+    const clock = new FixedClock(new Date('2026-09-16T12:00:00Z'));
+    service = new KnowledgeService(
+      repo,
+      ids,
+      clock,
+      new BitacoraService(new InMemoryBitacoraRepository(), ids, clock, silentLogger),
+    );
+    await repo.save(
+      new ArticuloKB({
+        id: 'a1', titulo: 'Reinicio de servicio Contpaqi', cuerpoMarkdown: 'Detener y arrancar el servicio de licencias.',
+        tags: ['contpaqi', 'licencias'], publicado: true, visibilidad: 'publico',
+      }),
+    );
+    await repo.save(
+      new ArticuloKB({
+        id: 'a2', titulo: 'Backup de nómina', cuerpoMarkdown: 'Respaldo manual del módulo de nómina.',
+        tags: ['nomina'], publicado: true, visibilidad: 'publico',
+      }),
+    );
+  });
+
+  const ctxPublico = { esStaff: false, esCliente: false, anonimo: true };
+
+  it('filtro por tag exacto', async () => {
+    const r = await service.listarVisibles(ctxPublico, { tag: 'nomina' });
+    expect(r.map((a) => a.id)).toEqual(['a2']);
+  });
+
+  it('texto sin fraseExacta: busca cada palabra por separado, incluido el cuerpo', async () => {
+    const r = await service.listarVisibles(ctxPublico, { texto: 'arrancar servicio' });
+    expect(r.map((a) => a.id)).toEqual(['a1']);
+  });
+
+  it('fraseExacta: exige la frase completa contigua', async () => {
+    const sinFrase = await service.listarVisibles(ctxPublico, { texto: 'servicio arrancar', fraseExacta: true });
+    expect(sinFrase).toHaveLength(0);
+    const conFrase = await service.listarVisibles(ctxPublico, { texto: 'arrancar el servicio', fraseExacta: true });
+    expect(conFrase.map((a) => a.id)).toEqual(['a1']);
+  });
 });
