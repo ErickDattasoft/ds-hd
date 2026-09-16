@@ -14,7 +14,7 @@ export function securityHeaders(config: AppConfig): RequestHandler {
         scriptSrc: ["'self'", 'https://challenges.cloudflare.com'],
         styleSrc: ["'self'", "'unsafe-inline'"],
         imgSrc: ["'self'", 'data:', 'https:'],
-        connectSrc: ["'self'", 'https://challenges.cloudflare.com'],
+        connectSrc: ["'self'", 'https://challenges.cloudflare.com', 'https://api.github.com'],
         frameSrc: ['https://challenges.cloudflare.com'],
         objectSrc: ["'none'"],
         baseUri: ["'self'"],

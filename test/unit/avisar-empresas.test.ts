@@ -177,7 +177,7 @@ describe('AvisarEmpresasService', () => {
     expect((await empresas.findById('e4'))?.ultimoAvisoVersionesEn).toEqual(clock.now());
   });
 
-  it('WhatsApp sin webhook configurado reporta sin_webhook_configurado', async () => {
+  it('WhatsApp sin webhook configurado cae al respaldo manual (wa.me) como el CRM viejo', async () => {
     await versiones.save(new VersionSistema({ id: 'v1', sistema: 'Contabilidad', versionActual: '19.1.0' }));
     await empresas.save(
       new Empresa({
@@ -196,8 +196,12 @@ describe('AvisarEmpresasService', () => {
       canal: 'whatsapp',
     });
 
-    expect(resultados[0]).toMatchObject({ enviado: false, motivo: 'sin_webhook_configurado' });
+    expect(resultados[0]!.enviado).toBe(true);
+    expect(resultados[0]!.motivo).toBeUndefined();
+    expect(resultados[0]!.whatsappManual?.telefono).toBe('9991234567');
+    expect(resultados[0]!.whatsappManual?.mensaje).toBeTruthy();
     expect(gateway.webhooksLlamados).toHaveLength(0);
+    expect((await empresas.findById('e5'))?.ultimoAvisoVersionesEn).toEqual(clock.now());
   });
 
   it('WhatsApp sin ningún contacto con teléfono reporta sin_contacto_telefono', async () => {

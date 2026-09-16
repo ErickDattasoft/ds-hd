@@ -5,6 +5,11 @@
     <h1>Resultado del aviso de {{ 'versiones' if tipo == 'versiones' else 'licencias' }} ({{ 'WhatsApp' if canal == 'whatsapp' else 'correo' }})</h1>
     <a class="btn btn--sm btn--ghost" href="/app/empresas">Volver a empresas</a>
   </div>
+  {% if resultados | selectattr('whatsappManual') | list | length %}
+    <p class="alert alert--warn">No hay webhook de WhatsApp configurado en
+      <a href="/app/configuracion/integraciones">Configuración → Integraciones</a> — abre cada
+      chat manualmente con el botón "Abrir WhatsApp" de cada fila (mensaje ya redactado).</p>
+  {% endif %}
   <table class="data-table">
     <thead><tr><th>Empresa</th><th>Resultado</th></tr></thead>
     <tbody>
@@ -12,7 +17,11 @@
         <tr>
           <td>{{ r.empresaNombre }}</td>
           <td>
-            {% if r.enviado %}
+            {% if r.whatsappManual %}
+              <span class="badge badge--ok">Enviado</span>
+              <a class="btn btn--secondary btn--sm" target="_blank" rel="noopener"
+                 href="https://wa.me/{{ r.whatsappManual.telefono | replace('+', '') | replace(' ', '') }}?text={{ r.whatsappManual.mensaje | urlencode }}">Abrir WhatsApp</a>
+            {% elif r.enviado %}
               <span class="badge badge--ok">Enviado</span>
             {% elif r.motivo == 'sin_pendientes' %}
               <span class="badge">Sin pendientes, no se envió</span>
@@ -20,8 +29,6 @@
               <span class="badge badge--warning">Sin contacto con correo</span>
             {% elif r.motivo == 'sin_contacto_telefono' %}
               <span class="badge badge--warning">Sin contacto con teléfono</span>
-            {% elif r.motivo == 'sin_webhook_configurado' %}
-              <span class="badge badge--warning">Falta configurar el webhook de empresas</span>
             {% else %}
               <span class="badge badge--danger">No encontrada</span>
             {% endif %}

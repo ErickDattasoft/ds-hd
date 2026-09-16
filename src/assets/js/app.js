@@ -97,6 +97,75 @@
     toast('No se pudo completar la acción. Recarga la página.', 'error');
   });
 
+  // ── Puntos de restauración (GitHub): crea un tag anotado sobre HEAD de main ──
+  // El PAT nunca sale del navegador — fetch directo del cliente a api.github.com,
+  // igual que hacía el CRM viejo (localStorage, sin pasar por el servidor de ds-hd).
+  (function () {
+    var GH_OWNER = 'ErickDattasoft';
+    var GH_REPO = 'ds-hd';
+    var GH_PAT_KEY = 'ds_hd_gh_pat';
+    var contenedor = document.querySelector('[data-gh-punto]');
+    if (!contenedor) return;
+    var patInput = contenedor.querySelector('[data-gh-pat]');
+    if (patInput) patInput.value = localStorage.getItem(GH_PAT_KEY) || '';
+    contenedor.querySelector('[data-gh-crear]').addEventListener('click', function () {
+      var pat = (patInput.value || '').trim();
+      var nombre = contenedor.querySelector('[data-gh-nombre]').value.trim().replace(/\s+/g, '-');
+      var desc = contenedor.querySelector('[data-gh-desc]').value.trim() || ('Punto de restauración ' + nombre);
+      var estado = contenedor.querySelector('[data-gh-estado]');
+      var btn = contenedor.querySelector('[data-gh-crear]');
+      if (!pat) { toast('Falta el Personal Access Token de GitHub'); return; }
+      if (!nombre) { toast('El nombre del punto no puede estar vacío'); return; }
+      try { localStorage.setItem(GH_PAT_KEY, pat); } catch (e) { void e; }
+
+      var headers = { Authorization: 'Bearer ' + pat, Accept: 'application/vnd.github+json' };
+      btn.disabled = true;
+      estado.textContent = '⏳ Obteniendo commit actual…';
+
+      fetch('https://api.github.com/repos/' + GH_OWNER + '/' + GH_REPO + '/git/ref/heads/main', { headers: headers })
+        .then(function (r) {
+          if (!r.ok) throw new Error(r.status === 401 ? 'Token inválido o sin permiso' : 'Error ' + r.status);
+          return r.json();
+        })
+        .then(function (ref) {
+          estado.textContent = '⏳ Creando tag anotado…';
+          return fetch('https://api.github.com/repos/' + GH_OWNER + '/' + GH_REPO + '/git/tags', {
+            method: 'POST',
+            headers: Object.assign({ 'Content-Type': 'application/json' }, headers),
+            body: JSON.stringify({
+              tag: nombre,
+              message: desc,
+              object: ref.object.sha,
+              type: 'commit',
+              tagger: { name: 'ds-hd', email: 'erick.casas@dattasoft.mx', date: new Date().toISOString() },
+            }),
+          }).then(function (r) {
+            if (!r.ok) return r.json().then(function (err) { throw new Error(err.message || 'Error ' + r.status); });
+            return r.json();
+          });
+        })
+        .then(function (tag) {
+          return fetch('https://api.github.com/repos/' + GH_OWNER + '/' + GH_REPO + '/git/refs', {
+            method: 'POST',
+            headers: Object.assign({ 'Content-Type': 'application/json' }, headers),
+            body: JSON.stringify({ ref: 'refs/tags/' + nombre, sha: tag.sha }),
+          }).then(function (r) {
+            if (!r.ok) return r.json().then(function (err) { throw new Error(err.message || 'Error ' + r.status); });
+          });
+        })
+        .then(function () {
+          estado.textContent = '✓ Punto "' + nombre + '" creado en GitHub';
+          toast('🔖 Punto de restauración "' + nombre + '" guardado');
+        })
+        .catch(function (err) {
+          estado.textContent = '✗ ' + err.message;
+        })
+        .finally(function () {
+          btn.disabled = false;
+        });
+    });
+  })();
+
   // ── Restaurar backup: lee el archivo en el navegador y lo manda como JSON ──
   document.addEventListener('submit', function (e) {
     var form = e.target.closest('[data-restaurar-backup]');
@@ -1079,6 +1148,29 @@
         })
         .catch(function () { if (msg) msg.textContent = '❌ No se pudo subir. Revisa tu conexión.'; });
     });
+  });
+
+  // ── Dashboard: descartar el banner de licencias por vencer (por hoy) ─────
+  var ALERTAS_DESCARTADAS_KEY = 'ds_hd_alertas_vencimiento_descartadas';
+  function hoyISO() {
+    return new Date().toISOString().slice(0, 10);
+  }
+  function aplicarDescarteBanner(banner) {
+    var firma = banner.getAttribute('data-firma-alertas') || '';
+    var guardado;
+    try { guardado = JSON.parse(localStorage.getItem(ALERTAS_DESCARTADAS_KEY) || 'null'); } catch (e) { void e; guardado = null; }
+    if (guardado && guardado.fecha === hoyISO() && guardado.firma === firma) banner.hidden = true;
+  }
+  document.querySelectorAll('#banner-licencias[data-firma-alertas]').forEach(aplicarDescarteBanner);
+  document.addEventListener('click', function (e) {
+    var btn = e.target.closest('[data-descartar-banner]');
+    if (!btn) return;
+    var banner = document.querySelector(btn.getAttribute('data-descartar-banner'));
+    if (!banner) return;
+    try {
+      localStorage.setItem(ALERTAS_DESCARTADAS_KEY, JSON.stringify({ fecha: hoyISO(), firma: banner.getAttribute('data-firma-alertas') || '' }));
+    } catch (e) { void e; }
+    banner.hidden = true;
   });
 
   document.addEventListener('DOMContentLoaded', function () {

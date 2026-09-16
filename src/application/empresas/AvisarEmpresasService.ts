@@ -18,14 +18,18 @@ export interface ResultadoAviso {
   empresaId: string;
   empresaNombre: string;
   enviado: boolean;
-  motivo?: 'sin_pendientes' | 'sin_contacto_correo' | 'sin_contacto_telefono' | 'sin_webhook_configurado' | 'no_encontrada';
+  motivo?: 'sin_pendientes' | 'sin_contacto_correo' | 'sin_contacto_telefono' | 'no_encontrada';
+  /** Solo cuando enviado=true por WhatsApp sin webhook n8n: el cliente debe abrir
+   * wa.me con este teléfono/mensaje (mismo respaldo "WhatsApp Web" del CRM viejo). */
+  whatsappManual?: { telefono: string; mensaje: string };
 }
 
 /** Caso de uso: avisar (por correo o WhatsApp) a un lote de empresas sobre versiones
  * desactualizadas o licencias por vencer/vencidas, con la plantilla y contactos de soporte
  * configurados. WhatsApp no usa CallMeBot (solo manda al número propio dado de alta) — manda
  * el evento `empresa.avisar_whatsapp` al webhook n8n dedicado, para que se enrute ahí a un
- * proveedor real de WhatsApp Business. */
+ * proveedor real de WhatsApp Business. Si no hay webhook configurado, cae al mismo respaldo
+ * que el CRM viejo: el cliente abre wa.me/WhatsApp Web con el mensaje ya redactado. */
 export class AvisarEmpresasService {
   constructor(
     private readonly empresas: IEmpresaRepository,
@@ -103,19 +107,22 @@ export class AvisarEmpresasService {
         contacto_soporte: formatearContactoSoporte(contactosSoporte),
       });
 
+      let whatsappManual: { telefono: string; mensaje: string } | undefined;
       if (canal === 'whatsapp') {
-        if (!integraciones.n8nWebhookEmpresas) {
-          resultados.push({ empresaId, empresaNombre: empresa.nombre, enviado: false, motivo: 'sin_webhook_configurado' });
-          continue;
+        if (integraciones.n8nWebhookEmpresas) {
+          await this.gateway.postWebhook(integraciones.n8nWebhookEmpresas, {
+            evento: 'empresa.avisar_whatsapp',
+            empresaId: empresa.id,
+            empresaNombre: empresa.nombre,
+            telefono,
+            mensaje,
+            _ts: Date.now(),
+          });
+        } else {
+          // Sin n8n configurado: mismo respaldo que el CRM viejo — el navegador abre
+          // WhatsApp Web/wa.me por el usuario en vez de mandarlo por webhook.
+          whatsappManual = { telefono, mensaje };
         }
-        await this.gateway.postWebhook(integraciones.n8nWebhookEmpresas, {
-          evento: 'empresa.avisar_whatsapp',
-          empresaId: empresa.id,
-          empresaNombre: empresa.nombre,
-          telefono,
-          mensaje,
-          _ts: Date.now(),
-        });
       } else {
         await this.email.enviar({
           para: [{ email: contacto!.email!, nombre: contacto!.nombre }],
@@ -140,7 +147,7 @@ export class AvisarEmpresasService {
             ? `Aviso de ${input.tipo} enviado por WhatsApp a ${contacto!.nombre} (${telefono})`
             : `Aviso de ${input.tipo} enviado a ${contacto!.nombre} (${contacto!.email})`,
       });
-      resultados.push({ empresaId, empresaNombre: empresa.nombre, enviado: true });
+      resultados.push({ empresaId, empresaNombre: empresa.nombre, enviado: true, whatsappManual });
     }
     return resultados;
   }

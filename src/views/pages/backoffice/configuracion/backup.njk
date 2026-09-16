@@ -22,6 +22,28 @@
     </p>
   {% endif %}
 
+  <h2>🔖 Puntos de restauración (GitHub)</h2>
+  <p class="muted">
+    Crea una etiqueta (tag) en GitHub sobre el último commit de <code>main</code> para marcar
+    una versión estable del código de ds-hd. Necesitas un Personal Access Token de GitHub con
+    permiso <strong>repo</strong> (Settings → Developer settings → Personal access tokens) — se
+    guarda solo en este navegador (nunca se manda al servidor de ds-hd).
+  </p>
+  <div class="form" data-gh-punto>
+    <label class="field"><span>GitHub Personal Access Token</span>
+      <input type="password" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" data-gh-pat autocomplete="off" />
+    </label>
+    <div class="form-grid">
+      <label class="field"><span>Nombre del punto</span><input placeholder="v1-estable" data-gh-nombre /></label>
+      <label class="field"><span>Descripción (opcional)</span><input placeholder="Antes de..." data-gh-desc /></label>
+    </div>
+    <div class="page-head__actions">
+      <button type="button" class="btn btn--sm" data-gh-crear>🔖 Crear punto de restauración</button>
+      <a class="btn btn--ghost btn--sm" target="_blank" rel="noopener" href="https://github.com/ErickDattasoft/ds-hd/tags">📋 Ver puntos en GitHub ↗</a>
+    </div>
+    <span class="muted" data-gh-estado></span>
+  </div>
+
   <h2>Restaurar</h2>
   <p class="alert alert--warning">
     Restaurar <strong>agrega o actualiza</strong> lo que traiga el archivo (por id) — nunca

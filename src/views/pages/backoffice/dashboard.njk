@@ -41,7 +41,10 @@
   {% endif %}
 
   {% if m.licencias and m.licencias.banner | length %}
-  <div class="alert alert--warn" role="alert">
+  {% set firmas = [] %}
+  {% for e in m.licencias.banner %}{% set _ = firmas.push(e.empresaId + '|' + e.vencidas + '|' + e.porVencer + '|' + e.diasMin) %}{% endfor %}
+  <div class="alert alert--warn" role="alert" id="banner-licencias"
+       data-firma-alertas="{{ firmas | sort | join(';') }}">
     <p><strong>Licencias por vencer</strong> — {{ m.licencias.empresasEnRiesgo }}
     empresa{{ 's' if m.licencias.empresasEnRiesgo != 1 }} con
     {{ m.licencias.vencidas }} vencida{{ 's' if m.licencias.vencidas != 1 }} y
@@ -56,7 +59,10 @@
         </li>
       {% endfor %}
     </ul>
-    <a class="btn btn--secondary btn--sm" href="/app/empresas?pendientes=1">Ver todas y avisar</a>
+    <div class="page-head__actions">
+      <a class="btn btn--secondary btn--sm" href="/app/empresas?pendientes=1">Ver todas y avisar</a>
+      <button type="button" class="btn btn--ghost btn--sm" data-descartar-banner="#banner-licencias">✕ Descartar</button>
+    </div>
   </div>
   {% endif %}
 
