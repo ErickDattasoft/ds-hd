@@ -14,6 +14,7 @@
   {% if filtro.agenda == '1' %}<p class="muted">Solo tickets con atención programada, del más próximo al más lejano.</p>{% endif %}
 
   <form method="get" class="filterbar">
+    <input type="hidden" name="f" value="1" />
     {% if filtro.agenda == '1' %}<input type="hidden" name="agenda" value="1" />{% endif %}
     <input type="search" name="texto" value="{{ filtro.texto }}" placeholder="Buscar por asunto, # o empresa…" autocomplete="off" spellcheck="false" />
     <select name="estado">
@@ -24,7 +25,8 @@
       <option value="">Cualquier prioridad</option>
       {% for p in config.prioridades %}<option value="{{ p }}" {{ 'selected' if filtro.prioridad == p }}>{{ p }}</option>{% endfor %}
     </select>
-    <label class="field--check"><input type="checkbox" name="abiertos" value="0" {{ 'checked' if filtro.abiertos == '0' }} /> incluir cerrados</label>
+    <label class="field--check"><input type="checkbox" name="abiertos" value="0" data-filtro-recordar="tickets-abiertos" {{ 'checked' if filtro.abiertos == '0' }} /> incluir cerrados</label>
+    <label class="field--check"><input type="checkbox" data-toggle-columna="SLA" checked /> mostrar SLA</label>
     <button class="btn btn--sm" type="submit">Filtrar</button>
     <button class="btn btn--sm btn--ghost" type="submit" formaction="/app/tickets/exportar">Exportar Excel</button>
   </form>

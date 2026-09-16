@@ -7,6 +7,7 @@ import nunjucks from 'nunjucks';
 import type { Container } from './config/container.js';
 import type { AppConfig } from './config/env.js';
 import { APP_VERSION } from './config/version.js';
+import { INFO_APP } from './core/entities/AcercaDe.js';
 import { buildRouter } from './interfaces/http/routes/index.js';
 import { securityHeaders } from './interfaces/http/middlewares/securityHeaders.js';
 import { errorHandler, notFoundHandler } from './interfaces/http/middlewares/errorHandler.js';
@@ -134,6 +135,7 @@ export function createApp(container: Container, options: CreateAppOptions = {}):
   // Locals disponibles en todas las vistas.
   app.use((req, res, next) => {
     res.locals.config = { baseUrl: config.baseUrl, env: config.env };
+    res.locals.appNombre = INFO_APP.nombre;
     res.locals.currentPath = req.path;
     res.locals.can = (permiso: string): boolean => req.user?.permisos.includes(permiso) ?? false;
     const tema = req.cookies?.theme;

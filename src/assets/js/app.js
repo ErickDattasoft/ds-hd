@@ -1204,11 +1204,75 @@
     banner.hidden = true;
   });
 
+  // ── Tablas largas: encabezado fijo justo debajo del topbar (--topbar-h real) ─
+  function medirTopbar() {
+    var topbar = document.querySelector('.topbar');
+    if (topbar) document.documentElement.style.setProperty('--topbar-h', topbar.offsetHeight + 'px');
+  }
+
+  // ── Tablas: columnas opcionales (ej. ocultar SLA si no se usa), por página ───
+  function indiceColumna(tabla, nombre) {
+    var ths = tabla.tHead ? tabla.tHead.rows[0].cells : [];
+    for (var i = 0; i < ths.length; i++) {
+      if (ths[i].textContent.trim().toLowerCase() === nombre.toLowerCase()) return i;
+    }
+    return -1;
+  }
+  function aplicarColumna(tabla, idx, visible) {
+    if (idx < 0) return;
+    Array.prototype.forEach.call(tabla.rows, function (r) {
+      if (r.cells[idx]) r.cells[idx].hidden = !visible;
+    });
+  }
+  function initColumnasOpcionales() {
+    document.querySelectorAll('[data-toggle-columna]').forEach(function (chk) {
+      var nombre = chk.getAttribute('data-toggle-columna');
+      var tabla = document.querySelector('table.data-table');
+      if (!tabla || chk.__enh) return;
+      chk.__enh = true;
+      var clave = 'ds_hd_col_' + location.pathname + ':' + nombre;
+      var guardado = lee(clave);
+      if (guardado !== null) chk.checked = guardado;
+      aplicarColumna(tabla, indiceColumna(tabla, nombre), chk.checked);
+      chk.addEventListener('change', function () {
+        guarda(clave, chk.checked);
+        aplicarColumna(tabla, indiceColumna(tabla, nombre), chk.checked);
+      });
+    });
+  }
+
+  // ── Filtros que se recuerdan entre visitas (ej. "incluir cerrados") ──────────
+  // El checkbox se marca `data-filtro-recordar="<clave>"`. Si llegas a la página SIN pasar
+  // por el formulario (nav lateral, "Tickets" del sidebar, etc. — se detecta por la ausencia
+  // del marcador `f=1` que el propio formulario siempre manda), y la última vez lo dejaste
+  // marcado, se re-aplica solo con un redirect. Si SÍ vienes de enviar el formulario
+  // (`f=1` presente), se respeta tal cual lo mandaste, incluso desmarcado.
+  function initFiltrosRecordados() {
+    document.querySelectorAll('[data-filtro-recordar]').forEach(function (cb) {
+      var clave = 'ds_hd_filtro_' + cb.getAttribute('data-filtro-recordar');
+      var url = new URL(location.href);
+      if (!url.searchParams.has('f')) {
+        var guardado = lee(clave);
+        if (guardado === true && !cb.checked) {
+          url.searchParams.set(cb.name, cb.value);
+          url.searchParams.set('f', '1');
+          location.replace(url.toString());
+          return;
+        }
+      }
+      cb.addEventListener('change', function () { guarda(clave, cb.checked); });
+    });
+  }
+
   document.addEventListener('DOMContentLoaded', function () {
     updateToggle();
     initKanban();
     initTablas();
+    medirTopbar();
+    initColumnasOpcionales();
+    initFiltrosRecordados();
   });
+  window.addEventListener('resize', medirTopbar);
   document.body.addEventListener('htmx:afterSwap', function (e) {
     initKanban();
     initTablas(e.target);

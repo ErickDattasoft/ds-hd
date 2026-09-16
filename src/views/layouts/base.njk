@@ -6,7 +6,8 @@
   <meta name="color-scheme" content="light dark" />
   <meta name="theme-color" content="#f6f7f9" media="(prefers-color-scheme: light)" />
   <meta name="theme-color" content="#0e1116" media="(prefers-color-scheme: dark)" />
-  <title>{% block title %}{{ titulo | default('ds-hd') }}{% endblock %} · ds-hd</title>
+  <title>{% block title %}{{ titulo | default(appNombre) }}{% endblock %} · {{ appNombre }}</title>
+  <link rel="icon" href="/logo" />
   <link rel="stylesheet" href="/static/build/tokens.css" />
   <link rel="stylesheet" href="/static/build/roles.css" />
   <link rel="stylesheet" href="/static/build/base.css" />

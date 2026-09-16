@@ -81,6 +81,9 @@
 
   --transition: 150ms cubic-bezier(0.4, 0, 0.2, 1);
   --sidebar-w: 15rem;
+  /* Alto real del topbar, medido por JS (initTablas) — el encabezado de las tablas largas
+     se pega justo debajo. El valor de aquí es solo un respaldo antes de que corra el JS. */
+  --topbar-h: 3.75rem;
 }
 
 /* ── Tema oscuro ─────────────────────────────────────────────────────────── */
