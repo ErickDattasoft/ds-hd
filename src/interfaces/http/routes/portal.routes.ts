@@ -37,5 +37,7 @@ export function portalRoutes(container: Container): Router {
   r.get('/kb', (req, res) => kb().listar(req, res));
   r.get('/kb/:idOrSlug', (req, res) => kb().ver(req, res));
 
+  r.get('/manual', (req, res) => container.resolve('manualController').ver(req, res));
+
   return r;
 }

@@ -11,12 +11,13 @@
  * Uso: npm run docs:manuals [-- --check]
  */
 import { readdirSync, readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 
 const ROOT = process.cwd();
 const SOURCES_DIR = join(ROOT, 'docs/manual/_sources');
 const SCREENSHOTS_DIR = join(ROOT, 'docs/manual/screenshots');
 const DIST_DIR = join(ROOT, 'docs/manual/dist');
+const TS_MODULE = join(ROOT, 'src/infrastructure/content/manualesGenerados.ts');
 const check = process.argv.includes('--check');
 
 type Audiencia = 'cliente' | 'staff';
@@ -118,6 +119,16 @@ const manuales: Record<string, string> = {
   'MANUAL-USUARIO-FINAL.md': armarManual('Manual de usuario final — Portal de cliente', cliente),
 };
 
+// Cloudflare Workers no tiene filesystem para leer los .md en runtime (ver
+// scripts/build-worker.mjs) — se embebe el mismo contenido como módulo TS para que el
+// "Manual de uso" dentro de la app funcione igual en Node y en Workers.
+const tsModule = [
+  '// Generado automáticamente por `npm run docs:manuals` — no editar a mano.',
+  `export const MANUAL_STAFF_MD = ${JSON.stringify(manuales['MANUAL-STAFF.md'])};`,
+  `export const MANUAL_USUARIO_FINAL_MD = ${JSON.stringify(manuales['MANUAL-USUARIO-FINAL.md'])};`,
+  '',
+].join('\n');
+
 if (check) {
   let desactualizado = false;
   for (const [archivo, contenido] of Object.entries(manuales)) {
@@ -127,6 +138,11 @@ if (check) {
       console.error(`${archivo} desactualizado respecto a docs/manual/_sources/.`);
       desactualizado = true;
     }
+  }
+  const tsActual = existsSync(TS_MODULE) ? readFileSync(TS_MODULE, 'utf8') : null;
+  if (tsActual !== tsModule) {
+    console.error('src/infrastructure/content/manualesGenerados.ts desactualizado respecto a docs/manual/_sources/.');
+    desactualizado = true;
   }
   if (desactualizado) {
     console.error('Corre `npm run docs:manuals` y commitea el resultado.');
@@ -138,6 +154,8 @@ if (check) {
   for (const [archivo, contenido] of Object.entries(manuales)) {
     writeFileSync(join(DIST_DIR, archivo), contenido);
   }
+  mkdirSync(dirname(TS_MODULE), { recursive: true });
+  writeFileSync(TS_MODULE, tsModule);
   console.log(
     `Manuales regenerados: ${Object.keys(manuales).join(', ')} (${fuentes.length} fuentes: ${staff.length} staff, ${cliente.length} cliente).`,
   );

@@ -25,13 +25,21 @@
       {% endfor %}
     </ul>
   {% endfor %}
-  {% if area == 'backoffice' %}
+  {% if area == 'backoffice' or area == 'portal' %}
+    {% set manualHref = '/app/manual' if area == 'backoffice' else '/portal/manual' %}
     <ul class="sidebar__list sidebar__list--footer">
       <li>
-        <a class="sidebar__link {{ 'is-active' if currentPath == '/app/acerca-de' }}" href="/app/acerca-de">
-          <span class="sidebar__icon" aria-hidden="true">ℹ️</span>Acerca de
+        <a class="sidebar__link {{ 'is-active' if currentPath == manualHref }}" href="{{ manualHref }}">
+          <span class="sidebar__icon" aria-hidden="true">📖</span>Manual de uso
         </a>
       </li>
+      {% if area == 'backoffice' %}
+        <li>
+          <a class="sidebar__link {{ 'is-active' if currentPath == '/app/acerca-de' }}" href="/app/acerca-de">
+            <span class="sidebar__icon" aria-hidden="true">ℹ️</span>Acerca de
+          </a>
+        </li>
+      {% endif %}
     </ul>
   {% endif %}
 </nav>

@@ -111,6 +111,7 @@ import { ContactoController } from '../interfaces/http/controllers/backoffice/Co
 import { BitacoraController } from '../interfaces/http/controllers/backoffice/BitacoraController.js';
 import { VersionController } from '../interfaces/http/controllers/backoffice/VersionController.js';
 import { KnowledgeController } from '../interfaces/http/controllers/KnowledgeController.js';
+import { ManualController } from '../interfaces/http/controllers/ManualController.js';
 import { BusquedaGlobalService } from '../application/shared/BusquedaGlobalService.js';
 import { BusquedaController } from '../interfaces/http/controllers/backoffice/BusquedaController.js';
 import { CotizacionController } from '../interfaces/http/controllers/backoffice/CotizacionController.js';
@@ -275,6 +276,7 @@ export interface Cradle {
   bitacoraController: BitacoraController;
   versionController: VersionController;
   knowledgeController: KnowledgeController;
+  manualController: ManualController;
   busquedaGlobalService: BusquedaGlobalService;
   busquedaController: BusquedaController;
   cotizacionController: CotizacionController;
@@ -965,6 +967,7 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
     knowledgeController: asFunction(
       (c: Cradle) => new KnowledgeController(c.knowledgeService),
     ).singleton(),
+    manualController: asFunction(() => new ManualController()).singleton(),
     busquedaGlobalService: asFunction(
       (c: Cradle) => new BusquedaGlobalService(c.empresaRepo, c.contactoRepo, c.ticketQueries, c.knowledgeRepo),
     ).singleton(),
