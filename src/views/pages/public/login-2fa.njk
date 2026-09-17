@@ -1,0 +1,16 @@
+{% extends "layouts/public.njk" %}
+{% block title %}Verificación en dos pasos{% endblock %}
+{% block content %}
+  <h1>🔐 Verificación en dos pasos</h1>
+  {% if errores.general %}<p class="alert alert--error">{{ errores.general }}</p>{% endif %}
+  <p>Abre tu app autenticadora (Google Authenticator, Microsoft Authenticator…) y escribe el código de 6 dígitos de <strong>DATTASOFT HD</strong>.</p>
+  <form method="post" action="/login/verificacion" class="form">
+    <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+    <input type="hidden" name="next" value="{{ next }}" />
+    <label class="field"><span>Código</span>
+      <input name="codigo" inputmode="numeric" pattern="[0-9 ]{6,7}" maxlength="7" autocomplete="one-time-code" required autofocus />
+    </label>
+    <button type="submit" class="btn">Verificar</button>
+  </form>
+  <p class="muted">¿Perdiste tu teléfono? Pide a un administrador que te quite la verificación en dos pasos. · <a href="/login">Volver</a></p>
+{% endblock %}

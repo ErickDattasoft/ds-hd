@@ -13,6 +13,13 @@ import { sanearEstadoFacturacion, type EstadoFacturacion } from './value-objects
 import { fechaHoraAgenda, sanearAgenda, type AgendaTicket } from './value-objects/AgendaTicket.js';
 import { descripcionATextoPlano, sanitizarDescripcionHtml } from './value-objects/descripcionHtml.js';
 
+/** Respuesta del cliente a la encuesta de satisfacción (1 = mala … 5 = excelente). */
+export interface SatisfaccionTicket {
+  calificacion: number;
+  comentario: string | null;
+  at: Date;
+}
+
 export type CanalTicket = 'interno' | 'publico' | 'portal' | 'correo';
 
 /** Un registro del historial de estados de un ticket. */
@@ -81,6 +88,8 @@ export interface TicketProps {
   /** Correos en copia en las notificaciones del ticket. */
   cc?: string[];
   cco?: string[];
+  /** Encuesta de satisfacción respondida por el cliente al resolverse. */
+  satisfaccion?: SatisfaccionTicket | null;
 
   origenPublicoId?: string | null;
   solicitanteUid?: string | null;
@@ -144,6 +153,7 @@ export class Ticket {
   notasInternas: string | null;
   cc: string[];
   cco: string[];
+  satisfaccion: SatisfaccionTicket | null;
 
   readonly origenPublicoId: string | null;
   readonly solicitanteUid: string | null;
@@ -193,6 +203,7 @@ export class Ticket {
     this.notasInternas = props.notasInternas?.trim() || null;
     this.cc = (props.cc ?? []).map((c) => c.trim()).filter(Boolean);
     this.cco = (props.cco ?? []).map((c) => c.trim()).filter(Boolean);
+    this.satisfaccion = props.satisfaccion ?? null;
 
     this.origenPublicoId = props.origenPublicoId ?? null;
     this.solicitanteUid = props.solicitanteUid ?? null;
@@ -474,5 +485,12 @@ export class Ticket {
   /** ¿El estado actual está fuera del catálogo dado? (para avisos de UI) */
   estadoFueraDeCatalogo(catalogo: readonly string[]): boolean {
     return !catalogo.some((e) => slugEstado(e) === slugEstado(this.estado));
+  }
+
+  /** Registra (o corrige) la calificación del cliente. */
+  calificar(calificacion: number, comentario: string | null, ahora: Date): void {
+    const c = Math.round(calificacion);
+    if (!(c >= 1 && c <= 5)) throw new ValidationError('Calificación inválida', { calificacion: 'De 1 a 5' });
+    this.satisfaccion = { calificacion: c, comentario: comentario?.trim().slice(0, 1000) || null, at: ahora };
   }
 }

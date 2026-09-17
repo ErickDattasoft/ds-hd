@@ -18,6 +18,37 @@ export interface ConfiguracionTickets {
   correosNotificacion: string[];
   /** Valores con los que nace el formulario de ticket nuevo (⭐ en Configuración → Tickets). */
   predeterminados?: PredeterminadosTicket;
+  /** Respuestas guardadas (macros) que se insertan al redactar. */
+  respuestas?: RespuestaGuardada[];
+}
+
+/** Texto reutilizable para responder casos repetidos. */
+export interface RespuestaGuardada {
+  titulo: string;
+  texto: string;
+}
+
+/** Parsea bloques "### Título" seguidos de su texto. */
+export function parsearRespuestas(texto: string): RespuestaGuardada[] {
+  const out: RespuestaGuardada[] = [];
+  let actual: RespuestaGuardada | null = null;
+  for (const linea of String(texto ?? '').split(/\r?\n/)) {
+    const m = /^###\s*(.+)$/.exec(linea);
+    if (m) {
+      actual = { titulo: m[1]!.trim(), texto: '' };
+      out.push(actual);
+    } else if (actual) {
+      actual.texto += (actual.texto ? '\n' : '') + linea;
+    }
+  }
+  return out
+    .map((r) => ({ titulo: r.titulo, texto: r.texto.trim() }))
+    .filter((r) => r.titulo && r.texto);
+}
+
+/** Inverso de {@link parsearRespuestas}, para editar en un textarea. */
+export function respuestasATexto(lista: RespuestaGuardada[] | undefined): string {
+  return (lista ?? []).map((r) => `### ${r.titulo}\n${r.texto}`).join('\n\n');
 }
 
 /** Valores predeterminados del formulario de ticket nuevo; vacío = sin preselección. */

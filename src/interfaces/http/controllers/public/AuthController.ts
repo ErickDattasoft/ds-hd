@@ -7,6 +7,9 @@ import { DomainError } from '../../../../core/errors/DomainError.js';
 import { invalidarCacheUsuario } from '../../middlewares/sessionAuth.js';
 import { SESSION_COOKIE_NAME, SESSION_COOKIE_MAX_AGE_MS } from '../../../../config/constants.js';
 
+/** Cookie del paso intermedio del login con verificación en dos pasos. */
+const COOKIE_2FA = 'ds_2fa';
+
 export interface AuthControllerOpts {
   /** Correos a los que se notifican las solicitudes de acceso. */
   notificarSolicitudesA: string[];
@@ -36,23 +39,62 @@ export class AuthController {
   procesarLogin = async (req: Request, res: Response): Promise<void> => {
     const { email = '', password = '', next: destino = '' } = req.body ?? {};
     try {
-      const { token, usuario } = await this.login.ejecutar({ email, password });
-      invalidarCacheUsuario(usuario.uid);
-      res.cookie(SESSION_COOKIE_NAME, token, {
-        httpOnly: true,
-        secure: this.opts.cookieSecure,
-        sameSite: 'lax',
-        maxAge: SESSION_COOKIE_MAX_AGE_MS,
-        path: '/',
-      });
-      const url = esRutaInterna(destino) ? destino : usuario.esCliente ? '/portal' : '/app';
-      res.redirect(url);
+      const r = await this.login.ejecutar({ email, password });
+      if (r.pendienteDosPasos) {
+        res.cookie(COOKIE_2FA, r.pendienteDosPasos, {
+          httpOnly: true,
+          secure: this.opts.cookieSecure,
+          sameSite: 'lax',
+          maxAge: 5 * 60_000,
+          path: '/login',
+        });
+        res.redirect(`/login/verificacion${esRutaInterna(destino) ? `?next=${encodeURIComponent(destino)}` : ''}`);
+        return;
+      }
+      this.entrar(res, r.token!, r.usuario, destino);
     } catch (err) {
       const mensaje = err instanceof DomainError ? err.message : 'No se pudo iniciar sesión';
       res.status(401).render('pages/public/login', {
         titulo: 'Iniciar sesión',
         next: destino,
         valores: { email },
+        errores: { general: mensaje },
+      });
+    }
+  };
+
+  private entrar(res: Response, token: string, usuario: { uid: string; esCliente: boolean }, destino: string): void {
+    invalidarCacheUsuario(usuario.uid);
+    res.cookie(SESSION_COOKIE_NAME, token, {
+      httpOnly: true,
+      secure: this.opts.cookieSecure,
+      sameSite: 'lax',
+      maxAge: SESSION_COOKIE_MAX_AGE_MS,
+      path: '/',
+    });
+    res.redirect(esRutaInterna(destino) ? destino : usuario.esCliente ? '/portal' : '/app');
+  }
+
+  mostrarVerificacion = (req: Request, res: Response): void => {
+    if (!req.cookies?.[COOKIE_2FA]) return res.redirect('/login');
+    res.render('pages/public/login-2fa', {
+      titulo: 'Verificación en dos pasos',
+      next: typeof req.query.next === 'string' ? req.query.next : '',
+      errores: {},
+    });
+  };
+
+  procesarVerificacion = async (req: Request, res: Response): Promise<void> => {
+    const { codigo = '', next: destino = '' } = req.body ?? {};
+    try {
+      const r = await this.login.completarDosPasos(String(req.cookies?.[COOKIE_2FA] ?? ''), String(codigo));
+      res.clearCookie(COOKIE_2FA, { path: '/login' });
+      this.entrar(res, r.token!, r.usuario, destino);
+    } catch (err) {
+      const mensaje = err instanceof DomainError ? err.message : 'No se pudo verificar';
+      res.status(401).render('pages/public/login-2fa', {
+        titulo: 'Verificación en dos pasos',
+        next: destino,
         errores: { general: mensaje },
       });
     }

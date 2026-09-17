@@ -26,6 +26,7 @@ import {
   InMemoryBitacoraRepository,
 } from '../fakes/crm.js';
 import { InMemoryIntentosLoginRepository } from '../fakes/InMemoryIntentosLoginRepository.js';
+import { InMemoryOportunidadRepository } from '../fakes/InMemoryOportunidadRepository.js';
 import { InMemoryFiltroGuardadoRepository } from '../fakes/InMemoryFiltroGuardadoRepository.js';
 import { InMemoryAdjuntoTicketRepository } from '../fakes/InMemoryAdjuntoTicketRepository.js';
 import {
@@ -66,6 +67,7 @@ export interface TestApp {
   inscripcionRepo: InMemoryInscripcionRepository;
   listaNegraRepo: InMemoryListaNegraRepository;
   filtroGuardadoRepo: InMemoryFiltroGuardadoRepository;
+  oportunidadRepo: InMemoryOportunidadRepository;
   adjuntoTicketRepo: InMemoryAdjuntoTicketRepository;
   solicitudAccesoRepo: InMemorySolicitudAccesoRepository;
 }
@@ -124,6 +126,7 @@ export function makeTestApp(opts: { usuarios?: { uid: string; email: string; pas
     ),
     intentosLoginRepo: new InMemoryIntentosLoginRepository(),
     filtroGuardadoRepo: new InMemoryFiltroGuardadoRepository(),
+    oportunidadRepo: new InMemoryOportunidadRepository(),
     adjuntoTicketRepo,
     ticketRepo: new InMemoryTicketRepository(ticketStore),
     ticketQueries: new InMemoryTicketQueries(ticketStore),
@@ -172,6 +175,7 @@ export function makeTestApp(opts: { usuarios?: { uid: string; email: string; pas
     inscripcionRepo,
     listaNegraRepo,
     filtroGuardadoRepo: overrides.filtroGuardadoRepo as InMemoryFiltroGuardadoRepository,
+    oportunidadRepo: overrides.oportunidadRepo as InMemoryOportunidadRepository,
     adjuntoTicketRepo,
     solicitudAccesoRepo: overrides.solicitudAccesoRepo as InMemorySolicitudAccesoRepository,
   };

@@ -56,6 +56,16 @@
       </div>
     </details>
 
+    <details class="disclosure">
+      <summary class="disclosure__summary">💬 Respuestas guardadas <span class="disclosure__hint">— textos listos para casos repetidos</span></summary>
+      <div class="disclosure__body form">
+        <label class="field"><span>Respuestas</span>
+          <textarea name="respuestas" rows="12" placeholder="### Cómo timbrar&#10;Hola, para timbrar entra a…&#10;&#10;### Actualizar versión&#10;Descarga la versión…">{{ respuestasATexto(config.respuestas) }}</textarea>
+          <em class="field__hint">Cada respuesta empieza con una línea <code>### Título</code> y abajo su texto. Se insertan desde el botón 💬 al redactar un ticket o una nota. Puedes usar <code>[fecha]</code>.</em>
+        </label>
+      </div>
+    </details>
+
     <details class="disclosure" open>
       <summary class="disclosure__summary">⭐ Predeterminados del ticket nuevo</summary>
       <div class="disclosure__body form">

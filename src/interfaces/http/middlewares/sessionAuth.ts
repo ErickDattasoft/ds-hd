@@ -30,6 +30,7 @@ function aSessionUser(u: Usuario): SessionUser {
     permisos: permisosEfectivos(u),
     firma: u.firma,
     encabezado: u.encabezado,
+    totpActivo: u.totpActivo,
   };
 }
 

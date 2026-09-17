@@ -1,0 +1,32 @@
+{% extends "layouts/backoffice.njk" %}
+{% block title %}Verificación en dos pasos{% endblock %}
+{% block content %}
+  <p><a href="/app/mi-perfil">← Mi perfil</a></p>
+  <h1>🔐 Verificación en dos pasos</h1>
+  {% if activa %}
+    <p class="alert alert--ok">Está <strong>activa</strong>: al entrar se te pide un código de tu app además de la contraseña.</p>
+    <form method="post" action="/app/mi-perfil/dos-pasos/desactivar" class="form card" data-confirm="¿Quitar la verificación en dos pasos?">
+      <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+      <label class="field"><span>Código actual de tu app (para desactivarla)</span>
+        <input name="codigo" inputmode="numeric" maxlength="7" autocomplete="one-time-code" required />
+        {% if errores.codigo %}<em class="field__error">{{ errores.codigo }}</em>{% endif %}
+      </label>
+      <button class="btn btn--danger" type="submit">Desactivar</button>
+    </form>
+  {% else %}
+    <ol>
+      <li>Instala en tu teléfono una app autenticadora: <strong>Google Authenticator</strong>, <strong>Microsoft Authenticator</strong> o <strong>Authy</strong>.</li>
+      <li>En la app elige "Agregar cuenta" y escanea este código:</li>
+    </ol>
+    <p><img src="{{ qrDataUrl }}" alt="Código QR para la app autenticadora" width="220" height="220" style="image-rendering:pixelated;background:#fff;padding:8px;border-radius:8px" /></p>
+    <p class="muted">¿No puedes escanear? Escribe esta clave a mano: <code>{{ secreto }}</code></p>
+    <form method="post" action="/app/mi-perfil/dos-pasos/activar" class="form card">
+      <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+      <label class="field"><span>3. Escribe el código de 6 dígitos que muestra la app</span>
+        <input name="codigo" inputmode="numeric" maxlength="7" autocomplete="one-time-code" required autofocus />
+        {% if errores.codigo %}<em class="field__error">{{ errores.codigo }}</em>{% endif %}
+      </label>
+      <button class="btn" type="submit">Activar</button>
+    </form>
+  {% endif %}
+{% endblock %}

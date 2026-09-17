@@ -1,0 +1,29 @@
+{% extends "layouts/public.njk" %}
+{% block title %}Encuesta de satisfacción{% endblock %}
+{% block content %}
+  {% if invalida %}
+    <h1>Liga no válida</h1>
+    <p>Esta liga de encuesta no es válida o el ticket ya no existe.</p>
+  {% else %}
+    <h1>¿Cómo te atendimos?</h1>
+    <p class="muted">Ticket #{{ ticket.numero }} — {{ ticket.asunto }}</p>
+    {% if gracias %}<p class="alert alert--ok">¡Gracias! Guardamos tu respuesta.</p>
+    {% elif ticket.satisfaccion %}<p class="alert alert--ok">Registramos tu calificación. Si quieres, déjanos un comentario.</p>{% endif %}
+    <form method="post" action="/encuesta/{{ ticket.id }}/{{ firma }}" class="form">
+      <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+      <fieldset class="field">
+        <legend>Calificación</legend>
+        {% for e in etiquetas %}
+          <label class="field--check">
+            <input type="radio" name="calificacion" value="{{ e.n }}" required {{ 'checked' if ticket.satisfaccion and ticket.satisfaccion.calificacion == e.n }} />
+            <span>{% for i in range(e.n) %}★{% endfor %} {{ e.etiqueta }}</span>
+          </label>
+        {% endfor %}
+      </fieldset>
+      <label class="field"><span>Comentario (opcional)</span>
+        <textarea name="comentario" rows="4" maxlength="1000">{{ ticket.satisfaccion.comentario if ticket.satisfaccion }}</textarea>
+      </label>
+      <button class="btn" type="submit">Enviar</button>
+    </form>
+  {% endif %}
+{% endblock %}

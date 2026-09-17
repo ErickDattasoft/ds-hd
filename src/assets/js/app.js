@@ -1165,6 +1165,43 @@
     caja.focus();
   });
 
+  // Respuestas guardadas: se agregan al final de la caja, como la firma.
+  document.addEventListener('change', function (e) {
+    var sel = e.target.closest && e.target.closest('[data-insertar-respuesta]');
+    if (!sel || !sel.value) return;
+    var caja = document.querySelector(sel.getAttribute('data-destino'));
+    var texto = sel.value.replace(/\[fecha\]/g, new Date().toLocaleDateString('es-MX'));
+    sel.value = '';
+    if (!caja) return;
+    if (caja.isContentEditable) {
+      var html = texto.split('\n').map(escHtmlTexto).join('<br>');
+      var actual = caja.innerHTML;
+      caja.innerHTML = (actual ? actual.replace(/(<br\s*\/?>\s*)+$/i, '') + '<br><br>' : '') + html;
+    } else {
+      caja.value = (caja.value ? caja.value.replace(/\s+$/, '') + '\n\n' : '') + texto;
+    }
+    caja.focus();
+  });
+
+  // ── Selects que envían su formulario al cambiar (filtros, embudo de ventas) ──
+  document.addEventListener('change', function (e) {
+    var sel = e.target;
+    if (!sel.matches) return;
+    if (sel.matches('[data-autoenviar]')) {
+      sel.form.submit();
+    } else if (sel.matches('[data-mover-etapa]')) {
+      if (sel.value === 'perdida') {
+        var motivo = prompt('¿Por qué se perdió? (opcional)');
+        if (motivo === null) {
+          sel.value = sel.getAttribute('data-etapa-actual');
+          return;
+        }
+        sel.form.elements.motivoPerdida.value = motivo;
+      }
+      sel.form.submit();
+    }
+  });
+
   // ── Logo de empresa: si no hay uno configurado, oculta el <img> roto ────
   document.addEventListener(
     'error',

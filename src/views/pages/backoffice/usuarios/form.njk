@@ -102,6 +102,15 @@
       <a class="btn btn--ghost" href="/app/usuarios">Cancelar</a>
     </div>
   </form>
+  {% if modo == 'editar' and usuario.totpActivo %}
+    <form method="post" action="/app/usuarios/{{ usuario.uid }}/dos-pasos/quitar" class="card form form--wide"
+          data-confirm="¿Quitar la verificación en dos pasos de {{ usuario.nombre }}? Podrá entrar solo con su contraseña hasta que la vuelva a activar.">
+      <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+      <h2>🔐 Verificación en dos pasos: activa</h2>
+      <p class="muted">Quítala solo si la persona perdió su teléfono.</p>
+      <button class="btn btn--danger btn--sm" type="submit">Quitar verificación en dos pasos</button>
+    </form>
+  {% endif %}
   {% if modo == 'editar' %}
   <form method="post" action="/app/usuarios/{{ usuario.uid }}/contrasena" class="form form--wide card" id="contrasena" autocomplete="off" data-confirm="¿Restablecer la contraseña? Se cerrarán sus sesiones abiertas.">
     <input type="hidden" name="_csrf" value="{{ csrfToken }}" />

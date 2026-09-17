@@ -8,6 +8,8 @@ export function publicRoutes(container: Container): Router {
 
   r.get('/login', (req, res) => ctrl().mostrarLogin(req, res));
   r.post('/login', (req, res) => ctrl().procesarLogin(req, res));
+  r.get('/login/verificacion', (req, res) => ctrl().mostrarVerificacion(req, res));
+  r.post('/login/verificacion', (req, res) => ctrl().procesarVerificacion(req, res));
   r.post('/logout', (req, res) => ctrl().logout(req, res));
   r.get('/logout', (req, res) => ctrl().logout(req, res));
 
@@ -20,6 +22,10 @@ export function publicRoutes(container: Container): Router {
   const ticketPublico = () => container.resolve('ticketPublicoController');
   r.get('/ticket-publico', (req, res) => ticketPublico().form(req, res));
   r.post('/ticket-publico', (req, res) => ticketPublico().crearPost(req, res));
+
+  const encuesta = () => container.resolve('encuestaController');
+  r.get('/encuesta/:id/:firma', (req, res) => encuesta().ver(req, res));
+  r.post('/encuesta/:id/:firma', (req, res) => encuesta().guardarPost(req, res));
 
   const kb = () => container.resolve('knowledgeController');
   r.get('/kb', (req, res) => kb().listar(req, res));

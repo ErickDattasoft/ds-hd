@@ -25,6 +25,8 @@ export interface SessionUser {
   readonly firma?: string | null;
   /** Encabezado/plantilla del usuario para redactar tickets (con `[fecha]`). */
   readonly encabezado?: string | null;
+  /** ¿Tiene activa la verificación en dos pasos? */
+  readonly totpActivo?: boolean;
 }
 
 /** ¿El actor tiene este permiso concreto? */

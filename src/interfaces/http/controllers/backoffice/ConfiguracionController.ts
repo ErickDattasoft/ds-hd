@@ -12,6 +12,7 @@ import type { ExcelUnificadoService } from '../../../../application/excel/ExcelU
 import { ETIQUETAS_EVENTOS, destinatariosWhatsAppATexto } from '../../../../core/entities/ConfiguracionIntegraciones.js';
 import { INFO_APP } from '../../../../core/entities/AcercaDe.js';
 import { catalogoFacturacion } from './TicketController.js';
+import { respuestasATexto } from '../../../../core/entities/ConfiguracionTickets.js';
 import { camposDeError } from '../../support/errores.js';
 
 const str = (v: unknown): string => (typeof v === 'string' ? v : '');
@@ -187,6 +188,7 @@ export class ConfiguracionController {
     const config = await this.configTickets.obtener();
     res.render('pages/backoffice/configuracion/tickets', {
       estadosFacturacion: catalogoFacturacion(),
+      respuestasATexto,
       titulo: 'Configuración de tickets',
       config,
       errores: {},
@@ -212,6 +214,7 @@ export class ConfiguracionController {
         estadoInicial: str(b.estadoInicial),
         correosNotificacion: str(b.correosNotificacion),
         slaHoras,
+        respuestas: str(b.respuestas),
         predeterminados: {
           tipo: str(b.predTipo),
           prioridad: str(b.predPrioridad),
@@ -224,6 +227,7 @@ export class ConfiguracionController {
       const config = await this.configTickets.obtener();
       res.render('pages/backoffice/configuracion/tickets', {
       estadosFacturacion: catalogoFacturacion(),
+      respuestasATexto,
         titulo: 'Configuración de tickets',
         config,
         errores: {},
@@ -233,6 +237,7 @@ export class ConfiguracionController {
       const config = await this.configTickets.obtener();
       res.status(422).render('pages/backoffice/configuracion/tickets', {
       estadosFacturacion: catalogoFacturacion(),
+      respuestasATexto,
         titulo: 'Configuración de tickets',
         config,
         errores: camposDeError(err),

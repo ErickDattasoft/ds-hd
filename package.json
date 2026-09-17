@@ -53,6 +53,7 @@
     "nunjucks": "^3.2.4",
     "pino": "^9.7.0",
     "pino-http": "^10.4.0",
+    "qrcode-generator": "^2.0.4",
     "zod": "^4.0.5"
   },
   "devDependencies": {

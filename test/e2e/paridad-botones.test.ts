@@ -175,3 +175,82 @@ describe('predeterminados por usuario, WhatsApp a varias personas y correo de em
     expect(det.text).toContain('href="mailto:hola@acme.mx"');
   });
 });
+
+describe('verificación en dos pasos', () => {
+  it('activa, pide código al entrar y el admin la puede quitar', async () => {
+    const { codigoTotp } = await import('../../src/application/auth/totp.js');
+    const codigo = (s: string) => codigoTotp(s, Math.floor(Date.now() / 30_000));
+    const t = makeTestApp({ usuarios: [ADMIN, AGENTE] });
+    const { agent, csrf } = await login(t.app, AGENTE.email, AGENTE.password);
+    const setup = await agent.get('/app/mi-perfil/dos-pasos');
+    expect(setup.text).toContain('data:image/gif');
+    const secreto = (await t.usuarioRepo.findByUid(AGENTE.uid))!.totpSecreto!;
+    const mal = await agent.post('/app/mi-perfil/dos-pasos/activar').type('form').send({ _csrf: csrf, codigo: '000000' });
+    expect(mal.status).toBe(422);
+    await agent.post('/app/mi-perfil/dos-pasos/activar').type('form').send({ _csrf: csrf, codigo: codigo(secreto) });
+    expect((await t.usuarioRepo.findByUid(AGENTE.uid))!.totpActivo).toBe(true);
+
+    // Nuevo login: la contraseña sola ya no da sesión.
+    const otro = request.agent(t.app);
+    const page = await otro.get('/login');
+    const csrf2 = cookieValor(page.headers['set-cookie'] as unknown as string[], 'x-csrf-token')!;
+    const paso1 = await otro.post('/login').type('form').send({ email: AGENTE.email, password: AGENTE.password, _csrf: csrf2 });
+    expect(paso1.headers.location).toBe('/login/verificacion');
+    expect((await otro.get('/app')).status).toBe(302);
+    const malo = await otro.post('/login/verificacion').type('form').send({ _csrf: csrf2, codigo: '000000' });
+    expect(malo.status).toBe(401);
+    const paso2 = await otro.post('/login/verificacion').type('form').send({ _csrf: csrf2, codigo: codigo(secreto) });
+    expect(paso2.headers.location).toBe('/app');
+    expect((await otro.get('/app')).status).toBe(200);
+
+    // El admin la quita.
+    const adm = await login(t.app, ADMIN.email, ADMIN.password);
+    await adm.agent.post(`/app/usuarios/${AGENTE.uid}/dos-pasos/quitar`).type('form').send({ _csrf: adm.csrf });
+    expect((await t.usuarioRepo.findByUid(AGENTE.uid))!.totpActivo).toBe(false);
+  });
+});
+
+describe('encuesta de satisfacción y reportes', () => {
+  it('el cliente califica desde la liga firmada y aparece en reportes', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    const { agent, csrf } = await login(t.app, ADMIN.email, ADMIN.password);
+    const crear = await agent.post('/app/tickets').type('form').send({
+      _csrf: csrf, asunto: 'No timbra', descripcion: 'Falla al timbrar la factura',
+      contactoNombre: 'Luis', contactoCorreo: 'luis@cliente.mx', tipo: 'General', prioridad: 'Media',
+    });
+    const id = String(crear.headers.location).split('/').pop()!;
+    await agent.post(`/app/tickets/${id}/estado`).type('form').send({ _csrf: csrf, estado: 'En proceso' });
+    await agent.post(`/app/tickets/${id}/estado`).type('form').send({ _csrf: csrf, estado: 'Resuelto' });
+    const correo = t.emailSender.enviados.find((e) => e.asunto.includes('resuelto'));
+    expect(correo).toBeTruthy();
+    const liga = /href="https?:\/\/[^/]+(\/encuesta\/[^"?]+)\?c=5"/.exec(correo!.html)![1]!;
+    const falsa = await request(t.app).get(`/encuesta/${id}/firmafalsa?c=5`);
+    expect(falsa.status).toBe(404);
+    const ok = await request(t.app).get(`${liga}?c=5`);
+    expect(ok.status).toBe(200);
+    const rep = await agent.get('/app/reportes');
+    expect(rep.text).toContain('★ 5');
+    const csv = await agent.get('/app/reportes/agentes.csv');
+    expect(csv.headers['content-type']).toContain('text/csv');
+  });
+});
+
+describe('embudo de ventas', () => {
+  it('crea, mueve de etapa y calcula el pronóstico', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    t.empresaRepo.items.set('e1', new Empresa({ id: 'e1', nombre: 'ACME' }));
+    const { agent, csrf } = await login(t.app, ADMIN.email, ADMIN.password);
+    await agent.post('/app/ventas').type('form').send({ _csrf: csrf, titulo: 'Renovación', empresaId: 'e1', monto: '10,000', etapa: 'propuesta' });
+    const [o] = [...t.oportunidadRepo.items.values()];
+    expect(o!.monto).toBe(10000);
+    let vista = await agent.get('/app/ventas');
+    expect(vista.text).toContain('Renovación');
+    expect(vista.text).toContain('$5,000.00'); // 50 % de probabilidad en "propuesta"
+    await agent.post(`/app/ventas/${o!.id}/mover`).type('form').send({ _csrf: csrf, etapa: 'perdida', motivoPerdida: 'Precio' });
+    expect(t.oportunidadRepo.items.get(o!.id)!.motivoPerdida).toBe('Precio');
+    vista = await agent.get('/app/ventas');
+    expect(vista.text).toContain('0%');
+    const vacio = await agent.post('/app/ventas').type('form').send({ _csrf: csrf, titulo: '', monto: '1' });
+    expect(vacio.status).toBe(422);
+  });
+});

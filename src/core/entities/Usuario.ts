@@ -43,6 +43,9 @@ export interface UsuarioProps {
   encabezado?: string | null;
   /** Predeterminados propios del ticket nuevo; ganan sobre los de Configuración → Tickets. */
   predeterminadosTicket?: PredeterminadosTicket | null;
+  /** Secreto TOTP (Base32) de la verificación en dos pasos; `totpActivo` indica si ya se confirmó. */
+  totpSecreto?: string | null;
+  totpActivo?: boolean;
   createdAt?: Date;
   updatedAt?: Date;
   lastLoginAt?: Date | null;
@@ -73,6 +76,8 @@ export class Usuario {
   firma: string | null;
   encabezado: string | null;
   predeterminadosTicket: PredeterminadosTicket | null;
+  totpSecreto: string | null;
+  totpActivo: boolean;
   readonly createdAt: Date;
   updatedAt: Date;
   lastLoginAt: Date | null;
@@ -94,6 +99,8 @@ export class Usuario {
     this.firma = props.firma?.trim() || null;
     this.encabezado = props.encabezado?.trim() || null;
     this.predeterminadosTicket = props.predeterminadosTicket ?? null;
+    this.totpSecreto = props.totpSecreto ?? null;
+    this.totpActivo = Boolean(props.totpActivo && props.totpSecreto);
     this.createdAt = props.createdAt ?? new Date();
     this.updatedAt = props.updatedAt ?? this.createdAt;
     this.lastLoginAt = props.lastLoginAt ?? null;

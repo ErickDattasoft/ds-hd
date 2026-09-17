@@ -36,7 +36,7 @@ describe('LoginService', () => {
     expect(usuario.uid).toBe('uid-ana');
     expect(usuario.lastLoginAt).toEqual(clock.now());
 
-    const claims = await sesiones.verify(token);
+    const claims = await sesiones.verify(token!);
     expect(claims?.uid).toBe('uid-ana');
   });
 

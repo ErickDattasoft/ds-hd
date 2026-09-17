@@ -41,7 +41,7 @@
         {% if permisos.editar %}
           <form method="post" action="/app/tickets/{{ ticket.id }}/nota" class="form">
             <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
-            {{ tk.editorToolbar(user, '#nota-cuerpo') }}
+            {{ tk.editorToolbar(user, '#nota-cuerpo', config.respuestas) }}
             <textarea name="cuerpo" id="nota-cuerpo" rows="3" required placeholder="Escribe una respuesta…"></textarea>
             <label class="field--check">
               <input type="checkbox" name="tipo" value="interna" {{ 'disabled' if not permisos.notasInternas }} />
@@ -123,6 +123,10 @@
         <p><strong>Estado:</strong> <span class="{{ ticket.estado | estadoClase }}">{{ ticket.estado }}</span></p>
         <p><strong>Prioridad:</strong> <span class="{{ ticket.prioridad | prioridadClase }}">{{ ticket.prioridad }}</span></p>
         <p><strong>SLA:</strong> {{ tk.slaBadge(vm) }}</p>
+        {% if ticket.satisfaccion %}
+          <p><strong>Satisfacción:</strong> <span title="{{ ticket.satisfaccion.comentario or '' }}">{% for i in range(ticket.satisfaccion.calificacion) %}★{% endfor %}</span> ({{ ticket.satisfaccion.calificacion }}/5)
+            {% if ticket.satisfaccion.comentario %}<br><em class="muted">“{{ ticket.satisfaccion.comentario }}”</em>{% endif %}</p>
+        {% endif %}
         <p><strong>Tiempo trabajado:</strong> {{ vm.tiempoTrabajado }}
           {% if vm.tiempoEsManual %}<span class="badge" title="Ajustado a mano">✏️</span> <span class="muted">(auto: {{ vm.tiempoTrabajadoAuto }})</span>{% endif %}
         </p>

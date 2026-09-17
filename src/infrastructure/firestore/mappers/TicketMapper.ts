@@ -38,6 +38,13 @@ export const TicketMapper = {
       notasInternas: d.notasInternas ?? null,
       cc: Array.isArray(d.cc) ? d.cc.map(String) : [],
       cco: Array.isArray(d.cco) ? d.cco.map(String) : [],
+      satisfaccion: d.satisfaccion
+        ? {
+            calificacion: Number(d.satisfaccion.calificacion),
+            comentario: d.satisfaccion.comentario ?? null,
+            at: fecha(d.satisfaccion.at) ?? new Date(),
+          }
+        : null,
       origenPublicoId: d.origenPublicoId ?? null,
       solicitanteUid: d.solicitanteUid ?? null,
       creadoPorUid: d.creadoPorUid ?? null,
@@ -95,6 +102,9 @@ export const TicketMapper = {
       notasInternas: t.notasInternas,
       cc: t.cc,
       cco: t.cco,
+      satisfaccion: t.satisfaccion
+        ? { calificacion: t.satisfaccion.calificacion, comentario: t.satisfaccion.comentario, at: ts(t.satisfaccion.at) }
+        : null,
       origenPublicoId: t.origenPublicoId,
       solicitanteUid: t.solicitanteUid,
       creadoPorUid: t.creadoPorUid,

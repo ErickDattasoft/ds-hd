@@ -8,6 +8,8 @@ import type { IKnowledgeRepository } from '../../core/ports/repositories/IKnowle
 import type { IUsuarioRepository } from '../../core/ports/repositories/IUsuarioRepository.js';
 import type { IConfiguracionRepository } from '../../core/ports/repositories/IConfiguracionRepository.js';
 import type { IContadorRepository } from '../../core/ports/repositories/IContadorRepository.js';
+import type { IOportunidadRepository } from '../../core/ports/repositories/IOportunidadRepository.js';
+import { Oportunidad, type OportunidadProps } from '../../core/entities/Oportunidad.js';
 import type { IClock } from '../../core/ports/services/IClock.js';
 import { Empresa, type EmpresaProps } from '../../core/entities/Empresa.js';
 import { Contacto, type ContactoProps } from '../../core/entities/Contacto.js';
@@ -79,6 +81,7 @@ export class BackupService {
     private readonly configuracion: IConfiguracionRepository,
     private readonly contador: IContadorRepository,
     private readonly clock: IClock,
+    private readonly oportunidades?: IOportunidadRepository,
   ) {}
 
   /** Vuelca todas las colecciones principales a un solo objeto serializable a JSON. */
@@ -98,6 +101,7 @@ export class BackupService {
       cotizaciones_cfg,
       logo,
       resumen,
+      oportunidades,
     ] = await Promise.all([
       this.empresas.list({}),
       this.contactos.list({}),
@@ -113,6 +117,7 @@ export class BackupService {
       this.configuracion.obtenerCotizaciones(),
       this.configuracion.obtenerLogo(),
       this.configuracion.obtenerResumen(),
+      this.oportunidades?.list() ?? Promise.resolve([]),
     ]);
 
     return {
@@ -124,9 +129,11 @@ export class BackupService {
       cotizaciones,
       versiones,
       kb,
+      oportunidades,
       // Las cuentas se listan sin nada sensible de Auth (no hay contraseñas que respaldar
       // aquí — eso vive en Firebase Auth, fuera de Firestore).
-      usuarios: usuarios.map((u) => ({ ...u, email: u.email.value })),
+      // Sin el secreto de la verificación en dos pasos: quien tenga el archivo no debe poder generar códigos.
+      usuarios: usuarios.map((u) => ({ ...u, email: u.email.value, totpSecreto: null, totpActivo: false })),
       configuracion: {
         tickets: tickets_cfg,
         calculadora,
@@ -193,6 +200,13 @@ export class BackupService {
         resumen.errores.push(`cotización "${d.folio}": ${err instanceof Error ? err.message : err}`);
       }
     }
+    for (const d of arr(datos.oportunidades)) {
+      try {
+        await this.oportunidades?.save(new Oportunidad(d as unknown as OportunidadProps));
+      } catch (err) {
+        resumen.errores.push(`oportunidad "${d.titulo}": ${err instanceof Error ? err.message : err}`);
+      }
+    }
     for (const d of arr(datos.versiones)) {
       try {
         await this.versiones.save(new VersionSistema(d as unknown as VersionSistemaProps));
@@ -211,7 +225,15 @@ export class BackupService {
     }
     for (const d of arr(datos.usuarios)) {
       try {
-        await this.usuarios.save(new Usuario(d as unknown as UsuarioProps));
+        // El backup no trae el secreto 2FA: conserva el que ya tenga la cuenta.
+        const existente = await this.usuarios.findByUid(String(d.uid));
+        await this.usuarios.save(
+          new Usuario({
+            ...(d as unknown as UsuarioProps),
+            totpSecreto: existente?.totpSecreto ?? null,
+            totpActivo: existente?.totpActivo ?? false,
+          }),
+        );
         resumen.usuarios++;
       } catch (err) {
         resumen.errores.push(`usuario "${d.email}": ${err instanceof Error ? err.message : err}`);

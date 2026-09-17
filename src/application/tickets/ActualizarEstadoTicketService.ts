@@ -13,6 +13,7 @@ import { registrarEvento } from './efectos.js';
 import { avisarSiQuedoCerradoYFacturado } from './cerradoFacturado.js';
 import { historialActividadHtml } from './historialCorreo.js';
 import { destinatariosTicket } from './notificacionTicket.js';
+import type { EncuestaSatisfaccionService } from './EncuestaSatisfaccionService.js';
 import type { CambiarEstadoInput } from './dto.js';
 
 /**
@@ -29,6 +30,7 @@ export class ActualizarEstadoTicketService {
     private readonly email: IEmailSender,
     private readonly webhooks: IWebhookPublisher,
     private readonly logger: ILogger,
+    private readonly encuesta?: EncuestaSatisfaccionService,
   ) {}
 
   async ejecutar(input: CambiarEstadoInput): Promise<Ticket> {
@@ -131,7 +133,9 @@ export class ActualizarEstadoTicketService {
       ...(dest.cc.length ? { cc: dest.cc } : {}),
       ...(dest.responderA ? { responderA: dest.responderA } : {}),
       asunto: `Ticket #${ticket.numero} — ${tipo}`,
-      html: `${avisoSinContacto}<p>El ticket <strong>#${ticket.numero} — ${ticket.asunto}</strong> fue marcado como <strong>${tipo}</strong>.</p>${historial}`,
+      html: `${avisoSinContacto}<p>El ticket <strong>#${ticket.numero} — ${ticket.asunto}</strong> fue marcado como <strong>${tipo}</strong>.</p>${historial}${
+        this.encuesta && !dest.sinContacto ? this.encuesta.bloqueCorreo(ticket) : ''
+      }`,
       tags: [`ticket-${tipo}`, `ticket-${ticket.numero}`],
     });
     await registrarEvento(this.tickets, this.ids, ticket.id, {

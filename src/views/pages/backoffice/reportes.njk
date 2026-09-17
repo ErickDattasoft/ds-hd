@@ -1,0 +1,51 @@
+{% extends "layouts/backoffice.njk" %}
+{% block title %}Reportes{% endblock %}
+{% macro tabla(titulo, clave, filas) %}
+  <div class="page-head">
+    <h2>{{ titulo }}</h2>
+    <div class="page-head__actions">
+      <a class="btn btn--ghost btn--sm" href="/app/reportes/{{ clave }}.csv?desde={{ desde }}&hasta={{ hasta }}">📥 Exportar CSV</a>
+    </div>
+  </div>
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead><tr>
+        <th>{{ titulo }}</th><th>Tickets</th><th>Resueltos</th><th title="Promedio desde que se creó hasta la primera respuesta del equipo">1ª respuesta</th>
+        <th title="Promedio desde que se creó hasta que se resolvió o cerró">Solución</th><th>Horas trabajadas</th><th>Satisfacción</th>
+      </tr></thead>
+      <tbody>
+        {% for f in filas %}
+          <tr>
+            <td>{{ f.clave }}</td><td>{{ f.tickets }}</td><td>{{ f.resueltos }}</td>
+            <td>{{ (f.primeraRespuestaMin ~ ' min') if f.primeraRespuestaMin !== null else '—' }}</td>
+            <td>{{ (f.solucionHoras ~ ' h') if f.solucionHoras !== null else '—' }}</td>
+            <td>{{ f.horasTrabajadas }} h</td>
+            <td>{% if f.satisfaccion !== null %}★ {{ f.satisfaccion }} <span class="muted">({{ f.encuestas }})</span>{% else %}—{% endif %}</td>
+          </tr>
+        {% else %}<tr><td colspan="7" class="muted">Sin tickets en este periodo.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endmacro %}
+{% block content %}
+  <h1>Reportes de desempeño</h1>
+  <form method="get" action="/app/reportes" class="form-grid">
+    <label class="field"><span>Desde</span><input type="date" name="desde" value="{{ desde }}" /></label>
+    <label class="field"><span>Hasta</span><input type="date" name="hasta" value="{{ hasta }}" /></label>
+    <button class="btn btn--sm" type="submit">Ver</button>
+  </form>
+  <p class="muted">Cuenta los tickets creados en el periodo.</p>
+
+  {% set t = reporte.total %}
+  <div class="stat-row">
+    <div class="stat stat--top-brand"><span class="stat__num">{{ t.tickets }}</span><span class="stat__lbl">Tickets ({{ t.resueltos }} resueltos)</span></div>
+    <div class="stat stat--top-info"><span class="stat__num">{{ (t.primeraRespuestaMin ~ ' min') if t.primeraRespuestaMin !== null else '—' }}</span><span class="stat__lbl">1ª respuesta promedio</span></div>
+    <div class="stat stat--top-warning"><span class="stat__num">{{ (t.solucionHoras ~ ' h') if t.solucionHoras !== null else '—' }}</span><span class="stat__lbl">Solución promedio</span></div>
+    <div class="stat stat--top-ok"><span class="stat__num">{{ t.horasTrabajadas }} h</span><span class="stat__lbl">Horas trabajadas</span></div>
+    <div class="stat"><span class="stat__num">{{ ('★ ' ~ t.satisfaccion) if t.satisfaccion !== null else '—' }}</span><span class="stat__lbl">Satisfacción ({{ t.encuestas }} encuestas)</span></div>
+  </div>
+
+  {{ tabla('Agente', 'agentes', reporte.porAgente) }}
+  {{ tabla('Sistema', 'sistemas', reporte.porSistema) }}
+  {{ tabla('Empresa', 'empresas', reporte.porEmpresa) }}
+{% endblock %}

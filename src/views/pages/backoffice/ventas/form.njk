@@ -1,0 +1,49 @@
+{% extends "layouts/backoffice.njk" %}
+{% block title %}{{ titulo }}{% endblock %}
+{% block content %}
+  <p><a href="/app/ventas">← Embudo de ventas</a></p>
+  <h1>{{ titulo }}</h1>
+  {% if errores.general %}<p class="alert alert--error">{{ errores.general }}</p>{% endif %}
+  <form method="post" action="{{ '/app/ventas' if modo == 'crear' else '/app/ventas/' + oportunidad.id }}" class="form form--wide">
+    <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+    <input type="hidden" name="cotizacionId" value="{{ valores.cotizacionId }}" />
+    <label class="field"><span>Título *</span>
+      <input name="titulo" value="{{ valores.titulo }}" required placeholder="Ej: Renovación Contabilidad + Nóminas" />
+      {% if errores.titulo %}<em class="field__error">{{ errores.titulo }}</em>{% endif %}
+    </label>
+    <div class="form-grid">
+      <label class="field"><span>Empresa</span>
+        <select name="empresaId">
+          <option value="">— Sin empresa —</option>
+          {% for e in empresas %}<option value="{{ e.id }}" {{ 'selected' if valores.empresaId == e.id }}>{{ e.nombre }}</option>{% endfor %}
+        </select>
+        {% if errores.empresaId %}<em class="field__error">{{ errores.empresaId }}</em>{% endif %}
+      </label>
+      <label class="field"><span>Monto estimado (MXN)</span>
+        <input name="monto" inputmode="decimal" value="{{ valores.monto }}" placeholder="0" />
+        {% if errores.monto %}<em class="field__error">{{ errores.monto }}</em>{% endif %}
+      </label>
+      <label class="field"><span>Etapa</span>
+        <select name="etapa">{% for e in etapas %}<option value="{{ e.valor }}" {{ 'selected' if valores.etapa == e.valor }}>{{ e.etiqueta }}</option>{% endfor %}</select>
+      </label>
+      <label class="field"><span>Cierre estimado</span>
+        <input type="date" name="cierreEstimado" value="{{ valores.cierreEstimado }}" />
+      </label>
+      <label class="field"><span>Responsable</span>
+        <select name="responsableUid">{% for u in responsables %}<option value="{{ u.uid }}" {{ 'selected' if valores.responsableUid == u.uid }}>{{ u.nombre }}</option>{% endfor %}</select>
+      </label>
+    </div>
+    <label class="field"><span>Notas</span><textarea name="notas" rows="4">{{ valores.notas }}</textarea></label>
+    {% if valores.cotizacionId %}<p class="muted">Ligada a la <a href="/app/cotizaciones/{{ valores.cotizacionId }}">cotización</a>.</p>{% endif %}
+    <div class="page-head__actions">
+      <button class="btn" type="submit">Guardar</button>
+      <a class="btn btn--ghost" href="/app/ventas">Cancelar</a>
+    </div>
+  </form>
+  {% if modo == 'editar' and can('cotizaciones:editar') %}
+    <form method="post" action="/app/ventas/{{ oportunidad.id }}/eliminar" data-confirm="¿Eliminar esta oportunidad?">
+      <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+      <button class="btn btn--sm btn--danger" type="submit">🗑️ Eliminar</button>
+    </form>
+  {% endif %}
+{% endblock %}

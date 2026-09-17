@@ -72,7 +72,7 @@
 
     <div class="card">
       <p><strong>Descripción *</strong></p>
-      {{ tk.editorToolbar(user, '#ticket-descripcion-editor') }}
+      {{ tk.editorToolbar(user, '#ticket-descripcion-editor', config.respuestas) }}
       <div id="ticket-descripcion-editor" class="rte-editor" contenteditable="true" data-descripcion-editor
            data-placeholder="Describe el problema en detalle… — puedes pegar imágenes (Ctrl+V)">{{ valores.descripcion | safe }}</div>
       <textarea name="descripcion" id="ticket-descripcion" hidden>{{ valores.descripcion }}</textarea>

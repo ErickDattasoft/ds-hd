@@ -70,6 +70,11 @@ export function backofficeRoutes(container: Container): Router {
   // ── Usuarios ───────────────────────────────────────────────────────────────
   r.get('/mi-perfil', (req, res) => usuarios().miPerfilView(req, res));
   r.post('/mi-perfil', (req, res) => usuarios().miPerfilPost(req, res));
+  const dosPasos = () => container.resolve('dosPasosController');
+  r.get('/mi-perfil/dos-pasos', (req, res) => dosPasos().ver(req, res));
+  r.post('/mi-perfil/dos-pasos/activar', (req, res) => dosPasos().activarPost(req, res));
+  r.post('/mi-perfil/dos-pasos/desactivar', (req, res) => dosPasos().desactivarPost(req, res));
+  r.post('/usuarios/:uid/dos-pasos/quitar', gestUsuarios, (req, res) => dosPasos().quitarPost(req, res));
   r.post('/mi-perfil/contrasena', (req, res) => usuarios().miPasswordPost(req, res));
 
   r.get('/usuarios', gestUsuarios, (req, res) => usuarios().listar(req, res));
@@ -171,7 +176,19 @@ export function backofficeRoutes(container: Container): Router {
   r.post('/contactos/:id/archivar', requirePermission('contactos:eliminar'), (req, res) => contactos().archivarPost(req, res));
 
   // ── Cotizaciones ───────────────────────────────────────────────────────────
+  const reportes = () => container.resolve('reportesController');
+  r.get('/reportes', requirePermission('tickets:leer_todos'), (req, res) => reportes().ver(req, res));
+  r.get('/reportes/:seccion.csv', requirePermission('tickets:leer_todos'), (req, res) => reportes().csv(req, res));
+
   const leerCot = requirePermission('cotizaciones:leer');
+  const ventas = () => container.resolve('oportunidadController');
+  r.get('/ventas', leerCot, (req, res) => ventas().embudo(req, res));
+  r.get('/ventas/nueva', requirePermission('cotizaciones:crear'), (req, res) => ventas().nuevo(req, res));
+  r.post('/ventas', requirePermission('cotizaciones:crear'), (req, res) => ventas().crearPost(req, res));
+  r.get('/ventas/:id/editar', requirePermission('cotizaciones:editar'), (req, res) => ventas().editar(req, res));
+  r.post('/ventas/:id/mover', requirePermission('cotizaciones:editar'), (req, res) => ventas().moverPost(req, res));
+  r.post('/ventas/:id/eliminar', requirePermission('cotizaciones:editar'), (req, res) => ventas().eliminarPost(req, res));
+  r.post('/ventas/:id', requirePermission('cotizaciones:editar'), (req, res) => ventas().actualizarPost(req, res));
   r.get('/cotizaciones', leerCot, (req, res) => cotizaciones().listar(req, res));
   r.get('/cotizaciones/calculadora', requirePermission('cotizaciones:crear'), (req, res) => cotizaciones().calculadoraForm(req, res));
   r.post('/cotizaciones/calcular', requirePermission('cotizaciones:crear'), (req, res) => cotizaciones().calcularPost(req, res));

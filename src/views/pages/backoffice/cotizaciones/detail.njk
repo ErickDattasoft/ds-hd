@@ -8,6 +8,9 @@
       {% if can('cotizaciones:editar') and cotizacion.estado != 'aceptada' %}
         <a class="btn btn--sm" href="/app/cotizaciones/{{ cotizacion.id }}/editar">Editar</a>
       {% endif %}
+      {% if can('cotizaciones:crear') %}
+        <a class="btn btn--sm btn--ghost" href="/app/ventas/nueva?cotizacion={{ cotizacion.id }}&empresa={{ cotizacion.empresaId }}&monto={{ cotizacion.total }}&titulo={{ ('Cotización ' ~ cotizacion.folio) | urlencode }}">💼 Al embudo</a>
+      {% endif %}
       {% if cotizacion.ticketId %}
         <a class="btn btn--sm btn--secondary" href="/app/tickets/{{ cotizacion.ticketId }}">🎫 Ver ticket #{{ cotizacion.ticketNumero }} →</a>
       {% endif %}

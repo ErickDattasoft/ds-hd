@@ -84,7 +84,7 @@
   (plantilla del usuario o la por defecto, con [fecha]), la firma del usuario, o una imagen
   (que se sube como adjunto). `destino` = selector CSS del textarea.
 #}
-{% macro editorToolbar(user, destino) %}
+{% macro editorToolbar(user, destino, respuestas) %}
   <div class="editor-toolbar">
     <button type="button" class="btn btn--ghost btn--sm"
       data-insertar="encabezado" data-destino="{{ destino }}" data-texto="{{ user.encabezado or '' }}"
@@ -93,6 +93,12 @@
       data-insertar="firma" data-destino="{{ destino }}" data-texto="{{ user.firma or '' }}"
       title="Inserta tu firma (configúrala en Mi perfil)">🖊️ Firma</button>
     <button type="button" class="btn btn--ghost btn--sm" data-insertar-imagen data-destino="{{ destino }}" title="Insertar/adjuntar una imagen">🖼️ Imagen</button>
+    {% if respuestas and respuestas | length %}
+      <select class="btn btn--ghost btn--sm" data-insertar-respuesta data-destino="{{ destino }}" aria-label="Insertar respuesta guardada">
+        <option value="">💬 Respuesta…</option>
+        {% for r in respuestas %}<option value="{{ r.texto }}">{{ r.titulo }}</option>{% endfor %}
+      </select>
+    {% endif %}
   </div>
 {% endmacro %}
 

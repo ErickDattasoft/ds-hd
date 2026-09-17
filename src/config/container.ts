@@ -52,6 +52,16 @@ import { SolicitarAccesoService } from '../application/auth/SolicitarAccesoServi
 import { SolicitudAccesoService } from '../application/auth/SolicitudAccesoService.js';
 import { CrearUsuarioService } from '../application/usuarios/CrearUsuarioService.js';
 import { ActualizarUsuarioService } from '../application/usuarios/ActualizarUsuarioService.js';
+import { EncuestaSatisfaccionService } from '../application/tickets/EncuestaSatisfaccionService.js';
+import { EncuestaController } from '../interfaces/http/controllers/public/EncuestaController.js';
+import { ReportesService } from '../application/reportes/ReportesService.js';
+import { ReportesController } from '../interfaces/http/controllers/backoffice/ReportesController.js';
+import { DosPasosController } from '../interfaces/http/controllers/backoffice/DosPasosController.js';
+import { DosPasosService } from '../application/auth/DosPasosService.js';
+import type { IOportunidadRepository } from '../core/ports/repositories/IOportunidadRepository.js';
+import { FirestoreOportunidadRepository } from '../infrastructure/firestore/FirestoreOportunidadRepository.js';
+import { OportunidadService } from '../application/ventas/OportunidadService.js';
+import { OportunidadController } from '../interfaces/http/controllers/backoffice/OportunidadController.js';
 import { ContrasenaService } from '../application/usuarios/ContrasenaService.js';
 import { ActualizarMiFirmaService } from '../application/usuarios/ActualizarMiFirmaService.js';
 import { InvitarClienteService } from '../application/usuarios/InvitarClienteService.js';
@@ -193,6 +203,8 @@ export interface Cradle {
   contadorRepo: IContadorRepository;
   intentosLoginRepo: IIntentosLoginRepository;
   filtroGuardadoRepo: IFiltroGuardadoRepository;
+  oportunidadRepo: IOportunidadRepository;
+  oportunidadController: OportunidadController;
   adjuntoTicketRepo: IAdjuntoTicketRepository;
   adjuntoTicketService: AdjuntoTicketService;
   filtrosGuardadosService: FiltrosGuardadosService;
@@ -276,6 +288,11 @@ export interface Cradle {
   // Controllers
   authController: AuthController;
   usuarioController: UsuarioController;
+  encuestaController: EncuestaController;
+  dosPasosService: DosPasosService;
+  dosPasosController: DosPasosController;
+  reportesController: ReportesController;
+  encuestaSatisfaccionService: EncuestaSatisfaccionService;
   solicitudAccesoController: SolicitudAccesoController;
   portalPerfilController: PortalPerfilController;
   portalTicketController: PortalTicketController;
@@ -425,6 +442,18 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
       ({ firestoreDb }: Cradle): IIntentosLoginRepository =>
         new FirestoreIntentosLoginRepository(requireFirestore(firestoreDb)),
     ).singleton(),
+    oportunidadRepo: asFunction(
+      ({ firestoreDb }: Cradle): IOportunidadRepository =>
+        new FirestoreOportunidadRepository(requireFirestore(firestoreDb)),
+    ).singleton(),
+    oportunidadController: asFunction(
+      (c: Cradle) =>
+        new OportunidadController(
+          new OportunidadService(c.oportunidadRepo, c.empresaRepo, c.usuarioRepo, c.idGenerator, c.clock, c.bitacoraService),
+          c.empresaRepo,
+          c.usuarioRepo,
+        ),
+    ).singleton(),
     filtroGuardadoRepo: asFunction(
       ({ firestoreDb }: Cradle): IFiltroGuardadoRepository =>
         new FirestoreFiltroGuardadoRepository(requireFirestore(firestoreDb)),
@@ -525,7 +554,13 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
           c.clock,
           c.logger,
           c.intentosLoginRepo,
+          c.dosPasosService,
         ),
+    ).singleton(),
+    dosPasosController: asFunction((c: Cradle) => new DosPasosController(c.dosPasosService)).singleton(),
+    dosPasosService: asFunction(
+      (c: Cradle) =>
+        new DosPasosService(c.usuarioRepo, c.clock, c.logger, c.config.session.secret, 'DATTASOFT HD'),
     ).singleton(),
     solicitarAccesoService: asFunction(
       (c: Cradle) =>
@@ -626,6 +661,7 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
           c.emailSender,
           c.webhookPublisher,
           c.logger,
+          c.encuestaSatisfaccionService,
         ),
     ).singleton(),
     asignarAgenteService: asFunction(
@@ -872,6 +908,14 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
           { notificarSolicitudesA: [c.config.brevo.senderEmail], cookieSecure: c.config.isProduction },
         ),
     ).singleton(),
+    encuestaSatisfaccionService: asFunction(
+      (c: Cradle) =>
+        new EncuestaSatisfaccionService(c.ticketRepo, c.idGenerator, c.clock, c.config.session.secret, c.config.baseUrl),
+    ).singleton(),
+    reportesController: asFunction(
+      (c: Cradle) => new ReportesController(new ReportesService(c.ticketQueries, c.clock)),
+    ).singleton(),
+    encuestaController: asFunction((c: Cradle) => new EncuestaController(c.encuestaSatisfaccionService)).singleton(),
     usuarioController: asFunction(
       (c: Cradle) =>
         new UsuarioController(
@@ -941,6 +985,7 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
           c.configuracionRepo,
           c.contadorRepo,
           c.clock,
+          c.oportunidadRepo,
         ),
     ).singleton(),
     configuracionController: asFunction(

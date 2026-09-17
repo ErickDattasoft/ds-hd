@@ -1,0 +1,62 @@
+{% extends "layouts/backoffice.njk" %}
+{% block title %}Embudo de ventas{% endblock %}
+{% block content %}
+  <div class="page-head">
+    <h1>Embudo de ventas</h1>
+    <div class="page-head__actions">
+      {% if can('cotizaciones:crear') %}<a class="btn btn--sm" href="/app/ventas/nueva">➕ Nueva oportunidad</a>{% endif %}
+    </div>
+  </div>
+
+  <form method="get" action="/app/ventas" class="form-grid">
+    <label class="field"><span>Responsable</span>
+      <select name="responsable" data-autoenviar>
+        <option value="">Todos</option>
+        {% for u in responsables %}<option value="{{ u.uid }}" {{ 'selected' if responsableUid == u.uid }}>{{ u.nombre }}</option>{% endfor %}
+      </select>
+    </label>
+    <noscript><button class="btn btn--sm" type="submit">Filtrar</button></noscript>
+  </form>
+
+  <div class="stat-row">
+    <div class="stat stat--top-brand"><span class="stat__num">{{ embudo.abierto | moneda }}</span><span class="stat__lbl">En el embudo (abiertas)</span></div>
+    <div class="stat stat--top-info" title="Cada oportunidad abierta × la probabilidad de su etapa"><span class="stat__num">{{ embudo.ponderado | moneda }}</span><span class="stat__lbl">Pronóstico ponderado</span></div>
+    <div class="stat stat--top-ok"><span class="stat__num">{{ embudo.ganadoMes | moneda }}</span><span class="stat__lbl">Ganado este mes</span></div>
+    <div class="stat"><span class="stat__num">{{ (embudo.tasaCierre ~ '%') if embudo.tasaCierre !== null else '—' }}</span><span class="stat__lbl">Tasa de cierre</span></div>
+  </div>
+
+  <div class="kanban">
+    {% for col in embudo.columnas %}
+      <section class="kanban__col" aria-label="{{ col.etiqueta }}">
+        <h2 class="kanban__title">{{ col.etiqueta }} <span class="muted">({{ col.oportunidades | length }} · {{ col.total | moneda }})</span></h2>
+        {% for o in col.oportunidades %}
+          <div class="kanban__card">
+            <a href="/app/ventas/{{ o.id }}/editar"><strong>{{ o.titulo }}</strong></a>
+            <div class="kanban__meta">
+              <span>{{ o.empresaNombre or 'Sin empresa' }}</span>
+              <strong>{{ o.monto | moneda }}</strong>
+            </div>
+            <div class="kanban__meta">
+              <span>{{ o.responsableNombre or '—' }}</span>
+              <span>{% if o.cierreEstimado %}cierre {{ o.cierreEstimado | fecha }}{% endif %}</span>
+            </div>
+            {% if o.cotizacionId %}<a class="muted" href="/app/cotizaciones/{{ o.cotizacionId }}">🧾 cotización</a>{% endif %}
+            {% if o.motivoPerdida %}<p class="muted">Motivo: {{ o.motivoPerdida }}</p>{% endif %}
+            {% if can('cotizaciones:editar') %}
+              <form method="post" action="/app/ventas/{{ o.id }}/mover" class="inline">
+                <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+                <input type="hidden" name="volver" value="{{ ('?responsable=' ~ responsableUid) if responsableUid else '' }}" />
+                <select name="etapa" aria-label="Mover a etapa" data-mover-etapa data-etapa-actual="{{ o.etapa }}">
+                  {% for e in etapas %}<option value="{{ e.valor }}" {{ 'selected' if e.valor == o.etapa }}>{{ e.etiqueta }}</option>{% endfor %}
+                </select>
+                <input type="hidden" name="motivoPerdida" value="" />
+              </form>
+            {% endif %}
+          </div>
+        {% else %}
+          <p class="muted">—</p>
+        {% endfor %}
+      </section>
+    {% endfor %}
+  </div>
+{% endblock %}

@@ -2,7 +2,7 @@ import type { IConfiguracionRepository } from '../../core/ports/repositories/ICo
 import type { ILogger } from '../../core/ports/services/ILogger.js';
 import type { ConfiguracionTickets } from '../../core/entities/ConfiguracionTickets.js';
 import type { PredeterminadosTicket } from '../../core/entities/ConfiguracionTickets.js';
-import { CONFIG_TICKETS_POR_DEFECTO } from '../../core/entities/ConfiguracionTickets.js';
+import { CONFIG_TICKETS_POR_DEFECTO, parsearRespuestas } from '../../core/entities/ConfiguracionTickets.js';
 import { ForbiddenError, ValidationError } from '../../core/errors/DomainError.js';
 import type { SessionUser } from '../shared/SessionUser.js';
 
@@ -35,6 +35,7 @@ export class ConfiguracionTicketsService {
     correosNotificacion: string;
     slaHoras: Record<string, string | number>;
     predeterminados?: PredeterminadosTicket;
+    respuestas?: string;
   }): Promise<void> {
     if (!input.actor.permisos.includes('configuracion:catalogos')) {
       throw new ForbiddenError('No puedes editar la configuración');
@@ -66,6 +67,8 @@ export class ConfiguracionTicketsService {
       estadoInicial: input.estadoInicial,
       correosNotificacion: listaLimpia(input.correosNotificacion),
     };
+    if (input.respuestas !== undefined) config.respuestas = parsearRespuestas(input.respuestas);
+    else config.respuestas = (await this.repo.obtenerTickets()).respuestas ?? [];
     if (input.predeterminados) {
       const p = input.predeterminados;
       // Un predeterminado que ya no está en su catálogo se descarta en silencio.

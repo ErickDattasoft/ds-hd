@@ -51,6 +51,16 @@
     <button class="btn" type="submit">Guardar</button>
   </form>
 
+  <div class="card" id="dos-pasos">
+    <h2>🔐 Verificación en dos pasos</h2>
+    {% if user.totpActivo %}
+      <p><span class="badge badge--ok">Activa</span> Al entrar se te pide un código de tu app autenticadora.</p>
+    {% else %}
+      <p class="muted">Protege tu cuenta: además de la contraseña, se pide un código de tu teléfono. Muy recomendable para administradores.</p>
+    {% endif %}
+    <a class="btn btn--secondary btn--sm" href="/app/mi-perfil/dos-pasos">{{ 'Administrar' if user.totpActivo else 'Activar' }}</a>
+  </div>
+
   <form method="post" action="/app/mi-perfil/contrasena" class="form form--wide card" id="contrasena" autocomplete="off">
     <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
     <h2>🔐 Cambiar mi contraseña</h2>
