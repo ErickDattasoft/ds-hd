@@ -13,6 +13,15 @@
   </div>
   {% if filtro.agenda == '1' %}<p class="muted">Solo tickets con atención programada, del más próximo al más lejano.</p>{% endif %}
 
+  {% if resumen %}
+    <div class="stat-row">
+      <a class="stat stat--top-brand" href="/app/tickets"><span class="stat__num">{{ resumen.total }}</span><span class="stat__lbl">Total tickets</span></a>
+      {% for e in config.estados %}
+        <a class="stat {{ e | estadoStatClase }}" href="/app/tickets?estado={{ e }}"><span class="stat__num">{{ resumen.porEstado[e] or 0 }}</span><span class="stat__lbl">{{ e }}</span></a>
+      {% endfor %}
+    </div>
+  {% endif %}
+
   <form method="get" class="filterbar">
     <input type="hidden" name="f" value="1" />
     {% if filtro.agenda == '1' %}<input type="hidden" name="agenda" value="1" />{% endif %}

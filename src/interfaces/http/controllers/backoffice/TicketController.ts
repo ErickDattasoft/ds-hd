@@ -83,12 +83,16 @@ export class TicketController {
 
   listarView = async (req: Request, res: Response): Promise<void> => {
     const filtro = this.filtroDeQuery(req);
-    const { tickets, total, config } = await this.listar.listar(req.user!, filtro);
+    const [{ tickets, total, config }, resumen] = await Promise.all([
+      this.listar.listar(req.user!, filtro),
+      this.listar.resumenPorEstado(req.user!),
+    ]);
     const ahora = this.clock.now();
     res.render('pages/backoffice/tickets/list', {
       titulo: 'Tickets',
       tickets: tickets.map((t) => ticketVM(t, ahora)),
       total,
+      resumen,
       config,
       filtro: req.query,
     });

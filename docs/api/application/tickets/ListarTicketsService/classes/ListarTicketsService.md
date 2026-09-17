@@ -50,6 +50,26 @@ Caso de uso: listar / tablero de tickets del back-office, respetando el alcance 
 
 ***
 
+### resumenPorEstado()
+
+> **resumenPorEstado**(`actor`): `Promise`\<\{ `total`: `number`; `porEstado`: `Record`\<`string`, `number`\>; \}\>
+
+Conteo global por estado, sin importar el filtro de la vista (búsqueda/prioridad/etc.) —
+para el resumen de arriba de la lista ("51 total, 2 abiertos, ..."). Respeta el alcance del
+actor (un agente sin `tickets:leer_todos` solo cuenta los suyos) y excluye la papelera.
+
+#### Parameters
+
+##### actor
+
+[`SessionUser`](../../../shared/SessionUser/interfaces/SessionUser.md)
+
+#### Returns
+
+`Promise`\<\{ `total`: `number`; `porEstado`: `Record`\<`string`, `number`\>; \}\>
+
+***
+
 ### tablero()
 
 > **tablero**(`actor`, `filtro`): `Promise`\<\{ `columnas`: [`ColumnaKanban`](../../../../core/ports/repositories/ITicketQueries/interfaces/ColumnaKanban.md)[]; `config`: [`ConfiguracionTickets`](../../../../core/entities/ConfiguracionTickets/interfaces/ConfiguracionTickets.md); \}\>

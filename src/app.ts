@@ -101,6 +101,16 @@ function installViewEngine(app: Express, config: AppConfig, precompiled: boolean
     if (s === 'media') return 'badge badge--info';
     return 'badge';
   });
+  /** Igual que `estadoClase` pero para la barra de color de una tarjeta `.stat` (resumen). */
+  env.addFilter('estadoStatClase', (v: unknown) => {
+    const s = slug(v);
+    if (/cerrad/.test(s)) return '';
+    if (/cancelad|rechazad|vencid/.test(s)) return 'stat--top-danger';
+    if (/resuelt|aceptad|finalizad/.test(s)) return 'stat--top-ok';
+    if (/pendient/.test(s)) return 'stat--top-warning';
+    if (/proces|enviad|public|abiert/.test(s)) return 'stat--top-info';
+    return 'stat--top-brand';
+  });
 }
 
 /**

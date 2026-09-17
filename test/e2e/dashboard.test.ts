@@ -31,8 +31,8 @@ describe('dashboard', () => {
     expect(dash.text).toContain('Sin asignar');
     // 3 tickets abiertos
     expect(dash.text).toMatch(/stat__num">3</);
-    // el logo de empresa solo va en el sidebar del portal, no en el del staff
-    expect(dash.text).not.toContain('data-logo-img');
+    // el logo de empresa va en el sidebar de ambas áreas (staff y portal)
+    expect(dash.text).toContain('data-logo-img');
   });
 
   it('el agente ve el dashboard acotado a lo suyo', async () => {
