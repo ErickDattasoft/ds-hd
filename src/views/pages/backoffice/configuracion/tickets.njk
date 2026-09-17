@@ -56,6 +56,30 @@
       </div>
     </details>
 
+    <details class="disclosure" open>
+      <summary class="disclosure__summary">⭐ Predeterminados del ticket nuevo</summary>
+      <div class="disclosure__body form">
+        <p class="muted">Con estos valores nace el formulario de <strong>Crear ticket</strong> para todos. Vacío = sin preselección. Guarda primero si acabas de agregar opciones a un catálogo.</p>
+        {% set pred = config.predeterminados or {} %}
+        {% macro sel(nombre, etiqueta, lista, actual) %}
+          <label class="field"><span>{{ etiqueta }}</span>
+            <select name="{{ nombre }}"><option value="">—</option>{% for v in lista %}<option {{ 'selected' if actual == v }}>{{ v }}</option>{% endfor %}</select>
+          </label>
+        {% endmacro %}
+        <div class="form-grid">
+          {{ sel('predTipo', 'Tipo', config.tipos, pred.tipo) }}
+          {{ sel('predPrioridad', 'Prioridad', config.prioridades, pred.prioridad) }}
+          {{ sel('predSistema', 'Sistema', config.sistemas, pred.sistema) }}
+          {{ sel('predGrupo', 'Grupo', config.grupos, pred.grupo) }}
+          <label class="field"><span>Facturación</span>
+            <select name="predFacturacion"><option value="">—</option>{% for ef in estadosFacturacion %}<option value="{{ ef.valor }}" {{ 'selected' if pred.estadoFacturacion == ef.valor }}>{{ ef.etiqueta }}</option>{% endfor %}</select>
+          </label>
+        </div>
+        <label class="field--check"><input type="checkbox" name="predAsignarAlCreador" {{ 'checked' if pred.asignarAlCreador }} /> <span>Agente: asignar el ticket a quien lo crea (técnicos)</span></label>
+        <p class="muted">El estado inicial se elige en "Flujo de estados".</p>
+      </div>
+    </details>
+
     <button class="btn" type="submit">Guardar</button>
   </form>
 {% endblock %}

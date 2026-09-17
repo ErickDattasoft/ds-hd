@@ -11,6 +11,7 @@ import type { AdjuntoTicketService } from '../../../../application/tickets/Adjun
 import type { ExcelUnificadoService } from '../../../../application/excel/ExcelUnificadoService.js';
 import { ETIQUETAS_EVENTOS } from '../../../../core/entities/ConfiguracionIntegraciones.js';
 import { INFO_APP } from '../../../../core/entities/AcercaDe.js';
+import { catalogoFacturacion } from './TicketController.js';
 import { camposDeError } from '../../support/errores.js';
 
 const str = (v: unknown): string => (typeof v === 'string' ? v : '');
@@ -185,6 +186,7 @@ export class ConfiguracionController {
   ticketsView = async (_req: Request, res: Response): Promise<void> => {
     const config = await this.configTickets.obtener();
     res.render('pages/backoffice/configuracion/tickets', {
+      estadosFacturacion: catalogoFacturacion(),
       titulo: 'Configuración de tickets',
       config,
       errores: {},
@@ -210,9 +212,18 @@ export class ConfiguracionController {
         estadoInicial: str(b.estadoInicial),
         correosNotificacion: str(b.correosNotificacion),
         slaHoras,
+        predeterminados: {
+          tipo: str(b.predTipo),
+          prioridad: str(b.predPrioridad),
+          sistema: str(b.predSistema),
+          grupo: str(b.predGrupo),
+          estadoFacturacion: str(b.predFacturacion),
+          asignarAlCreador: b.predAsignarAlCreador === 'on',
+        },
       });
       const config = await this.configTickets.obtener();
       res.render('pages/backoffice/configuracion/tickets', {
+      estadosFacturacion: catalogoFacturacion(),
         titulo: 'Configuración de tickets',
         config,
         errores: {},
@@ -221,6 +232,7 @@ export class ConfiguracionController {
     } catch (err) {
       const config = await this.configTickets.obtener();
       res.status(422).render('pages/backoffice/configuracion/tickets', {
+      estadosFacturacion: catalogoFacturacion(),
         titulo: 'Configuración de tickets',
         config,
         errores: camposDeError(err),

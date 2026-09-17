@@ -1,6 +1,7 @@
 import type { IConfiguracionRepository } from '../../core/ports/repositories/IConfiguracionRepository.js';
 import type { ILogger } from '../../core/ports/services/ILogger.js';
 import type { ConfiguracionTickets } from '../../core/entities/ConfiguracionTickets.js';
+import type { PredeterminadosTicket } from '../../core/entities/ConfiguracionTickets.js';
 import { CONFIG_TICKETS_POR_DEFECTO } from '../../core/entities/ConfiguracionTickets.js';
 import { ForbiddenError, ValidationError } from '../../core/errors/DomainError.js';
 import type { SessionUser } from '../shared/SessionUser.js';
@@ -33,6 +34,7 @@ export class ConfiguracionTicketsService {
     estadoInicial: string;
     correosNotificacion: string;
     slaHoras: Record<string, string | number>;
+    predeterminados?: PredeterminadosTicket;
   }): Promise<void> {
     if (!input.actor.permisos.includes('configuracion:catalogos')) {
       throw new ForbiddenError('No puedes editar la configuración');
@@ -64,6 +66,19 @@ export class ConfiguracionTicketsService {
       estadoInicial: input.estadoInicial,
       correosNotificacion: listaLimpia(input.correosNotificacion),
     };
+    if (input.predeterminados) {
+      const p = input.predeterminados;
+      // Un predeterminado que ya no está en su catálogo se descarta en silencio.
+      const en = (v: string | undefined, lista: string[]): string => (v && lista.includes(v) ? v : '');
+      config.predeterminados = {
+        tipo: en(p.tipo, config.tipos),
+        prioridad: en(p.prioridad, prioridades),
+        sistema: en(p.sistema, config.sistemas),
+        grupo: en(p.grupo, config.grupos),
+        estadoFacturacion: p.estadoFacturacion ?? '',
+        asignarAlCreador: Boolean(p.asignarAlCreador),
+      };
+    }
     await this.repo.guardarTickets(config);
     this.logger.info('Configuración de tickets actualizada', { por: input.actor.uid });
   }

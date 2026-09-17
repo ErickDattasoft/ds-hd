@@ -37,7 +37,8 @@ import { ValidationError } from '../../../../core/errors/DomainError.js';
 
 const str = (v: unknown): string => (typeof v === 'string' ? v : '');
 
-const catalogoFacturacion = (): { valor: string; etiqueta: string }[] =>
+/** Estados de facturación como opciones de `<select>`. */
+export const catalogoFacturacion = (): { valor: string; etiqueta: string }[] =>
   ESTADOS_FACTURACION.map((valor) => ({ valor, etiqueta: ETIQUETAS_FACTURACION[valor] }));
 
 /** Módulo de tickets del back-office. */
@@ -160,10 +161,19 @@ export class TicketController {
   }
 
   nuevoForm = async (req: Request, res: Response): Promise<void> => {
+    const datos = await this.datosFormNuevo(req.user!);
+    const pred = datos.config.predeterminados ?? {};
     res.render('pages/backoffice/tickets/form', {
       titulo: 'Nuevo ticket',
-      ...(await this.datosFormNuevo(req.user!)),
-      valores: { prioridad: 'Media', estadoFacturacion: 'no_facturado' },
+      ...datos,
+      valores: {
+        tipo: pred.tipo || '',
+        prioridad: pred.prioridad || 'Media',
+        sistema: pred.sistema || '',
+        grupo: pred.grupo || '',
+        estadoFacturacion: pred.estadoFacturacion || 'no_facturado',
+        asignarAMi: pred.asignarAlCreador && req.user!.esTecnico ? 'on' : '',
+      },
       aviso: req.query.ok ? 'ok' : '',
       errores: {},
     });

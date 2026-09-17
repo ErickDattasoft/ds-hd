@@ -16,6 +16,19 @@ export interface ConfiguracionTickets {
   estadoInicial: string;
   /** Correos que se notifican al llegar un ticket del portal público. */
   correosNotificacion: string[];
+  /** Valores con los que nace el formulario de ticket nuevo (⭐ en Configuración → Tickets). */
+  predeterminados?: PredeterminadosTicket;
+}
+
+/** Valores predeterminados del formulario de ticket nuevo; vacío = sin preselección. */
+export interface PredeterminadosTicket {
+  tipo?: string;
+  prioridad?: string;
+  sistema?: string;
+  grupo?: string;
+  estadoFacturacion?: string;
+  /** Ticket nuevo nace asignado a quien lo crea (si es técnico). */
+  asignarAlCreador?: boolean;
 }
 
 export const CONFIG_TICKETS_POR_DEFECTO: ConfiguracionTickets = {
@@ -35,6 +48,7 @@ export const CONFIG_TICKETS_POR_DEFECTO: ConfiguracionTickets = {
   tiposFacturables: ['Consultoría Sitio', 'Consultoría Remoto'],
   estadoInicial: 'Abierto',
   correosNotificacion: [],
+  predeterminados: { prioridad: 'Media', estadoFacturacion: 'no_facturado' },
 };
 
 /** Horas de SLA para una prioridad según la config (con fallback al valor por defecto). */
