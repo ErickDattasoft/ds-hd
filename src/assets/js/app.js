@@ -1286,6 +1286,35 @@
     banner.hidden = true;
   });
 
+  // ── Favoritas: alternar sin recargar la página ────────────────────────────
+  document.addEventListener('submit', function (ev) {
+    var form = ev.target;
+    if (!form.id || form.id.indexOf('fav-') !== 0 || !window.fetch) return;
+    ev.preventDefault();
+    var input = form.querySelector('input[name="favorita"]');
+    var boton = document.querySelector('button[form="' + form.id + '"]');
+    var marcar = input.value === 'true';
+    var pintar = function (on) {
+      if (!boton) return;
+      boton.textContent = on ? '⭐' : '☆';
+      boton.setAttribute('aria-pressed', on ? 'true' : 'false');
+      boton.title = on ? 'Quitar de favoritas' : 'Marcar como favorita';
+      input.value = on ? 'false' : 'true';
+    };
+    pintar(marcar);
+    fetch(form.action, {
+      method: 'POST',
+      body: new URLSearchParams(new FormData(form)),
+      headers: { 'X-Requested-With': 'fetch' },
+      credentials: 'same-origin',
+    }).then(function (r) {
+      if (!r.ok) throw new Error(String(r.status));
+    }).catch(function () {
+      pintar(!marcar);
+      alert('No se pudo actualizar la favorita. Intenta de nuevo.');
+    });
+  });
+
   // ── Tablas largas: encabezado fijo justo debajo del topbar (--topbar-h real) ─
   function medirTopbar() {
     var topbar = document.querySelector('.topbar');

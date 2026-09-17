@@ -381,7 +381,9 @@ fieldset.field {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius);
-  overflow: hidden;
+  /* clip (no hidden): "hidden" convierte la tabla en contenedor de scroll y el thead sticky
+     se desplazaba --topbar-h DENTRO de la tabla, encimándose a la primera fila. */
+  overflow: clip;
   font-size: var(--text-sm);
 }
 .data-table th,

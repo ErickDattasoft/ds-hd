@@ -110,6 +110,11 @@ export class EmpresaController {
   favoritaPost = async (req: Request, res: Response): Promise<void> => {
     const id = str(req.params.id);
     await this.empresas.alternarFavorita(req.user!, id, req.body?.favorita === 'true');
+    // app.js lo manda por fetch: sin redirect para no recargar (y releer) toda la lista.
+    if (req.get('X-Requested-With') === 'fetch') {
+      res.status(204).end();
+      return;
+    }
     const volver = str(req.body?.volver);
     res.redirect(volver.startsWith('/app/') ? volver : `/app/empresas/${id}`);
   };
