@@ -52,6 +52,7 @@ import { SolicitarAccesoService } from '../application/auth/SolicitarAccesoServi
 import { SolicitudAccesoService } from '../application/auth/SolicitudAccesoService.js';
 import { CrearUsuarioService } from '../application/usuarios/CrearUsuarioService.js';
 import { ActualizarUsuarioService } from '../application/usuarios/ActualizarUsuarioService.js';
+import { ContrasenaService } from '../application/usuarios/ContrasenaService.js';
 import { ActualizarMiFirmaService } from '../application/usuarios/ActualizarMiFirmaService.js';
 import { InvitarClienteService } from '../application/usuarios/InvitarClienteService.js';
 import { AceptarInvitacionService } from '../application/usuarios/AceptarInvitacionService.js';
@@ -223,6 +224,7 @@ export interface Cradle {
   crearUsuarioService: CrearUsuarioService;
   actualizarUsuarioService: ActualizarUsuarioService;
   actualizarMiFirmaService: ActualizarMiFirmaService;
+  contrasenaService: ContrasenaService;
   invitarClienteService: InvitarClienteService;
   aceptarInvitacionService: AceptarInvitacionService;
   actualizarMiPerfilService: ActualizarMiPerfilService;
@@ -550,6 +552,9 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
       (c: Cradle) =>
         new ActualizarUsuarioService(c.usuarioRepo, c.authProvider, c.clock, c.logger),
     ).singleton(),
+    contrasenaService: asFunction(
+      (c: Cradle) => new ContrasenaService(c.usuarioRepo, c.authProvider, c.logger),
+    ).singleton(),
     actualizarMiFirmaService: asFunction(
       (c: Cradle) => new ActualizarMiFirmaService(c.usuarioRepo, c.clock),
     ).singleton(),
@@ -876,6 +881,7 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
           c.invitarClienteService,
           c.empresaRepo,
           c.actualizarMiFirmaService,
+          c.contrasenaService,
         ),
     ).singleton(),
     solicitudAccesoController: asFunction(

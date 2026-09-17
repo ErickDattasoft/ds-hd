@@ -32,6 +32,21 @@
     setTheme(next);
   });
 
+  // ── Colapsar menú lateral (escritorio) ─────────────────────────────────────
+  function pintarColapsar() {
+    var btn = document.querySelector('[data-nav-colapsar]');
+    if (btn) btn.textContent = root.getAttribute('data-sidebar') === 'mini' ? '›' : '‹';
+  }
+  pintarColapsar();
+  document.addEventListener('click', function (e) {
+    if (!e.target.closest('[data-nav-colapsar]')) return;
+    var mini = root.getAttribute('data-sidebar') !== 'mini';
+    if (mini) root.setAttribute('data-sidebar', 'mini');
+    else root.removeAttribute('data-sidebar');
+    document.cookie = 'sidebar=' + (mini ? 'mini;max-age=31536000' : ';max-age=0') + ';path=/;samesite=lax';
+    pintarColapsar();
+  });
+
   // ── Nav móvil ────────────────────────────────────────────────────────────
   document.addEventListener('click', function (e) {
     var sidebar = document.querySelector('.sidebar');
@@ -1284,6 +1299,32 @@
       localStorage.setItem(ALERTAS_DESCARTADAS_KEY, JSON.stringify({ fecha: hoyISO(), firma: banner.getAttribute('data-firma-alertas') || '' }));
     } catch (e) { void e; }
     banner.hidden = true;
+  });
+
+  // ── KB: copiar / descargar el documento (Markdown) ──────────────────────────
+  document.addEventListener('click', function (e) {
+    var copiar = e.target.closest('[data-kb-copiar]');
+    var descargar = e.target.closest('[data-kb-descargar]');
+    if (!copiar && !descargar) return;
+    var fuente = document.querySelector('[data-kb-markdown]');
+    if (!fuente) return;
+    var texto = fuente.value;
+    if (copiar) {
+      navigator.clipboard.writeText(texto).then(function () {
+        var original = copiar.textContent;
+        copiar.textContent = '✅ Copiado';
+        setTimeout(function () { copiar.textContent = original; }, 1500);
+      }, function () { alert('No se pudo copiar al portapapeles.'); });
+      return;
+    }
+    var url = URL.createObjectURL(new Blob([texto], { type: 'text/markdown;charset=utf-8' }));
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = descargar.getAttribute('data-kb-descargar');
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
   });
 
   // ── Favoritas: alternar sin recargar la página ────────────────────────────

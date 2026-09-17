@@ -232,8 +232,58 @@ export class CotizacionService {
   }
 
   /** Crea un ticket interno de seguimiento a partir de la cotización. */
+  /** Copia una cotización con folio nuevo, en borrador y con fecha de hoy. */
+  async duplicar(actor: SessionUser, id: string): Promise<Cotizacion> {
+    const o = await this.obtener(id);
+    const copia = await this.crear(actor, {
+      empresaId: o.empresaId,
+      contactoId: o.contactoId ?? undefined,
+      vigenciaDias: o.vigenciaDias,
+      conceptos: o.conceptos.map((c) => ({ ...c })),
+      notas: o.notas ?? undefined,
+      condiciones: o.condiciones ?? undefined,
+      emisorNombre: o.emisorNombre,
+      emisorCargo: o.emisorCargo,
+      emisorTelefono: o.emisorTelefono,
+      emisorCorreo: o.emisorCorreo,
+      rfc: o.rfc,
+      contactoNombre: o.contactoNombre,
+      contactoCorreo: o.contactoCorreo,
+      contactoTelefono: o.contactoTelefono,
+      origenCalculadora: o.origenCalculadora,
+      parametrosCompac: o.parametrosCompac,
+    });
+    await this.bitacora.registrar({
+      actor,
+      accion: 'duplicar',
+      modulo: 'cotizaciones',
+      entidadTipo: 'Cotizacion',
+      entidadId: copia.id,
+      resumen: `${copia.folio} duplicada de ${o.folio}`,
+    });
+    return copia;
+  }
+
+  /** Elimina definitivamente una cotización (igual que el CRM viejo: sin papelera). */
+  async eliminar(actor: SessionUser, id: string): Promise<void> {
+    if (!actor.permisos.includes('cotizaciones:editar')) throw new ForbiddenError('No puedes eliminar cotizaciones');
+    const c = await this.obtener(id);
+    await this.repo.delete(id);
+    await this.bitacora.registrar({
+      actor,
+      accion: 'eliminar',
+      modulo: 'cotizaciones',
+      entidadTipo: 'Cotizacion',
+      entidadId: id,
+      resumen: `${c.folio} de ${c.empresaNombre ?? '—'} eliminada`,
+    });
+  }
+
   async crearTicketSeguimiento(actor: SessionUser, id: string): Promise<Ticket> {
     const cotizacion = await this.obtener(id);
+    if (cotizacion.ticketId) {
+      throw new ValidationError(`Esta cotización ya tiene el ticket #${cotizacion.ticketNumero ?? ''}`);
+    }
     const lineas = cotizacion.conceptos
       .map((c) => `• ${c.cantidad} × ${c.descripcion} — ${this.fmt(c.importe, cotizacion.moneda)}`)
       .join('\n');
@@ -251,6 +301,10 @@ export class CotizacionService {
       empresaNombre: cotizacion.empresaNombre,
       asignarAlActor: true,
     });
+    cotizacion.ticketId = ticket.id;
+    cotizacion.ticketNumero = ticket.numero;
+    cotizacion.updatedAt = this.clock.now();
+    await this.repo.save(cotizacion);
     await this.bitacora.registrar({
       actor,
       accion: 'crear_ticket',

@@ -10,7 +10,7 @@
     <button type="button" class="sidebar__logo-btn" data-logo-agrandar title="Ver logo en grande" aria-label="Ver logo en grande">
       <img data-logo-img src="/logo" alt="" />
     </button>
-    <a href="{{ '/portal' if area == 'portal' else '/app' }}">{{ appNombre }}</a>
+    <a class="sidebar__text" href="{{ '/portal' if area == 'portal' else '/app' }}">{{ appNombre }}</a>
   </div>
   {% for seccion in navSecciones %}
     <ul class="sidebar__list" aria-label="{{ seccion.etiqueta }}">
@@ -20,8 +20,8 @@
       {% for item in seccion.items %}
         {% set cls = _activo(item.href) | trim %}
         <li>
-          <a class="sidebar__link {{ cls }}" href="{{ item.href }}"{% if cls %} aria-current="page"{% endif %}>
-            <span class="sidebar__icon" aria-hidden="true">{{ item.icono }}</span>{{ item.etiqueta }}
+          <a class="sidebar__link {{ cls }}" href="{{ item.href }}" title="{{ item.etiqueta }}"{% if cls %} aria-current="page"{% endif %}>
+            <span class="sidebar__icon" aria-hidden="true">{{ item.icono }}</span><span class="sidebar__text">{{ item.etiqueta }}</span>
             {% if item.contador %}<span class="badge sidebar__badge">{{ item.contador }}</span>{% endif %}
           </a>
         </li>
@@ -33,13 +33,13 @@
     <ul class="sidebar__list sidebar__list--footer">
       <li>
         <a class="sidebar__link {{ 'is-active' if currentPath == manualHref }}" href="{{ manualHref }}">
-          <span class="sidebar__icon" aria-hidden="true">📖</span>Manual de uso
+          <span class="sidebar__icon" aria-hidden="true">📖</span><span class="sidebar__text">Manual de uso</span>
         </a>
       </li>
       {% if area == 'backoffice' %}
         <li>
           <a class="sidebar__link {{ 'is-active' if currentPath == '/app/acerca-de' }}" href="/app/acerca-de">
-            <span class="sidebar__icon" aria-hidden="true">ℹ️</span>Acerca de
+            <span class="sidebar__icon" aria-hidden="true">ℹ️</span><span class="sidebar__text">Acerca de</span>
           </a>
         </li>
       {% endif %}

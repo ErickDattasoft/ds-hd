@@ -10,6 +10,11 @@
       · <a href="{{ kbBase }}/comparar?a={{ articulo.slug or articulo.id }}">🔀 comparar con otro</a>
       {% if puedeEditar %} · <a href="/app/kb/{{ articulo.id }}/editar">editar</a>{% endif %}
     </p>
+    <p class="kb-acciones">
+      <button type="button" class="btn btn--sm btn--ghost" data-kb-copiar>📋 Copiar</button>
+      <button type="button" class="btn btn--sm btn--ghost" data-kb-descargar="{{ articulo.slug or articulo.id }}.md">⬇ Descargar</button>
+      <textarea hidden data-kb-markdown>{{ articulo.cuerpoMarkdown }}</textarea>
+    </p>
     {% if articulo.tags | length %}
       <div class="kb-tags">
         {% for t in articulo.tags %}<a class="kb-tag" href="{{ kbBase }}?tag={{ t }}">{{ t }}</a>{% endfor %}

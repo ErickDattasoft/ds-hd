@@ -8,6 +8,23 @@
       {% if can('cotizaciones:editar') and cotizacion.estado != 'aceptada' %}
         <a class="btn btn--sm" href="/app/cotizaciones/{{ cotizacion.id }}/editar">Editar</a>
       {% endif %}
+      {% if cotizacion.ticketId %}
+        <a class="btn btn--sm btn--secondary" href="/app/tickets/{{ cotizacion.ticketId }}">🎫 Ver ticket #{{ cotizacion.ticketNumero }} →</a>
+      {% endif %}
+      {% if can('cotizaciones:crear') %}
+        <form method="post" action="/app/cotizaciones/{{ cotizacion.id }}/duplicar" class="inline"
+              data-confirm="¿Duplicar la cotización {{ cotizacion.folio }}?">
+          <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+          <button class="btn btn--sm btn--ghost" type="submit">📋 Duplicar</button>
+        </form>
+      {% endif %}
+      {% if can('cotizaciones:editar') %}
+        <form method="post" action="/app/cotizaciones/{{ cotizacion.id }}/eliminar" class="inline"
+              data-confirm="¿Eliminar definitivamente la cotización {{ cotizacion.folio }}? No se puede deshacer.">
+          <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+          <button class="btn btn--sm btn--danger" type="submit">🗑️ Eliminar</button>
+        </form>
+      {% endif %}
     </div>
   </div>
   <p class="muted">{{ cotizacion.empresaNombre }} · Fecha {{ cotizacion.fecha | fecha }} · Vence {{ cotizacion.venceEl | fecha }}</p>
@@ -72,7 +89,7 @@
         <button class="btn btn--sm btn--secondary" type="submit">Enviar</button>
       </form>
 
-      {% if can('tickets:crear') %}
+      {% if can('tickets:crear') and not cotizacion.ticketId %}
         <form method="post" action="/app/cotizaciones/{{ cotizacion.id }}/crear-ticket" class="card form">
           <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
           <p class="muted">Crea un ticket interno de seguimiento comercial para esta cotización.</p>

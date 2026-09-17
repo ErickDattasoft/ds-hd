@@ -20,6 +20,9 @@ export class InMemoryCotizacionRepository implements ICotizacionRepository {
   async save(c: Cotizacion): Promise<void> {
     this.items.set(c.id, c);
   }
+  async delete(id: string): Promise<void> {
+    this.items.delete(id);
+  }
   async contarPorEstado(): Promise<Record<string, number>> {
     const out: Record<string, number> = {};
     for (const c of this.items.values()) out[c.estado] = (out[c.estado] ?? 0) + 1;

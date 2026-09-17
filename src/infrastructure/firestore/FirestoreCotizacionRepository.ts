@@ -31,6 +31,8 @@ function toDomain(id: string, d: DocumentData): Cotizacion {
     contactoTelefono: d.contactoTelefono ?? null,
     origenCalculadora: Boolean(d.origenCalculadora),
     parametrosCompac: d.parametrosCompac ?? null,
+    ticketId: d.ticketId ?? null,
+    ticketNumero: typeof d.ticketNumero === 'number' ? d.ticketNumero : null,
     creadoPorUid: d.creadoPorUid ?? null,
     createdAt: fecha(d.createdAt),
     updatedAt: fecha(d.updatedAt),
@@ -89,12 +91,18 @@ export class FirestoreCotizacionRepository implements ICotizacionRepository {
         contactoTelefono: c.contactoTelefono,
         origenCalculadora: c.origenCalculadora,
         parametrosCompac: c.parametrosCompac,
+        ticketId: c.ticketId,
+        ticketNumero: c.ticketNumero,
         creadoPorUid: c.creadoPorUid,
         createdAt: Timestamp.fromDate(c.createdAt),
         updatedAt: Timestamp.fromDate(c.updatedAt),
       },
       { merge: true },
     );
+  }
+
+  async delete(id: string): Promise<void> {
+    await this.db.collection(COL).doc(id).delete();
   }
 
   async contarPorEstado(): Promise<Record<string, number>> {

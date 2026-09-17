@@ -19,7 +19,7 @@
     <button class="btn btn--sm" type="submit">Filtrar</button>
   </form>
   <table class="data-table">
-    <thead><tr><th>Folio</th><th>Empresa</th><th>Fecha</th><th>Total</th><th>Estado</th></tr></thead>
+    <thead><tr><th>Folio</th><th>Empresa</th><th>Fecha</th><th>Total</th><th>Estado</th><th></th></tr></thead>
     <tbody>
       {% for c in cotizaciones %}
         <tr>
@@ -28,8 +28,23 @@
           <td>{{ c.fecha | fecha }}</td>
           <td>{{ c.total | moneda(c.moneda) }}</td>
           <td><span class="{{ c.estado | estadoClase }}">{{ c.estado }}</span></td>
+          <td class="col-acciones">
+            {% if c.ticketId %}<a class="btn btn--sm btn--ghost" href="/app/tickets/{{ c.ticketId }}" title="Ver ticket">🎫 #{{ c.ticketNumero }}</a>{% endif %}
+            {% if can('cotizaciones:crear') %}
+              <form method="post" action="/app/cotizaciones/{{ c.id }}/duplicar" class="inline" data-confirm="¿Duplicar la cotización {{ c.folio }}?">
+                <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+                <button class="btn btn--sm btn--ghost" type="submit" title="Duplicar">📋</button>
+              </form>
+            {% endif %}
+            {% if can('cotizaciones:editar') %}
+              <form method="post" action="/app/cotizaciones/{{ c.id }}/eliminar" class="inline" data-confirm="¿Eliminar definitivamente la cotización {{ c.folio }}?">
+                <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+                <button class="btn btn--sm btn--ghost" type="submit" title="Eliminar">🗑️</button>
+              </form>
+            {% endif %}
+          </td>
         </tr>
-      {% else %}<tr><td colspan="5" class="muted">📭 Sin cotizaciones que coincidan.{% if can('cotizaciones:crear') %} <a href="/app/cotizaciones/nueva">Crea la primera</a>.{% endif %}</td></tr>{% endfor %}
+      {% else %}<tr><td colspan="6" class="muted">📭 Sin cotizaciones que coincidan.{% if can('cotizaciones:crear') %} <a href="/app/cotizaciones/nueva">Crea la primera</a>.{% endif %}</td></tr>{% endfor %}
     </tbody>
   </table>
 {% endblock %}

@@ -3,6 +3,7 @@ import type { IUsuarioRepository } from '../../../../core/ports/repositories/IUs
 import type { CrearUsuarioService } from '../../../../application/usuarios/CrearUsuarioService.js';
 import type { ActualizarUsuarioService } from '../../../../application/usuarios/ActualizarUsuarioService.js';
 import type { ActualizarMiFirmaService } from '../../../../application/usuarios/ActualizarMiFirmaService.js';
+import type { ContrasenaService } from '../../../../application/usuarios/ContrasenaService.js';
 import type { InvitarClienteService } from '../../../../application/usuarios/InvitarClienteService.js';
 import type { IEmpresaRepository } from '../../../../core/ports/repositories/IEmpresaRepository.js';
 import { DomainError, NotFoundError } from '../../../../core/errors/DomainError.js';
@@ -24,6 +25,7 @@ export class UsuarioController {
     private readonly invitarCliente: InvitarClienteService,
     private readonly empresas: IEmpresaRepository,
     private readonly actualizarFirma: ActualizarMiFirmaService,
+    private readonly contrasena: ContrasenaService,
   ) {}
 
   miPerfilView = async (req: Request, res: Response): Promise<void> => {
@@ -33,7 +35,62 @@ export class UsuarioController {
       firma: usuario?.firma ?? '',
       encabezado: usuario?.encabezado ?? '',
       guardado: false,
+      passGuardada: req.query.pass === 'ok',
+      erroresPass: {},
     });
+  };
+
+  miPasswordPost = async (req: Request, res: Response): Promise<void> => {
+    const b = req.body ?? {};
+    try {
+      await this.contrasena.cambiarMia({
+        actor: req.user!,
+        actual: String(b.actual ?? ''),
+        password: String(b.password ?? ''),
+        passwordConfirmacion: String(b.passwordConfirmacion ?? ''),
+      });
+      res.redirect('/app/mi-perfil?pass=ok#contrasena');
+    } catch (err) {
+      const usuario = await this.usuarios.findByUid(req.user!.uid);
+      res.status(422).render('pages/backoffice/mi-perfil', {
+        titulo: 'Mi perfil',
+        firma: usuario?.firma ?? '',
+        encabezado: usuario?.encabezado ?? '',
+        guardado: false,
+        passGuardada: false,
+        erroresPass: erroresDe(err, 'No se pudo cambiar la contraseña'),
+      });
+    }
+  };
+
+  restablecerPasswordPost = async (req: Request, res: Response): Promise<void> => {
+    const uid = String(req.params.uid ?? '');
+    const b = req.body ?? {};
+    try {
+      await this.contrasena.restablecer({
+        actor: req.user!,
+        uid,
+        password: String(b.password ?? ''),
+        passwordConfirmacion: String(b.passwordConfirmacion ?? ''),
+      });
+      invalidarCacheUsuario(uid);
+      res.redirect(`/app/usuarios/${encodeURIComponent(uid)}?pass=ok#contrasena`);
+    } catch (err) {
+      const usuario = await this.usuarios.findByUid(uid);
+      if (!usuario) throw err;
+      res.status(422).render('pages/backoffice/usuarios/form', {
+        titulo: `Editar ${usuario.nombre}`,
+        modo: 'editar',
+        usuario,
+        rolesStaff: ROLES_STAFF,
+        ROL_ETIQUETA,
+        ROL_GRUPOS,
+        permisosModulo: permisosPorModulo(),
+        valores: { ...usuario, roles: [...usuario.roles], esCliente: usuario.esCliente },
+        errores: {},
+        erroresPass: erroresDe(err, 'No se pudo restablecer la contraseña'),
+      });
+    }
   };
 
   miPerfilPost = async (req: Request, res: Response): Promise<void> => {
@@ -41,7 +98,14 @@ export class UsuarioController {
     const encabezado = String(req.body?.encabezado ?? '');
     await this.actualizarFirma.ejecutar({ actor: req.user!, firma, encabezado });
     invalidarCacheUsuario(req.user!.uid);
-    res.render('pages/backoffice/mi-perfil', { titulo: 'Mi perfil', firma, encabezado, guardado: true });
+    res.render('pages/backoffice/mi-perfil', {
+      titulo: 'Mi perfil',
+      firma,
+      encabezado,
+      guardado: true,
+      passGuardada: false,
+      erroresPass: {},
+    });
   };
 
   listar = async (req: Request, res: Response): Promise<void> => {
@@ -105,6 +169,8 @@ export class UsuarioController {
       permisosModulo: permisosPorModulo(),
       valores: { ...usuario, roles: [...usuario.roles], esCliente: usuario.esCliente },
       errores: {},
+      passGuardada: req.query.pass === 'ok',
+      erroresPass: {},
     });
   };
 
@@ -210,6 +276,11 @@ export class UsuarioController {
       errores,
     });
   }
+}
+
+function erroresDe(err: unknown, porDefecto: string): Record<string, string> {
+  if (err instanceof DomainError && 'campos' in err) return err.campos as Record<string, string>;
+  return { general: err instanceof DomainError ? err.message : porDefecto };
 }
 
 function aArreglo(v: unknown): string[] | undefined {

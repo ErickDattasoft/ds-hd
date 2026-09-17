@@ -13,5 +13,6 @@ export interface ICotizacionRepository {
   findById(id: string): Promise<Cotizacion | null>;
   list(filtro?: ListarCotizacionesFiltro): Promise<Cotizacion[]>;
   save(cotizacion: Cotizacion): Promise<void>;
+  delete(id: string): Promise<void>;
   contarPorEstado(): Promise<Record<string, number>>;
 }

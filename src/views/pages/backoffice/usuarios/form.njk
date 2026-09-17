@@ -102,4 +102,22 @@
       <a class="btn btn--ghost" href="/app/usuarios">Cancelar</a>
     </div>
   </form>
+  {% if modo == 'editar' %}
+  <form method="post" action="/app/usuarios/{{ usuario.uid }}/contrasena" class="form form--wide card" id="contrasena" autocomplete="off" data-confirm="¿Restablecer la contraseña? Se cerrarán sus sesiones abiertas.">
+    <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+    <h2>🔑 Restablecer contraseña</h2>
+    {% if passGuardada %}<p class="alert alert--ok">Contraseña actualizada.</p>{% endif %}
+    {% if erroresPass.general %}<p class="alert alert--error">{{ erroresPass.general }}</p>{% endif %}
+    <p class="muted">Fija una contraseña nueva para este usuario (por ejemplo, si olvidó la suya) y compártesela por un medio seguro.</p>
+    <label class="field"><span>Contraseña nueva</span>
+      <input type="password" name="password" minlength="8" autocomplete="new-password" required />
+      {% if erroresPass.password %}<em class="field__error">{{ erroresPass.password }}</em>{% endif %}
+    </label>
+    <label class="field"><span>Confirmar contraseña nueva</span>
+      <input type="password" name="passwordConfirmacion" minlength="8" autocomplete="new-password" required />
+      {% if erroresPass.passwordConfirmacion %}<em class="field__error">{{ erroresPass.passwordConfirmacion }}</em>{% endif %}
+    </label>
+    <button class="btn btn--secondary" type="submit">Restablecer contraseña</button>
+  </form>
+  {% endif %}
 {% endblock %}

@@ -70,6 +70,7 @@ export function backofficeRoutes(container: Container): Router {
   // ── Usuarios ───────────────────────────────────────────────────────────────
   r.get('/mi-perfil', (req, res) => usuarios().miPerfilView(req, res));
   r.post('/mi-perfil', (req, res) => usuarios().miPerfilPost(req, res));
+  r.post('/mi-perfil/contrasena', (req, res) => usuarios().miPasswordPost(req, res));
 
   r.get('/usuarios', gestUsuarios, (req, res) => usuarios().listar(req, res));
   r.get('/usuarios/nuevo', gestUsuarios, (req, res) => usuarios().nuevo(req, res));
@@ -77,6 +78,7 @@ export function backofficeRoutes(container: Container): Router {
   r.get('/usuarios/invitar-cliente', gestUsuarios, (req, res) => usuarios().invitarClienteGet(req, res));
   r.post('/usuarios/invitar-cliente', gestUsuarios, (req, res) => usuarios().invitarClientePost(req, res));
   r.get('/usuarios/:uid', gestUsuarios, (req, res) => usuarios().editar(req, res));
+  r.post('/usuarios/:uid/contrasena', gestUsuarios, (req, res) => usuarios().restablecerPasswordPost(req, res));
   r.post('/usuarios/:uid', gestUsuarios, (req, res) => usuarios().actualizarPost(req, res));
 
   const solicitudesAcceso = () => container.resolve('solicitudAccesoController');
@@ -180,6 +182,8 @@ export function backofficeRoutes(container: Container): Router {
   r.get('/cotizaciones/:id/editar', requirePermission('cotizaciones:editar'), (req, res) => cotizaciones().editar(req, res));
   r.post('/cotizaciones/:id/estado', requirePermission('cotizaciones:editar'), (req, res) => cotizaciones().cambiarEstadoPost(req, res));
   r.post('/cotizaciones/:id/enviar', requirePermission('cotizaciones:editar'), (req, res) => cotizaciones().enviarPost(req, res));
+  r.post('/cotizaciones/:id/duplicar', requirePermission('cotizaciones:crear'), (req, res) => cotizaciones().duplicarPost(req, res));
+  r.post('/cotizaciones/:id/eliminar', requirePermission('cotizaciones:editar'), (req, res) => cotizaciones().eliminarPost(req, res));
   r.post('/cotizaciones/:id/crear-ticket', requirePermission('tickets:crear'), (req, res) => cotizaciones().crearTicketPost(req, res));
   r.post('/cotizaciones/:id', requirePermission('cotizaciones:editar'), (req, res) => cotizaciones().actualizarPost(req, res));
 

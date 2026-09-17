@@ -68,6 +68,9 @@ export interface CotizacionProps extends DatosGeneralesCotizacion {
   condiciones?: string | null;
   origenCalculadora?: boolean;
   parametrosCompac?: Record<string, unknown> | null;
+  /** Ticket de seguimiento creado desde esta cotización. */
+  ticketId?: string | null;
+  ticketNumero?: number | null;
   creadoPorUid?: string | null;
   createdAt?: Date;
   updatedAt?: Date;
@@ -106,6 +109,8 @@ export class Cotizacion {
   contactoTelefono: string | null;
   origenCalculadora: boolean;
   parametrosCompac: Record<string, unknown> | null;
+  ticketId: string | null;
+  ticketNumero: number | null;
   readonly creadoPorUid: string | null;
   readonly createdAt: Date;
   updatedAt: Date;
@@ -134,6 +139,8 @@ export class Cotizacion {
     this.contactoTelefono = props.contactoTelefono ?? null;
     this.origenCalculadora = props.origenCalculadora ?? false;
     this.parametrosCompac = props.parametrosCompac ?? null;
+    this.ticketId = props.ticketId ?? null;
+    this.ticketNumero = props.ticketNumero ?? null;
     this.creadoPorUid = props.creadoPorUid ?? null;
     this.createdAt = props.createdAt ?? new Date();
     this.updatedAt = props.updatedAt ?? this.createdAt;

@@ -176,6 +176,7 @@ export function createApp(container: Container, options: CreateAppOptions = {}):
     res.locals.can = (permiso: string): boolean => req.user?.permisos.includes(permiso) ?? false;
     const tema = req.cookies?.theme;
     if (tema === 'light' || tema === 'dark') res.locals.theme = tema;
+    res.locals.sidebarMini = req.cookies?.sidebar === 'mini';
     next();
   });
 

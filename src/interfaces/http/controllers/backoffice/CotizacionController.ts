@@ -141,6 +141,16 @@ export class CotizacionController {
     res.redirect(`/app/cotizaciones/${str(req.params.id)}`);
   };
 
+  duplicarPost = async (req: Request, res: Response): Promise<void> => {
+    const copia = await this.cotizaciones.duplicar(req.user!, str(req.params.id));
+    res.redirect(`/app/cotizaciones/${copia.id}`);
+  };
+
+  eliminarPost = async (req: Request, res: Response): Promise<void> => {
+    await this.cotizaciones.eliminar(req.user!, str(req.params.id));
+    res.redirect('/app/cotizaciones');
+  };
+
   imprimir = async (req: Request, res: Response): Promise<void> => {
     const cotizacion = await this.cotizaciones.obtener(str(req.params.id));
     res.render('pages/backoffice/cotizaciones/imprimir', {
