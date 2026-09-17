@@ -1,3 +1,7 @@
+import {
+  CONFIG_CORREO_ENTRANTE_POR_DEFECTO,
+  type ConfiguracionCorreoEntrante,
+} from '../../src/core/entities/ConfiguracionCorreoEntrante.js';
 import type { ITicketRepository } from '../../src/core/ports/repositories/ITicketRepository.js';
 import type {
   ITicketQueries,
@@ -224,6 +228,13 @@ export class InMemoryConfiguracionRepository implements IConfiguracionRepository
   }
   async guardarResumen(config: ConfiguracionResumen): Promise<void> {
     this.resumen = config;
+  }
+  correoEntrante: ConfiguracionCorreoEntrante = { ...CONFIG_CORREO_ENTRANTE_POR_DEFECTO };
+  async obtenerCorreoEntrante(): Promise<ConfiguracionCorreoEntrante> {
+    return this.correoEntrante;
+  }
+  async guardarCorreoEntrante(config: ConfiguracionCorreoEntrante): Promise<void> {
+    this.correoEntrante = config;
   }
 }
 

@@ -219,8 +219,16 @@ describe('empresas y contactos', () => {
       _csrf: csrf, nombre: 'Contacto Uno', empresaId: 'e1', email: 'contacto@e1.com',
     });
 
-    const res = await agent.post('/app/empresas/avisar').type('form').send({
+    // Paso 1: pantalla para elegir qué licencias mencionar.
+    const seleccion = await agent.post('/app/empresas/avisar').type('form').send({
       _csrf: csrf, accion: 'licencias-correo', empresaIds: 'e1',
+    });
+    expect(seleccion.status).toBe(200);
+    expect(seleccion.text).toContain('Contabilidad');
+
+    // Paso 2: envío con lo marcado.
+    const res = await agent.post('/app/empresas/avisar/confirmar').type('form').send({
+      _csrf: csrf, accion: 'licencias-correo', empresaIds: 'e1', sel_e1: 'Contabilidad',
     });
     expect(res.status).toBe(200);
     expect(res.text).toContain('correo');

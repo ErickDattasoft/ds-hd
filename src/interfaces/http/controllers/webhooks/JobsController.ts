@@ -6,6 +6,7 @@ import type { IIdGenerator } from '../../../../core/ports/services/IIdGenerator.
 import type { IClock } from '../../../../core/ports/services/IClock.js';
 import type { ILogger } from '../../../../core/ports/services/ILogger.js';
 import type { BitacoraService } from '../../../../application/shared/BitacoraService.js';
+import type { CorreoEntranteService } from '../../../../application/tickets/CorreoEntranteService.js';
 import type { ResumenDiarioService } from '../../../../application/dashboard/ResumenDiarioService.js';
 
 /**
@@ -22,6 +23,7 @@ export class JobsController {
     private readonly secret: string,
     private readonly bitacora: BitacoraService,
     private readonly resumen: ResumenDiarioService,
+    private readonly correoEntrante: CorreoEntranteService,
   ) {}
 
   private autorizado(req: Request): boolean {
@@ -29,6 +31,17 @@ export class JobsController {
     const key = typeof req.query.key === 'string' ? req.query.key : '';
     return Boolean(this.secret) && (bearer === this.secret || key === this.secret);
   }
+
+  /** Revisa el buzón de Zoho y mete las respuestas de clientes como notas de su ticket. */
+  revisarCorreo = async (req: Request, res: Response): Promise<void> => {
+    if (!this.autorizado(req)) return void res.status(401).json({ error: 'no autorizado' });
+    try {
+      res.json({ ok: true, ...(await this.correoEntrante.revisar()) });
+    } catch (err) {
+      this.logger.warn('Correo entrante falló', { err: String(err) });
+      res.status(502).json({ ok: false, error: err instanceof Error ? err.message : 'falló' });
+    }
+  };
 
   recordatoriosEventos = async (req: Request, res: Response): Promise<void> => {
     if (!this.autorizado(req)) return void res.status(401).json({ error: 'no autorizado' });

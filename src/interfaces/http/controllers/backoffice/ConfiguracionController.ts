@@ -8,6 +8,7 @@ import type { ConfiguracionCalculadoraService } from '../../../../application/co
 import type { ConfiguracionLogoService } from '../../../../application/configuracion/ConfiguracionLogoService.js';
 import type { ResumenDiarioService } from '../../../../application/dashboard/ResumenDiarioService.js';
 import type { AdjuntoTicketService } from '../../../../application/tickets/AdjuntoTicketService.js';
+import type { CorreoEntranteService } from '../../../../application/tickets/CorreoEntranteService.js';
 import type { ExcelUnificadoService } from '../../../../application/excel/ExcelUnificadoService.js';
 import {
   ETIQUETAS_EVENTOS,
@@ -35,6 +36,7 @@ export class ConfiguracionController {
     private readonly configResumen: ResumenDiarioService,
     private readonly adjuntos: AdjuntoTicketService,
     private readonly excelUnificado: ExcelUnificadoService,
+    private readonly correoEntrante: CorreoEntranteService,
   ) {}
 
   cotizacionesView = async (_req: Request, res: Response): Promise<void> => {
@@ -309,6 +311,63 @@ export class ConfiguracionController {
       res.json(resultado);
     } catch (err) {
       res.status(422).json({ ok: false, detalle: err instanceof Error ? err.message : 'No se pudo probar' });
+    }
+  };
+
+  correoEntranteView = async (req: Request, res: Response): Promise<void> => {
+    await this.renderCorreoEntrante(req, res);
+  };
+
+  private async renderCorreoEntrante(
+    req: Request,
+    res: Response,
+    extra: { guardado?: boolean; aviso?: string; error?: string } = {},
+  ): Promise<void> {
+    res.render('pages/backoffice/configuracion/correo-entrante', {
+      titulo: 'Correo entrante',
+      cfg: await this.correoEntrante.configuracion(req.user!),
+      guardado: false,
+      aviso: '',
+      error: '',
+      ...extra,
+    });
+  }
+
+  correoEntrantePost = async (req: Request, res: Response): Promise<void> => {
+    const b = req.body ?? {};
+    await this.correoEntrante.guardar(req.user!, {
+      habilitado: b.habilitado === 'on',
+      region: str(b.region),
+      clientId: str(b.clientId),
+      clientSecret: str(b.clientSecret),
+      refreshToken: str(b.refreshToken),
+      accountId: str(b.accountId),
+      carpeta: str(b.carpeta),
+      soloContactoDelTicket: b.soloContactoDelTicket === 'on',
+    });
+    await this.renderCorreoEntrante(req, res, { guardado: true });
+  };
+
+  correoEntranteProbarPost = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const datos = await this.correoEntrante.verificar(req.user!);
+      await this.renderCorreoEntrante(req, res, {
+        aviso: `Conexión correcta con ${datos.correo || 'la cuenta'} (accountId ${datos.accountId}, guardado).`,
+      });
+    } catch (err) {
+      await this.renderCorreoEntrante(req, res, { error: err instanceof Error ? err.message : 'No se pudo conectar' });
+    }
+  };
+
+  correoEntranteRevisarPost = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const r = await this.correoEntrante.revisarManual(req.user!);
+      const detalle = r.omitidos.map((o) => `• ${o.asunto || '(sin asunto)'} de ${o.de}: ${o.motivo}`).join(' ');
+      await this.renderCorreoEntrante(req, res, {
+        aviso: `Revisados ${r.revisados}, agregados ${r.agregados}.${detalle ? ` Sin ligar: ${detalle}` : ''}`,
+      });
+    } catch (err) {
+      await this.renderCorreoEntrante(req, res, { error: err instanceof Error ? err.message : 'No se pudo revisar' });
     }
   };
 

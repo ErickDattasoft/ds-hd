@@ -82,7 +82,7 @@
   </table>
 
   {% if can('empresas:editar') %}
-    <form id="avisar-form" method="post" action="/app/empresas/avisar" data-confirm="¿Enviar el aviso a las empresas seleccionadas?">
+    <form id="avisar-form" method="post" action="/app/empresas/avisar">
       <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
       {% if filas | length %}
         <div class="page-head__actions">

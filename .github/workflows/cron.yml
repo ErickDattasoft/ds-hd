@@ -25,6 +25,10 @@ jobs:
         run: |
           curl -fsS -X POST "${{ secrets.APP_BASE_URL }}/jobs/purgar-bitacora" \
             -H "Authorization: Bearer ${{ secrets.JOBS_SECRET }}"
+      - name: Respuestas de clientes por correo (Zoho) → notas del ticket
+        run: |
+          curl -fsS -X POST "${{ secrets.APP_BASE_URL }}/jobs/revisar-correo" \
+            -H "Authorization: Bearer ${{ secrets.JOBS_SECRET }}"
       - name: Resumen diario (solo envía si está habilitado y es la hora configurada)
         run: |
           curl -fsS -X POST "${{ secrets.APP_BASE_URL }}/jobs/resumen-diario" \

@@ -1,0 +1,82 @@
+{% extends "layouts/backoffice.njk" %}
+{% import "components/configuracion.njk" as cfgnav %}
+{% block title %}Correo entrante{% endblock %}
+{% block content %}
+  <div class="page-head">
+    <h1>Correo entrante (respuestas de clientes)</h1>
+    <div class="page-head__actions">{{ cfgnav.nav('correo-entrante') }}</div>
+  </div>
+  {% if guardado %}<p class="alert alert--ok">Configuración guardada.</p>{% endif %}
+  {% if aviso %}<p class="alert alert--ok">{{ aviso }}</p>{% endif %}
+  {% if error %}<p class="alert alert--error">{{ error }}</p>{% endif %}
+
+  <div class="card">
+    <p>Cada hora el sistema revisa un buzón de <strong>Zoho Mail</strong>. Si un correo trae el número
+      de ticket en el asunto (<code>Ticket #123</code>), su texto se agrega como respuesta en ese ticket.
+      <strong>No hay que tocar nada del dominio</strong>: solo autorizar una vez la aplicación en Zoho.</p>
+    <details class="disclosure">
+      <summary class="disclosure__summary">Cómo obtener los datos de Zoho (una sola vez)</summary>
+      <div class="disclosure__body">
+        <ol>
+          <li>Entra a <a href="https://api-console.zoho.com" target="_blank" rel="noopener">api-console.zoho.com</a> con la cuenta de DATTASOFT y crea un cliente de tipo <strong>Self Client</strong>.</li>
+          <li>Copia el <strong>Client ID</strong> y el <strong>Client Secret</strong> y pégalos aquí abajo.</li>
+          <li>En la pestaña "Generate Code" pide un código con el ámbito
+            <code>ZohoMail.messages.ALL,ZohoMail.accounts.READ</code>, duración 10 minutos.</li>
+          <li>Cambia ese código por un <strong>refresh token</strong> (el que no expira) y pégalo aquí.
+            Si no sabes cómo, dímelo y te paso el comando exacto.</li>
+          <li>Guarda, y luego usa <strong>Probar conexión</strong>: el sistema descubre solo el id de la cuenta.</li>
+        </ol>
+      </div>
+    </details>
+  </div>
+
+  <form method="post" action="/app/configuracion/correo-entrante" class="form form--wide">
+    <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+    <label class="field--check">
+      <input type="checkbox" name="habilitado" {{ 'checked' if cfg.habilitado }} />
+      <span>Revisar el buzón automáticamente cada hora</span>
+    </label>
+    <div class="form-grid">
+      <label class="field"><span>Client ID</span><input name="clientId" value="{{ cfg.clientId }}" autocomplete="off" /></label>
+      <label class="field"><span>Client Secret</span>
+        <input type="password" name="clientSecret" autocomplete="off" placeholder="{{ '•••••••• guardado — vacío para conservarlo' if cfg.clientSecret }}" />
+      </label>
+      <label class="field"><span>Refresh token</span>
+        <input type="password" name="refreshToken" autocomplete="off" placeholder="{{ '•••••••• guardado — vacío para conservarlo' if cfg.refreshToken }}" />
+      </label>
+      <label class="field"><span>Región de Zoho</span>
+        <input name="region" value="{{ cfg.region }}" placeholder="com" />
+        <em class="field__hint">com, eu, in, com.au, jp o ca — según dónde esté la cuenta.</em>
+      </label>
+      <label class="field"><span>Account ID</span>
+        <input name="accountId" value="{{ cfg.accountId }}" placeholder="lo llena Probar conexión" />
+      </label>
+      <label class="field"><span>Carpeta (id)</span>
+        <input name="carpeta" value="{{ cfg.carpeta }}" placeholder="vacío = Inbox" />
+      </label>
+    </div>
+    <label class="field--check">
+      <input type="checkbox" name="soloContactoDelTicket" {{ 'checked' if cfg.soloContactoDelTicket }} />
+      <span>Aceptar la respuesta solo si viene del contacto del ticket (recomendado)</span>
+    </label>
+    <p class="muted">Un correo que no se pueda ligar a un ticket se queda sin leer en el buzón para que lo atiendas a mano.</p>
+    <button class="btn" type="submit">Guardar</button>
+  </form>
+
+  <div class="card">
+    <h2>Probar</h2>
+    <p class="muted">
+      Última revisión: {{ cfg.ultimaRevision or '—' }}{% if cfg.ultimoResultado %} · {{ cfg.ultimoResultado }}{% endif %}
+    </p>
+    <div class="page-head__actions">
+      <form method="post" action="/app/configuracion/correo-entrante/probar" class="inline">
+        <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+        <button class="btn btn--sm btn--secondary" type="submit">🔌 Probar conexión</button>
+      </form>
+      <form method="post" action="/app/configuracion/correo-entrante/revisar" class="inline">
+        <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+        <button class="btn btn--sm btn--ghost" type="submit">📥 Revisar ahora</button>
+      </form>
+    </div>
+  </div>
+{% endblock %}

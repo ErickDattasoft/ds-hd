@@ -254,3 +254,34 @@ describe('embudo de ventas', () => {
     expect(vacio.status).toBe(422);
   });
 });
+
+describe('avisos: elegir qué sistemas mencionar', () => {
+  it('solo manda los sistemas marcados y omite la empresa sin nada marcado', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    t.empresaRepo.items.set(
+      'e1',
+      new Empresa({ id: 'e1', nombre: 'Dos Licencias', sistemasContratados: ['Contabilidad', 'Nóminas'], vigencias: { Contabilidad: '2026-01-01', Nóminas: '2026-02-01' } }),
+    );
+    t.empresaRepo.items.set('e2', new Empresa({ id: 'e2', nombre: 'Omitida', sistemasContratados: ['Bancos'], vigencias: { Bancos: '2026-01-15' } }));
+    const { agent, csrf } = await login(t.app, ADMIN.email, ADMIN.password);
+    for (const [id, correo] of [['e1', 'uno@x.mx'], ['e2', 'dos@x.mx']]) {
+      await agent.post('/app/contactos').type('form').send({ _csrf: csrf, nombre: `C ${id}`, empresaId: id, email: correo });
+    }
+
+    const paso1 = await agent.post('/app/empresas/avisar').type('form').send({
+      _csrf: csrf, accion: 'licencias-correo', empresaIds: ['e1', 'e2'],
+    });
+    expect(paso1.text).toContain('Nóminas');
+    expect(paso1.text).toContain('Omitida');
+
+    const res = await agent.post('/app/empresas/avisar/confirmar').type('form').send({
+      _csrf: csrf, accion: 'licencias-correo', empresaIds: ['e1', 'e2'], sel_e1: 'Contabilidad',
+    });
+    expect(res.status).toBe(200);
+    expect(t.emailSender.enviados).toHaveLength(1);
+    const cuerpo = t.emailSender.enviados[0]!.texto ?? '';
+    expect(cuerpo).toContain('Contabilidad');
+    expect(cuerpo).not.toContain('Nóminas');
+    expect(res.text).toContain('Sin pendientes');
+  });
+});

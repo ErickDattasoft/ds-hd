@@ -1,0 +1,38 @@
+{% extends "layouts/backoffice.njk" %}
+{% block title %}Elegir qué avisar{% endblock %}
+{% block content %}
+  <div class="page-head">
+    <h1>Aviso de {{ 'versiones' if tipo == 'versiones' else 'licencias' }} por {{ 'WhatsApp' if canal == 'whatsapp' else 'correo' }}</h1>
+    <a class="btn btn--sm btn--ghost" href="/app/empresas">Cancelar</a>
+  </div>
+
+  {% if filas | length %}
+    <p class="muted">Desmarca lo que no quieras mencionar en cada empresa. Si dejas una empresa sin nada marcado, no se le envía.</p>
+    <form method="post" action="/app/empresas/avisar/confirmar" data-confirm="¿Enviar el aviso con lo que quedó marcado?">
+      <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+      <input type="hidden" name="accion" value="{{ tipo }}-{{ canal }}" />
+      {% for f in filas %}
+        <div class="card">
+          <input type="hidden" name="empresaIds" value="{{ f.empresaId }}" />
+          <h2>{{ f.empresaNombre }}</h2>
+          {% if f.pendientes | length %}
+            {% for p in f.pendientes %}
+              <label class="field--check">
+                <input type="checkbox" name="sel_{{ f.empresaId }}" value="{{ p.sistema }}" checked />
+                <span>{{ p.linea | replace('- ', '') }}</span>
+              </label>
+            {% endfor %}
+          {% else %}
+            <p class="muted">Sin pendientes — no se le enviará nada.</p>
+          {% endif %}
+        </div>
+      {% endfor %}
+      <div class="page-head__actions">
+        <button class="btn" type="submit">✉️ Enviar</button>
+        <a class="btn btn--ghost" href="/app/empresas">Cancelar</a>
+      </div>
+    </form>
+  {% else %}
+    <p class="alert alert--warn">No seleccionaste ninguna empresa. <a href="/app/empresas">Volver a empresas</a>.</p>
+  {% endif %}
+{% endblock %}

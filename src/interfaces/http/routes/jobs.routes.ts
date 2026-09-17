@@ -15,5 +15,7 @@ export function jobsRoutes(container: Container): Router {
   r.get('/purgar-bitacora', (req, res) => jobs().purgarBitacora(req, res));
   r.post('/resumen-diario', (req, res) => jobs().resumenDiario(req, res));
   r.get('/resumen-diario', (req, res) => jobs().resumenDiario(req, res));
+  r.post('/revisar-correo', (req, res) => jobs().revisarCorreo(req, res));
+  r.get('/revisar-correo', (req, res) => jobs().revisarCorreo(req, res));
   return r;
 }

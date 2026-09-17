@@ -2,20 +2,50 @@ import type { Empresa } from '../../core/entities/Empresa.js';
 import type { ContactoSoporte } from '../../core/entities/ConfiguracionAvisos.js';
 import { estadoActualizacion } from '../../core/entities/value-objects/version.js';
 
-/** Sistemas de `empresa` cuya versión instalada está por debajo de la oficial, una línea por sistema. */
-export function formatearSistemasPendientes(empresa: Empresa, oficialPorSistema: Record<string, string>): string {
-  const lineas = empresa.sistemasContratados
+/** Un pendiente que puede incluirse en el aviso (un sistema desactualizado o una licencia en riesgo). */
+export interface PendienteAviso {
+  /** Sistema; es la clave con la que se selecciona el pendiente en el formulario. */
+  sistema: string;
+  /** Línea como aparece en el mensaje. */
+  linea: string;
+}
+
+/** Sistemas de `empresa` cuya versión instalada está por debajo de la oficial. */
+export function sistemasPendientes(empresa: Empresa, oficialPorSistema: Record<string, string>): PendienteAviso[] {
+  return empresa.sistemasContratados
     .filter((s) => estadoActualizacion(empresa.versionesInstaladas[s], oficialPorSistema[s]) === 'desactualizada')
-    .map((s) => `- ${s}: instalada ${empresa.versionesInstaladas[s] || 'sin dato'}, oficial ${oficialPorSistema[s]}`);
+    .map((s) => ({
+      sistema: s,
+      linea: `- ${s}: instalada ${empresa.versionesInstaladas[s] || 'sin dato'}, oficial ${oficialPorSistema[s]}`,
+    }));
+}
+
+/** Licencias de `empresa` vencidas o por vencer. */
+export function licenciasPendientes(empresa: Empresa, hoy: Date): PendienteAviso[] {
+  return empresa.licenciasEnRiesgo(hoy).map((l) => ({
+    sistema: l.sistema,
+    linea: `- ${l.sistema}: ${l.estado === 'vencida' ? `vencida hace ${Math.abs(l.dias)} días` : `vence en ${l.dias} días`} (${l.fecha})`,
+  }));
+}
+
+/** Deja solo los pendientes elegidos (`undefined` = todos, como antes de la pantalla de selección). */
+export function filtrarPendientes(pendientes: PendienteAviso[], sistemas?: readonly string[]): PendienteAviso[] {
+  return sistemas ? pendientes.filter((p) => sistemas.includes(p.sistema)) : pendientes;
+}
+
+/** Sistemas desactualizados, una línea por sistema. */
+export function formatearSistemasPendientes(
+  empresa: Empresa,
+  oficialPorSistema: Record<string, string>,
+  sistemas?: readonly string[],
+): string {
+  const lineas = filtrarPendientes(sistemasPendientes(empresa, oficialPorSistema), sistemas).map((p) => p.linea);
   return lineas.join('\n') || '(sin sistemas pendientes de actualizar)';
 }
 
-/** Licencias de `empresa` vencidas o por vencer, una línea por sistema. */
-export function formatearLicenciasPendientes(empresa: Empresa, hoy: Date): string {
-  const lineas = empresa.licenciasEnRiesgo(hoy).map((l) => {
-    const etiqueta = l.estado === 'vencida' ? `vencida hace ${Math.abs(l.dias)} días` : `vence en ${l.dias} días`;
-    return `- ${l.sistema}: ${etiqueta} (${l.fecha})`;
-  });
+/** Licencias vencidas o por vencer, una línea por sistema. */
+export function formatearLicenciasPendientes(empresa: Empresa, hoy: Date, sistemas?: readonly string[]): string {
+  const lineas = filtrarPendientes(licenciasPendientes(empresa, hoy), sistemas).map((p) => p.linea);
   return lineas.join('\n') || '(sin licencias pendientes)';
 }
 

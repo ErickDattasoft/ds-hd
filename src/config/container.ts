@@ -57,6 +57,9 @@ import { EncuestaController } from '../interfaces/http/controllers/public/Encues
 import { ReportesService } from '../application/reportes/ReportesService.js';
 import { ReportesController } from '../interfaces/http/controllers/backoffice/ReportesController.js';
 import { DosPasosController } from '../interfaces/http/controllers/backoffice/DosPasosController.js';
+import type { IBuzonEntrante } from '../core/ports/services/IBuzonEntrante.js';
+import { ZohoBuzonEntrante } from '../infrastructure/email/ZohoBuzonEntrante.js';
+import { CorreoEntranteService } from '../application/tickets/CorreoEntranteService.js';
 import { DosPasosService } from '../application/auth/DosPasosService.js';
 import type { IOportunidadRepository } from '../core/ports/repositories/IOportunidadRepository.js';
 import { FirestoreOportunidadRepository } from '../infrastructure/firestore/FirestoreOportunidadRepository.js';
@@ -290,6 +293,8 @@ export interface Cradle {
   usuarioController: UsuarioController;
   encuestaController: EncuestaController;
   dosPasosService: DosPasosService;
+  buzonEntrante: IBuzonEntrante;
+  correoEntranteService: CorreoEntranteService;
   dosPasosController: DosPasosController;
   reportesController: ReportesController;
   encuestaSatisfaccionService: EncuestaSatisfaccionService;
@@ -558,6 +563,11 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
         ),
     ).singleton(),
     dosPasosController: asFunction((c: Cradle) => new DosPasosController(c.dosPasosService)).singleton(),
+    buzonEntrante: asFunction((): IBuzonEntrante => new ZohoBuzonEntrante()).singleton(),
+    correoEntranteService: asFunction(
+      (c: Cradle) =>
+        new CorreoEntranteService(c.ticketRepo, c.configuracionRepo, c.buzonEntrante, c.idGenerator, c.clock, c.logger),
+    ).singleton(),
     dosPasosService: asFunction(
       (c: Cradle) =>
         new DosPasosService(c.usuarioRepo, c.clock, c.logger, c.config.session.secret, 'DATTASOFT HD'),
@@ -1001,6 +1011,7 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
           c.resumenDiarioService,
           c.adjuntoTicketService,
           c.excelUnificadoService,
+          c.correoEntranteService,
         ),
     ).singleton(),
     ticketPublicoController: asFunction(
@@ -1105,6 +1116,7 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
           c.config.jobs.secret,
           c.bitacoraService,
           c.resumenDiarioService,
+          c.correoEntranteService,
         ),
     ).singleton(),
   });

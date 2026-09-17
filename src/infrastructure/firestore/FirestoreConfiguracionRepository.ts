@@ -1,3 +1,7 @@
+import {
+  sanearConfigCorreoEntrante,
+  type ConfiguracionCorreoEntrante,
+} from '../../core/entities/ConfiguracionCorreoEntrante.js';
 import type { Firestore } from 'firebase-admin/firestore';
 import type { IConfiguracionRepository } from '../../core/ports/repositories/IConfiguracionRepository.js';
 import {
@@ -88,6 +92,15 @@ export class FirestoreConfiguracionRepository implements IConfiguracionRepositor
 
   async guardarAvisos(config: ConfiguracionAvisos): Promise<void> {
     await this.db.collection(COL).doc('avisos').set(config, { merge: true });
+  }
+
+  async obtenerCorreoEntrante(): Promise<ConfiguracionCorreoEntrante> {
+    const snap = await this.db.collection(COL).doc('correo_entrante').get();
+    return sanearConfigCorreoEntrante(snap.exists ? snap.data() : null);
+  }
+
+  async guardarCorreoEntrante(config: ConfiguracionCorreoEntrante): Promise<void> {
+    await this.db.collection(COL).doc('correo_entrante').set(config, { merge: true });
   }
 
   async obtenerIntegraciones(): Promise<ConfiguracionIntegraciones> {

@@ -7,7 +7,15 @@ import type { IIntegracionesGateway } from '../../core/ports/services/IIntegraci
 import type { IClock } from '../../core/ports/services/IClock.js';
 import { normalizarTelefonoMx } from '../../core/entities/value-objects/Telefono.js';
 import { ForbiddenError } from '../../core/errors/DomainError.js';
-import { formatearContactoSoporte, formatearLicenciasPendientes, formatearSistemasPendientes, renderizarPlantilla } from './avisos.js';
+import {
+  formatearContactoSoporte,
+  formatearLicenciasPendientes,
+  formatearSistemasPendientes,
+  licenciasPendientes,
+  renderizarPlantilla,
+  sistemasPendientes,
+  type PendienteAviso,
+} from './avisos.js';
 import type { SessionUser } from '../shared/SessionUser.js';
 import type { BitacoraService } from '../shared/BitacoraService.js';
 
@@ -45,11 +53,38 @@ export class AvisarEmpresasService {
     private readonly clock: IClock,
   ) {}
 
+  /** Los pendientes de cada empresa, para la pantalla donde se eligen antes de enviar. */
+  async pendientes(
+    actor: SessionUser,
+    empresaIds: string[],
+    tipo: TipoAviso,
+  ): Promise<{ empresaId: string; empresaNombre: string; pendientes: PendienteAviso[] }[]> {
+    if (!actor.permisos.includes('empresas:editar')) {
+      throw new ForbiddenError('No puedes enviar avisos a empresas');
+    }
+    const hoy = this.clock.now();
+    const oficial: Record<string, string> = {};
+    for (const v of await this.versiones.list()) oficial[v.sistema] = v.versionActual;
+    const out = [];
+    for (const empresaId of empresaIds) {
+      const empresa = await this.empresas.findById(empresaId);
+      if (!empresa) continue;
+      out.push({
+        empresaId,
+        empresaNombre: empresa.nombre,
+        pendientes: tipo === 'versiones' ? sistemasPendientes(empresa, oficial) : licenciasPendientes(empresa, hoy),
+      });
+    }
+    return out;
+  }
+
   async ejecutar(input: {
     actor: SessionUser;
     empresaIds: string[];
     tipo: TipoAviso;
     canal?: CanalAviso;
+    /** Qué sistemas mencionar por empresa (`empresaId` → sistemas). Sin esto van todos los pendientes. */
+    seleccion?: Record<string, string[]>;
   }): Promise<ResultadoAviso[]> {
     if (!input.actor.permisos.includes('empresas:editar')) {
       throw new ForbiddenError('No puedes enviar avisos a empresas');
@@ -73,8 +108,15 @@ export class AvisarEmpresasService {
         continue;
       }
 
+      const elegidos = input.seleccion?.[empresaId];
+      if (elegidos && elegidos.length === 0) {
+        resultados.push({ empresaId, empresaNombre: empresa.nombre, enviado: false, motivo: 'sin_pendientes' });
+        continue;
+      }
       const pendientesTexto =
-        input.tipo === 'versiones' ? formatearSistemasPendientes(empresa, oficial) : formatearLicenciasPendientes(empresa, hoy);
+        input.tipo === 'versiones'
+          ? formatearSistemasPendientes(empresa, oficial, elegidos)
+          : formatearLicenciasPendientes(empresa, hoy, elegidos);
       const sinPendientes = pendientesTexto.startsWith('(sin ');
       if (sinPendientes) {
         resultados.push({ empresaId, empresaNombre: empresa.nombre, enviado: false, motivo: 'sin_pendientes' });

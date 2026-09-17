@@ -119,13 +119,37 @@ export class EmpresaController {
     res.redirect(volver.startsWith('/app/') ? volver : `/app/empresas/${id}`);
   };
 
+  /** Paso 1: muestra los pendientes de cada empresa para elegir cuáles mencionar. */
   avisarPost = async (req: Request, res: Response): Promise<void> => {
-    const [tipoRaw, canalRaw] = str(req.body?.accion).split('-');
-    const tipo = tipoRaw === 'licencias' ? 'licencias' : 'versiones';
-    const canal = canalRaw === 'whatsapp' ? 'whatsapp' : 'correo';
+    const { tipo, canal } = this.tipoCanal(req);
     const empresaIds = ([] as string[]).concat(req.body?.empresaIds ?? []).filter(Boolean);
+    res.render('pages/backoffice/empresas/avisar-seleccion', {
+      titulo: 'Elegir qué avisar',
+      tipo,
+      canal,
+      filas: empresaIds.length ? await this.avisar.pendientes(req.user!, empresaIds, tipo) : [],
+    });
+  };
+
+  private tipoCanal(req: Request): { tipo: 'versiones' | 'licencias'; canal: 'correo' | 'whatsapp' } {
+    const [tipoRaw, canalRaw] = str(req.body?.accion).split('-');
+    return {
+      tipo: tipoRaw === 'licencias' ? 'licencias' : 'versiones',
+      canal: canalRaw === 'whatsapp' ? 'whatsapp' : 'correo',
+    };
+  }
+
+  /** Paso 2: envía solo los sistemas marcados (`sel_<empresaId>`). */
+  avisarConfirmarPost = async (req: Request, res: Response): Promise<void> => {
+    const { tipo, canal } = this.tipoCanal(req);
+    const b = (req.body ?? {}) as Record<string, unknown>;
+    const empresaIds = ([] as string[]).concat((b.empresaIds as string[]) ?? []).filter(Boolean);
+    const seleccion: Record<string, string[]> = {};
+    for (const id of empresaIds) {
+      seleccion[id] = ([] as string[]).concat((b[`sel_${id}`] as string[]) ?? []).filter(Boolean);
+    }
     const resultados = empresaIds.length
-      ? await this.avisar.ejecutar({ actor: req.user!, empresaIds, tipo, canal })
+      ? await this.avisar.ejecutar({ actor: req.user!, empresaIds, tipo, canal, seleccion })
       : [];
     res.render('pages/backoffice/empresas/avisar-resultado', {
       titulo: 'Resultado del aviso',

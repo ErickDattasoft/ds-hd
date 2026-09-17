@@ -1,3 +1,4 @@
+import type { ConfiguracionCorreoEntrante } from '../../entities/ConfiguracionCorreoEntrante.js';
 import type { ConfiguracionTickets } from '../../entities/ConfiguracionTickets.js';
 import type { ConfiguracionCalculadora } from '../../entities/CalculadoraCompac.js';
 import type { ConfiguracionAvisos } from '../../entities/ConfiguracionAvisos.js';
@@ -25,4 +26,6 @@ export interface IConfiguracionRepository {
   guardarLogo(config: ConfiguracionLogo | null): Promise<void>;
   obtenerResumen(): Promise<ConfiguracionResumen>;
   guardarResumen(config: ConfiguracionResumen): Promise<void>;
+  obtenerCorreoEntrante(): Promise<ConfiguracionCorreoEntrante>;
+  guardarCorreoEntrante(config: ConfiguracionCorreoEntrante): Promise<void>;
 }

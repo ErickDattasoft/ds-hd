@@ -151,6 +151,9 @@ export function backofficeRoutes(container: Container): Router {
   r.get('/empresas/nueva', requirePermission('empresas:crear'), (req, res) => empresas().nuevo(req, res));
   r.post('/empresas', requirePermission('empresas:crear'), (req, res) => empresas().crearPost(req, res));
   r.post('/empresas/avisar', requirePermission('empresas:editar'), (req, res) => empresas().avisarPost(req, res));
+  r.post('/empresas/avisar/confirmar', requirePermission('empresas:editar'), (req, res) =>
+    empresas().avisarConfirmarPost(req, res),
+  );
   r.get('/empresas/exportar', requirePermission('empresas:leer'), (req, res) => empresas().exportarExcel(req, res));
   r.get('/empresas/importar', requirePermission('empresas:crear'), (req, res) => empresas().importarView(req, res));
   r.post('/empresas/importar', requirePermission('empresas:crear'), uploadExcel, (req, res) =>
@@ -331,6 +334,18 @@ export function backofficeRoutes(container: Container): Router {
     '/configuracion/integraciones/probar-correo',
     requirePermission('configuracion:integraciones'),
     (req, res) => configuracion().probarCorreoPost(req, res),
+  );
+  r.get('/configuracion/correo-entrante', requirePermission('configuracion:integraciones'), (req, res) =>
+    configuracion().correoEntranteView(req, res),
+  );
+  r.post('/configuracion/correo-entrante', requirePermission('configuracion:integraciones'), (req, res) =>
+    configuracion().correoEntrantePost(req, res),
+  );
+  r.post('/configuracion/correo-entrante/probar', requirePermission('configuracion:integraciones'), (req, res) =>
+    configuracion().correoEntranteProbarPost(req, res),
+  );
+  r.post('/configuracion/correo-entrante/revisar', requirePermission('configuracion:integraciones'), (req, res) =>
+    configuracion().correoEntranteRevisarPost(req, res),
   );
   r.get('/configuracion/backup', requirePermission('configuracion:integraciones'), (req, res) =>
     configuracion().backupView(req, res),
