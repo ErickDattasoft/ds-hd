@@ -9,15 +9,34 @@
   {% if vm.agenda %}<span class="badge {{ 'badge--danger' if vm.agenda.vencida else 'badge--ok' }}" title="Atención programada">📅 {{ vm.agenda.texto }}</span>{% endif %}
 {% endmacro %}
 
-{% macro filaTicket(vm) %}
+{% macro facturacionBadge(vm) %}
+  {% if vm.facturacion.estado == 'facturado' %}<span class="badge badge--warning">{{ vm.facturacion.etiqueta }}</span>
+  {% elif vm.facturacion.clase == 'warning' %}<span class="badge badge--danger">{{ vm.facturacion.etiqueta }}</span>
+  {% else %}<span class="muted">{{ vm.facturacion.etiqueta }}</span>{% endif %}
+{% endmacro %}
+
+{% macro filaTicket(vm, csrfToken, puedeEliminar) %}
   <tr>
     <td><a href="/app/tickets/{{ vm.id }}">#{{ vm.numero }}</a></td>
     <td>{{ vm.asunto }}{% if vm.agenda %}<br>{{ agendaBadge(vm) }}{% endif %}</td>
-    <td><span class="{{ vm.estado | estadoClase }}">{{ vm.estado }}</span></td>
+    <td>{{ vm.empresaNombre or '—' }}{% if vm.contactoNombre %}<br><span class="muted">{{ vm.contactoNombre }}</span>{% endif %}</td>
+    <td>{{ vm.tipo }}{% if vm.sistema %}<br><span class="muted">{{ vm.sistema }}</span>{% endif %}</td>
     <td><span class="{{ vm.prioridad | prioridadClase }}">{{ vm.prioridad }}</span></td>
-    <td>{{ vm.empresaNombre or '—' }}</td>
+    <td><span class="{{ vm.estado | estadoClase }}">{{ vm.estado }}</span></td>
+    <td>{{ facturacionBadge(vm) }}</td>
     <td>{{ vm.agenteAsignadoNombre or 'Sin asignar' }}</td>
+    <td data-sort-value="{{ vm.abiertoEnIso }}">{{ vm.abiertoEnIso | fecha }}</td>
     <td>{{ slaBadge(vm) }}</td>
+    <td class="col-acciones" data-no-ordenar>
+      <a class="btn btn--ghost btn--sm" href="/app/tickets/{{ vm.id }}" title="Ver">👁</a>
+      {% if puedeEliminar %}
+        <form method="post" action="/app/tickets/{{ vm.id }}/archivar" style="display:inline" data-confirm="¿Enviar este ticket a la papelera?">
+          <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+          <input type="hidden" name="archivar" value="true" />
+          <button class="btn btn--ghost btn--sm" type="submit" title="Enviar a la papelera">🗑️</button>
+        </form>
+      {% endif %}
+    </td>
   </tr>
 {% endmacro %}
 
@@ -77,14 +96,17 @@
   </div>
 {% endmacro %}
 
-{% macro tablaTickets(tickets) %}
+{% macro tablaTickets(tickets, csrfToken, puedeEliminar) %}
   <table class="data-table">
     <thead>
-      <tr><th>#</th><th>Asunto</th><th>Estado</th><th>Prioridad</th><th>Empresa</th><th>Agente</th><th>SLA</th></tr>
+      <tr>
+        <th>#</th><th>Asunto</th><th>Empresa</th><th>Tipo</th><th>Prioridad</th><th>Estado</th>
+        <th>Facturación</th><th>Agente</th><th>Creado</th><th>SLA</th><th data-no-ordenar></th>
+      </tr>
     </thead>
     <tbody>
-      {% for vm in tickets %}{{ filaTicket(vm) }}{% else %}
-        <tr><td colspan="7" class="muted">📭 No hay tickets que mostrar.</td></tr>
+      {% for vm in tickets %}{{ filaTicket(vm, csrfToken, puedeEliminar) }}{% else %}
+        <tr><td colspan="11" class="muted">📭 No hay tickets que mostrar.</td></tr>
       {% endfor %}
     </tbody>
   </table>

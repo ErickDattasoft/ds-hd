@@ -31,5 +31,5 @@
     <button class="btn btn--sm btn--ghost" type="submit" formaction="/app/tickets/exportar">Exportar Excel</button>
   </form>
 
-  {{ tk.tablaTickets(tickets) }}
+  {{ tk.tablaTickets(tickets, csrfToken, can('tickets:eliminar')) }}
 {% endblock %}

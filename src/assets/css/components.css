@@ -375,6 +375,7 @@ fieldset.field {
 .data-table tbody tr.tr-danger { background: color-mix(in srgb, var(--danger) 7%, var(--color-surface)); }
 .data-table tbody tr.tr-danger:hover { background: color-mix(in srgb, var(--danger) 13%, var(--color-surface)); }
 .data-table td { max-width: 22rem; overflow: hidden; text-overflow: ellipsis; }
+.data-table td.col-acciones { white-space: nowrap; text-align: right; max-width: none; }
 
 /* Mejoras aplicadas por app.js (initTablas): ordenar por columna + ancho ajustable.
    El "position: sticky" de arriba ya sirve como contexto de posicionamiento para el

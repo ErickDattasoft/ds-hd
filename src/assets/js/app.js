@@ -1300,7 +1300,10 @@
       var tabla = document.querySelector('table.data-table');
       if (!tabla || chk.__enh) return;
       chk.__enh = true;
-      var clave = 'ds_hd_col_' + location.pathname + ':' + nombre;
+      // "col2": versión bumpeada a propósito — el default de "mostrar SLA" cambió de
+      // mostrado a oculto, así que se invalida cualquier preferencia vieja guardada bajo
+      // la clave anterior (quedaba "encendida" para quien ya la había tocado antes).
+      var clave = 'ds_hd_col2_' + location.pathname + ':' + nombre;
       var guardado = lee(clave);
       if (guardado !== null) chk.checked = guardado;
       aplicarColumna(tabla, indiceColumna(tabla, nombre), chk.checked);

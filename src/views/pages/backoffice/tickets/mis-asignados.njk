@@ -3,5 +3,5 @@
 {% block title %}Mis tickets asignados{% endblock %}
 {% block content %}
   <h1>Mis tickets asignados</h1>
-  {{ tk.tablaTickets(tickets) }}
+  {{ tk.tablaTickets(tickets, csrfToken, can('tickets:eliminar')) }}
 {% endblock %}

@@ -18,6 +18,7 @@ export interface TicketVM {
   estado: string;
   prioridad: string;
   tipo: string;
+  sistema: string | null;
   grupo: string | null;
   empresaNombre: string | null;
   contactoNombre: string | null;
@@ -80,6 +81,7 @@ export function ticketVM(t: Ticket, ahora: Date): TicketVM {
     estado: t.estado,
     prioridad: t.prioridad,
     tipo: t.tipo,
+    sistema: t.sistema,
     grupo: t.grupo,
     empresaNombre: t.empresaNombre,
     contactoNombre: t.contactoNombre,
