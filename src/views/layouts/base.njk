@@ -8,6 +8,14 @@
   <meta name="theme-color" content="#0e1116" media="(prefers-color-scheme: dark)" />
   <title>{% block title %}{{ titulo | default(appNombre) }}{% endblock %} · {{ appNombre }}</title>
   <link rel="icon" href="/logo" />
+  <link rel="apple-touch-icon" href="/logo" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="{{ appNombre }}" />
+  {% if area == 'portal' %}
+    <link rel="manifest" href="/static/manifest-portal.json" />
+  {% elif area == 'backoffice' %}
+    <link rel="manifest" href="/static/manifest-staff.json" />
+  {% endif %}
   <link rel="stylesheet" href="/static/build/tokens.css" />
   <link rel="stylesheet" href="/static/build/roles.css" />
   <link rel="stylesheet" href="/static/build/base.css" />
@@ -26,6 +34,12 @@
   <div class="toasts" aria-live="polite">
     {% for f in flash %}<div class="toast toast--{{ f.tipo }}">{{ f.mensaje }}</div>{% endfor %}
   </div>
+  {% endif %}
+
+  {% if user %}
+    <dialog id="logo-grande" class="logo-grande" aria-label="Logo en grande">
+      <img data-logo-img src="/logo" alt="" />
+    </dialog>
   {% endif %}
 
   <script src="/static/vendor/htmx.min.js" defer></script>

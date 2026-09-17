@@ -6,9 +6,12 @@
   {%- endif -%}
 {% endmacro %}
 <nav class="sidebar" aria-label="Navegación principal" id="menu-lateral">
-  <a class="sidebar__brand" href="{{ '/portal' if area == 'portal' else '/app' }}">
-    <img data-logo-img src="/logo" alt="" style="max-height:28px;vertical-align:middle;margin-right:8px" />{{ appNombre }}
-  </a>
+  <div class="sidebar__brand">
+    <button type="button" class="sidebar__logo-btn" data-logo-agrandar title="Ver logo en grande" aria-label="Ver logo en grande">
+      <img data-logo-img src="/logo" alt="" />
+    </button>
+    <a href="{{ '/portal' if area == 'portal' else '/app' }}">{{ appNombre }}</a>
+  </div>
   {% for seccion in navSecciones %}
     <ul class="sidebar__list" aria-label="{{ seccion.etiqueta }}">
       {% if navSecciones.length > 1 %}

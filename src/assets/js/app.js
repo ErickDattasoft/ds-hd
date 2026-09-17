@@ -919,6 +919,18 @@
     if (dialog && e.target === dialog) dialog.close();
   });
 
+  // ── Logo del sidebar: clic para verlo en grande ──────────────────────────
+  document.addEventListener('click', function (e) {
+    if (e.target.closest('[data-logo-agrandar]')) {
+      var dialog = document.getElementById('logo-grande');
+      if (dialog) dialog.showModal();
+    }
+  });
+  document.addEventListener('click', function (e) {
+    var dialog = document.getElementById('logo-grande');
+    if (dialog && e.target === dialog) dialog.close();
+  });
+
   // ── Kanban: arrastrar tarjeta → cambiar estado ──────────────────────────
   function initKanban() {
     var board = document.querySelector('[data-kanban]');
