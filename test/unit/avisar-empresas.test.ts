@@ -11,6 +11,7 @@ import { InMemoryVersionRepository } from '../fakes/kb.js';
 import { InMemoryConfiguracionRepository } from '../fakes/tickets.js';
 import { FakeEmailSender } from '../fakes/FakeEmailSender.js';
 import { FixedClock, silentLogger } from '../fakes/support.js';
+import { WHATSAPP_CLIENTES_POR_DEFECTO, type WhatsAppClientesConfig } from '../../src/core/entities/ConfiguracionIntegraciones.js';
 import type { IIntegracionesGateway, ResultadoPrueba } from '../../src/core/ports/services/IIntegracionesGateway.js';
 
 class FakeIntegracionesGateway implements IIntegracionesGateway {
@@ -21,6 +22,12 @@ class FakeIntegracionesGateway implements IIntegracionesGateway {
   }
   async enviarWhatsApp(): Promise<ResultadoPrueba> {
     return { ok: true, detalle: 'no usado en estos tests' };
+  }
+  readonly business: { proveedor: string; telefono: string; mensaje: string }[] = [];
+  respuestaBusiness: ResultadoPrueba = { ok: true, detalle: 'Enviado (id wamid.1)' };
+  async enviarWhatsAppClientes(cfg: WhatsAppClientesConfig, telefono: string, mensaje: string): Promise<ResultadoPrueba> {
+    this.business.push({ proveedor: cfg.proveedor, telefono, mensaje });
+    return this.respuestaBusiness;
   }
 }
 
@@ -198,7 +205,7 @@ describe('AvisarEmpresasService', () => {
 
     expect(resultados[0]!.enviado).toBe(true);
     expect(resultados[0]!.motivo).toBeUndefined();
-    expect(resultados[0]!.whatsappManual?.telefono).toBe('9991234567');
+    expect(resultados[0]!.whatsappManual?.telefono).toBe('529991234567');
     expect(resultados[0]!.whatsappManual?.mensaje).toBeTruthy();
     expect(gateway.webhooksLlamados).toHaveLength(0);
     expect((await empresas.findById('e5'))?.ultimoAvisoVersionesEn).toEqual(clock.now());
@@ -226,5 +233,30 @@ describe('AvisarEmpresasService', () => {
     });
 
     expect(resultados[0]).toMatchObject({ enviado: false, motivo: 'sin_contacto_telefono' });
+  });
+
+  it('con Meta configurado manda el WhatsApp solo; si la API falla deja el botón manual', async () => {
+    await versiones.save(new VersionSistema({ id: 'v1', sistema: 'Contabilidad', versionActual: '19.1.0' }));
+    await empresas.save(
+      new Empresa({ id: 'e6', nombre: 'Con Meta', sistemasContratados: ['Contabilidad'], versionesInstaladas: { Contabilidad: '18.0.0' } }),
+    );
+    await contactos.save(new Contacto({ id: 'c6', nombre: 'Cliente Seis', empresaId: 'e6', celular: '999 123 4567' }));
+    const integraciones = await config.obtenerIntegraciones();
+    await config.guardarIntegraciones({
+      ...integraciones,
+      n8nWebhookEmpresas: 'https://n8n.example.com/wh',
+      whatsappClientes: { ...WHATSAPP_CLIENTES_POR_DEFECTO, proveedor: 'meta', metaToken: 't', metaPhoneNumberId: '1', metaPlantilla: 'p' },
+    });
+
+    const [ok] = await service.ejecutar({ actor: actor(), empresaIds: ['e6'], tipo: 'versiones', canal: 'whatsapp' });
+    expect(gateway.business).toHaveLength(1);
+    expect(gateway.webhooksLlamados).toHaveLength(0);
+    expect(ok).toMatchObject({ enviado: true, detalle: 'Enviado (id wamid.1)' });
+    expect(ok!.whatsappManual).toBeUndefined();
+
+    gateway.respuestaBusiness = { ok: false, detalle: 'Template not found' };
+    const [fallo] = await service.ejecutar({ actor: actor(), empresaIds: ['e6'], tipo: 'versiones', canal: 'whatsapp' });
+    expect(fallo!.whatsappManual?.telefono).toBe('529991234567');
+    expect(fallo!.detalle).toBe('Template not found');
   });
 });

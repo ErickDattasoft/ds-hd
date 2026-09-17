@@ -323,6 +323,11 @@ export function backofficeRoutes(container: Container): Router {
     (req, res) => configuracion().probarWhatsappPost(req, res),
   );
   r.post(
+    '/configuracion/integraciones/probar-whatsapp-clientes',
+    requirePermission('configuracion:integraciones'),
+    (req, res) => configuracion().probarWhatsappClientesPost(req, res),
+  );
+  r.post(
     '/configuracion/integraciones/probar-correo',
     requirePermission('configuracion:integraciones'),
     (req, res) => configuracion().probarCorreoPost(req, res),

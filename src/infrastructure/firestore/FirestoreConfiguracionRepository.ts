@@ -15,6 +15,7 @@ import {
 } from '../../core/entities/ConfiguracionAvisos.js';
 import {
   CONFIG_INTEGRACIONES_POR_DEFECTO,
+  WHATSAPP_CLIENTES_POR_DEFECTO,
   sanearReglas,
   type ConfiguracionIntegraciones,
 } from '../../core/entities/ConfiguracionIntegraciones.js';
@@ -101,6 +102,7 @@ export class FirestoreConfiguracionRepository implements IConfiguracionRepositor
       whatsappTelefono: String(d.whatsappTelefono ?? ''),
       whatsappApiKey: String(d.whatsappApiKey ?? ''),
       whatsappOtros: Array.isArray(d.whatsappOtros) ? d.whatsappOtros : [],
+      whatsappClientes: { ...WHATSAPP_CLIENTES_POR_DEFECTO, ...(d.whatsappClientes ?? {}) },
       reglas: sanearReglas(d.reglas),
     };
   }

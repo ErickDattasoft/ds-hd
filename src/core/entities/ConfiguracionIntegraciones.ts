@@ -54,8 +54,44 @@ export interface ConfiguracionIntegraciones {
   whatsappApiKey: string;
   /** Más personas del equipo que reciben los avisos (cada una con su propia API key de CallMeBot). */
   whatsappOtros?: DestinatarioWhatsApp[];
+  /** WhatsApp a CLIENTES (avisos de versiones/licencias). */
+  whatsappClientes?: WhatsAppClientesConfig;
   reglas: MatrizReglas;
 }
+
+/**
+ * Cómo se manda WhatsApp a clientes: `manual` abre WhatsApp Web con el mensaje listo,
+ * `n8n` lo manda al webhook de Empresas, `meta` usa la API oficial (Cloud API) y `twilio` la de Twilio.
+ */
+export type ProveedorWhatsAppClientes = 'manual' | 'n8n' | 'meta' | 'twilio';
+
+/** Credenciales y proveedor del WhatsApp a clientes. */
+export interface WhatsAppClientesConfig {
+  proveedor: ProveedorWhatsAppClientes;
+  /** Meta: token permanente de usuario de sistema, id del número y plantilla aprobada. */
+  metaToken: string;
+  metaPhoneNumberId: string;
+  metaPlantilla: string;
+  metaIdioma: string;
+  /** Twilio: credenciales, número remitente y (opcional) plantilla de Content API. */
+  twilioAccountSid: string;
+  twilioAuthToken: string;
+  twilioFrom: string;
+  twilioContentSid: string;
+}
+
+export const WHATSAPP_CLIENTES_POR_DEFECTO: WhatsAppClientesConfig = {
+  // `n8n` sin webhook configurado se comporta como `manual` (así funcionaba antes de esta opción).
+  proveedor: 'n8n',
+  metaToken: '',
+  metaPhoneNumberId: '',
+  metaPlantilla: '',
+  metaIdioma: 'es_MX',
+  twilioAccountSid: '',
+  twilioAuthToken: '',
+  twilioFrom: '',
+  twilioContentSid: '',
+};
 
 /** Una persona que recibe avisos por WhatsApp vía CallMeBot. */
 export interface DestinatarioWhatsApp {

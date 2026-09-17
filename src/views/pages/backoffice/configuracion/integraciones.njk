@@ -70,6 +70,53 @@
       </div>
     </details>
 
+    <details class="disclosure"{{ ' open' if wa.proveedor == 'meta' or wa.proveedor == 'twilio' }}>
+      <summary class="disclosure__summary">WhatsApp a clientes (avisos de versiones y licencias)</summary>
+      <div class="disclosure__body form">
+        <p class="muted">CallMeBot (arriba) solo sirve para avisos internos a tu equipo. Para escribirle a clientes elige cómo:</p>
+        <label class="field"><span>Envío</span>
+          <select name="waProveedor" data-wa-proveedor>
+            <option value="manual" {{ 'selected' if wa.proveedor == 'manual' }}>Manual — abre WhatsApp Web con el mensaje listo</option>
+            <option value="n8n" {{ 'selected' if wa.proveedor == 'n8n' }}>n8n — manda al webhook de Empresas (si no hay, manual)</option>
+            <option value="meta" {{ 'selected' if wa.proveedor == 'meta' }}>Meta — API oficial de WhatsApp Business</option>
+            <option value="twilio" {{ 'selected' if wa.proveedor == 'twilio' }}>Twilio</option>
+          </select>
+        </label>
+        <fieldset class="field" data-wa-panel="meta" {{ 'hidden' if wa.proveedor != 'meta' }}>
+          <legend>Meta (WhatsApp Cloud API)</legend>
+          <label class="field"><span>Token de acceso (usuario del sistema)</span>
+            <input type="password" name="waMetaToken" autocomplete="off" placeholder="{{ '•••••••• guardado — déjalo vacío para conservarlo' if wa.metaToken else 'EAAG…' }}" />
+          </label>
+          <label class="field"><span>Phone number ID</span><input name="waMetaPhoneNumberId" value="{{ wa.metaPhoneNumberId }}" /></label>
+          <div class="form-grid">
+            <label class="field"><span>Nombre de la plantilla aprobada</span><input name="waMetaPlantilla" value="{{ wa.metaPlantilla }}" placeholder="aviso_dattasoft" /></label>
+            <label class="field"><span>Idioma de la plantilla</span><input name="waMetaIdioma" value="{{ wa.metaIdioma }}" placeholder="es_MX" /></label>
+          </div>
+          <p class="field__hint">Meta solo deja que la empresa inicie la conversación con una <strong>plantilla aprobada</strong>. Crea en WhatsApp Manager una plantilla de tipo "Utilidad" con una sola variable, por ejemplo: <code>Aviso de DATTASOFT: {{ '{{1}}' }}</code>. El mensaje de tus plantillas del CRM va completo en esa variable (en una sola línea).</p>
+        </fieldset>
+        <fieldset class="field" data-wa-panel="twilio" {{ 'hidden' if wa.proveedor != 'twilio' }}>
+          <legend>Twilio</legend>
+          <div class="form-grid">
+            <label class="field"><span>Account SID</span><input name="waTwilioAccountSid" value="{{ wa.twilioAccountSid }}" placeholder="AC…" /></label>
+            <label class="field"><span>Auth Token</span>
+              <input type="password" name="waTwilioAuthToken" autocomplete="off" placeholder="{{ '•••••••• guardado — vacío para conservarlo' if wa.twilioAuthToken else '' }}" />
+            </label>
+            <label class="field"><span>Número remitente</span><input name="waTwilioFrom" value="{{ wa.twilioFrom }}" placeholder="+14155238886" /></label>
+            <label class="field"><span>Content SID de la plantilla</span><input name="waTwilioContentSid" value="{{ wa.twilioContentSid }}" placeholder="HX…" /></label>
+          </div>
+          <p class="field__hint">Igual que con Meta, para iniciar la conversación Twilio pide una plantilla aprobada (Content SID) con la variable <code>{{ '{{1}}' }}</code>. Sin ella, el mensaje solo llega si el cliente te escribió en las últimas 24 h.</p>
+        </fieldset>
+        <div data-wa-panel="meta twilio" {{ 'hidden' if wa.proveedor != 'meta' and wa.proveedor != 'twilio' }}>
+          <label class="field"><span>Probar (guarda primero)</span>
+            <input name="waPruebaTelefono" placeholder="10 dígitos" data-wa-prueba-tel />
+          </label>
+          <button type="button" class="btn btn--ghost btn--sm" data-probar-wa-clientes>🧪 Enviar prueba</button>
+          <span class="muted" data-resultado-wa-clientes></span>
+          <p class="field__hint">Si un envío falla, el aviso no se pierde: aparece el botón "Abrir WhatsApp" para mandarlo a mano.</p>
+        </div>
+      </div>
+    </details>
+
     <details class="disclosure">
       <summary class="disclosure__summary">Correo saliente</summary>
       <div class="disclosure__body form">

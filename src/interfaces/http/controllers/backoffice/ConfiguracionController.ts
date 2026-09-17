@@ -9,7 +9,12 @@ import type { ConfiguracionLogoService } from '../../../../application/configura
 import type { ResumenDiarioService } from '../../../../application/dashboard/ResumenDiarioService.js';
 import type { AdjuntoTicketService } from '../../../../application/tickets/AdjuntoTicketService.js';
 import type { ExcelUnificadoService } from '../../../../application/excel/ExcelUnificadoService.js';
-import { ETIQUETAS_EVENTOS, destinatariosWhatsAppATexto } from '../../../../core/entities/ConfiguracionIntegraciones.js';
+import {
+  ETIQUETAS_EVENTOS,
+  WHATSAPP_CLIENTES_POR_DEFECTO,
+  destinatariosWhatsAppATexto,
+  type ProveedorWhatsAppClientes,
+} from '../../../../core/entities/ConfiguracionIntegraciones.js';
 import { INFO_APP } from '../../../../core/entities/AcercaDe.js';
 import { catalogoFacturacion } from './TicketController.js';
 import { respuestasATexto } from '../../../../core/entities/ConfiguracionTickets.js';
@@ -255,6 +260,7 @@ export class ConfiguracionController {
       titulo: 'Integraciones',
       config,
       whatsappOtrosTexto: destinatariosWhatsAppATexto(config.whatsappOtros),
+      wa: { ...WHATSAPP_CLIENTES_POR_DEFECTO, ...config.whatsappClientes },
       eventosEtiquetas: ETIQUETAS_EVENTOS,
       infoCorreo: this.configIntegraciones.infoCorreo(),
       errores: opts.errores ?? {},
@@ -278,6 +284,17 @@ export class ConfiguracionController {
         whatsappTelefono: str(b.whatsappTelefono),
         whatsappApiKey: str(b.whatsappApiKey),
         whatsappOtros: str(b.whatsappOtros),
+        whatsappClientes: {
+          proveedor: str(b.waProveedor) as ProveedorWhatsAppClientes,
+          metaToken: str(b.waMetaToken),
+          metaPhoneNumberId: str(b.waMetaPhoneNumberId),
+          metaPlantilla: str(b.waMetaPlantilla),
+          metaIdioma: str(b.waMetaIdioma),
+          twilioAccountSid: str(b.waTwilioAccountSid),
+          twilioAuthToken: str(b.waTwilioAuthToken),
+          twilioFrom: str(b.waTwilioFrom),
+          twilioContentSid: str(b.waTwilioContentSid),
+        },
         reglas: ConfiguracionIntegracionesService.reglasDeForm(b),
       });
       await this.renderIntegraciones(res, { guardado: true });
@@ -290,6 +307,14 @@ export class ConfiguracionController {
     try {
       const resultado = await this.configIntegraciones.probarWebhook(req.user!, str(req.body?.url));
       res.json(resultado);
+    } catch (err) {
+      res.status(422).json({ ok: false, detalle: err instanceof Error ? err.message : 'No se pudo probar' });
+    }
+  };
+
+  probarWhatsappClientesPost = async (req: Request, res: Response): Promise<void> => {
+    try {
+      res.json(await this.configIntegraciones.probarWhatsAppClientes(req.user!, str(req.body?.telefono)));
     } catch (err) {
       res.status(422).json({ ok: false, detalle: err instanceof Error ? err.message : 'No se pudo probar' });
     }

@@ -5,6 +5,7 @@ import type { IConfiguracionRepository } from '../../core/ports/repositories/ICo
 import type { IEmailSender } from '../../core/ports/services/IEmailSender.js';
 import type { IIntegracionesGateway } from '../../core/ports/services/IIntegracionesGateway.js';
 import type { IClock } from '../../core/ports/services/IClock.js';
+import { normalizarTelefonoMx } from '../../core/entities/value-objects/Telefono.js';
 import { ForbiddenError } from '../../core/errors/DomainError.js';
 import { formatearContactoSoporte, formatearLicenciasPendientes, formatearSistemasPendientes, renderizarPlantilla } from './avisos.js';
 import type { SessionUser } from '../shared/SessionUser.js';
@@ -22,6 +23,8 @@ export interface ResultadoAviso {
   /** Solo cuando enviado=true por WhatsApp sin webhook n8n: el cliente debe abrir
    * wa.me con este teléfono/mensaje (mismo respaldo "WhatsApp Web" del CRM viejo). */
   whatsappManual?: { telefono: string; mensaje: string };
+  /** Respuesta del proveedor de WhatsApp (Meta/Twilio), si se usó. */
+  detalle?: string;
 }
 
 /** Caso de uso: avisar (por correo o WhatsApp) a un lote de empresas sobre versiones
@@ -108,8 +111,16 @@ export class AvisarEmpresasService {
       });
 
       let whatsappManual: { telefono: string; mensaje: string } | undefined;
+      let detalleEnvio: string | undefined;
       if (canal === 'whatsapp') {
-        if (integraciones.n8nWebhookEmpresas) {
+        const wa = integraciones.whatsappClientes;
+        const automatico = wa && (wa.proveedor === 'meta' || wa.proveedor === 'twilio') && this.gateway.enviarWhatsAppClientes;
+        if (automatico) {
+          const r = await this.gateway.enviarWhatsAppClientes!(wa, telefono, mensaje);
+          detalleEnvio = r.detalle;
+          // Si la API falla, no se pierde el aviso: queda el botón para mandarlo a mano.
+          if (!r.ok) whatsappManual = { telefono: normalizarTelefonoMx(telefono), mensaje };
+        } else if (wa?.proveedor !== 'manual' && integraciones.n8nWebhookEmpresas) {
           await this.gateway.postWebhook(integraciones.n8nWebhookEmpresas, {
             evento: 'empresa.avisar_whatsapp',
             empresaId: empresa.id,
@@ -121,7 +132,7 @@ export class AvisarEmpresasService {
         } else {
           // Sin n8n configurado: mismo respaldo que el CRM viejo — el navegador abre
           // WhatsApp Web/wa.me por el usuario en vez de mandarlo por webhook.
-          whatsappManual = { telefono, mensaje };
+          whatsappManual = { telefono: normalizarTelefonoMx(telefono), mensaje };
         }
       } else {
         await this.email.enviar({
@@ -144,10 +155,16 @@ export class AvisarEmpresasService {
         entidadId: empresa.id,
         resumen:
           canal === 'whatsapp'
-            ? `Aviso de ${input.tipo} enviado por WhatsApp a ${contacto!.nombre} (${telefono})`
+            ? `Aviso de ${input.tipo} por WhatsApp a ${contacto!.nombre} (${telefono})${detalleEnvio ? ` — ${detalleEnvio}` : ''}`
             : `Aviso de ${input.tipo} enviado a ${contacto!.nombre} (${contacto!.email})`,
       });
-      resultados.push({ empresaId, empresaNombre: empresa.nombre, enviado: true, whatsappManual });
+      resultados.push({
+        empresaId,
+        empresaNombre: empresa.nombre,
+        enviado: true,
+        whatsappManual,
+        ...(detalleEnvio ? { detalle: detalleEnvio } : {}),
+      });
     }
     return resultados;
   }

@@ -1,3 +1,5 @@
+import type { WhatsAppClientesConfig } from '../../entities/ConfiguracionIntegraciones.js';
+
 /** Resultado de una llamada saliente a una integración externa. */
 export interface ResultadoPrueba {
   ok: boolean;
@@ -12,4 +14,6 @@ export interface ResultadoPrueba {
 export interface IIntegracionesGateway {
   postWebhook(url: string, payload: Record<string, unknown>): Promise<ResultadoPrueba>;
   enviarWhatsApp(telefono: string, apiKey: string, mensaje: string): Promise<ResultadoPrueba>;
+  /** WhatsApp Business a un cliente, por Meta (Cloud API) o Twilio según la config. */
+  enviarWhatsAppClientes?(cfg: WhatsAppClientesConfig, telefono: string, mensaje: string): Promise<ResultadoPrueba>;
 }

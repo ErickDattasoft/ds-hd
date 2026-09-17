@@ -6,9 +6,10 @@
     <a class="btn btn--sm btn--ghost" href="/app/empresas">Volver a empresas</a>
   </div>
   {% if resultados | selectattr('whatsappManual') | list | length %}
-    <p class="alert alert--warn">No hay webhook de WhatsApp configurado en
-      <a href="/app/configuracion/integraciones">Configuración → Integraciones</a> — abre cada
-      chat manualmente con el botón "Abrir WhatsApp" de cada fila (mensaje ya redactado).</p>
+    <p class="alert alert--warn">Estos mensajes no se mandaron solos: abre cada chat con el botón
+      "Abrir WhatsApp" de su fila (el mensaje ya va redactado) y dale Enviar. Para mandarlos
+      automáticamente, configura WhatsApp Business en
+      <a href="/app/configuracion/integraciones">Configuración → Integraciones</a>.</p>
   {% endif %}
   <table class="data-table">
     <thead><tr><th>Empresa</th><th>Resultado</th></tr></thead>
@@ -18,11 +19,13 @@
           <td>{{ r.empresaNombre }}</td>
           <td>
             {% if r.whatsappManual %}
-              <span class="badge badge--ok">Enviado</span>
+              <span class="badge badge--warning">Pendiente de enviar</span>
+              {% if r.detalle %}<span class="muted">({{ r.detalle }})</span>{% endif %}
               <a class="btn btn--secondary btn--sm" target="_blank" rel="noopener"
-                 href="https://wa.me/{{ r.whatsappManual.telefono | replace('+', '') | replace(' ', '') }}?text={{ r.whatsappManual.mensaje | urlencode }}">Abrir WhatsApp</a>
+                 href="https://wa.me/{{ r.whatsappManual.telefono }}?text={{ r.whatsappManual.mensaje | urlencode }}">Abrir WhatsApp</a>
             {% elif r.enviado %}
               <span class="badge badge--ok">Enviado</span>
+              {% if r.detalle %}<span class="muted">{{ r.detalle }}</span>{% endif %}
             {% elif r.motivo == 'sin_pendientes' %}
               <span class="badge">Sin pendientes, no se envió</span>
             {% elif r.motivo == 'sin_contacto_correo' %}

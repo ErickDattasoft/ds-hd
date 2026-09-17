@@ -406,6 +406,25 @@
       return;
     }
 
+    var btnWaCli = e.target.closest('[data-probar-wa-clientes]');
+    if (btnWaCli) {
+      var telCli = document.querySelector('[data-wa-prueba-tel]');
+      var salidaCli = document.querySelector('[data-resultado-wa-clientes]');
+      if (!telCli || !salidaCli) return;
+      btnWaCli.disabled = true;
+      salidaCli.textContent = 'Enviando…';
+      fetch('/app/configuracion/integraciones/probar-whatsapp-clientes', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'x-csrf-token': cookie('x-csrf-token') },
+        body: JSON.stringify({ telefono: telCli.value }),
+      })
+        .then(function (r) { return r.json(); })
+        .then(function (data) { salidaCli.textContent = (data.ok ? '✅ ' : '❌ ') + data.detalle; })
+        .catch(function () { salidaCli.textContent = '❌ No se pudo probar.'; })
+        .finally(function () { btnWaCli.disabled = false; });
+      return;
+    }
+
     var btnWaOtros = e.target.closest('[data-probar-whatsapp-otros]');
     if (btnWaOtros) {
       var area = document.querySelector('[data-whatsapp-otros]');
@@ -1181,6 +1200,15 @@
       caja.value = (caja.value ? caja.value.replace(/\s+$/, '') + '\n\n' : '') + texto;
     }
     caja.focus();
+  });
+
+  // ── Integraciones: mostrar solo los campos del proveedor de WhatsApp elegido ──
+  document.addEventListener('change', function (e) {
+    if (!e.target.matches || !e.target.matches('[data-wa-proveedor]')) return;
+    var valor = e.target.value;
+    document.querySelectorAll('[data-wa-panel]').forEach(function (p) {
+      p.hidden = p.getAttribute('data-wa-panel').split(' ').indexOf(valor) === -1;
+    });
   });
 
   // ── Selects que envían su formulario al cambiar (filtros, embudo de ventas) ──

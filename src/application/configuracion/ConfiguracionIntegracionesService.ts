@@ -8,7 +8,10 @@ import {
   parsearDestinatariosWhatsApp,
   sanearReglas,
   type ConfiguracionIntegraciones,
+  WHATSAPP_CLIENTES_POR_DEFECTO,
   type MatrizReglas,
+  type ProveedorWhatsAppClientes,
+  type WhatsAppClientesConfig,
 } from '../../core/entities/ConfiguracionIntegraciones.js';
 import { ForbiddenError, ValidationError } from '../../core/errors/DomainError.js';
 import type { SessionUser } from '../shared/SessionUser.js';
@@ -24,6 +27,8 @@ export interface DatosIntegraciones {
   whatsappApiKey: string;
   /** Texto "Nombre, teléfono, API key" por línea. */
   whatsappOtros?: string;
+  /** WhatsApp a clientes. Los secretos vacíos conservan el valor guardado. */
+  whatsappClientes?: Partial<WhatsAppClientesConfig>;
   reglas: unknown;
 }
 
@@ -83,6 +88,25 @@ export class ConfiguracionIntegracionesService {
       });
     }
 
+    const previa = await this.repo.obtenerIntegraciones();
+    const waPrevio = { ...WHATSAPP_CLIENTES_POR_DEFECTO, ...previa.whatsappClientes };
+    const waIn = input.whatsappClientes ?? {};
+    const t = (v: string | undefined) => (v ?? '').trim();
+    const proveedores: ProveedorWhatsAppClientes[] = ['manual', 'n8n', 'meta', 'twilio'];
+    const whatsappClientes: WhatsAppClientesConfig = {
+      proveedor: proveedores.includes(waIn.proveedor as ProveedorWhatsAppClientes)
+        ? (waIn.proveedor as ProveedorWhatsAppClientes)
+        : waPrevio.proveedor,
+      metaToken: t(waIn.metaToken) || waPrevio.metaToken,
+      metaPhoneNumberId: t(waIn.metaPhoneNumberId),
+      metaPlantilla: t(waIn.metaPlantilla),
+      metaIdioma: t(waIn.metaIdioma) || 'es_MX',
+      twilioAccountSid: t(waIn.twilioAccountSid),
+      twilioAuthToken: t(waIn.twilioAuthToken) || waPrevio.twilioAuthToken,
+      twilioFrom: t(waIn.twilioFrom),
+      twilioContentSid: t(waIn.twilioContentSid),
+    };
+
     const config: ConfiguracionIntegraciones = {
       n8nWebhookTickets: input.n8nWebhookTickets.trim(),
       n8nWebhookCotizaciones: input.n8nWebhookCotizaciones.trim(),
@@ -91,6 +115,7 @@ export class ConfiguracionIntegracionesService {
       whatsappTelefono: input.whatsappTelefono.trim(),
       whatsappApiKey: input.whatsappApiKey.trim(),
       whatsappOtros: parsearDestinatariosWhatsApp(input.whatsappOtros ?? ''),
+      whatsappClientes: input.whatsappClientes ? whatsappClientes : waPrevio,
       reglas: sanearReglas(input.reglas) as MatrizReglas,
     };
     await this.repo.guardarIntegraciones(config);
@@ -127,6 +152,20 @@ export class ConfiguracionIntegracionesService {
     }
     if (!telefono || !apiKey) return { ok: false, detalle: 'Falta teléfono o API key' };
     return this.gateway.enviarWhatsApp(telefono, apiKey, 'Prueba de conexión desde ds-hd 🎉');
+  }
+
+  /** Manda un WhatsApp de prueba con el proveedor de clientes guardado (Meta o Twilio). */
+  async probarWhatsAppClientes(actor: SessionUser, telefono: string): Promise<ResultadoPrueba> {
+    if (!actor.permisos.includes('configuracion:integraciones')) {
+      throw new ForbiddenError('No puedes probar integraciones');
+    }
+    const cfg = { ...WHATSAPP_CLIENTES_POR_DEFECTO, ...(await this.repo.obtenerIntegraciones()).whatsappClientes };
+    if (cfg.proveedor !== 'meta' && cfg.proveedor !== 'twilio') {
+      return { ok: false, detalle: 'Elige Meta o Twilio y guarda antes de probar' };
+    }
+    if (!telefono) return { ok: false, detalle: 'Escribe un teléfono de prueba' };
+    if (!this.gateway.enviarWhatsAppClientes) return { ok: false, detalle: 'Envío no disponible' };
+    return this.gateway.enviarWhatsAppClientes(cfg, telefono, 'Prueba de WhatsApp Business desde DATTASOFT HD ✅');
   }
 
   /** Manda un correo de prueba a `destino` para verificar que el envío funciona de verdad. */
