@@ -131,3 +131,47 @@ describe('KB y menú', () => {
     expect(mini.text).toContain('data-sidebar="mini"');
   });
 });
+
+describe('predeterminados por usuario, WhatsApp a varias personas y correo de empresa', () => {
+  it('los predeterminados propios ganan sobre los generales', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    const { agent, csrf } = await login(t.app, ADMIN.email, ADMIN.password);
+    const cfg = await t.configuracionRepo.obtenerTickets();
+    await t.configuracionRepo.guardarTickets({ ...cfg, predeterminados: { tipo: 'Instalación', grupo: 'Ventas' } });
+    const perfil = await agent.get('/app/mi-perfil');
+    expect(perfil.text).toContain('Mis predeterminados');
+    await agent.post('/app/mi-perfil').type('form').send({
+      _csrf: csrf, firma: 'Saludos', encabezado: '', predTipo: 'General', predSistema: 'Nóminas',
+    });
+    const form = await agent.get('/app/tickets/nuevo');
+    expect(form.text).toMatch(/<option selected>General<\/option>/);
+    expect(form.text).toMatch(/<option selected>Nóminas<\/option>/);
+    expect(form.text).toMatch(/<option selected>Ventas<\/option>/);
+  });
+
+  it('guarda varias personas de WhatsApp', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    const { agent, csrf } = await login(t.app, ADMIN.email, ADMIN.password);
+    await agent.post('/app/configuracion/integraciones').type('form').send({
+      _csrf: csrf,
+      n8nWebhookTickets: '', n8nWebhookCotizaciones: '', n8nWebhookEmpresas: '',
+      whatsappTelefono: '', whatsappApiKey: '',
+      whatsappOtros: 'Ana, +5211111111, K1\nBeto | +5222222222 | K2\nlínea inválida',
+    });
+    const cfg = await t.configuracionRepo.obtenerIntegraciones();
+    expect(cfg.whatsappOtros).toEqual([
+      { nombre: 'Ana', telefono: '+5211111111', apiKey: 'K1' },
+      { nombre: 'Beto', telefono: '+5222222222', apiKey: 'K2' },
+    ]);
+    const vista = await agent.get('/app/configuracion/integraciones');
+    expect(vista.text).toContain('Ana, +5211111111, K1');
+  });
+
+  it('empresa con correo muestra "Escribir correo"', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    t.empresaRepo.items.set('e1', new Empresa({ id: 'e1', nombre: 'ACME', email: 'hola@acme.mx' }));
+    const { agent } = await login(t.app, ADMIN.email, ADMIN.password);
+    const det = await agent.get('/app/empresas/e1');
+    expect(det.text).toContain('href="mailto:hola@acme.mx"');
+  });
+});

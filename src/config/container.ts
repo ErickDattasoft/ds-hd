@@ -882,6 +882,7 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
           c.empresaRepo,
           c.actualizarMiFirmaService,
           c.contrasenaService,
+          c.configuracionTicketsService,
         ),
     ).singleton(),
     solicitudAccesoController: asFunction(

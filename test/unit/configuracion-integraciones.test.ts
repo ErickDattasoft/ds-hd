@@ -207,6 +207,19 @@ describe('N8nWebhookPublisher', () => {
     expect(gateway.whatsappLlamados[0]!.mensaje).toContain('#7');
   });
 
+  it('envía el WhatsApp al número principal y a las demás personas', async () => {
+    repo.integraciones = {
+      ...repo.integraciones,
+      whatsappHabilitado: true,
+      whatsappTelefono: '+521234567890',
+      whatsappApiKey: 'clave',
+      whatsappOtros: [{ nombre: 'Ana', telefono: '+5211111111', apiKey: 'K1' }],
+      reglas: { ...repo.integraciones.reglas, 'ticket.creado': { webhook: false, whatsapp: true } },
+    };
+    await publisher.publicar({ evento: 'ticket.creado', canal: 'tickets', payload: { numero: 8 } });
+    expect(gateway.whatsappLlamados).toHaveLength(2);
+  });
+
   it('no envía WhatsApp si la regla lo pide pero el canal no está habilitado', async () => {
     repo.integraciones = {
       ...repo.integraciones,

@@ -63,7 +63,7 @@
                       aria-pressed="{{ 'true' if e.favorita else 'false' }}">{{ '⭐' if e.favorita else '☆' }}</button>
             </td>
           {% endif %}
-          <td><a href="/app/empresas/{{ e.id }}">{{ e.nombre }}</a></td>
+          <td><a href="/app/empresas/{{ e.id }}">{{ e.nombre }}</a>{% if e.email %} <a href="mailto:{{ e.email }}" title="Escribir correo a {{ e.email }}" aria-label="Escribir correo">✉️</a>{% endif %}</td>
           <td>{{ e.rfc or '—' }}</td>
           <td>{{ e.telefono or '—' }}</td>
           <td>{{ e.sistemasContratados | length }}</td>

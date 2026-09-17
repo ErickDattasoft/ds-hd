@@ -1,3 +1,4 @@
+import type { PredeterminadosTicket } from './ConfiguracionTickets.js';
 import {
   esRolStaff,
   parseRoles,
@@ -40,6 +41,8 @@ export interface UsuarioProps {
   firma?: string | null;
   /** Encabezado/plantilla que el usuario inserta al redactar un ticket (con `[fecha]`). */
   encabezado?: string | null;
+  /** Predeterminados propios del ticket nuevo; ganan sobre los de Configuración → Tickets. */
+  predeterminadosTicket?: PredeterminadosTicket | null;
   createdAt?: Date;
   updatedAt?: Date;
   lastLoginAt?: Date | null;
@@ -69,6 +72,7 @@ export class Usuario {
   agente: PerfilAgente;
   firma: string | null;
   encabezado: string | null;
+  predeterminadosTicket: PredeterminadosTicket | null;
   readonly createdAt: Date;
   updatedAt: Date;
   lastLoginAt: Date | null;
@@ -89,6 +93,7 @@ export class Usuario {
     this.agente = { ...AGENTE_POR_DEFECTO, ...props.agente };
     this.firma = props.firma?.trim() || null;
     this.encabezado = props.encabezado?.trim() || null;
+    this.predeterminadosTicket = props.predeterminadosTicket ?? null;
     this.createdAt = props.createdAt ?? new Date();
     this.updatedAt = props.updatedAt ?? this.createdAt;
     this.lastLoginAt = props.lastLoginAt ?? null;

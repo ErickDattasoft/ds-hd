@@ -59,13 +59,23 @@ export class N8nWebhookPublisher implements IWebhookPublisher {
       }
     }
 
-    if (regla.whatsapp && config.whatsappHabilitado && config.whatsappTelefono && config.whatsappApiKey) {
-      const r = await this.gateway.enviarWhatsApp(
-        config.whatsappTelefono,
-        config.whatsappApiKey,
-        mensajeWhatsApp(evento),
+    if (regla.whatsapp && config.whatsappHabilitado) {
+      // El número principal + las demás personas del equipo, cada una con su API key.
+      const destinos = [
+        ...(config.whatsappTelefono && config.whatsappApiKey
+          ? [{ telefono: config.whatsappTelefono, apiKey: config.whatsappApiKey }]
+          : []),
+        ...(config.whatsappOtros ?? []),
+      ];
+      const mensaje = mensajeWhatsApp(evento);
+      await Promise.all(
+        destinos.map(async (d) => {
+          const r = await this.gateway.enviarWhatsApp(d.telefono, d.apiKey, mensaje);
+          if (!r.ok) {
+            this.logger.warn('WhatsApp (CallMeBot) falló', { evento: evento.evento, telefono: d.telefono, detalle: r.detalle });
+          }
+        }),
       );
-      if (!r.ok) this.logger.warn('WhatsApp (CallMeBot) falló', { evento: evento.evento, detalle: r.detalle });
     }
   }
 }

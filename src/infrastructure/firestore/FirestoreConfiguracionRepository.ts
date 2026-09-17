@@ -99,6 +99,7 @@ export class FirestoreConfiguracionRepository implements IConfiguracionRepositor
       whatsappHabilitado: Boolean(d.whatsappHabilitado),
       whatsappTelefono: String(d.whatsappTelefono ?? ''),
       whatsappApiKey: String(d.whatsappApiKey ?? ''),
+      whatsappOtros: Array.isArray(d.whatsappOtros) ? d.whatsappOtros : [],
       reglas: sanearReglas(d.reglas),
     };
   }

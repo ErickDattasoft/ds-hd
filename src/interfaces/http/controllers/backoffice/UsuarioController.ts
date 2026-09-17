@@ -4,6 +4,8 @@ import type { CrearUsuarioService } from '../../../../application/usuarios/Crear
 import type { ActualizarUsuarioService } from '../../../../application/usuarios/ActualizarUsuarioService.js';
 import type { ActualizarMiFirmaService } from '../../../../application/usuarios/ActualizarMiFirmaService.js';
 import type { ContrasenaService } from '../../../../application/usuarios/ContrasenaService.js';
+import type { ConfiguracionTicketsService } from '../../../../application/configuracion/ConfiguracionTicketsService.js';
+import { catalogoFacturacion } from './TicketController.js';
 import type { InvitarClienteService } from '../../../../application/usuarios/InvitarClienteService.js';
 import type { IEmpresaRepository } from '../../../../core/ports/repositories/IEmpresaRepository.js';
 import { DomainError, NotFoundError } from '../../../../core/errors/DomainError.js';
@@ -26,18 +28,55 @@ export class UsuarioController {
     private readonly empresas: IEmpresaRepository,
     private readonly actualizarFirma: ActualizarMiFirmaService,
     private readonly contrasena: ContrasenaService,
+    private readonly configTickets: ConfiguracionTicketsService,
   ) {}
 
-  miPerfilView = async (req: Request, res: Response): Promise<void> => {
-    const usuario = await this.usuarios.findByUid(req.user!.uid);
-    res.render('pages/backoffice/mi-perfil', {
+  /** Renderiza Mi perfil (firma, encabezado, predeterminados y contraseña). */
+  private async renderPerfil(
+    req: Request,
+    res: Response,
+    extra: { guardado?: boolean; passGuardada?: boolean; erroresPass?: Record<string, string> } = {},
+    status = 200,
+  ): Promise<void> {
+    const [usuario, config] = await Promise.all([
+      this.usuarios.findByUid(req.user!.uid),
+      this.configTickets.obtener(),
+    ]);
+    res.status(status).render('pages/backoffice/mi-perfil', {
       titulo: 'Mi perfil',
       firma: usuario?.firma ?? '',
       encabezado: usuario?.encabezado ?? '',
+      pred: usuario?.predeterminadosTicket ?? {},
+      config,
+      estadosFacturacion: catalogoFacturacion(),
       guardado: false,
-      passGuardada: req.query.pass === 'ok',
+      passGuardada: false,
       erroresPass: {},
+      ...extra,
     });
+  }
+
+  miPerfilView = async (req: Request, res: Response): Promise<void> => {
+    await this.renderPerfil(req, res, { passGuardada: req.query.pass === 'ok' });
+  };
+
+  miPerfilPost = async (req: Request, res: Response): Promise<void> => {
+    const b = req.body ?? {};
+    await this.actualizarFirma.ejecutar({
+      actor: req.user!,
+      firma: String(b.firma ?? ''),
+      encabezado: String(b.encabezado ?? ''),
+      predeterminadosTicket: {
+        tipo: String(b.predTipo ?? ''),
+        prioridad: String(b.predPrioridad ?? ''),
+        sistema: String(b.predSistema ?? ''),
+        grupo: String(b.predGrupo ?? ''),
+        estadoFacturacion: String(b.predFacturacion ?? ''),
+        ...(b.predAsignar === 'si' ? { asignarAlCreador: true } : b.predAsignar === 'no' ? { asignarAlCreador: false } : {}),
+      },
+    });
+    invalidarCacheUsuario(req.user!.uid);
+    await this.renderPerfil(req, res, { guardado: true });
   };
 
   miPasswordPost = async (req: Request, res: Response): Promise<void> => {
@@ -51,15 +90,7 @@ export class UsuarioController {
       });
       res.redirect('/app/mi-perfil?pass=ok#contrasena');
     } catch (err) {
-      const usuario = await this.usuarios.findByUid(req.user!.uid);
-      res.status(422).render('pages/backoffice/mi-perfil', {
-        titulo: 'Mi perfil',
-        firma: usuario?.firma ?? '',
-        encabezado: usuario?.encabezado ?? '',
-        guardado: false,
-        passGuardada: false,
-        erroresPass: erroresDe(err, 'No se pudo cambiar la contraseña'),
-      });
+      await this.renderPerfil(req, res, { erroresPass: erroresDe(err, 'No se pudo cambiar la contraseña') }, 422);
     }
   };
 
@@ -91,21 +122,6 @@ export class UsuarioController {
         erroresPass: erroresDe(err, 'No se pudo restablecer la contraseña'),
       });
     }
-  };
-
-  miPerfilPost = async (req: Request, res: Response): Promise<void> => {
-    const firma = String(req.body?.firma ?? '');
-    const encabezado = String(req.body?.encabezado ?? '');
-    await this.actualizarFirma.ejecutar({ actor: req.user!, firma, encabezado });
-    invalidarCacheUsuario(req.user!.uid);
-    res.render('pages/backoffice/mi-perfil', {
-      titulo: 'Mi perfil',
-      firma,
-      encabezado,
-      guardado: true,
-      passGuardada: false,
-      erroresPass: {},
-    });
   };
 
   listar = async (req: Request, res: Response): Promise<void> => {

@@ -20,6 +20,34 @@
       <p class="muted">Se inserta con el botón 📋 Encabezado al redactar un ticket. Usa <code>[fecha]</code> y se reemplaza por la fecha de hoy.</p>
     </div>
 
+    <details class="card disclosure"{{ ' open' if pred.tipo or pred.prioridad or pred.sistema or pred.grupo or pred.estadoFacturacion }}>
+      <summary class="disclosure__summary">⭐ Mis predeterminados del ticket nuevo <span class="disclosure__hint">— ganan sobre los generales de Configuración</span></summary>
+      <div class="disclosure__body form">
+        <p class="muted">Vacío = usar el predeterminado general.</p>
+        {% macro sel(nombre, etiqueta, lista, actual) %}
+          <label class="field"><span>{{ etiqueta }}</span>
+            <select name="{{ nombre }}"><option value="">(general)</option>{% for v in lista %}<option {{ 'selected' if actual == v }}>{{ v }}</option>{% endfor %}</select>
+          </label>
+        {% endmacro %}
+        <div class="form-grid">
+          {{ sel('predTipo', 'Tipo', config.tipos, pred.tipo) }}
+          {{ sel('predPrioridad', 'Prioridad', config.prioridades, pred.prioridad) }}
+          {{ sel('predSistema', 'Sistema', config.sistemas, pred.sistema) }}
+          {{ sel('predGrupo', 'Grupo', config.grupos, pred.grupo) }}
+          <label class="field"><span>Facturación</span>
+            <select name="predFacturacion"><option value="">(general)</option>{% for ef in estadosFacturacion %}<option value="{{ ef.valor }}" {{ 'selected' if pred.estadoFacturacion == ef.valor }}>{{ ef.etiqueta }}</option>{% endfor %}</select>
+          </label>
+          <label class="field"><span>Asignarme los tickets que creo</span>
+            <select name="predAsignar">
+              <option value="">(general)</option>
+              <option value="si" {{ 'selected' if pred.asignarAlCreador === true }}>Sí</option>
+              <option value="no" {{ 'selected' if pred.asignarAlCreador === false }}>No</option>
+            </select>
+          </label>
+        </div>
+      </div>
+    </details>
+
     <button class="btn" type="submit">Guardar</button>
   </form>
 

@@ -58,6 +58,12 @@
         </label>
         <button type="button" class="btn btn--ghost btn--sm" data-probar-whatsapp>Probar conexión</button>
         <span class="muted" data-resultado-whatsapp></span>
+        <label class="field"><span>Otras personas que reciben los avisos</span>
+          <textarea name="whatsappOtros" rows="4" data-whatsapp-otros placeholder="Nombre, +521234567890, APIKEY">{{ whatsappOtrosTexto }}</textarea>
+          <em class="field__hint">Una por línea: <code>Nombre, teléfono, API key</code>. Cada persona activa su propio número en CallMeBot y usa su propia API key.</em>
+        </label>
+        <button type="button" class="btn btn--ghost btn--sm" data-probar-whatsapp-otros>🧪 Probar a estas personas</button>
+        <ul class="muted" data-resultado-whatsapp-otros></ul>
         <p class="muted">
           Requiere haber activado el número en <a href="https://www.callmebot.com/blog/free-api-whatsapp-messages/" target="_blank" rel="noopener">CallMeBot</a> (envía "I allow callmebot to send me messages" al número oficial y guarda el API key que te respondan).
         </p>

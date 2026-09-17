@@ -10,6 +10,11 @@
       {{ empresa.nombre }} {% if not empresa.activa %}<span class="badge">archivada</span>{% endif %}
     </h1>
     <div class="page-head__actions">
+      {% set correoDestino = empresa.email %}
+      {% for c in contactos %}{% if not correoDestino and c.email %}{% set correoDestino = c.email %}{% endif %}{% endfor %}
+      {% if correoDestino %}
+        <a class="btn btn--sm btn--ghost" href="mailto:{{ correoDestino }}" title="Abre tu programa de correo para escribir a {{ correoDestino }}">✉️ Escribir correo</a>
+      {% endif %}
       {% if can('empresas:editar') %}<a class="btn btn--sm" href="/app/empresas/{{ empresa.id }}/editar">Editar</a>{% endif %}
       {% if can('contactos:crear') %}<a class="btn btn--sm btn--secondary" href="/app/contactos/nuevo?empresa={{ empresa.id }}">Agregar contacto</a>{% endif %}
     </div>
@@ -87,7 +92,7 @@
         <tr>
           <td><a href="/app/contactos/{{ c.id }}/editar">{{ c.nombre }}</a></td>
           <td>{{ c.puesto or '—' }}</td>
-          <td>{{ c.email or '—' }}</td>
+          <td>{% if c.email %}<a href="mailto:{{ c.email }}" title="Escribir correo">✉️ {{ c.email }}</a>{% else %}—{% endif %}</td>
           <td>{{ c.telefono or c.celular or '—' }}</td>
           <td>
             {% set tel = (c.celular or c.telefono) | replace(' ', '') | replace('-', '') | replace('(', '') | replace(')', '') | replace('+', '') %}

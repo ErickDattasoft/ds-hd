@@ -161,8 +161,21 @@ export class TicketController {
   }
 
   nuevoForm = async (req: Request, res: Response): Promise<void> => {
-    const datos = await this.datosFormNuevo(req.user!);
-    const pred = datos.config.predeterminados ?? {};
+    const [datos, yo] = await Promise.all([
+      this.datosFormNuevo(req.user!),
+      this.usuarios.findByUid(req.user!.uid),
+    ]);
+    // Los predeterminados propios (Mi perfil) ganan campo por campo sobre los generales.
+    const general = datos.config.predeterminados ?? {};
+    const propios = yo?.predeterminadosTicket ?? {};
+    const pred = {
+      tipo: propios.tipo || general.tipo,
+      prioridad: propios.prioridad || general.prioridad,
+      sistema: propios.sistema || general.sistema,
+      grupo: propios.grupo || general.grupo,
+      estadoFacturacion: propios.estadoFacturacion || general.estadoFacturacion,
+      asignarAlCreador: propios.asignarAlCreador ?? general.asignarAlCreador,
+    };
     res.render('pages/backoffice/tickets/form', {
       titulo: 'Nuevo ticket',
       ...datos,

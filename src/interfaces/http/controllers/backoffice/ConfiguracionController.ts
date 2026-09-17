@@ -9,7 +9,7 @@ import type { ConfiguracionLogoService } from '../../../../application/configura
 import type { ResumenDiarioService } from '../../../../application/dashboard/ResumenDiarioService.js';
 import type { AdjuntoTicketService } from '../../../../application/tickets/AdjuntoTicketService.js';
 import type { ExcelUnificadoService } from '../../../../application/excel/ExcelUnificadoService.js';
-import { ETIQUETAS_EVENTOS } from '../../../../core/entities/ConfiguracionIntegraciones.js';
+import { ETIQUETAS_EVENTOS, destinatariosWhatsAppATexto } from '../../../../core/entities/ConfiguracionIntegraciones.js';
 import { INFO_APP } from '../../../../core/entities/AcercaDe.js';
 import { catalogoFacturacion } from './TicketController.js';
 import { camposDeError } from '../../support/errores.js';
@@ -249,6 +249,7 @@ export class ConfiguracionController {
     res.status(opts.status ?? 200).render('pages/backoffice/configuracion/integraciones', {
       titulo: 'Integraciones',
       config,
+      whatsappOtrosTexto: destinatariosWhatsAppATexto(config.whatsappOtros),
       eventosEtiquetas: ETIQUETAS_EVENTOS,
       infoCorreo: this.configIntegraciones.infoCorreo(),
       errores: opts.errores ?? {},
@@ -271,6 +272,7 @@ export class ConfiguracionController {
         whatsappHabilitado: b.whatsappHabilitado === 'on' || b.whatsappHabilitado === 'true',
         whatsappTelefono: str(b.whatsappTelefono),
         whatsappApiKey: str(b.whatsappApiKey),
+        whatsappOtros: str(b.whatsappOtros),
         reglas: ConfiguracionIntegracionesService.reglasDeForm(b),
       });
       await this.renderIntegraciones(res, { guardado: true });

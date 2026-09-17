@@ -5,6 +5,7 @@ import type { ILogger } from '../../core/ports/services/ILogger.js';
 import { Email } from '../../core/entities/value-objects/Email.js';
 import {
   EVENTOS_NOTIFICABLES,
+  parsearDestinatariosWhatsApp,
   sanearReglas,
   type ConfiguracionIntegraciones,
   type MatrizReglas,
@@ -21,6 +22,8 @@ export interface DatosIntegraciones {
   whatsappHabilitado: boolean;
   whatsappTelefono: string;
   whatsappApiKey: string;
+  /** Texto "Nombre, teléfono, API key" por línea. */
+  whatsappOtros?: string;
   reglas: unknown;
 }
 
@@ -87,6 +90,7 @@ export class ConfiguracionIntegracionesService {
       whatsappHabilitado: input.whatsappHabilitado,
       whatsappTelefono: input.whatsappTelefono.trim(),
       whatsappApiKey: input.whatsappApiKey.trim(),
+      whatsappOtros: parsearDestinatariosWhatsApp(input.whatsappOtros ?? ''),
       reglas: sanearReglas(input.reglas) as MatrizReglas,
     };
     await this.repo.guardarIntegraciones(config);

@@ -52,7 +52,30 @@ export interface ConfiguracionIntegraciones {
   whatsappHabilitado: boolean;
   whatsappTelefono: string;
   whatsappApiKey: string;
+  /** Más personas del equipo que reciben los avisos (cada una con su propia API key de CallMeBot). */
+  whatsappOtros?: DestinatarioWhatsApp[];
   reglas: MatrizReglas;
+}
+
+/** Una persona que recibe avisos por WhatsApp vía CallMeBot. */
+export interface DestinatarioWhatsApp {
+  nombre: string;
+  telefono: string;
+  apiKey: string;
+}
+
+/** Parsea "Nombre, +521234567890, APIKEY" (uno por línea; también acepta | o tabulador). */
+export function parsearDestinatariosWhatsApp(texto: string): DestinatarioWhatsApp[] {
+  return String(texto ?? '')
+    .split(/\r?\n/)
+    .map((l) => l.split(/[,|\t]/).map((p) => p.trim()))
+    .filter((p) => p.length >= 3 && p[1] && p[2])
+    .map(([nombre, telefono, apiKey]) => ({ nombre: nombre!, telefono: telefono!, apiKey: apiKey! }));
+}
+
+/** Formato de texto (una línea por persona) para editar en un textarea. */
+export function destinatariosWhatsAppATexto(lista: DestinatarioWhatsApp[] | undefined): string {
+  return (lista ?? []).map((d) => `${d.nombre}, ${d.telefono}, ${d.apiKey}`).join('\n');
 }
 
 /** Matriz por defecto: webhook activo y WhatsApp inactivo para todos los eventos. */
@@ -69,6 +92,7 @@ export const CONFIG_INTEGRACIONES_POR_DEFECTO: ConfiguracionIntegraciones = {
   whatsappHabilitado: false,
   whatsappTelefono: '',
   whatsappApiKey: '',
+  whatsappOtros: [],
   reglas: reglasPorDefecto(),
 };
 

@@ -406,6 +406,36 @@
       return;
     }
 
+    var btnWaOtros = e.target.closest('[data-probar-whatsapp-otros]');
+    if (btnWaOtros) {
+      var area = document.querySelector('[data-whatsapp-otros]');
+      var lista = document.querySelector('[data-resultado-whatsapp-otros]');
+      if (!area || !lista) return;
+      lista.innerHTML = '';
+      var filas = area.value.split(/\r?\n/).map(function (l) {
+        return l.split(/[,|\t]/).map(function (p) { return p.trim(); });
+      }).filter(function (p) { return p.length >= 3 && p[1] && p[2]; });
+      if (!filas.length) {
+        lista.textContent = 'Escribe al menos una línea: Nombre, teléfono, API key.';
+        return;
+      }
+      btnWaOtros.disabled = true;
+      Promise.all(filas.map(function (p) {
+        var li = document.createElement('li');
+        li.textContent = p[0] + ': probando…';
+        lista.appendChild(li);
+        return fetch('/app/configuracion/integraciones/probar-whatsapp', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', 'x-csrf-token': cookie('x-csrf-token') },
+          body: JSON.stringify({ telefono: p[1], apiKey: p[2] }),
+        })
+          .then(function (r) { return r.json(); })
+          .then(function (data) { li.textContent = p[0] + ': ' + (data.ok ? '✅ ' : '❌ ') + data.detalle; })
+          .catch(function () { li.textContent = p[0] + ': ❌ no se pudo probar'; });
+      })).finally(function () { btnWaOtros.disabled = false; });
+      return;
+    }
+
     var btnCorreo = e.target.closest('[data-probar-correo]');
     if (btnCorreo) {
       var dest = document.querySelector('[data-correo-prueba]');
