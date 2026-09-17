@@ -369,7 +369,12 @@ fieldset.field {
 .perm-row { display: flex; gap: var(--space-3); align-items: center; font-size: var(--text-xs); padding: 2px 0; }
 
 /* ── Tablas ────────────────────────────────────────────────────────────── */
-.table-wrap { overflow-x: auto; }
+/* Sin overflow-x aquí a propósito: por la regla de CSS que fuerza overflow-y a "auto" en
+   cuanto overflow-x deja de ser "visible", este contenedor se volvía su propio contexto de
+   scroll y rompía el "position: sticky" del encabezado (dejaba de pegarse a la ventana y se
+   iba con el resto de la página). El scroll horizontal en pantallas angostas se recupera
+   abajo, en el media query — ahí el encabezado fijo importa menos que poder deslizar la tabla. */
+.table-wrap { overflow-x: visible; }
 .data-table {
   width: 100%;
   border-collapse: collapse;

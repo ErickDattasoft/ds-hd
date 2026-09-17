@@ -27,7 +27,12 @@ export function slugEstado(estado: string): string {
 }
 
 const ESPERA = new Set(['abierto', 'pendiente']);
-const FINALES = new Set(['resuelto', 'cerrado']);
+// "garantia" y "consulta sin costo" son estados propios del catálogo real de DATTASOFT
+// (migrados del CRM viejo, no genéricos) que funcionan como terminales — un ticket en garantía
+// o marcado como consulta sin costo ya no está pendiente de trabajo ni debe seguir consumiendo
+// SLA. Sin esto, esEstadoFinal() los trataba como "abiertos" (no son ni espera ni finales por
+// nombre literal), inflando el contador del sidebar y dejando el SLA corriendo indefinidamente.
+const FINALES = new Set(['resuelto', 'cerrado', 'garantia', 'consulta sin costo']);
 
 /** ¿Estado de espera para el cálculo de TIEMPO TRABAJADO (no cuenta como trabajo)? */
 export function esEstadoEspera(estado: string): boolean {
