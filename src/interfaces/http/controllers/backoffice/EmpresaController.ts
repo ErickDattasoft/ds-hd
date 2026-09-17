@@ -2,6 +2,7 @@ import type { Request, Response } from 'express';
 import type { EmpresaService } from '../../../../application/empresas/EmpresaService.js';
 import type { AvisarEmpresasService } from '../../../../application/empresas/AvisarEmpresasService.js';
 import type { EmpresaExcelService } from '../../../../application/empresas/EmpresaExcelService.js';
+import type { ICotizacionRepository } from '../../../../core/ports/repositories/ICotizacionRepository.js';
 import type { FiltrosGuardadosService } from '../../../../application/shared/FiltrosGuardadosService.js';
 import type { ContactoService } from '../../../../application/contactos/ContactoService.js';
 import type { SeguimientoService } from '../../../../application/seguimiento/SeguimientoService.js';
@@ -52,6 +53,7 @@ export class EmpresaController {
     private readonly avisar: AvisarEmpresasService,
     private readonly excel: EmpresaExcelService,
     private readonly filtrosGuardados: FiltrosGuardadosService,
+    private readonly cotizaciones: ICotizacionRepository,
   ) {}
 
   listar = async (req: Request, res: Response): Promise<void> => {
@@ -200,13 +202,15 @@ export class EmpresaController {
     const id = str(req.params.id);
     const empresa = await this.empresas.obtener(id);
     const filtroHistorial = { desde: str(req.query.hDesde), hasta: str(req.query.hHasta), tipo: str(req.query.hTipo) };
-    const [contactos, tickets, todosLosTickets, interacciones, versiones, tareas] = await Promise.all([
+    const puedeVerCotizaciones = req.user!.permisos.includes('cotizaciones:leer');
+    const [contactos, tickets, todosLosTickets, interacciones, versiones, tareas, cotizaciones] = await Promise.all([
       this.contactos.listar({ empresaId: id }),
       this.ticketQueries.listar({ empresaId: id, limite: 20, archivado: false }),
       this.ticketQueries.listar({ empresaId: id }),
       this.seguimiento.interaccionesDe(id),
       this.versiones.listar(),
       this.seguimiento.listarTareas({ empresaId: id, completada: false }),
+      puedeVerCotizaciones ? this.cotizaciones.list({ empresaId: id }) : Promise.resolve([]),
     ]);
     const oficial = this.mapaOficial(versiones);
     const hoy = new Date();
@@ -220,6 +224,7 @@ export class EmpresaController {
       resumenTickets,
       filtroHistorial,
       tareas,
+      cotizaciones,
       sistemas: empresa.sistemasContratados.map((sistema) => ({
         sistema,
         vigencia: empresa.vigencias[sistema] ?? null,

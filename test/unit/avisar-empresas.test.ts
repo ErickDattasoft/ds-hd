@@ -7,6 +7,8 @@ import { VersionSistema } from '../../src/core/entities/VersionSistema.js';
 import { ForbiddenError } from '../../src/core/errors/DomainError.js';
 import type { SessionUser } from '../../src/application/shared/SessionUser.js';
 import { InMemoryEmpresaRepository, InMemoryContactoRepository, InMemoryBitacoraRepository } from '../fakes/crm.js';
+import { InMemoryUsuarioRepository } from '../fakes/InMemoryUsuarioRepository.js';
+import { Usuario } from '../../src/core/entities/Usuario.js';
 import { InMemoryVersionRepository } from '../fakes/kb.js';
 import { InMemoryConfiguracionRepository } from '../fakes/tickets.js';
 import { FakeEmailSender } from '../fakes/FakeEmailSender.js';
@@ -258,5 +260,58 @@ describe('AvisarEmpresasService', () => {
     const [fallo] = await service.ejecutar({ actor: actor(), empresaIds: ['e6'], tipo: 'versiones', canal: 'whatsapp' });
     expect(fallo!.whatsappManual?.telefono).toBe('529991234567');
     expect(fallo!.detalle).toBe('Template not found');
+  });
+
+  it('incluye la carta técnica del sistema en el mensaje de versiones', async () => {
+    await versiones.save(
+      new VersionSistema({
+        id: 'v1',
+        sistema: 'Contabilidad',
+        versionActual: '19.1.0',
+        linkCartaTecnica: 'https://dattasoft.mx/carta.pdf',
+      }),
+    );
+    await empresas.save(
+      new Empresa({ id: 'e9', nombre: 'Con Carta', sistemasContratados: ['Contabilidad'], versionesInstaladas: { Contabilidad: '18.0.0' } }),
+    );
+    await contactos.save(new Contacto({ id: 'c9', nombre: 'Cliente Nueve', empresaId: 'e9', email: 'c9@x.mx' }));
+
+    await service.ejecutar({ actor: actor(), empresaIds: ['e9'], tipo: 'versiones' });
+    expect(email.enviados[0]!.texto).toContain('Carta técnica: https://dattasoft.mx/carta.pdf');
+  });
+
+  it('usa los contactos de soporte propios del usuario si los tiene (Mi perfil)', async () => {
+    const usuarios = new InMemoryUsuarioRepository([
+      new Usuario({
+        uid: 'ventas1',
+        email: 'v@d.com',
+        nombre: 'Ventas',
+        rol: 'ventas',
+        contactosSoporte: [{ nombre: 'Erick', telefono: '999 111 2222' }],
+      }),
+    ]);
+    const conUsuarios = new AvisarEmpresasService(
+      empresas,
+      contactos,
+      versiones,
+      config,
+      email,
+      gateway,
+      new BitacoraService(bitacora, ids, clock, silentLogger),
+      clock,
+      usuarios,
+    );
+    const cfg = await config.obtenerAvisos();
+    await config.guardarAvisos({ ...cfg, contactosSoporteVersiones: [{ nombre: 'General', telefono: '555' }] });
+    await versiones.save(new VersionSistema({ id: 'v1', sistema: 'Contabilidad', versionActual: '19.1.0' }));
+    await empresas.save(
+      new Empresa({ id: 'e10', nombre: 'Propios', sistemasContratados: ['Contabilidad'], versionesInstaladas: { Contabilidad: '18.0.0' } }),
+    );
+    await contactos.save(new Contacto({ id: 'c10', nombre: 'Cliente Diez', empresaId: 'e10', email: 'c10@x.mx' }));
+
+    await conUsuarios.ejecutar({ actor: actor(), empresaIds: ['e10'], tipo: 'versiones' });
+    const texto = email.enviados[0]!.texto ?? '';
+    expect(texto).toContain('Erick: 999 111 2222');
+    expect(texto).not.toContain('General: 555');
   });
 });

@@ -47,6 +47,7 @@ export class UsuarioController {
       firma: usuario?.firma ?? '',
       encabezado: usuario?.encabezado ?? '',
       pred: usuario?.predeterminadosTicket ?? {},
+      contactosSoporteTexto: (usuario?.contactosSoporte ?? []).map((c) => `${c.nombre}, ${c.telefono}`).join('\n'),
       config,
       estadosFacturacion: catalogoFacturacion(),
       guardado: false,
@@ -66,6 +67,7 @@ export class UsuarioController {
       actor: req.user!,
       firma: String(b.firma ?? ''),
       encabezado: String(b.encabezado ?? ''),
+      contactosSoporte: String(b.contactosSoporte ?? ''),
       predeterminadosTicket: {
         tipo: String(b.predTipo ?? ''),
         prioridad: String(b.predPrioridad ?? ''),

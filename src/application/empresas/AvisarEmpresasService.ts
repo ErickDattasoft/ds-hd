@@ -1,3 +1,4 @@
+import type { IUsuarioRepository } from '../../core/ports/repositories/IUsuarioRepository.js';
 import type { IEmpresaRepository } from '../../core/ports/repositories/IEmpresaRepository.js';
 import type { IContactoRepository } from '../../core/ports/repositories/IContactoRepository.js';
 import type { IVersionRepository } from '../../core/ports/repositories/IVersionRepository.js';
@@ -51,6 +52,7 @@ export class AvisarEmpresasService {
     private readonly gateway: IIntegracionesGateway,
     private readonly bitacora: BitacoraService,
     private readonly clock: IClock,
+    private readonly usuarios?: IUsuarioRepository,
   ) {}
 
   /** Los pendientes de cada empresa, para la pantalla donde se eligen antes de enviar. */
@@ -64,7 +66,11 @@ export class AvisarEmpresasService {
     }
     const hoy = this.clock.now();
     const oficial: Record<string, string> = {};
-    for (const v of await this.versiones.list()) oficial[v.sistema] = v.versionActual;
+    const cartas: Record<string, string | null> = {};
+    for (const v of await this.versiones.list()) {
+      oficial[v.sistema] = v.versionActual;
+      cartas[v.sistema] = v.linkCartaTecnica;
+    }
     const out = [];
     for (const empresaId of empresaIds) {
       const empresa = await this.empresas.findById(empresaId);
@@ -72,7 +78,7 @@ export class AvisarEmpresasService {
       out.push({
         empresaId,
         empresaNombre: empresa.nombre,
-        pendientes: tipo === 'versiones' ? sistemasPendientes(empresa, oficial) : licenciasPendientes(empresa, hoy),
+        pendientes: tipo === 'versiones' ? sistemasPendientes(empresa, oficial, cartas) : licenciasPendientes(empresa, hoy),
       });
     }
     return out;
@@ -97,7 +103,11 @@ export class AvisarEmpresasService {
       this.versiones.list(),
     ]);
     const oficial: Record<string, string> = {};
-    for (const v of listaVersiones) oficial[v.sistema] = v.versionActual;
+    const cartas: Record<string, string | null> = {};
+    for (const v of listaVersiones) {
+      oficial[v.sistema] = v.versionActual;
+      cartas[v.sistema] = v.linkCartaTecnica;
+    }
     const hoy = this.clock.now();
 
     const resultados: ResultadoAviso[] = [];
@@ -115,7 +125,7 @@ export class AvisarEmpresasService {
       }
       const pendientesTexto =
         input.tipo === 'versiones'
-          ? formatearSistemasPendientes(empresa, oficial, elegidos)
+          ? formatearSistemasPendientes(empresa, oficial, elegidos, cartas)
           : formatearLicenciasPendientes(empresa, hoy, elegidos);
       const sinPendientes = pendientesTexto.startsWith('(sin ');
       if (sinPendientes) {
@@ -141,8 +151,13 @@ export class AvisarEmpresasService {
         continue;
       }
 
-      const contactosSoporte =
-        input.tipo === 'versiones' ? config.contactosSoporteVersiones : config.contactosSoporteLicencias;
+      // Los contactos propios de quien envía (Mi perfil) ganan sobre la lista general.
+      const propios = (await this.usuarios?.findByUid(input.actor.uid))?.contactosSoporte ?? [];
+      const contactosSoporte = propios.length
+        ? propios
+        : input.tipo === 'versiones'
+          ? config.contactosSoporteVersiones
+          : config.contactosSoporteLicencias;
       const plantilla = input.tipo === 'versiones' ? config.plantillaVersiones : config.plantillaLicencias;
       const mensaje = renderizarPlantilla(plantilla, {
         contacto: contacto!.nombre,

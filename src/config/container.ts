@@ -796,6 +796,7 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
           c.integracionesGateway,
           c.bitacoraService,
           c.clock,
+          c.usuarioRepo,
         ),
     ).singleton(),
     empresaExcelService: asFunction(
@@ -1036,6 +1037,7 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
           c.avisarEmpresasService,
           c.empresaExcelService,
           c.filtrosGuardadosService,
+          c.cotizacionRepo,
         ),
     ).singleton(),
     contactoController: asFunction(

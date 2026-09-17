@@ -326,3 +326,17 @@ describe('avisar al cliente al cambiar de estado', () => {
     expect(vista.text).toContain('Avisar al cliente al cambiar de estado');
   });
 });
+
+describe('detalle de empresa, carta técnica y contactos de soporte propios', () => {
+  it('el detalle de la empresa lista sus cotizaciones', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    t.empresaRepo.items.set('e1', new Empresa({ id: 'e1', nombre: 'ACME' }));
+    const { agent, csrf } = await login(t.app, ADMIN.email, ADMIN.password);
+    await agent.post('/app/cotizaciones').type('form').send({
+      _csrf: csrf, empresaId: 'e1', concepto_descripcion: 'Licencia', concepto_cantidad: '1', concepto_precio: '100',
+    });
+    const det = await agent.get('/app/empresas/e1');
+    expect(det.text).toContain('Cotizaciones (1)');
+    expect(det.text).toMatch(/COT-\d{4}-0001/);
+  });
+});

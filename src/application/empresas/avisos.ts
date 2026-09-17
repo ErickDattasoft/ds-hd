@@ -10,13 +10,22 @@ export interface PendienteAviso {
   linea: string;
 }
 
-/** Sistemas de `empresa` cuya versión instalada está por debajo de la oficial. */
-export function sistemasPendientes(empresa: Empresa, oficialPorSistema: Record<string, string>): PendienteAviso[] {
+/**
+ * Sistemas de `empresa` cuya versión instalada está por debajo de la oficial. Si el sistema
+ * tiene carta técnica registrada, se incluye su enlace (igual que el CRM viejo).
+ */
+export function sistemasPendientes(
+  empresa: Empresa,
+  oficialPorSistema: Record<string, string>,
+  cartaPorSistema: Record<string, string | null> = {},
+): PendienteAviso[] {
   return empresa.sistemasContratados
     .filter((s) => estadoActualizacion(empresa.versionesInstaladas[s], oficialPorSistema[s]) === 'desactualizada')
     .map((s) => ({
       sistema: s,
-      linea: `- ${s}: instalada ${empresa.versionesInstaladas[s] || 'sin dato'}, oficial ${oficialPorSistema[s]}`,
+      linea:
+        `- ${s}: instalada ${empresa.versionesInstaladas[s] || 'sin dato'}, oficial ${oficialPorSistema[s]}` +
+        (cartaPorSistema[s] ? ` — Carta técnica: ${cartaPorSistema[s]}` : ''),
     }));
 }
 
@@ -38,8 +47,11 @@ export function formatearSistemasPendientes(
   empresa: Empresa,
   oficialPorSistema: Record<string, string>,
   sistemas?: readonly string[],
+  cartaPorSistema: Record<string, string | null> = {},
 ): string {
-  const lineas = filtrarPendientes(sistemasPendientes(empresa, oficialPorSistema), sistemas).map((p) => p.linea);
+  const lineas = filtrarPendientes(sistemasPendientes(empresa, oficialPorSistema, cartaPorSistema), sistemas).map(
+    (p) => p.linea,
+  );
   return lineas.join('\n') || '(sin sistemas pendientes de actualizar)';
 }
 

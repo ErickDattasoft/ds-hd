@@ -20,6 +20,13 @@
       <p class="muted">Se inserta con el botón 📋 Encabezado al redactar un ticket. Usa <code>[fecha]</code> y se reemplaza por la fecha de hoy.</p>
     </div>
 
+    <div class="card">
+      <label class="field"><span>Mis contactos de soporte</span>
+        <textarea name="contactosSoporte" rows="3" placeholder="Erick Casas, 999 123 4567">{{ contactosSoporteTexto }}</textarea>
+        <em class="field__hint">Uno por línea: <code>Nombre, teléfono</code>. Aparecen como contacto en los avisos de versiones y licencias que tú envías. Si lo dejas vacío se usa la lista general de Configuración.</em>
+      </label>
+    </div>
+
     <details class="card disclosure"{{ ' open' if pred.tipo or pred.prioridad or pred.sistema or pred.grupo or pred.estadoFacturacion }}>
       <summary class="disclosure__summary">⭐ Mis predeterminados del ticket nuevo <span class="disclosure__hint">— ganan sobre los generales de Configuración</span></summary>
       <div class="disclosure__body form">

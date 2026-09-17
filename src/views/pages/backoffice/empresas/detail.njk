@@ -104,6 +104,25 @@
     </tbody>
   </table>
 
+  {% if can('cotizaciones:leer') %}
+    <h2>Cotizaciones ({{ cotizaciones | length }})</h2>
+    <table class="data-table">
+      <thead><tr><th>Folio</th><th>Fecha</th><th>Total</th><th>Estado</th></tr></thead>
+      <tbody>
+        {% for c in cotizaciones %}
+          <tr>
+            <td><a href="/app/cotizaciones/{{ c.id }}">{{ c.folio }}</a></td>
+            <td>{{ c.fecha | fecha }}</td>
+            <td>{{ c.total | moneda(c.moneda) }}</td>
+            <td><span class="{{ c.estado | estadoClase }}">{{ c.estado }}</span></td>
+          </tr>
+        {% else %}
+          <tr><td colspan="4" class="muted">Sin cotizaciones.{% if can('cotizaciones:crear') %} <a href="/app/cotizaciones/nueva?empresa={{ empresa.id }}">Crear una</a>.{% endif %}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% endif %}
+
   <h2>Tickets recientes</h2>
   <table class="data-table">
     <thead><tr><th>#</th><th>Asunto</th><th>Estado</th></tr></thead>
