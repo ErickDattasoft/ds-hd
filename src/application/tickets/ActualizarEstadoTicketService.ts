@@ -78,6 +78,8 @@ export class ActualizarEstadoTicketService {
 
     if (resultado.quedoResuelto || resultado.quedoCerrado) {
       await this.notificarCierre(ticket, resultado.quedoCerrado ? 'cerrado' : 'resuelto', input, ahora);
+    } else if ((cfg.avisarClienteEstados ?? []).includes(resultado.nuevo)) {
+      await this.notificarAvance(ticket, resultado.nuevo, input, ahora);
     }
 
     this.logger.info('Estado de ticket actualizado', {
@@ -105,6 +107,40 @@ export class ActualizarEstadoTicketService {
     if (!puedeTodos && !esSuyo) {
       throw new ForbiddenError('Solo puedes cambiar el estado de tickets asignados a ti');
     }
+  }
+
+  /** Correo de avance al cliente cuando el ticket entra a un estado marcado en Configuración. */
+  private async notificarAvance(
+    ticket: Ticket,
+    estado: string,
+    input: CambiarEstadoInput,
+    ahora: Date,
+  ): Promise<void> {
+    const cfg = await this.config.obtenerTickets();
+    const copiaInterna = await this.emailAgenteOActor(ticket, input.actor.email);
+    const dest = destinatariosTicket(ticket, cfg.correosNotificacion, copiaInterna);
+    // Sin correo de contacto no hay a quién avisarle el avance (al equipo no le sirve otra copia).
+    if (dest.sinContacto || dest.para.length === 0) return;
+
+    const historial = historialActividadHtml(await this.tickets.listarEventos(ticket.id), 'cliente');
+    await this.email.enviar({
+      para: dest.para,
+      ...(dest.cc.length ? { cc: dest.cc } : {}),
+      ...(dest.responderA ? { responderA: dest.responderA } : {}),
+      asunto: `Ticket #${ticket.numero} — ${estado}`,
+      html:
+        `<p>Tu ticket <strong>#${ticket.numero} — ${ticket.asunto}</strong> cambió a ` +
+        `<strong>${estado}</strong>.</p>` +
+        `${ticket.agenteAsignadoNombre ? `<p>Lo atiende: ${ticket.agenteAsignadoNombre}.</p>` : ''}${historial}` +
+        '<p>Puedes responder a este correo para agregar información.</p>',
+      tags: ['ticket-avance', `ticket-${ticket.numero}`],
+    });
+    await registrarEvento(this.tickets, this.ids, ticket.id, {
+      tipo: 'correo',
+      resumen: `Correo de avance ("${estado}") enviado a ${dest.para.map((p) => p.email).join(', ')}`,
+      actor: null,
+      at: ahora,
+    });
   }
 
   private async notificarCierre(

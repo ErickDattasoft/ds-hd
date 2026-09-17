@@ -36,6 +36,8 @@ export class ConfiguracionTicketsService {
     slaHoras: Record<string, string | number>;
     predeterminados?: PredeterminadosTicket;
     respuestas?: string;
+    /** Estados marcados para avisar al cliente. */
+    avisarClienteEstados?: string[];
   }): Promise<void> {
     if (!input.actor.permisos.includes('configuracion:catalogos')) {
       throw new ForbiddenError('No puedes editar la configuración');
@@ -66,6 +68,8 @@ export class ConfiguracionTicketsService {
       tiposFacturables: listaLimpia(input.tiposFacturables),
       estadoInicial: input.estadoInicial,
       correosNotificacion: listaLimpia(input.correosNotificacion),
+      // Solo estados que existan en el flujo; resuelto/cerrado ya avisan por su cuenta.
+      avisarClienteEstados: (input.avisarClienteEstados ?? []).filter((e) => estados.includes(e)),
     };
     if (input.respuestas !== undefined) config.respuestas = parsearRespuestas(input.respuestas);
     else config.respuestas = (await this.repo.obtenerTickets()).respuestas ?? [];

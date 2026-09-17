@@ -56,6 +56,25 @@
       </div>
     </details>
 
+    <details class="disclosure"{{ ' open' if config.avisarClienteEstados | length }}>
+      <summary class="disclosure__summary">📧 Avisar al cliente al cambiar de estado</summary>
+      <div class="disclosure__body form">
+        <p class="muted">Marca los estados en los que quieres que al cliente le llegue un correo con el avance de su ticket.</p>
+        <fieldset class="field">
+          <legend>Estados que avisan</legend>
+          {% for e in config.estados %}
+            {% set esFinal = e | lower in ['resuelto', 'cerrado'] %}
+            <label class="field--check">
+              <input type="checkbox" name="avisarClienteEstados" value="{{ e }}"
+                     {{ 'checked' if e in config.avisarClienteEstados }} {{ 'disabled' if esFinal }} />
+              <span>{{ e }}{% if esFinal %} <span class="muted">— siempre avisa (incluye la encuesta)</span>{% endif %}</span>
+            </label>
+          {% endfor %}
+        </fieldset>
+        <p class="muted">El correo lleva el estado nuevo y la actividad del ticket; nunca incluye notas internas.</p>
+      </div>
+    </details>
+
     <details class="disclosure">
       <summary class="disclosure__summary">💬 Respuestas guardadas <span class="disclosure__hint">— textos listos para casos repetidos</span></summary>
       <div class="disclosure__body form">

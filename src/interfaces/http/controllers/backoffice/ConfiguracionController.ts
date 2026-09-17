@@ -222,6 +222,7 @@ export class ConfiguracionController {
         correosNotificacion: str(b.correosNotificacion),
         slaHoras,
         respuestas: str(b.respuestas),
+        avisarClienteEstados: ([] as string[]).concat((b.avisarClienteEstados as string[]) ?? []).filter(Boolean),
         predeterminados: {
           tipo: str(b.predTipo),
           prioridad: str(b.predPrioridad),

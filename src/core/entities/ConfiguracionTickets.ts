@@ -18,6 +18,11 @@ export interface ConfiguracionTickets {
   correosNotificacion: string[];
   /** Valores con los que nace el formulario de ticket nuevo (⭐ en Configuración → Tickets). */
   predeterminados?: PredeterminadosTicket;
+  /**
+   * Estados que, al aplicarse, mandan un correo de avance al cliente. Resuelto y cerrado ya
+   * avisan siempre (con la encuesta), así que aquí se marcan los intermedios ("En proceso").
+   */
+  avisarClienteEstados?: string[];
   /** Respuestas guardadas (macros) que se insertan al redactar. */
   respuestas?: RespuestaGuardada[];
 }
@@ -79,6 +84,7 @@ export const CONFIG_TICKETS_POR_DEFECTO: ConfiguracionTickets = {
   tiposFacturables: ['Consultoría Sitio', 'Consultoría Remoto'],
   estadoInicial: 'Abierto',
   correosNotificacion: [],
+  avisarClienteEstados: [],
   predeterminados: { prioridad: 'Media', estadoFacturacion: 'no_facturado' },
 };
 

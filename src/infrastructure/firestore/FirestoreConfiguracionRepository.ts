@@ -52,6 +52,7 @@ export class FirestoreConfiguracionRepository implements IConfiguracionRepositor
       estadoInicial: String(d.estadoInicial ?? CONFIG_TICKETS_POR_DEFECTO.estadoInicial),
       correosNotificacion: arr(d.correosNotificacion, []),
       respuestas: Array.isArray(d.respuestas) ? d.respuestas : [],
+      avisarClienteEstados: arr(d.avisarClienteEstados, []),
       predeterminados: (d.predeterminados as ConfiguracionTickets['predeterminados']) ?? {
         ...CONFIG_TICKETS_POR_DEFECTO.predeterminados,
       },

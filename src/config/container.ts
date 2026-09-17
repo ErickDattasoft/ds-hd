@@ -920,7 +920,15 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
     ).singleton(),
     encuestaSatisfaccionService: asFunction(
       (c: Cradle) =>
-        new EncuestaSatisfaccionService(c.ticketRepo, c.idGenerator, c.clock, c.config.session.secret, c.config.baseUrl),
+        new EncuestaSatisfaccionService(
+          c.ticketRepo,
+          c.idGenerator,
+          c.clock,
+          c.config.session.secret,
+          c.config.baseUrl,
+          c.configuracionRepo,
+          c.emailSender,
+        ),
     ).singleton(),
     reportesController: asFunction(
       (c: Cradle) => new ReportesController(new ReportesService(c.ticketQueries, c.clock)),

@@ -228,8 +228,25 @@ describe('encuesta de satisfacción y reportes', () => {
     expect(falsa.status).toBe(404);
     const ok = await request(t.app).get(`${liga}?c=5`);
     expect(ok.status).toBe(200);
+    // Calificación baja: el equipo recibe aviso (los correos de notificación de la config).
+    const cfg = await t.configuracionRepo.obtenerTickets();
+    await t.configuracionRepo.guardarTickets({ ...cfg, correosNotificacion: ['soporte@dattasoft.mx'] });
+    t.emailSender.enviados.length = 0;
+    const cliente = request.agent(t.app);
+    const pagina = await cliente.get(liga);
+    const csrfCliente = cookieValor(pagina.headers['set-cookie'] as unknown as string[], 'x-csrf-token')!;
+    const enviada = await cliente.post(liga).type('form').send({
+      _csrf: csrfCliente, calificacion: '2', comentario: 'Tardaron mucho',
+    });
+    expect(enviada.status).toBe(200);
+    const guardada = t.ticketStore.tickets.get(id)!.satisfaccion;
+    expect(guardada).toMatchObject({ calificacion: 2, comentario: 'Tardaron mucho' });
+    const aviso = t.emailSender.enviados.find((e) => e.asunto.startsWith('Encuesta'));
+    expect(aviso?.html).toContain('Tardaron mucho');
+    expect(aviso?.para).toEqual([{ email: 'soporte@dattasoft.mx' }]);
+
     const rep = await agent.get('/app/reportes');
-    expect(rep.text).toContain('★ 5');
+    expect(rep.text).toContain('★ 2');
     const csv = await agent.get('/app/reportes/agentes.csv');
     expect(csv.headers['content-type']).toContain('text/csv');
   });
@@ -283,5 +300,31 @@ describe('avisos: elegir qué sistemas mencionar', () => {
     expect(cuerpo).toContain('Contabilidad');
     expect(cuerpo).not.toContain('Nóminas');
     expect(res.text).toContain('Sin pendientes');
+  });
+});
+
+describe('avisar al cliente al cambiar de estado', () => {
+  it('solo manda correo en los estados marcados', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    const { agent, csrf } = await login(t.app, ADMIN.email, ADMIN.password);
+    const cfg = await t.configuracionRepo.obtenerTickets();
+    await t.configuracionRepo.guardarTickets({ ...cfg, avisarClienteEstados: ['En proceso'] });
+
+    const crear = await agent.post('/app/tickets').type('form').send({
+      _csrf: csrf, asunto: 'Avance', descripcion: 'Describe el problema aquí',
+      contactoNombre: 'Luis', contactoCorreo: 'luis@cliente.mx', tipo: 'General', prioridad: 'Media',
+    });
+    const id = String(crear.headers.location).split('/').pop()!;
+    t.emailSender.enviados.length = 0;
+
+    await agent.post(`/app/tickets/${id}/estado`).type('form').send({ _csrf: csrf, estado: 'En proceso' });
+    expect(t.emailSender.enviados.map((e) => e.asunto)).toEqual(['Ticket #1 — En proceso']);
+    expect(t.emailSender.enviados[0]!.para).toEqual([{ email: 'luis@cliente.mx', nombre: 'Luis' }]);
+
+    await agent.post(`/app/tickets/${id}/estado`).type('form').send({ _csrf: csrf, estado: 'Pendiente' });
+    expect(t.emailSender.enviados).toHaveLength(1); // "Pendiente" no está marcado
+
+    const vista = await agent.get('/app/configuracion/tickets');
+    expect(vista.text).toContain('Avisar al cliente al cambiar de estado');
   });
 });
