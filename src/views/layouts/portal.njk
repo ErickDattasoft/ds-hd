@@ -1,6 +1,6 @@
 {% extends "layouts/base.njk" %}
 {% block body %}
-<div class="app-shell app-shell--portal">
+<div class="app-shell app-shell--portal" hx-boost="true" hx-target="body" hx-swap="innerHTML show:window:top" hx-indicator="#barra-carga">
   {% include "partials/nav.njk" %}
   <div class="app-main">
     {% include "partials/topbar.njk" %}

@@ -921,12 +921,12 @@
       window.print();
     }
   });
-  document.addEventListener('DOMContentLoaded', function () {
+  function initImprimirAuto() {
     if (document.querySelector('[data-print-auto]')) setTimeout(function () { window.print(); }, 150);
-  });
+  }
 
   // ── Impresión: checkbox de "incluir logo", recordado entre documentos ───
-  document.addEventListener('DOMContentLoaded', function () {
+  function initLogoImpresion() {
     var chk = document.querySelector('[data-toggle-logo]');
     if (!chk) return;
     var clave = 'ds_hd_imprimir_logo';
@@ -945,7 +945,7 @@
       u.searchParams.set('logo', chk.checked ? '1' : '0');
       location.href = u.toString();
     });
-  });
+  }
 
   // ── Doble clic en una fila de tabla → abrir el primer enlace de la fila ──
   document.addEventListener('dblclick', function (e) {
@@ -1211,6 +1211,75 @@
     });
   });
 
+  // hx-boost está puesto en todo el shell para que los ENLACES naveguen sin recargar. Los
+  // formularios se quedan fuera a propósito: varios se interceptan aquí con submit +
+  // preventDefault (confirmaciones, favoritas por fetch, subida de archivos) y htmx mandaría
+  // la petición antes de que corriera ese código. Se exceptúan las barras de filtro GET, que
+  // no tienen lógica propia y son justo donde se nota la espera.
+  // Descargas (Excel, CSV, backup, logo) y enlaces que abren otra pestaña: navegación normal,
+  // porque htmx intentaría meter el archivo dentro de la página.
+  var SIN_BOOST = /\/(exportar|descargar|export\.(json|zip)|logo)(\?|$)|\.(csv|xlsx|zip|json|pdf)(\?|$)/;
+  function ajustarBoost(nodo) {
+    if (!nodo || !nodo.querySelectorAll) return;
+    var formularios = nodo instanceof HTMLFormElement ? [nodo] : nodo.querySelectorAll('form');
+    Array.prototype.forEach.call(formularios, function (f) {
+      if (f.hasAttribute('hx-boost')) return;
+      var esFiltroGet = f.classList.contains('filterbar') && f.method.toLowerCase() === 'get';
+      f.setAttribute('hx-boost', esFiltroGet ? 'true' : 'false');
+    });
+    var enlaces = nodo.tagName === 'A' ? [nodo] : nodo.querySelectorAll('a[href]');
+    Array.prototype.forEach.call(enlaces, function (a) {
+      if (a.hasAttribute('hx-boost')) return;
+      var href = a.getAttribute('href') || '';
+      if (a.hasAttribute('download') || a.target || SIN_BOOST.test(href) || href.charAt(0) === '#') {
+        a.setAttribute('hx-boost', 'false');
+      }
+    });
+  }
+  ajustarBoost(document);
+  document.addEventListener('htmx:beforeProcessNode', function (e) {
+    ajustarBoost(e.target);
+  });
+
+  // ── Filtros que se aplican solos al cambiar (sin darle a "Filtrar") ────────
+  // El texto espera a que dejes de escribir; lo demás se aplica al instante. Los controles
+  // que solo tocan la vista en el navegador (mostrar/ocultar columnas) se quedan fuera.
+  var temporizadorFiltro = null;
+  function enviarFiltro(form) {
+    if (!form) return;
+    clearTimeout(temporizadorFiltro);
+    if (window.htmx && form.closest('[hx-boost]')) {
+      window.htmx.trigger(form, 'submit');
+    } else if (form.requestSubmit) {
+      form.requestSubmit();
+    } else {
+      form.submit();
+    }
+  }
+  function esControlDeFiltro(el) {
+    return (
+      el.form &&
+      el.form.matches('form.filterbar') &&
+      el.form.method.toLowerCase() === 'get' &&
+      el.name &&
+      !el.hasAttribute('data-toggle-columna') &&
+      !el.hasAttribute('data-sin-autofiltro')
+    );
+  }
+  document.addEventListener('change', function (e) {
+    var el = e.target;
+    if (!el.matches || !esControlDeFiltro(el)) return;
+    if (el.type === 'search' || el.type === 'text') return; // el texto se maneja abajo
+    enviarFiltro(el.form);
+  });
+  document.addEventListener('input', function (e) {
+    var el = e.target;
+    if (!el.matches || !esControlDeFiltro(el) || (el.type !== 'search' && el.type !== 'text')) return;
+    clearTimeout(temporizadorFiltro);
+    var form = el.form;
+    temporizadorFiltro = setTimeout(function () { enviarFiltro(form); }, 500);
+  });
+
   // ── Selects que envían su formulario al cambiar (filtros, embudo de ventas) ──
   document.addEventListener('change', function (e) {
     var sel = e.target;
@@ -1331,7 +1400,7 @@
   });
 
   // ── Login / invitación: aviso de Bloq Mayús ──────────────────────────────
-  document.addEventListener('DOMContentLoaded', function () {
+  function initCapsLock() {
     document.querySelectorAll('[data-capslock-check]').forEach(function (input) {
       var aviso = input.parentElement && input.parentElement.querySelector('[data-capslock-aviso]');
       if (!aviso) return;
@@ -1341,7 +1410,7 @@
       input.addEventListener('keyup', check);
       input.addEventListener('keydown', check);
     });
-  });
+  }
 
   // ── Eventos → Detalle: subir flayer ──────────────────────────────────────
   document.addEventListener('submit', function (e) {
@@ -1529,17 +1598,39 @@
     btn.classList.add('is-loading');
   });
 
-  document.addEventListener('DOMContentLoaded', function () {
+  /**
+   * Todo lo que hay que preparar al pintar una página. Se llama al cargar y también después de
+   * cada navegación con hx-boost (htmx reemplaza el <body> sin recargar, así que no hay un
+   * DOMContentLoaded nuevo). Cada init es idempotente: volver a llamarlo no duplica nada.
+   */
+  function iniciarPagina() {
     updateToggle();
+    pintarColapsar();
     initKanban();
     initTablas();
     medirTopbar();
     initColumnasOpcionales();
     initFiltrosRecordados();
-  });
+    initImprimirAuto();
+    initLogoImpresion();
+    initCapsLock();
+  }
+  document.addEventListener('DOMContentLoaded', iniciarPagina);
   window.addEventListener('resize', medirTopbar);
-  document.body.addEventListener('htmx:afterSwap', function (e) {
-    initKanban();
-    initTablas(e.target);
+  document.addEventListener('htmx:afterSettle', function (e) {
+    // Swap del <body> entero (navegación boosted) → preparar toda la página; si solo cambió
+    // un trozo (htmx puntual, como la búsqueda global), basta con mejorar ese trozo.
+    if (e.target === document.body || e.target === document.documentElement) iniciarPagina();
+    else {
+      initKanban();
+      initTablas(e.target);
+    }
+  });
+  // Errores de red en una navegación boosted: sin esto la página se queda como estaba.
+  document.addEventListener('htmx:responseError', function () {
+    location.reload();
+  });
+  document.addEventListener('htmx:sendError', function () {
+    alert('Se perdió la conexión. Revisa tu internet e intenta de nuevo.');
   });
 })();

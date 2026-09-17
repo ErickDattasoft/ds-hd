@@ -37,7 +37,7 @@
     <label class="field--check"><input type="checkbox" name="abiertos" value="0" data-filtro-recordar="tickets-abiertos" {{ 'checked' if filtro.abiertos == '0' }} /> incluir cerrados</label>
     <label class="field--check"><input type="checkbox" data-toggle-columna="SLA" /> mostrar SLA</label>
     <button class="btn btn--sm" type="submit">Filtrar</button>
-    <button class="btn btn--sm btn--ghost" type="submit" formaction="/app/tickets/exportar">Exportar Excel</button>
+    <button class="btn btn--sm btn--ghost" type="submit" formaction="/app/tickets/exportar" hx-boost="false">Exportar Excel</button>
   </form>
 
   {{ tk.tablaTickets(tickets, csrfToken, can('tickets:eliminar')) }}
