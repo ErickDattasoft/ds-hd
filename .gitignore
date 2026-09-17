@@ -44,3 +44,6 @@ docker/caddy_config/
 *.swp
 *.swo
 *~
+
+# Configuración local del editor
+.vscode/
