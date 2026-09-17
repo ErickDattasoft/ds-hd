@@ -110,7 +110,9 @@
         <th>Facturación</th><th>Agente</th><th>Creado</th><th>SLA</th><th data-no-ordenar></th>
       </tr>
     </thead>
-    <tbody>
+    {# `preload` = al pasar el mouse sobre una fila se va cargando su detalle, para que
+       el click abra al instante. Requiere el `Cache-Control` corto de `detalleView`. #}
+    <tbody preload="mouseover">
       {% for vm in tickets %}{{ filaTicket(vm, csrfToken, puedeEliminar) }}{% else %}
         <tr><td colspan="11" class="muted">📭 No hay tickets que mostrar.</td></tr>
       {% endfor %}

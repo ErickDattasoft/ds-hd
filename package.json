@@ -47,6 +47,7 @@
     "fflate": "^0.8.3",
     "firebase-admin": "^13.4.0",
     "helmet": "^8.1.0",
+    "htmx-ext-preload": "^2.1.1",
     "htmx.org": "^2.0.4",
     "marked": "^15.0.7",
     "nodemailer": "^9.1.1",

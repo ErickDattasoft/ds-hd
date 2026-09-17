@@ -33,6 +33,7 @@ await copyDir('src/assets/js', buildDir, ['.js']);
 const vendorFiles = [
   ['htmx.org/dist/htmx.min.js', 'htmx.min.js'],
   ['alpinejs/dist/cdn.min.js', 'alpine.min.js'],
+  ['htmx-ext-preload/dist/preload.min.js', 'htmx-preload.min.js'],
 ];
 for (const [from, to] of vendorFiles) {
   const src = join(root, 'node_modules', from);

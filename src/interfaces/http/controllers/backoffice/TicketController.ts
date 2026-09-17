@@ -258,6 +258,14 @@ export class TicketController {
   };
 
   detalleView = async (req: Request, res: Response): Promise<void> => {
+    // La extensión `preload` de htmx precarga esta página al pasar el mouse por la fila de la
+    // lista y se apoya en el caché del navegador para que el click abra al instante. Solo esa
+    // petición se cachea (y por pocos segundos): así una navegación normal nunca deja una copia
+    // vieja, y el navegador invalida la entrada al seguir el redirect de cualquier POST de aquí.
+    res.setHeader(
+      'Cache-Control',
+      req.get('HX-Preloaded') === 'true' ? 'private, max-age=15' : 'no-store',
+    );
     const d = await this.ver.ejecutar(req.user!, str(req.params.id));
     const ahora = this.clock.now();
     const agentes = d.puedeAsignar
