@@ -53,3 +53,29 @@ desde la UI), mientras que `IWebhookPublisher` es best-effort y no propaga nada.
 #### Returns
 
 `Promise`\<[`ResultadoPrueba`](ResultadoPrueba.md)\>
+
+***
+
+### enviarWhatsAppClientes()?
+
+> `optional` **enviarWhatsAppClientes**(`cfg`, `telefono`, `mensaje`): `Promise`\<[`ResultadoPrueba`](ResultadoPrueba.md)\>
+
+WhatsApp Business a un cliente, por Meta (Cloud API) o Twilio según la config.
+
+#### Parameters
+
+##### cfg
+
+[`WhatsAppClientesConfig`](../../../../entities/ConfiguracionIntegraciones/interfaces/WhatsAppClientesConfig.md)
+
+##### telefono
+
+`string`
+
+##### mensaje
+
+`string`
+
+#### Returns
+
+`Promise`\<[`ResultadoPrueba`](ResultadoPrueba.md)\>

@@ -52,6 +52,22 @@ Entrada de actualización de la config de integraciones (viene del form).
 
 ***
 
+### whatsappOtros?
+
+> `optional` **whatsappOtros?**: `string`
+
+Texto "Nombre, teléfono, API key" por línea.
+
+***
+
+### whatsappClientes?
+
+> `optional` **whatsappClientes?**: `Partial`\<[`WhatsAppClientesConfig`](../../../../core/entities/ConfiguracionIntegraciones/interfaces/WhatsAppClientesConfig.md)\>
+
+WhatsApp a clientes. Los secretos vacíos conservan el valor guardado.
+
+***
+
 ### reglas
 
 > **reglas**: `unknown`

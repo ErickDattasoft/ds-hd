@@ -6,9 +6,9 @@
 
 # Function: formatearLicenciasPendientes()
 
-> **formatearLicenciasPendientes**(`empresa`, `hoy`): `string`
+> **formatearLicenciasPendientes**(`empresa`, `hoy`, `sistemas?`): `string`
 
-Licencias de `empresa` vencidas o por vencer, una línea por sistema.
+Licencias vencidas o por vencer, una línea por sistema.
 
 ## Parameters
 
@@ -19,6 +19,10 @@ Licencias de `empresa` vencidas o por vencer, una línea por sistema.
 ### hoy
 
 `Date`
+
+### sistemas?
+
+readonly `string`[]
 
 ## Returns
 

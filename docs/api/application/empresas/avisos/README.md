@@ -6,8 +6,15 @@
 
 # application/empresas/avisos
 
+## Interfaces
+
+- [PendienteAviso](interfaces/PendienteAviso.md)
+
 ## Functions
 
+- [sistemasPendientes](functions/sistemasPendientes.md)
+- [licenciasPendientes](functions/licenciasPendientes.md)
+- [filtrarPendientes](functions/filtrarPendientes.md)
 - [formatearSistemasPendientes](functions/formatearSistemasPendientes.md)
 - [formatearLicenciasPendientes](functions/formatearLicenciasPendientes.md)
 - [formatearContactoSoporte](functions/formatearContactoSoporte.md)

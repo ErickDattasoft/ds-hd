@@ -48,3 +48,11 @@ wa.me con este teléfono/mensaje (mismo respaldo "WhatsApp Web" del CRM viejo).
 #### mensaje
 
 > **mensaje**: `string`
+
+***
+
+### detalle?
+
+> `optional` **detalle?**: `string`
+
+Respuesta del proveedor de WhatsApp (Meta/Twilio), si se usó.

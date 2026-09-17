@@ -9,6 +9,8 @@
 ## Interfaces
 
 - [ConfiguracionTickets](interfaces/ConfiguracionTickets.md)
+- [RespuestaGuardada](interfaces/RespuestaGuardada.md)
+- [PredeterminadosTicket](interfaces/PredeterminadosTicket.md)
 
 ## Variables
 
@@ -16,4 +18,6 @@
 
 ## Functions
 
+- [parsearRespuestas](functions/parsearRespuestas.md)
+- [respuestasATexto](functions/respuestasATexto.md)
 - [horasSlaDe](functions/horasSlaDe.md)

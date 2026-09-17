@@ -12,7 +12,7 @@ Caso de uso: iniciar sesión con correo y contraseña.
 
 ### Constructor
 
-> **new LoginService**(`usuarios`, `auth`, `sesiones`, `clock`, `logger`, `intentos`): `LoginService`
+> **new LoginService**(`usuarios`, `auth`, `sesiones`, `clock`, `logger`, `intentos`, `dosPasos?`): `LoginService`
 
 #### Parameters
 
@@ -40,6 +40,10 @@ Caso de uso: iniciar sesión con correo y contraseña.
 
 [`IIntentosLoginRepository`](../../../../core/ports/repositories/IIntentosLoginRepository/interfaces/IIntentosLoginRepository.md)
 
+##### dosPasos?
+
+[`DosPasosService`](../../DosPasosService/classes/DosPasosService.md)
+
 #### Returns
 
 `LoginService`
@@ -55,6 +59,28 @@ Caso de uso: iniciar sesión con correo y contraseña.
 ##### input
 
 [`LoginInput`](../interfaces/LoginInput.md)
+
+#### Returns
+
+`Promise`\<[`LoginResultado`](../interfaces/LoginResultado.md)\>
+
+***
+
+### completarDosPasos()
+
+> **completarDosPasos**(`pendiente`, `codigo`): `Promise`\<[`LoginResultado`](../interfaces/LoginResultado.md)\>
+
+Segundo paso: valida el código de la app y emite la sesión.
+
+#### Parameters
+
+##### pendiente
+
+`string`
+
+##### codigo
+
+`string`
 
 #### Returns
 

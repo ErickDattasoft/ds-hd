@@ -228,22 +228,20 @@ describe('encuesta de satisfacción y reportes', () => {
     expect(falsa.status).toBe(404);
     const ok = await request(t.app).get(`${liga}?c=5`);
     expect(ok.status).toBe(200);
-    // Calificación baja: el equipo recibe aviso (los correos de notificación de la config).
-    const cfg = await t.configuracionRepo.obtenerTickets();
-    await t.configuracionRepo.guardarTickets({ ...cfg, correosNotificacion: ['soporte@dattasoft.mx'] });
-    t.emailSender.enviados.length = 0;
+    // La calificación se guarda y se ve en el ticket y en reportes; no se manda ningún correo
+    // (el soporte es una sola persona, que ya entra al CRM).
     const cliente = request.agent(t.app);
     const pagina = await cliente.get(liga);
     const csrfCliente = cookieValor(pagina.headers['set-cookie'] as unknown as string[], 'x-csrf-token')!;
+    t.emailSender.enviados.length = 0;
     const enviada = await cliente.post(liga).type('form').send({
       _csrf: csrfCliente, calificacion: '2', comentario: 'Tardaron mucho',
     });
     expect(enviada.status).toBe(200);
-    const guardada = t.ticketStore.tickets.get(id)!.satisfaccion;
-    expect(guardada).toMatchObject({ calificacion: 2, comentario: 'Tardaron mucho' });
-    const aviso = t.emailSender.enviados.find((e) => e.asunto.startsWith('Encuesta'));
-    expect(aviso?.html).toContain('Tardaron mucho');
-    expect(aviso?.para).toEqual([{ email: 'soporte@dattasoft.mx' }]);
+    expect(t.ticketStore.tickets.get(id)!.satisfaccion).toMatchObject({ calificacion: 2, comentario: 'Tardaron mucho' });
+    expect(t.emailSender.enviados).toHaveLength(0);
+    const detalleTicket = await agent.get(`/app/tickets/${id}`);
+    expect(detalleTicket.text).toContain('Tardaron mucho');
 
     const rep = await agent.get('/app/reportes');
     expect(rep.text).toContain('★ 2');

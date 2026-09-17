@@ -6,9 +6,9 @@
 
 # Function: formatearSistemasPendientes()
 
-> **formatearSistemasPendientes**(`empresa`, `oficialPorSistema`): `string`
+> **formatearSistemasPendientes**(`empresa`, `oficialPorSistema`, `sistemas?`): `string`
 
-Sistemas de `empresa` cuya versión instalada está por debajo de la oficial, una línea por sistema.
+Sistemas desactualizados, una línea por sistema.
 
 ## Parameters
 
@@ -19,6 +19,10 @@ Sistemas de `empresa` cuya versión instalada está por debajo de la oficial, un
 ### oficialPorSistema
 
 `Record`\<`string`, `string`\>
+
+### sistemas?
+
+readonly `string`[]
 
 ## Returns
 

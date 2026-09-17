@@ -12,6 +12,7 @@
 
 ## Interfaces
 
+- [SatisfaccionTicket](interfaces/SatisfaccionTicket.md)
 - [CambioEstado](interfaces/CambioEstado.md)
 - [TramoEstado](interfaces/TramoEstado.md)
 - [SlaState](interfaces/SlaState.md)

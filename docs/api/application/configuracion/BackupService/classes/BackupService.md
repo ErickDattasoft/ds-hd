@@ -19,7 +19,7 @@ opción segura.
 
 ### Constructor
 
-> **new BackupService**(`empresas`, `contactos`, `ticketRepo`, `ticketQueries`, `cotizaciones`, `versiones`, `kb`, `usuarios`, `configuracion`, `contador`, `clock`): `BackupService`
+> **new BackupService**(`empresas`, `contactos`, `ticketRepo`, `ticketQueries`, `cotizaciones`, `versiones`, `kb`, `usuarios`, `configuracion`, `contador`, `clock`, `oportunidades?`): `BackupService`
 
 #### Parameters
 
@@ -66,6 +66,10 @@ opción segura.
 ##### clock
 
 [`IClock`](../../../../core/ports/services/IClock/interfaces/IClock.md)
+
+##### oportunidades?
+
+[`IOportunidadRepository`](../../../../core/ports/repositories/IOportunidadRepository/interfaces/IOportunidadRepository.md)
 
 #### Returns
 

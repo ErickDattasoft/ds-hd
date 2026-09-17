@@ -96,6 +96,24 @@ Roles asignados (fuente de verdad). Ver getters `rol`/`rolPrincipal`.
 
 ***
 
+### predeterminadosTicket
+
+> **predeterminadosTicket**: [`PredeterminadosTicket`](../../ConfiguracionTickets/interfaces/PredeterminadosTicket.md) \| `null`
+
+***
+
+### totpSecreto
+
+> **totpSecreto**: `string` \| `null`
+
+***
+
+### totpActivo
+
+> **totpActivo**: `boolean`
+
+***
+
 ### createdAt
 
 > `readonly` **createdAt**: `Date`

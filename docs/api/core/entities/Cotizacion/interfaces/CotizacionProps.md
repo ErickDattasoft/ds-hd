@@ -190,6 +190,20 @@ Condiciones / términos comerciales (forma de pago, tiempos de entrega…).
 
 ***
 
+### ticketId?
+
+> `optional` **ticketId?**: `string` \| `null`
+
+Ticket de seguimiento creado desde esta cotización.
+
+***
+
+### ticketNumero?
+
+> `optional` **ticketNumero?**: `number` \| `null`
+
+***
+
 ### creadoPorUid?
 
 > `optional` **creadoPorUid?**: `string` \| `null`

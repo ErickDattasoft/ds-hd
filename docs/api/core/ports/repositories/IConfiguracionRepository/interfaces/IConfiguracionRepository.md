@@ -215,3 +215,29 @@ Documentos singleton de configuración (`configuracion/{seccion}`).
 #### Returns
 
 `Promise`\<`void`\>
+
+***
+
+### obtenerCorreoEntrante()
+
+> **obtenerCorreoEntrante**(): `Promise`\<[`ConfiguracionCorreoEntrante`](../../../../entities/ConfiguracionCorreoEntrante/interfaces/ConfiguracionCorreoEntrante.md)\>
+
+#### Returns
+
+`Promise`\<[`ConfiguracionCorreoEntrante`](../../../../entities/ConfiguracionCorreoEntrante/interfaces/ConfiguracionCorreoEntrante.md)\>
+
+***
+
+### guardarCorreoEntrante()
+
+> **guardarCorreoEntrante**(`config`): `Promise`\<`void`\>
+
+#### Parameters
+
+##### config
+
+[`ConfiguracionCorreoEntrante`](../../../../entities/ConfiguracionCorreoEntrante/interfaces/ConfiguracionCorreoEntrante.md)
+
+#### Returns
+
+`Promise`\<`void`\>

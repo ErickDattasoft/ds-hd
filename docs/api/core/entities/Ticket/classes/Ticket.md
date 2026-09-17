@@ -159,6 +159,12 @@ de tiempo trabajado y el reloj de SLA con pausa. No conoce Firestore ni HTTP.
 
 ***
 
+### satisfaccion
+
+> **satisfaccion**: [`SatisfaccionTicket`](../interfaces/SatisfaccionTicket.md) \| `null`
+
+***
+
 ### origenPublicoId
 
 > `readonly` **origenPublicoId**: `string` \| `null`
@@ -828,3 +834,29 @@ readonly `string`[]
 #### Returns
 
 `boolean`
+
+***
+
+### calificar()
+
+> **calificar**(`calificacion`, `comentario`, `ahora`): `void`
+
+Registra (o corrige) la calificación del cliente.
+
+#### Parameters
+
+##### calificacion
+
+`number`
+
+##### comentario
+
+`string` \| `null`
+
+##### ahora
+
+`Date`
+
+#### Returns
+
+`void`

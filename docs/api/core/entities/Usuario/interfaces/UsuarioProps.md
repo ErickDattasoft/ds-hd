@@ -98,6 +98,28 @@ Encabezado/plantilla que el usuario inserta al redactar un ticket (con `[fecha]`
 
 ***
 
+### predeterminadosTicket?
+
+> `optional` **predeterminadosTicket?**: [`PredeterminadosTicket`](../../ConfiguracionTickets/interfaces/PredeterminadosTicket.md) \| `null`
+
+Predeterminados propios del ticket nuevo; ganan sobre los de Configuración → Tickets.
+
+***
+
+### totpSecreto?
+
+> `optional` **totpSecreto?**: `string` \| `null`
+
+Secreto TOTP (Base32) de la verificación en dos pasos; `totpActivo` indica si ya se confirmó.
+
+***
+
+### totpActivo?
+
+> `optional` **totpActivo?**: `boolean`
+
+***
+
 ### createdAt?
 
 > `optional` **createdAt?**: `Date`

@@ -59,6 +59,32 @@ que el CRM viejo: el cliente abre wa.me/WhatsApp Web con el mensaje ya redactado
 
 ## Methods
 
+### pendientes()
+
+> **pendientes**(`actor`, `empresaIds`, `tipo`): `Promise`\<`object`[]\>
+
+Los pendientes de cada empresa, para la pantalla donde se eligen antes de enviar.
+
+#### Parameters
+
+##### actor
+
+[`SessionUser`](../../../shared/SessionUser/interfaces/SessionUser.md)
+
+##### empresaIds
+
+`string`[]
+
+##### tipo
+
+[`TipoAviso`](../type-aliases/TipoAviso.md)
+
+#### Returns
+
+`Promise`\<`object`[]\>
+
+***
+
 ### ejecutar()
 
 > **ejecutar**(`input`): `Promise`\<[`ResultadoAviso`](../interfaces/ResultadoAviso.md)[]\>
@@ -82,6 +108,12 @@ que el CRM viejo: el cliente abre wa.me/WhatsApp Web con el mensaje ya redactado
 ###### canal?
 
 [`CanalAviso`](../type-aliases/CanalAviso.md)
+
+###### seleccion?
+
+`Record`\<`string`, `string`[]\>
+
+Qué sistemas mencionar por empresa (`empresaId` → sistemas). Sin esto van todos los pendientes.
 
 #### Returns
 

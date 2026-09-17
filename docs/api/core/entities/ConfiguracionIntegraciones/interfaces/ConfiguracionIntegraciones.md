@@ -54,6 +54,22 @@ que ahí se enrute a un proveedor real de WhatsApp Business.
 
 ***
 
+### whatsappOtros?
+
+> `optional` **whatsappOtros?**: [`DestinatarioWhatsApp`](DestinatarioWhatsApp.md)[]
+
+Más personas del equipo que reciben los avisos (cada una con su propia API key de CallMeBot).
+
+***
+
+### whatsappClientes?
+
+> `optional` **whatsappClientes?**: [`WhatsAppClientesConfig`](WhatsAppClientesConfig.md)
+
+WhatsApp a CLIENTES (avisos de versiones/licencias).
+
+***
+
 ### reglas
 
 > **reglas**: [`MatrizReglas`](../type-aliases/MatrizReglas.md)

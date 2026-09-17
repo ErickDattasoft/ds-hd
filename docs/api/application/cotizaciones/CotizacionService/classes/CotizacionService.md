@@ -221,11 +221,53 @@ si estaba en borrador, la marca como "enviada".
 
 ***
 
+### duplicar()
+
+> **duplicar**(`actor`, `id`): `Promise`\<[`Cotizacion`](../../../../core/entities/Cotizacion/classes/Cotizacion.md)\>
+
+Copia una cotización con folio nuevo, en borrador y con fecha de hoy.
+
+#### Parameters
+
+##### actor
+
+[`SessionUser`](../../../shared/SessionUser/interfaces/SessionUser.md)
+
+##### id
+
+`string`
+
+#### Returns
+
+`Promise`\<[`Cotizacion`](../../../../core/entities/Cotizacion/classes/Cotizacion.md)\>
+
+***
+
+### eliminar()
+
+> **eliminar**(`actor`, `id`): `Promise`\<`void`\>
+
+Elimina definitivamente una cotización (igual que el CRM viejo: sin papelera).
+
+#### Parameters
+
+##### actor
+
+[`SessionUser`](../../../shared/SessionUser/interfaces/SessionUser.md)
+
+##### id
+
+`string`
+
+#### Returns
+
+`Promise`\<`void`\>
+
+***
+
 ### crearTicketSeguimiento()
 
 > **crearTicketSeguimiento**(`actor`, `id`): `Promise`\<[`Ticket`](../../../../core/entities/Ticket/classes/Ticket.md)\>
-
-Crea un ticket interno de seguimiento a partir de la cotización.
 
 #### Parameters
 

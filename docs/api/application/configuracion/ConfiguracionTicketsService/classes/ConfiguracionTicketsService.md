@@ -88,6 +88,20 @@ Casos de uso: leer y actualizar los catálogos del módulo de tickets.
 
 `Record`\<`string`, `string` \| `number`\>
 
+###### predeterminados?
+
+[`PredeterminadosTicket`](../../../../core/entities/ConfiguracionTickets/interfaces/PredeterminadosTicket.md)
+
+###### respuestas?
+
+`string`
+
+###### avisarClienteEstados?
+
+`string`[]
+
+Estados marcados para avisar al cliente.
+
 #### Returns
 
 `Promise`\<`void`\>

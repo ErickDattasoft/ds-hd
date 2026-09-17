@@ -1,7 +1,5 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
 import type { ITicketRepository } from '../../core/ports/repositories/ITicketRepository.js';
-import type { IConfiguracionRepository } from '../../core/ports/repositories/IConfiguracionRepository.js';
-import type { IEmailSender } from '../../core/ports/services/IEmailSender.js';
 import type { IClock } from '../../core/ports/services/IClock.js';
 import type { Ticket } from '../../core/entities/Ticket.js';
 import { NotFoundError, UnauthorizedError } from '../../core/errors/DomainError.js';
@@ -21,8 +19,6 @@ export class EncuestaSatisfaccionService {
     private readonly clock: IClock,
     private readonly secreto: string,
     private readonly baseUrl: string,
-    private readonly config?: IConfiguracionRepository,
-    private readonly email?: IEmailSender,
   ) {}
 
   private firmar(ticketId: string): string {
@@ -76,31 +72,8 @@ export class EncuestaSatisfaccionService {
         actor: null,
         at: ahora,
       });
-      await this.avisarAlEquipo(t);
     }
     return t;
-  }
-
-  /**
-   * Avisa al equipo cuando la respuesta amerita atención: calificación de 3 o menos, o con
-   * comentario. Las calificaciones buenas sin comentario no mandan correo (quedan en reportes).
-   */
-  private async avisarAlEquipo(t: Ticket): Promise<void> {
-    const s = t.satisfaccion;
-    if (!s || !this.config || !this.email) return;
-    if (s.calificacion > 3 && !s.comentario) return;
-    const correos = (await this.config.obtenerTickets()).correosNotificacion.filter((e) => e.includes('@'));
-    if (correos.length === 0) return;
-    await this.email.enviar({
-      para: correos.map((email) => ({ email })),
-      asunto: `Encuesta ${'★'.repeat(s.calificacion)} — Ticket #${t.numero}`,
-      html:
-        `<p>El cliente calificó la atención del ticket <strong>#${t.numero} — ${t.asunto}</strong> ` +
-        `con <strong>${s.calificacion}/5 (${ETIQUETAS[s.calificacion]})</strong>.</p>` +
-        (s.comentario ? `<p>Comentario: “${s.comentario}”</p>` : '') +
-        `<p><a href="${this.baseUrl}/app/tickets/${t.id}">Abrir el ticket</a></p>`,
-      tags: ['encuesta', `ticket-${t.numero}`],
-    });
   }
 
   static etiqueta(n: number): string {

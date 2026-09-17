@@ -164,6 +164,18 @@ Cotización comercial con folio consecutivo, conceptos e importes.
 
 ***
 
+### ticketId
+
+> **ticketId**: `string` \| `null`
+
+***
+
+### ticketNumero
+
+> **ticketNumero**: `number` \| `null`
+
+***
+
 ### creadoPorUid
 
 > `readonly` **creadoPorUid**: `string` \| `null`

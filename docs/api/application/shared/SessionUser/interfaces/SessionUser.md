@@ -99,3 +99,11 @@ Firma que se agrega a las respuestas públicas de tickets, si la tiene configura
 > `readonly` `optional` **encabezado?**: `string` \| `null`
 
 Encabezado/plantilla del usuario para redactar tickets (con `[fecha]`).
+
+***
+
+### totpActivo?
+
+> `readonly` `optional` **totpActivo?**: `boolean`
+
+¿Tiene activa la verificación en dos pasos?

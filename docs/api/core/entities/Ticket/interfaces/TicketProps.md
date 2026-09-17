@@ -150,6 +150,14 @@ Correos en copia en las notificaciones del ticket.
 
 ***
 
+### satisfaccion?
+
+> `optional` **satisfaccion?**: [`SatisfaccionTicket`](SatisfaccionTicket.md) \| `null`
+
+Encuesta de satisfacción respondida por el cliente al resolverse.
+
+***
+
 ### origenPublicoId?
 
 > `optional` **origenPublicoId?**: `string` \| `null`

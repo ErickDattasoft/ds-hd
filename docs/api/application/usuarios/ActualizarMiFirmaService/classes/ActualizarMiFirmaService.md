@@ -50,6 +50,10 @@ Caso de uso: un usuario de staff fija su propia firma y encabezado para redactar
 
 `string`
 
+###### predeterminadosTicket?
+
+[`PredeterminadosTicket`](../../../../core/entities/ConfiguracionTickets/interfaces/PredeterminadosTicket.md)
+
 #### Returns
 
 `Promise`\<`void`\>

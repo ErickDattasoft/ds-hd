@@ -142,6 +142,28 @@ Convierte los campos `regla_<evento>_webhook`/`regla_<evento>_whatsapp` del form
 
 ***
 
+### probarWhatsAppClientes()
+
+> **probarWhatsAppClientes**(`actor`, `telefono`): `Promise`\<[`ResultadoPrueba`](../../../../core/ports/services/IIntegracionesGateway/interfaces/ResultadoPrueba.md)\>
+
+Manda un WhatsApp de prueba con el proveedor de clientes guardado (Meta o Twilio).
+
+#### Parameters
+
+##### actor
+
+[`SessionUser`](../../../shared/SessionUser/interfaces/SessionUser.md)
+
+##### telefono
+
+`string`
+
+#### Returns
+
+`Promise`\<[`ResultadoPrueba`](../../../../core/ports/services/IIntegracionesGateway/interfaces/ResultadoPrueba.md)\>
+
+***
+
 ### probarCorreo()
 
 > **probarCorreo**(`actor`, `destino`): `Promise`\<[`ResultadoPrueba`](../../../../core/ports/services/IIntegracionesGateway/interfaces/ResultadoPrueba.md)\>

@@ -13,7 +13,7 @@ Caso de uso: cambiar el estado de un ticket, con los efectos colaterales del cic
 
 ### Constructor
 
-> **new ActualizarEstadoTicketService**(`tickets`, `config`, `usuarios`, `ids`, `clock`, `email`, `webhooks`, `logger`): `ActualizarEstadoTicketService`
+> **new ActualizarEstadoTicketService**(`tickets`, `config`, `usuarios`, `ids`, `clock`, `email`, `webhooks`, `logger`, `encuesta?`): `ActualizarEstadoTicketService`
 
 #### Parameters
 
@@ -48,6 +48,10 @@ Caso de uso: cambiar el estado de un ticket, con los efectos colaterales del cic
 ##### logger
 
 [`ILogger`](../../../../core/ports/services/ILogger/interfaces/ILogger.md)
+
+##### encuesta?
+
+[`EncuestaSatisfaccionService`](../../EncuestaSatisfaccionService/classes/EncuestaSatisfaccionService.md)
 
 #### Returns
 

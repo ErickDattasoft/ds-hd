@@ -69,3 +69,28 @@ Estado con el que nace un ticket nuevo.
 > **correosNotificacion**: `string`[]
 
 Correos que se notifican al llegar un ticket del portal público.
+
+***
+
+### predeterminados?
+
+> `optional` **predeterminados?**: [`PredeterminadosTicket`](PredeterminadosTicket.md)
+
+Valores con los que nace el formulario de ticket nuevo (⭐ en Configuración → Tickets).
+
+***
+
+### avisarClienteEstados?
+
+> `optional` **avisarClienteEstados?**: `string`[]
+
+Estados que, al aplicarse, mandan un correo de avance al cliente. Resuelto y cerrado ya
+avisan siempre (con la encuesta), así que aquí se marcan los intermedios ("En proceso").
+
+***
+
+### respuestas?
+
+> `optional` **respuestas?**: [`RespuestaGuardada`](RespuestaGuardada.md)[]
+
+Respuestas guardadas (macros) que se insertan al redactar.

@@ -58,6 +58,22 @@ Persistencia de cotizaciones (`cotizaciones/{id}`).
 
 ***
 
+### delete()
+
+> **delete**(`id`): `Promise`\<`void`\>
+
+#### Parameters
+
+##### id
+
+`string`
+
+#### Returns
+
+`Promise`\<`void`\>
+
+***
+
 ### contarPorEstado()
 
 > **contarPorEstado**(): `Promise`\<`Record`\<`string`, `number`\>\>
