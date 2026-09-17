@@ -47,3 +47,6 @@ docker/caddy_config/
 
 # Configuración local del editor
 .vscode/
+
+# Ajustes personales de Claude Code (no se comparten)
+.claude/settings.local.json
