@@ -1634,10 +1634,16 @@
       if (fila) fila.setAttribute('data-favorita', on ? 'true' : 'false');
       reordenar();
     };
+    // El cuerpo se arma ANTES de repintar y se le fija el valor a mano. Armándolo después,
+    // se enviaba el valor que `pintar` ya había dejado listo para el clic SIGUIENTE — es
+    // decir, el contrario: quitar una favorita mandaba "marcar" y la empresa reaparecía
+    // marcada al volver a entrar a la pantalla.
+    var datos = new URLSearchParams(new FormData(form));
+    datos.set('favorita', marcar ? 'true' : 'false');
     pintar(marcar);
     fetch(form.action, {
       method: 'POST',
-      body: new URLSearchParams(new FormData(form)),
+      body: datos,
       headers: { 'X-Requested-With': 'fetch' },
       credentials: 'same-origin',
     }).then(function (r) {
