@@ -221,10 +221,9 @@ export class MigracionCrmViejoService {
         ...(await ticketQueries.listar({ archivado: true })),
       ];
       conteo.tickets = tickets.length;
-      if (!simulacro) {
-        const repo = this.c.resolve('ticketRepo');
-        for (const t of tickets) await repo.eliminar(t.id);
-      }
+      // Agrupado: borrar uno por uno lee las dos subcolecciones y borra hijo por hijo de cada
+      // ticket, que en una tabla entera son cientos de peticiones HTTP.
+      if (!simulacro) await this.c.resolve('ticketRepo').eliminarVarios(tickets.map((t) => t.id));
     }
     if (trae('cotizaciones')) {
       const repo = this.c.resolve('cotizacionRepo');

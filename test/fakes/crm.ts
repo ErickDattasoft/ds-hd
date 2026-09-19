@@ -30,6 +30,9 @@ export class InMemoryEmpresaRepository implements IEmpresaRepository {
   async save(e: Empresa): Promise<void> {
     this.items.set(e.id, e);
   }
+  async guardarVarias(empresas: Empresa[]): Promise<void> {
+    for (const e of empresas) await this.save(e);
+  }
   async eliminar(id: string): Promise<void> {
     this.items.delete(id);
   }
@@ -65,6 +68,9 @@ export class InMemoryContactoRepository implements IContactoRepository {
     }
     return out.sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
   }
+  async guardarVarios(contactos: Contacto[]): Promise<void> {
+    for (const c of contactos) await this.save(c);
+  }
   async save(c: Contacto): Promise<void> {
     this.items.set(c.id, c);
   }
@@ -80,6 +86,9 @@ export class InMemoryBitacoraRepository implements IBitacoraRepository {
   readonly entradas: EntradaBitacora[] = [];
   async registrar(e: EntradaBitacora): Promise<void> {
     this.entradas.push(e);
+  }
+  async registrarVarias(entradas: EntradaBitacora[]): Promise<void> {
+    for (const e of entradas) await this.registrar(e);
   }
   async listar(f: FiltroBitacora = {}): Promise<EntradaBitacora[]> {
     let out = [...this.entradas].sort((a, b) => b.at.getTime() - a.at.getTime());

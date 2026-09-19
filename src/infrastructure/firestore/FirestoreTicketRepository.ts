@@ -26,12 +26,40 @@ export class FirestoreTicketRepository implements ITicketRepository {
   }
 
   async eliminar(id: string): Promise<void> {
-    const ref = this.db.collection(COL).doc(id);
-    for (const sub of ['notas', 'eventos']) {
-      const hijos = await ref.collection(sub).get();
-      await Promise.all(hijos.docs.map((h) => h.ref.delete()));
+    await this.eliminarVarios([id]);
+  }
+
+  /**
+   * Borrado permanente agrupando las llamadas: leer las dos subcolecciones de cada ticket y
+   * borrar hijo por hijo son cientos de peticiones HTTP cuando se vacía la tabla entera (modo
+   * "sustituir" de la importación), y un worker tiene un tope por request.
+   */
+  async eliminarVarios(ids: string[]): Promise<void> {
+    if (!ids.length) return;
+    const batch = this.db.batch();
+    for (const id of ids) {
+      const ref = this.db.collection(COL).doc(id);
+      for (const sub of ['notas', 'eventos']) {
+        const hijos = await ref.collection(sub).get();
+        for (const h of hijos.docs) batch.delete(h.ref);
+      }
+      batch.delete(ref);
     }
-    await ref.delete();
+    await batch.commit();
+  }
+
+  /** Ticket + sus notas + sus eventos en UNA sola escritura (ver `RestWriteBatch`). */
+  async guardarConDetalle(
+    ticket: Ticket,
+    notas: NotaTicket[],
+    eventos: EventoTicket[],
+  ): Promise<void> {
+    const ref = this.db.collection(COL).doc(ticket.id);
+    const batch = this.db.batch();
+    batch.set(ref, TicketMapper.toDocument(ticket), { merge: true });
+    for (const n of notas) batch.set(ref.collection('notas').doc(n.id), TicketMapper.notaToDoc(n));
+    for (const e of eventos) batch.set(ref.collection('eventos').doc(e.id), TicketMapper.eventoToDoc(e));
+    await batch.commit();
   }
 
   async agregarNota(ticketId: string, nota: NotaTicket): Promise<void> {

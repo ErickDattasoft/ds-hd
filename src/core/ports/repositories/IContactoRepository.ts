@@ -16,6 +16,8 @@ export interface IContactoRepository {
   list(filtro?: ListarContactosFiltro): Promise<Contacto[]>;
   /** Cuántos hay, sin traerlos: lo resuelve el servidor con un conteo agregado. */
   contar(): Promise<number>;
+  /** Guarda muchos de golpe (importaciones), agrupando las llamadas. */
+  guardarVarios(contactos: Contacto[]): Promise<void>;
   save(contacto: Contacto): Promise<void>;
   /** Borrado permanente (solo desde la papelera). */
   eliminar(id: string): Promise<void>;

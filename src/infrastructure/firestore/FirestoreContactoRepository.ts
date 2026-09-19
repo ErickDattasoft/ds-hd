@@ -65,25 +65,42 @@ export class FirestoreContactoRepository implements IContactoRepository {
     return contactos.sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
   }
 
+  /** Documento Firestore de un contacto. Lo comparten `save` y `guardarVarios`. */
+  private static toDocument(c: Contacto): Record<string, unknown> {
+    return {
+      nombre: c.nombre,
+      empresaId: c.empresaId,
+      puesto: c.puesto,
+      rfc: c.rfc,
+      email: c.email,
+      telefono: c.telefono,
+      celular: c.celular,
+      esPortal: c.esPortal,
+      uid: c.uid,
+      notas: c.notas,
+      activo: c.activo,
+      createdAt: Timestamp.fromDate(c.createdAt),
+      updatedAt: Timestamp.fromDate(c.updatedAt),
+    };
+  }
+
   async save(c: Contacto): Promise<void> {
-    await this.db.collection(COL).doc(c.id).set(
-      {
-        nombre: c.nombre,
-        empresaId: c.empresaId,
-        puesto: c.puesto,
-        rfc: c.rfc,
-        email: c.email,
-        telefono: c.telefono,
-        celular: c.celular,
-        esPortal: c.esPortal,
-        uid: c.uid,
-        notas: c.notas,
-        activo: c.activo,
-        createdAt: Timestamp.fromDate(c.createdAt),
-        updatedAt: Timestamp.fromDate(c.updatedAt),
-      },
-      { merge: true },
-    );
+    await this.db
+      .collection(COL)
+      .doc(c.id)
+      .set(FirestoreContactoRepository.toDocument(c), { merge: true });
+  }
+
+  /** Una sola llamada HTTP por cada 500, en vez de una por contacto (ver `RestWriteBatch`). */
+  async guardarVarios(contactos: Contacto[]): Promise<void> {
+    if (!contactos.length) return;
+    const batch = this.db.batch();
+    for (const c of contactos) {
+      batch.set(this.db.collection(COL).doc(c.id), FirestoreContactoRepository.toDocument(c), {
+        merge: true,
+      });
+    }
+    await batch.commit();
   }
 
   async eliminar(id: string): Promise<void> {

@@ -299,4 +299,44 @@ describe('MigracionCrmViejoService', () => {
     await servicio.importar(actor(), respaldo(), { modo: 'sustituir', simulacro: false, secciones: ['eventos'] });
     expect(inscripciones.borrados).toContain(ev!.id);
   });
+
+  it('escribe cada ticket con sus notas y eventos en una sola operación', async () => {
+    // Lo que se cuenta aquí es el NÚMERO DE ESCRITURAS, no el resultado: una por nota y otra
+    // por entrada de actividad eran cientos de peticiones HTTP y la importación se cortaba a
+    // medias contra el tope de subpeticiones del worker.
+    const llamadas = { guardarConDetalle: 0, save: 0, agregarNota: 0, registrarEvento: 0 };
+    const real = repos.ticketRepo as InMemoryTicketRepository;
+    repos.ticketRepo = new Proxy(real, {
+      get(obj, prop: string) {
+        if (prop in llamadas) llamadas[prop as keyof typeof llamadas]++;
+        return Reflect.get(obj, prop).bind(obj);
+      },
+    });
+
+    const conDetalle = respaldo();
+    (conDetalle.datos as Record<string, unknown>).tickets = [
+      {
+        numero: 10,
+        asunto: 'No imprime',
+        descripcion: 'x',
+        notas: [{ texto: 'llamé al cliente', fecha: '2026-01-02' }],
+        actividad: [
+          { texto: 'pasó a en proceso', fecha: '2026-01-02' },
+          { texto: 'cerrado', fecha: '2026-01-03' },
+        ],
+      },
+    ];
+    await servicio.importar(actor(), conDetalle, {
+      modo: 'actualizar',
+      simulacro: false,
+      secciones: ['tickets'],
+    });
+
+    expect(llamadas.guardarConDetalle).toBe(1);
+    expect(llamadas.agregarNota).toBe(0);
+    expect(llamadas.registrarEvento).toBe(0);
+    // Y el contenido sigue llegando entero.
+    expect(await real.listarNotas('tic-10')).toHaveLength(1);
+    expect(await real.listarEventos('tic-10')).toHaveLength(2);
+  });
 });

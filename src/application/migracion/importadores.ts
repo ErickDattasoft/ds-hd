@@ -16,6 +16,7 @@ import { ArticuloKB } from '../../core/entities/ArticuloKB.js';
 import { Evento, type RespuestaInvitacion, RESPUESTAS_INVITACION } from '../../core/entities/Evento.js';
 import { Cotizacion, type EstadoCotizacion } from '../../core/entities/Cotizacion.js';
 import type { EntradaBitacora } from '../../core/entities/EntradaBitacora.js';
+import type { EventoTicket, NotaTicket } from '../../core/entities/NotaTicket.js';
 import { PRIORIDADES, type Prioridad } from '../../core/entities/value-objects/Prioridad.js';
 import type { EstadoFacturacion } from '../../core/entities/value-objects/EstadoFacturacion.js';
 import type { IEmpresaRepository } from '../../core/ports/repositories/IEmpresaRepository.js';
@@ -115,6 +116,7 @@ export function crearImportadores({ dryRun: DRY_RUN, log }: OpcionesImportacion)
   async function importarEmpresas(c: Container, datos: Dato): Promise<{ ok: number; total: number }> {
     const repo = c.resolve('empresaRepo');
     const items = arr(datos.clientes);
+    const porGuardar: Empresa[] = [];
     let ok = 0;
     for (const d of items) {
       const nombre = s(d.EMPRESA);
@@ -149,12 +151,15 @@ export function crearImportadores({ dryRun: DRY_RUN, log }: OpcionesImportacion)
           versionesInstaladas,
           notas: s(d.CONTACTO) ? `Contacto original del CRM viejo: ${s(d.CONTACTO)}` : null,
         });
-        if (!DRY_RUN) await repo.save(empresa);
+        porGuardar.push(empresa);
         ok++;
       } catch (err) {
         log('empresas', `ERROR con "${nombre}": ${err instanceof Error ? err.message : err}`);
       }
     }
+    // Una sola escritura para todas: una por empresa son 120 peticiones HTTP y el worker tiene
+    // un tope por request que la importación completa se comía entero.
+    if (!DRY_RUN) await repo.guardarVarias(porGuardar);
     log('empresas', `${ok}/${items.length} importadas`);
     return { ok, total: items.length };
   }
@@ -191,6 +196,7 @@ export function crearImportadores({ dryRun: DRY_RUN, log }: OpcionesImportacion)
     const porNombre = mapaEmpresasPorNombre(datos);
 
     const items = arr(datos.contactos);
+    const porGuardar: Contacto[] = [];
     let ok = 0;
     const sinEmpresa: string[] = [];
     let placeholderCreado = false;
@@ -249,7 +255,7 @@ export function crearImportadores({ dryRun: DRY_RUN, log }: OpcionesImportacion)
           telefono: s(d.telefono1) || null,
           celular: s(d.telefono2) || null,
         });
-        if (!DRY_RUN) await contactoRepo.save(contacto);
+        porGuardar.push(contacto);
         // El recién importado también entra al índice: si el mismo respaldo trae dos renglones
         // de la misma persona (pasa cuando la capturaron dos veces), el segundo actualiza al
         // primero en vez de sumar otro duplicado.
@@ -260,6 +266,7 @@ export function crearImportadores({ dryRun: DRY_RUN, log }: OpcionesImportacion)
         log('contactos', `ERROR con "${nombre}": ${err instanceof Error ? err.message : err}`);
       }
     }
+    if (!DRY_RUN) await contactoRepo.guardarVarios(porGuardar);
     log('contactos', `${ok}/${items.length} importados, ${sinEmpresa.length} sin empresa emparejada`);
     return { ok, sinEmpresa, total: items.length };
   }
@@ -338,7 +345,11 @@ export function crearImportadores({ dryRun: DRY_RUN, log }: OpcionesImportacion)
           archivado,
         });
         if (!DRY_RUN) {
-          await repo.save(ticket);
+          // Notas y eventos se juntan y se escriben CON el ticket en una sola llamada: uno por
+          // documento eran cientos de peticiones HTTP y la importación moría a medias contra el
+          // tope de subpeticiones del worker (ver `guardarConDetalle`).
+          const notas: NotaTicket[] = [];
+          const eventos: EventoTicket[] = [];
           // Nota interna con el texto libre que el viejo guardaba aparte + el estado de
           // facturación textual original (por si el mapeo al catálogo fijo perdió matiz,
           // p. ej. "en proceso" o "garantía").
@@ -351,7 +362,7 @@ export function crearImportadores({ dryRun: DRY_RUN, log }: OpcionesImportacion)
             .filter(Boolean)
             .join('\n\n');
           if (notaInterna) {
-            await repo.agregarNota(ticket.id, {
+            notas.push({
               id: await hashId('nota-interna', ticket.id),
               tipo: 'interna',
               cuerpo: notaInterna,
@@ -363,7 +374,7 @@ export function crearImportadores({ dryRun: DRY_RUN, log }: OpcionesImportacion)
           for (const n of arr(d.notas)) {
             const cuerpo = s(n.texto ?? n.cuerpo);
             if (!cuerpo) continue;
-            await repo.agregarNota(ticket.id, {
+            notas.push({
               id: await hashId('nota', ticket.id, cuerpo, s(n.fecha)),
               tipo: 'publica',
               cuerpo,
@@ -379,7 +390,7 @@ export function crearImportadores({ dryRun: DRY_RUN, log }: OpcionesImportacion)
           for (const a of arr(d.actividad)) {
             const texto = s(a.texto);
             if (!texto) continue;
-            await repo.registrarEvento(ticket.id, {
+            eventos.push({
               id: await hashId('evt', ticket.id, texto, s(a.fecha)),
               tipo: 'nota',
               resumen: texto,
@@ -388,6 +399,7 @@ export function crearImportadores({ dryRun: DRY_RUN, log }: OpcionesImportacion)
               at: fecha(a.fecha),
             });
           }
+          await repo.guardarConDetalle(ticket, notas, eventos);
         }
         ok++;
       } catch (err) {
@@ -538,6 +550,7 @@ export function crearImportadores({ dryRun: DRY_RUN, log }: OpcionesImportacion)
   async function importarBitacora(c: Container, datos: Dato): Promise<number> {
     const repo = c.resolve('bitacoraRepo');
     const items = arr(datos.bitacora);
+    const porGuardar: EntradaBitacora[] = [];
     let n = 0;
     for (const d of items) {
       const msg = s(d.msg);
@@ -553,9 +566,11 @@ export function crearImportadores({ dryRun: DRY_RUN, log }: OpcionesImportacion)
         entidadId: 'n/a',
         resumen: s(d.icon) ? `${d.icon} ${msg}` : msg,
       };
-      if (!DRY_RUN) await repo.registrar(entrada);
+      porGuardar.push(entrada);
       n++;
     }
+    // 670 entradas = 670 peticiones si se guardan una a una; agrupadas son dos.
+    if (!DRY_RUN) await repo.registrarVarias(porGuardar);
     log('bitacora', `${n}/${items.length} entradas históricas`);
     return n;
   }

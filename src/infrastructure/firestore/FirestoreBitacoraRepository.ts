@@ -37,6 +37,25 @@ export class FirestoreBitacoraRepository implements IBitacoraRepository {
     });
   }
 
+  /** Una sola llamada por cada 500 entradas, en vez de una por entrada (ver RestWriteBatch). */
+  async registrarVarias(entradas: EntradaBitacora[]): Promise<void> {
+    if (!entradas.length) return;
+    const batch = this.db.batch();
+    for (const e of entradas) {
+      batch.set(this.db.collection(COL).doc(e.id), {
+        at: Timestamp.fromDate(e.at),
+        actorUid: e.actorUid,
+        actorNombre: e.actorNombre,
+        accion: e.accion,
+        modulo: e.modulo,
+        entidadTipo: e.entidadTipo,
+        entidadId: e.entidadId,
+        resumen: e.resumen,
+      });
+    }
+    await batch.commit();
+  }
+
   async listar(filtro: FiltroBitacora = {}): Promise<EntradaBitacora[]> {
     // El rango por fecha va a Firestore (mismo campo que el orderBy → no requiere índice
     // compuesto). `modulo`/`actorUid`/`entidadId` se filtran en memoria, igual que en

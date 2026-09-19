@@ -15,6 +15,8 @@ export interface FiltroBitacora {
 /** Registro de auditoría global (`bitacora/{id}`), solo escritura vía append. */
 export interface IBitacoraRepository {
   registrar(entrada: EntradaBitacora): Promise<void>;
+  /** Registra muchas entradas de golpe (importaciones), agrupando las llamadas. */
+  registrarVarias(entradas: EntradaBitacora[]): Promise<void>;
   listar(filtro?: FiltroBitacora): Promise<EntradaBitacora[]>;
   /**
    * Borra entradas con fecha anterior a `fecha`, empezando por las más viejas.

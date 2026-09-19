@@ -16,6 +16,8 @@ export interface IEmpresaRepository {
   list(filtro?: ListarEmpresasFiltro): Promise<Empresa[]>;
   /** Cuántas hay, sin traerlas: lo resuelve el servidor con un conteo agregado. */
   contar(soloActivas?: boolean): Promise<number>;
+  /** Guarda muchas de golpe (importaciones), agrupando las llamadas. */
+  guardarVarias(empresas: Empresa[]): Promise<void>;
   save(empresa: Empresa): Promise<void>;
   /** Borrado permanente (solo desde la papelera). */
   eliminar(id: string): Promise<void>;

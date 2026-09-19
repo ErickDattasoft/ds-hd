@@ -183,6 +183,38 @@ class RestTransaction {
   }
 }
 
+/**
+ * Escritura por lotes, con la misma forma que `WriteBatch` del SDK Admin: acumula operaciones
+ * y las manda en UNA sola llamada `:commit`.
+ *
+ * Importa mucho aquí: cada llamada suelta es una subpetición HTTP, y un Worker tiene un tope
+ * por request. Importar el respaldo del CRM viejo escribía un documento por ticket, por nota,
+ * por entrada de actividad y por línea de bitácora —más de mil— y la corrida se cortaba a
+ * media importación sin decir por qué. Agrupadas, son unas pocas llamadas.
+ */
+export class RestWriteBatch {
+  private readonly writes: object[] = [];
+  constructor(private readonly client: FirestoreRestClient) {}
+  get size(): number {
+    return this.writes.length;
+  }
+  set(ref: RestDocumentReference, data: Record<string, unknown>, opts?: { merge?: boolean }): this {
+    this.writes.push(this.client._updateWrite(ref.path, data, opts?.merge ?? false));
+    return this;
+  }
+  delete(ref: RestDocumentReference): this {
+    this.writes.push({ delete: this.client._name(ref.path) });
+    return this;
+  }
+  async commit(): Promise<void> {
+    // Firestore acepta hasta 500 escrituras por commit; se trocea por si acaso.
+    for (let i = 0; i < this.writes.length; i += 500) {
+      await this.client._write(this.writes.slice(i, i + 500));
+    }
+    this.writes.length = 0;
+  }
+}
+
 export interface FirestoreRestOptions {
   projectId: string;
   /** Credenciales para producción. Omitir junto con `emulatorHost` para el emulador. */
@@ -234,6 +266,10 @@ export class FirestoreRestClient {
 
   doc(path: string): RestDocumentReference {
     return new RestDocumentReference(this, path);
+  }
+
+  batch(): RestWriteBatch {
+    return new RestWriteBatch(this);
   }
 
   async runTransaction<T>(fn: (tx: RestTransaction) => Promise<T>): Promise<T> {

@@ -20,4 +20,16 @@ export interface ITicketRepository {
 
   registrarEvento(ticketId: string, evento: EventoTicket): Promise<void>;
   listarEventos(ticketId: string): Promise<EventoTicket[]>;
+
+  /**
+   * Guarda el ticket con sus notas y eventos en UNA sola escritura.
+   *
+   * Es para cargas masivas (importar el respaldo del CRM viejo): hacerlo documento a documento
+   * son cientos de llamadas HTTP y la importación se corta al chocar con el tope de
+   * subpeticiones del worker.
+   */
+  guardarConDetalle(ticket: Ticket, notas: NotaTicket[], eventos: EventoTicket[]): Promise<void>;
+
+  /** Borrado permanente de varios tickets (con sus notas y eventos), agrupando las llamadas. */
+  eliminarVarios(ids: string[]): Promise<void>;
 }

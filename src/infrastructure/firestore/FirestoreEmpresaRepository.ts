@@ -62,32 +62,50 @@ export class FirestoreEmpresaRepository implements IEmpresaRepository {
     return empresas.sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
   }
 
+  /** Documento Firestore de una empresa. Lo comparten `save` y `guardarVarias`, para que la
+   *  carga masiva no se pueda desincronizar del guardado de una sola. */
+  private static toDocument(empresa: Empresa): Record<string, unknown> {
+    return {
+      nombre: empresa.nombre,
+      nombreLower: empresa.nombre.toLowerCase(),
+      rfc: empresa.rfc,
+      razonSocial: empresa.razonSocial,
+      direccion: empresa.direccion,
+      telefono: empresa.telefono,
+      email: empresa.email,
+      sistemasContratados: empresa.sistemasContratados,
+      vigencias: empresa.vigencias,
+      versionesInstaladas: empresa.versionesInstaladas,
+      camposExtra: empresa.camposExtra,
+      contactoPrincipalId: empresa.contactoPrincipalId,
+      notas: empresa.notas,
+      activa: empresa.activa,
+      favorita: empresa.favorita,
+      creadoPorUid: empresa.creadoPorUid,
+      createdAt: Timestamp.fromDate(empresa.createdAt),
+      updatedAt: Timestamp.fromDate(empresa.updatedAt),
+      ultimoAvisoVersionesEn: ts(empresa.ultimoAvisoVersionesEn),
+      ultimoAvisoLicenciasEn: ts(empresa.ultimoAvisoLicenciasEn),
+    };
+  }
+
   async save(empresa: Empresa): Promise<void> {
-    await this.db.collection(COL).doc(empresa.id).set(
-      {
-        nombre: empresa.nombre,
-        nombreLower: empresa.nombre.toLowerCase(),
-        rfc: empresa.rfc,
-        razonSocial: empresa.razonSocial,
-        direccion: empresa.direccion,
-        telefono: empresa.telefono,
-        email: empresa.email,
-        sistemasContratados: empresa.sistemasContratados,
-        vigencias: empresa.vigencias,
-        versionesInstaladas: empresa.versionesInstaladas,
-        camposExtra: empresa.camposExtra,
-        contactoPrincipalId: empresa.contactoPrincipalId,
-        notas: empresa.notas,
-        activa: empresa.activa,
-        favorita: empresa.favorita,
-        creadoPorUid: empresa.creadoPorUid,
-        createdAt: Timestamp.fromDate(empresa.createdAt),
-        updatedAt: Timestamp.fromDate(empresa.updatedAt),
-        ultimoAvisoVersionesEn: ts(empresa.ultimoAvisoVersionesEn),
-        ultimoAvisoLicenciasEn: ts(empresa.ultimoAvisoLicenciasEn),
-      },
-      { merge: true },
-    );
+    await this.db
+      .collection(COL)
+      .doc(empresa.id)
+      .set(FirestoreEmpresaRepository.toDocument(empresa), { merge: true });
+  }
+
+  /** Una sola llamada HTTP por cada 500, en vez de una por empresa (ver `RestWriteBatch`). */
+  async guardarVarias(empresas: Empresa[]): Promise<void> {
+    if (!empresas.length) return;
+    const batch = this.db.batch();
+    for (const empresa of empresas) {
+      batch.set(this.db.collection(COL).doc(empresa.id), FirestoreEmpresaRepository.toDocument(empresa), {
+        merge: true,
+      });
+    }
+    await batch.commit();
   }
 
   async eliminar(id: string): Promise<void> {
