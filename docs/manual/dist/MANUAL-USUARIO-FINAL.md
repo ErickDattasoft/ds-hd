@@ -17,7 +17,7 @@
 
 Todo el sistema vive detrás de una sola pantalla de inicio de sesión en `/login`.
 
-*(captura pendiente: login-y-acceso-login.png — corre `npm run docs:screenshots` contra la app corriendo y con datos de `npm run seed:demo`)*
+![Pantalla de login](../screenshots/login-y-acceso-login.png)
 
 ## Iniciar sesión
 
@@ -52,7 +52,7 @@ Usa el enlace **Salir** del menú superior en cualquier pantalla, o entra a `/lo
 Si todavía no tienes una cuenta de portal, puedes reportar un problema sin iniciar sesión
 desde `/ticket-publico`.
 
-*(captura pendiente: ticket-publico-form.png — corre `npm run docs:screenshots` contra la app corriendo y con datos de `npm run seed:demo`)*
+![Formulario de ticket público](../screenshots/ticket-publico-form.png)
 
 ## Qué necesitas llenar
 
@@ -76,14 +76,14 @@ al equipo de soporte que te invite al portal de clientes (ver
 
 Al entrar con tu cuenta de cliente llegas a `/portal`, tu panel personal.
 
-*(captura pendiente: portal-tickets-dashboard.png — corre `npm run docs:screenshots` contra la app corriendo y con datos de `npm run seed:demo`)*
+![Portal, panel principal](../screenshots/portal-tickets-dashboard.png)
 
 ## Ver tus tickets
 
 *Mis tickets* (`/portal/tickets`) lista únicamente los tickets que tú (o alguien de tu
 empresa a través tuyo) ha abierto — nunca ves tickets de otros clientes.
 
-*(captura pendiente: portal-tickets-lista.png — corre `npm run docs:screenshots` contra la app corriendo y con datos de `npm run seed:demo`)*
+![Lista de mis tickets](../screenshots/portal-tickets-lista.png)
 
 Abre uno para ver su estado, su historial de cambios de estado y las notas **públicas** que
 el equipo de soporte haya dejado. Las notas internas del staff nunca aparecen aquí.
@@ -92,7 +92,7 @@ el equipo de soporte haya dejado. Las notas internas del staff nunca aparecen aq
 
 *Mis tickets → Nuevo ticket* (`/portal/tickets/nuevo`).
 
-*(captura pendiente: portal-tickets-nuevo.png — corre `npm run docs:screenshots` contra la app corriendo y con datos de `npm run seed:demo`)*
+![Nuevo ticket desde el portal](../screenshots/portal-tickets-nuevo.png)
 
 Describe tu problema (asunto, descripción, tipo). El ticket queda ligado automáticamente a
 tu cuenta y a tu empresa; no necesitas indicar datos de contacto porque ya se conocen de tu
@@ -111,7 +111,7 @@ configurada la notificación.
 `/portal/perfil` muestra tus datos de cuenta: nombre, correo y la empresa a la que estás
 vinculado.
 
-*(captura pendiente: portal-perfil-ver.png — corre `npm run docs:screenshots` contra la app corriendo y con datos de `npm run seed:demo`)*
+![Mi perfil](../screenshots/portal-perfil-ver.png)
 
 Hoy puedes editar tu **nombre** desde aquí. Si necesitas cambiar el correo con el que
 inicias sesión, tu contraseña o la empresa a la que estás vinculado, pide a tu contacto de
@@ -124,7 +124,7 @@ soporte que lo haga desde el módulo de Usuarios — no es autoservicio todavía
 `/eventos` lista los próximos webinars y eventos abiertos al público, sin necesidad de
 cuenta.
 
-*(captura pendiente: eventos-publico-lista.png — corre `npm run docs:screenshots` contra la app corriendo y con datos de `npm run seed:demo`)*
+![Lista de eventos públicos](../screenshots/eventos-publico-lista.png)
 
 ## Registrarte
 
@@ -146,7 +146,7 @@ Artículos de ayuda escritos en Markdown, con tres niveles de visibilidad por ar
 **staff** (solo equipo interno), **portal** (staff + clientes con cuenta) y **público**
 (cualquiera, sin sesión, en `/kb`).
 
-*(captura pendiente: base-conocimiento-staff.png — corre `npm run docs:screenshots` contra la app corriendo y con datos de `npm run seed:demo`)*
+![Base de conocimiento, vista de gestión](../screenshots/base-conocimiento-staff.png)
 
 ## Staff: escribir y publicar artículos
 
@@ -156,7 +156,7 @@ visibilidad. Un artículo no aparece fuera del back-office hasta que lo marcas *
 
 ## Consultar artículos (staff, portal y público)
 
-*(captura pendiente: base-conocimiento-portal.png — corre `npm run docs:screenshots` contra la app corriendo y con datos de `npm run seed:demo`)*
+![Base de conocimiento, vista de cliente](../screenshots/base-conocimiento-portal.png)
 
 - Staff los ve en `/app/kb`.
 - Un cliente logueado los ve en `/portal/kb` (solo los de visibilidad *portal* o *público*).
