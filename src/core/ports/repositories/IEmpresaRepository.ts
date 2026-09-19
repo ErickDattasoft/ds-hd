@@ -18,6 +18,8 @@ export interface IEmpresaRepository {
   contar(soloActivas?: boolean): Promise<number>;
   /** Guarda muchas de golpe (importaciones), agrupando las llamadas. */
   guardarVarias(empresas: Empresa[]): Promise<void>;
+  /** Borra muchas de golpe, agrupando las llamadas. */
+  eliminarVarias(ids: string[]): Promise<void>;
   save(empresa: Empresa): Promise<void>;
   /** Borrado permanente (solo desde la papelera). */
   eliminar(id: string): Promise<void>;

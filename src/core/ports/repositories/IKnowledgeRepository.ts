@@ -19,4 +19,6 @@ export interface IKnowledgeRepository {
   list(filtro?: ListarKBFiltro): Promise<ArticuloKB[]>;
   save(articulo: ArticuloKB): Promise<void>;
   eliminar(id: string): Promise<void>;
+  /** Borra muchos de golpe, agrupando las llamadas. */
+  eliminarVarios(ids: string[]): Promise<void>;
 }

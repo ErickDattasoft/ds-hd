@@ -21,6 +21,9 @@ export class InMemoryVersionRepository implements IVersionRepository {
   async eliminar(id: string): Promise<void> {
     this.items.delete(id);
   }
+  async eliminarVarios(ids: string[]): Promise<void> {
+    for (const id of ids) await this.eliminar(id);
+  }
 }
 
 export class InMemoryKnowledgeRepository implements IKnowledgeRepository {
@@ -44,6 +47,9 @@ export class InMemoryKnowledgeRepository implements IKnowledgeRepository {
   }
   async eliminar(id: string): Promise<void> {
     this.items.delete(id);
+  }
+  async eliminarVarios(ids: string[]): Promise<void> {
+    for (const id of ids) await this.eliminar(id);
   }
 }
 

@@ -112,6 +112,15 @@ export class FirestoreEmpresaRepository implements IEmpresaRepository {
     await this.db.collection(COL).doc(id).delete();
   }
 
+  /** Borra muchos de golpe: uno por uno son tantas peticiones HTTP como empresas, y una carga
+   *  masiva (modo "sustituir" de la importación) se come el presupuesto del worker. */
+  async eliminarVarias(ids: string[]): Promise<void> {
+    if (!ids.length) return;
+    const batch = this.db.batch();
+    for (const id of ids) batch.delete(this.db.collection(COL).doc(id));
+    await batch.commit();
+  }
+
   async existePorNombre(nombre: string, exceptoId?: string): Promise<boolean> {
     const q = await this.db
       .collection(COL)

@@ -201,6 +201,9 @@ export class MigracionCrmViejoService {
     log: (paso: string, msg: string) => void,
   ): Promise<Record<string, number>> {
     const trae = (s: SeccionImportacion): boolean => secciones.includes(s);
+    // Todos los borrados van agrupados: uno por documento eran cientos de peticiones HTTP
+    // —120 empresas, 135 contactos, la bitácora entera— y se comían el presupuesto de
+    // subpeticiones del worker ANTES de empezar a escribir, dejando la carga a medias.
     const conteo: Record<string, number> = {};
     const noBorrables = secciones.filter((s) => s === 'usuarios' || s === 'configuracion');
     if (noBorrables.length) {
@@ -249,25 +252,25 @@ export class MigracionCrmViejoService {
       const repo = this.c.resolve('contactoRepo');
       const contactos = await repo.list();
       conteo.contactos = contactos.length;
-      if (!simulacro) for (const x of contactos) await repo.eliminar(x.id);
+      if (!simulacro) await repo.eliminarVarios(contactos.map((x) => x.id));
     }
     if (trae('empresas')) {
       const repo = this.c.resolve('empresaRepo');
       const empresas = await repo.list();
       conteo.empresas = empresas.length;
-      if (!simulacro) for (const e of empresas) await repo.eliminar(e.id);
+      if (!simulacro) await repo.eliminarVarias(empresas.map((e) => e.id));
     }
     if (trae('kb')) {
       const repo = this.c.resolve('knowledgeRepo');
       const articulos = await repo.list();
       conteo.kb = articulos.length;
-      if (!simulacro) for (const a of articulos) await repo.eliminar(a.id);
+      if (!simulacro) await repo.eliminarVarios(articulos.map((a) => a.id));
     }
     if (trae('versiones')) {
       const repo = this.c.resolve('versionRepo');
       const versiones = await repo.list();
       conteo.versiones = versiones.length;
-      if (!simulacro) for (const v of versiones) await repo.eliminar(v.id);
+      if (!simulacro) await repo.eliminarVarios(versiones.map((v) => v.id));
     }
     if (trae('bitacora')) {
       const repo = this.c.resolve('bitacoraRepo');

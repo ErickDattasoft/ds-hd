@@ -85,8 +85,12 @@ export class FirestoreBitacoraRepository implements IBitacoraRepository {
       .limit(maxBorrar + 1)
       .get();
     const docs = snap.docs.slice(0, maxBorrar);
+    // Un commit por tanda, no un borrado por documento: purgar una bitácora de cientos de
+    // entradas eran cientos de peticiones HTTP y se comía el presupuesto del worker.
     for (let i = 0; i < docs.length; i += TANDA_BORRADO) {
-      await Promise.all(docs.slice(i, i + TANDA_BORRADO).map((d) => d.ref.delete()));
+      const batch = this.db.batch();
+      for (const d of docs.slice(i, i + TANDA_BORRADO)) batch.delete(d.ref);
+      await batch.commit();
     }
     return { borradas: docs.length, hayMas: snap.docs.length > maxBorrar };
   }

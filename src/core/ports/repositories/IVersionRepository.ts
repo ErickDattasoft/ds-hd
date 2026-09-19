@@ -6,4 +6,6 @@ export interface IVersionRepository {
   list(): Promise<VersionSistema[]>;
   save(version: VersionSistema): Promise<void>;
   eliminar(id: string): Promise<void>;
+  /** Borra muchos de golpe, agrupando las llamadas. */
+  eliminarVarios(ids: string[]): Promise<void>;
 }

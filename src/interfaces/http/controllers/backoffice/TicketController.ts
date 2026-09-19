@@ -76,7 +76,10 @@ export class TicketController {
       ...(str(q.agente) ? { agenteAsignadoUid: str(q.agente) } : {}),
       ...(q.sinAsignar === '1' ? { sinAsignar: true } : {}),
       ...(str(q.texto) ? { texto: str(q.texto) } : {}),
-      ...(q.abiertos !== '0' ? { soloAbiertos: true } : {}),
+      // "Incluir cerrados" viene marcado de fábrica: al abrir Tickets se ve el historial
+      // completo, que es lo que se quiere al buscar algo. Solo se acota a abiertos cuando se
+      // desmarca la casilla a mano, y eso se sabe porque el formulario manda `f=1`.
+      ...(q.f === '1' && q.abiertos !== '0' ? { soloAbiertos: true } : {}),
       ...(q.agenda === '1' ? { soloProgramados: true } : {}),
       archivado: false,
     };

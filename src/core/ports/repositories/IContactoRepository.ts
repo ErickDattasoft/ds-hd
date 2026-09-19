@@ -18,6 +18,8 @@ export interface IContactoRepository {
   contar(): Promise<number>;
   /** Guarda muchos de golpe (importaciones), agrupando las llamadas. */
   guardarVarios(contactos: Contacto[]): Promise<void>;
+  /** Borra muchos de golpe, agrupando las llamadas. */
+  eliminarVarios(ids: string[]): Promise<void>;
   save(contacto: Contacto): Promise<void>;
   /** Borrado permanente (solo desde la papelera). */
   eliminar(id: string): Promise<void>;

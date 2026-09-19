@@ -52,4 +52,13 @@ export class FirestoreVersionRepository implements IVersionRepository {
   async eliminar(id: string): Promise<void> {
     await this.db.collection(COL).doc(id).delete();
   }
+
+  /** Borra muchos de golpe: uno por uno son tantas peticiones HTTP como versións, y una carga
+   *  masiva (modo "sustituir" de la importación) se come el presupuesto del worker. */
+  async eliminarVarios(ids: string[]): Promise<void> {
+    if (!ids.length) return;
+    const batch = this.db.batch();
+    for (const id of ids) batch.delete(this.db.collection(COL).doc(id));
+    await batch.commit();
+  }
 }
