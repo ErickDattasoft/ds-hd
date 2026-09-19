@@ -69,8 +69,8 @@
   --_bd: var(--color-border);
 }
 .btn--ghost:hover { --_bg: var(--color-surface-2); --_fg: var(--color-text); }
-.btn--danger { --_bg: var(--danger); --_fg: #fff; --_bd: transparent; }
-.btn--danger:hover { --_bg: color-mix(in srgb, var(--danger) 85%, black); }
+.btn--danger { --_bg: var(--danger-solid); --_fg: #fff; --_bd: transparent; }
+.btn--danger:hover { --_bg: color-mix(in srgb, var(--danger-solid) 85%, black); }
 .btn--sm { padding: 0.35rem 0.65rem; font-size: var(--text-xs); }
 .btn--block { display: flex; width: 100%; justify-content: center; }
 @media (prefers-reduced-motion: reduce) {
@@ -874,3 +874,142 @@ fieldset.field {
   .cal-grid td { height: auto; min-height: 3.5rem; }
   .cal-ev { white-space: normal; }
 }
+
+/* ── Gráficas ──────────────────────────────────────────────────────────────
+   Se dibujan con CSS puro (sin librería de charts): el servidor ya manda los
+   conteos y aquí solo se traducen a alto/ancho en porcentaje. Así no entra un
+   bundle de JS al worker ni hay un segundo tema que mantener.
+
+   Paleta categórica validada contra las superficies reales de la app (claro
+   #ffffff, oscuro #161b22): pasa banda de luminosidad, piso de croma, separación
+   para daltonismo y piso de visión normal. El orden de los tonos es parte de esa
+   validación — se asignan por posición y NUNCA se ciclan; pasados los 6 slots el
+   servidor suma la cola en "Otros" (ver `enSegmentos`). En claro, tres de los
+   tonos quedan por debajo de 3:1 contra el blanco, así que el valor va siempre
+   escrito (etiqueta directa + leyenda), nunca solo el color. */
+.chart {
+  --serie-1: #2a78d6;
+  --serie-2: #eb6834;
+  --serie-3: #1baf7a;
+  --serie-4: #eda100;
+  --serie-5: #e87ba4;
+  --serie-6: #008300;
+  --serie-otros: var(--gray-400);
+  --chart-grid: var(--color-border);
+  --chart-ink: var(--color-text-muted);
+}
+/* Los mismos seis tonos, re-escalonados para el fondo oscuro (no es un volteo
+   automático: cada paso se validó contra #161b22). */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .chart {
+    --serie-1: #3987e5;
+    --serie-2: #d95926;
+    --serie-3: #199e70;
+    --serie-4: #c98500;
+    --serie-5: #d55181;
+    --serie-6: #008300;
+    --serie-otros: var(--gray-500);
+  }
+}
+:root[data-theme='dark'] .chart {
+  --serie-1: #3987e5;
+  --serie-2: #d95926;
+  --serie-3: #199e70;
+  --serie-4: #c98500;
+  --serie-5: #d55181;
+  --serie-6: #008300;
+  --serie-otros: var(--gray-500);
+}
+
+/* Columnas (una serie, una sola tinta: el mes no es una identidad distinta) */
+.chart-cols { display: grid; grid-template-columns: auto 1fr; gap: 0 var(--space-2); }
+/* El renglón de arriba lo reserva la etiqueta del valor, que va sobre la tapa de la columna;
+   por eso el eje Y lleva el mismo hueco y las dos escalas coinciden. */
+.chart-cols__y,
+.chart-cols__plot { padding-top: 1.25rem; }
+.chart-cols__y {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  font-size: var(--text-xs);
+  line-height: 1;
+  color: var(--chart-ink);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  height: 12rem;
+}
+/* Cada marca del eje se centra en su línea; la primera y la última se muerden media altura
+   para no salirse del área. */
+.chart-cols__y span { transform: translateY(-50%); }
+.chart-cols__y span:first-child { transform: translateY(0); }
+.chart-cols__y span:last-child { transform: translateY(-100%); }
+.chart-cols__plot { position: relative; display: flex; align-items: flex-end; gap: var(--space-2); height: 12rem; }
+/* Rejilla en su propia capa (no de fondo del contenedor) para que empiece justo donde
+   empieza la escala y no debajo de las etiquetas. Líneas de 1px, sólidas y discretas. */
+.chart-cols__rejilla {
+  position: absolute;
+  inset: 1.25rem 0 0 0;
+  background-image: repeating-linear-gradient(to top, var(--chart-grid) 0 1px, transparent 1px 25%);
+  pointer-events: none;
+}
+.chart-cols__col { position: relative; flex: 1; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; height: 100%; min-width: 0; }
+/* El alto porcentual lo lleva esta caja, y la etiqueta cuelga por encima de su tapa: así el
+   número viaja pegado a su columna en vez de quedar suelto arriba. */
+.chart-cols__medida { position: relative; width: 100%; display: flex; justify-content: center; align-items: flex-end; }
+.chart-cols__val {
+  position: absolute;
+  bottom: 100%;
+  margin-bottom: 3px;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.chart-cols__bar {
+  width: 100%;
+  max-width: 24px;
+  height: 100%;
+  background: var(--serie-1);
+  /* Extremo redondeado del lado del dato, recto sobre la línea base. */
+  border-radius: 4px 4px 0 0;
+}
+.chart-cols__bar--cero { height: 2px; background: var(--chart-grid); }
+.chart-cols__x { grid-column: 2; display: flex; gap: var(--space-2); margin-top: 0.35rem; }
+.chart-cols__x span {
+  flex: 1;
+  min-width: 0;
+  text-align: center;
+  font-size: var(--text-xs);
+  color: var(--chart-ink);
+  /* Si una etiqueta no cabe, que baje de renglón: recortarla con "…" se come justo el mes,
+     que es lo único que distingue una columna de otra. */
+  line-height: 1.25;
+}
+
+/* Reparto: una barra apilada horizontal + leyenda con el valor de cada parte */
+.chart-stack {
+  display: flex;
+  height: 1.5rem;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  /* El separador entre partes es un hueco del color de la superficie, no un borde:
+     un borde agrega tinta que no es dato. */
+  gap: 2px;
+  background: var(--color-surface);
+}
+.chart-stack__seg { min-width: 2px; }
+.chart-legend { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-4); margin-top: var(--space-3); font-size: var(--text-sm); }
+.chart-legend__item { display: flex; align-items: center; gap: 0.4rem; }
+/* La identidad la lleva la marca de color al lado del texto; el texto usa tinta
+   de texto, nunca el color de la serie. */
+.chart-legend__dot { width: 10px; height: 10px; border-radius: 3px; flex: none; }
+.chart-legend__val { font-weight: 600; font-variant-numeric: tabular-nums; }
+.chart-legend__pct { color: var(--chart-ink); }
+.serie-1 { background: var(--serie-1); }
+.serie-2 { background: var(--serie-2); }
+.serie-3 { background: var(--serie-3); }
+.serie-4 { background: var(--serie-4); }
+.serie-5 { background: var(--serie-5); }
+.serie-6 { background: var(--serie-6); }
+.serie-otros { background: var(--serie-otros); }
+.chart-vacio { color: var(--color-text-muted); font-size: var(--text-sm); margin: var(--space-3) 0; }
