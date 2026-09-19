@@ -23,7 +23,7 @@ import { sanearAcercaDe } from '../../core/entities/AcercaDe.js';
 import { CONFIG_TICKETS_POR_DEFECTO, type ConfiguracionTickets } from '../../core/entities/ConfiguracionTickets.js';
 import { CONFIG_AVISOS_POR_DEFECTO, type ConfiguracionAvisos, type ContactoSoporte } from '../../core/entities/ConfiguracionAvisos.js';
 import { CONTADOR_TICKETS } from '../tickets/constantes.js';
-import { arr, hashId, slug } from './lib.js';
+import { arr, hashId, slug, RE_DIACRITICOS } from './lib.js';
 import type { Container } from '../../config/container.js';
 
 
@@ -194,6 +194,31 @@ export function crearImportadores({ dryRun: DRY_RUN, log }: OpcionesImportacion)
     let ok = 0;
     const sinEmpresa: string[] = [];
     let placeholderCreado = false;
+
+    /**
+     * Índice de lo que YA está en ds-hd, para reusar el id en vez de crear un contacto nuevo.
+     *
+     * El id se deriva de nombre+correo+empresa, así que basta con que en el CRM viejo le
+     * corrijan el correo a alguien (o que cambie el nombre de su empresa) para que al
+     * reimportar salga un id distinto y el contacto quede DUPLICADO. Emparejar primero contra
+     * la base corta eso: la persona se reconoce por su correo, y si no lo trae, por su nombre
+     * dentro de su empresa.
+     */
+    const existentes = await contactoRepo.list();
+    const norm = (v: string): string =>
+      v
+        .normalize('NFD')
+        .replace(RE_DIACRITICOS, '')
+        .toLowerCase()
+        .replace(/\s+/g, ' ')
+        .trim();
+    const porCorreo = new Map<string, string>();
+    const porNombreEmpresa = new Map<string, string>();
+    for (const c of existentes) {
+      if (c.email) porCorreo.set(norm(c.email), c.id);
+      porNombreEmpresa.set(`${c.empresaId}|${norm(c.nombre)}`, c.id);
+    }
+
     for (const d of items) {
       const nombre = s(d.nombre) || 'Sin nombre';
       const empresaNombre = s(d.empresa);
@@ -209,15 +234,27 @@ export function crearImportadores({ dryRun: DRY_RUN, log }: OpcionesImportacion)
         }
       }
       try {
+        const correo = primerCorreo(d.correo);
+        // Se reusa el id del contacto que ya exista (mismo correo, o mismo nombre dentro de la
+        // misma empresa); solo cuando no hay contra qué emparejar se genera uno nuevo.
+        const id =
+          (correo ? porCorreo.get(norm(correo)) : undefined) ??
+          porNombreEmpresa.get(`${empresaId}|${norm(nombre)}`) ??
+          (await hashId('con', nombre, s(d.correo), empresaNombre));
         const contacto = new Contacto({
-          id: await hashId('con', nombre, s(d.correo), empresaNombre),
+          id,
           nombre,
           empresaId,
-          email: primerCorreo(d.correo) || null,
+          email: correo || null,
           telefono: s(d.telefono1) || null,
           celular: s(d.telefono2) || null,
         });
         if (!DRY_RUN) await contactoRepo.save(contacto);
+        // El recién importado también entra al índice: si el mismo respaldo trae dos renglones
+        // de la misma persona (pasa cuando la capturaron dos veces), el segundo actualiza al
+        // primero en vez de sumar otro duplicado.
+        if (correo) porCorreo.set(norm(correo), id);
+        porNombreEmpresa.set(`${empresaId}|${norm(nombre)}`, id);
         ok++;
       } catch (err) {
         log('contactos', `ERROR con "${nombre}": ${err instanceof Error ? err.message : err}`);

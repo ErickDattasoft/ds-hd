@@ -8,7 +8,7 @@
 export const arr = (v: unknown): Record<string, unknown>[] =>
   Array.isArray(v) ? (v as Record<string, unknown>[]) : [];
 
-const RE_DIACRITICOS = new RegExp('[\\u0300-\\u036f]', 'g');
+export const RE_DIACRITICOS = new RegExp('[\\u0300-\\u036f]', 'g');
 
 /** Slug ascii simple para ids legibles y deterministas (mismo texto → mismo id). */
 export function slug(texto: string): string {

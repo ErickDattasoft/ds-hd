@@ -257,4 +257,30 @@ describe('MigracionCrmViejoService', () => {
     expect(cot?.subtotal).toBe(2000);
     expect(cot?.vigenciaDias).toBe(15);
   });
+
+  it('no duplica un contacto al que le corrigieron el correo en el CRM viejo', async () => {
+    await servicio.importar(actor(), respaldo(), { modo: 'actualizar', simulacro: false, secciones: TODO });
+    expect(await contactos.list()).toHaveLength(1);
+
+    // Mismo respaldo, con el correo de Diana corregido: es la misma persona, no una nueva.
+    const corregido = respaldo();
+    (corregido.datos as Record<string, unknown>).contactos = [
+      { nombre: 'Diana', empresa: 'ACME SA', correo: 'diana.perez@acme.mx' },
+    ];
+    await servicio.importar(actor(), corregido, { modo: 'actualizar', simulacro: false, secciones: TODO });
+
+    const lista = await contactos.list();
+    expect(lista).toHaveLength(1);
+    expect(lista[0]?.email).toBe('diana.perez@acme.mx');
+  });
+
+  it('tampoco duplica si en el respaldo la misma persona viene capturada dos veces', async () => {
+    const doble = respaldo();
+    (doble.datos as Record<string, unknown>).contactos = [
+      { nombre: 'Diana', empresa: 'ACME SA', correo: 'diana@acme.mx' },
+      { nombre: 'DIANA ', empresa: 'ACME SA', telefono1: '555' },
+    ];
+    await servicio.importar(actor(), doble, { modo: 'actualizar', simulacro: false, secciones: TODO });
+    expect(await contactos.list()).toHaveLength(1);
+  });
 });
