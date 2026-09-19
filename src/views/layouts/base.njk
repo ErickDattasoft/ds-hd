@@ -21,6 +21,15 @@
   <link rel="stylesheet" href="/static/build/base.css" />
   <link rel="stylesheet" href="/static/build/components.css" />
   {% block head %}{% endblock %}
+  <!-- Los scripts van en el <head> con defer, NO al final de <body>. El shell navega con
+       hx-boost y hx-swap="innerHTML" sobre <body>: dentro del body, htmx los re-ejecutaba en
+       cada navegación y los manejadores de eventos se iban acumulando (un clic llegaba a
+       abrir cuatro veces el mismo confirm, y los botones de alternar se disparaban varias
+       veces y quedaban como estaban). En el head sobreviven al intercambio y corren una vez.
+       Con "defer" igual se ejecutan con el DOM ya construido. -->
+  <script src="/static/vendor/htmx.min.js" defer></script>
+  <script src="/static/vendor/htmx-preload.min.js" defer></script>
+  <script src="/static/build/app.js" defer></script>
 </head>
 <body>
   <a class="skip-link" href="#contenido">Saltar al contenido</a>
@@ -43,9 +52,6 @@
   {% endif %}
 
   <div id="barra-carga" class="barra-carga" aria-hidden="true"></div>
-  <script src="/static/vendor/htmx.min.js" defer></script>
-  <script src="/static/vendor/htmx-preload.min.js" defer></script>
-  <script src="/static/build/app.js" defer></script>
   {% block scripts %}{% endblock %}
 </body>
 </html>

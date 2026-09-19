@@ -1,6 +1,12 @@
 /* JS de cliente de ds-hd. Sin dependencias más allá de htmx (cargado aparte). */
 (function () {
   'use strict';
+
+  // Este archivo engancha manejadores a nivel de documento. Si por lo que sea se llegara a
+  // ejecutar dos veces en la misma página (un intercambio de htmx que arrastre el <script>),
+  // enganchar todo de nuevo haría que cada clic se procese tantas veces como copias haya.
+  if (window.__dsHdAppCargada) return;
+  window.__dsHdAppCargada = true;
   var root = document.documentElement;
 
   // ── Tema (claro / oscuro / sistema) ───────────────────────────────────────
