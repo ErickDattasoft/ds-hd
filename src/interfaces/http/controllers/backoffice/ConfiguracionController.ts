@@ -1,6 +1,7 @@
 import type { Request, Response } from 'express';
 import type { ConfiguracionTicketsService } from '../../../../application/configuracion/ConfiguracionTicketsService.js';
 import { ConfiguracionIntegracionesService } from '../../../../application/configuracion/ConfiguracionIntegracionesService.js';
+import type { MigracionCrmViejoService, ModoImportacion } from '../../../../application/migracion/MigracionCrmViejoService.js';
 import type { BackupService } from '../../../../application/configuracion/BackupService.js';
 import type { AcercaDeService } from '../../../../application/configuracion/AcercaDeService.js';
 import type { ConfiguracionCotizacionesService } from '../../../../application/configuracion/ConfiguracionCotizacionesService.js';
@@ -29,6 +30,7 @@ export class ConfiguracionController {
     private readonly configTickets: ConfiguracionTicketsService,
     private readonly configIntegraciones: ConfiguracionIntegracionesService,
     private readonly backup: BackupService,
+    private readonly migracionCrmViejo: MigracionCrmViejoService,
     private readonly acercaDe: AcercaDeService,
     private readonly configCotizaciones: ConfiguracionCotizacionesService,
     private readonly configCalculadora: ConfiguracionCalculadoraService,
@@ -150,6 +152,21 @@ export class ConfiguracionController {
       res.json({ ok: true, resumen });
     } catch (err) {
       res.status(422).json({ ok: false, error: err instanceof Error ? err.message : 'No se pudo restaurar' });
+    }
+  };
+
+  /**
+   * Importa un respaldo del CRM viejo desde la UI (mismo motor que `scripts/migrate`). El
+   * archivo llega como JSON crudo en el body, igual que la restauración de backups.
+   */
+  importarCrmViejoPost = async (req: Request, res: Response): Promise<void> => {
+    const modo: ModoImportacion = req.query.modo === 'sustituir' ? 'sustituir' : 'actualizar';
+    const simulacro = req.query.simulacro === '1';
+    try {
+      const resultado = await this.migracionCrmViejo.importar(req.user!, req.body ?? {}, { modo, simulacro });
+      res.json({ ok: true, resultado });
+    } catch (err) {
+      res.status(422).json({ ok: false, error: err instanceof Error ? err.message : 'No se pudo importar' });
     }
   };
 

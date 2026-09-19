@@ -235,6 +235,71 @@
     reader.readAsText(file);
   });
 
+  // ── Importar respaldo del CRM viejo: mismo motor que scripts/migrate, desde la UI ──
+  document.addEventListener('submit', function (e) {
+    var form = e.target.closest('[data-importar-crm-viejo]');
+    if (!form) return;
+    e.preventDefault();
+    var input = form.querySelector('input[type="file"]');
+    var file = input && input.files[0];
+    var salida = document.getElementById('resultado-importar-crm-viejo');
+    if (!file || !salida) return;
+    var modoEl = form.querySelector('input[name="modo"]:checked');
+    var modo = modoEl ? modoEl.value : 'actualizar';
+    var simulacro = form.querySelector('input[name="simulacro"]').checked;
+    if (!simulacro) {
+      var aviso =
+        modo === 'sustituir'
+          ? 'SUSTITUIR borra empresas, contactos, tickets, base de conocimiento, versiones y bitácora, y deja solo lo que traiga este archivo. No se puede deshacer. ¿Continuar?'
+          : '¿Importar este respaldo? Se agregará y actualizará lo que traiga el archivo (no se borra nada).';
+      if (!window.confirm(aviso)) return;
+    }
+    var btn = e.submitter || form.querySelector('button[type="submit"]');
+    if (btn) { btn.disabled = true; btn.classList.add('is-loading'); }
+    var reader = new FileReader();
+    reader.onload = function () {
+      salida.innerHTML = '<p class="muted">' + (simulacro ? 'Simulando…' : 'Importando…') + ' esto puede tardar varios minutos, no cierres la página.</p>';
+      fetch(form.getAttribute('action') + '?modo=' + modo + (simulacro ? '&simulacro=1' : ''), {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'x-csrf-token': cookie('x-csrf-token') },
+        body: reader.result,
+      })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          if (!data.ok) {
+            salida.innerHTML = '<p class="alert alert--error">' + data.error + '</p>';
+            return;
+          }
+          var d = data.resultado;
+          var detalle = document.createElement('details');
+          var resumen = document.createElement('summary');
+          resumen.textContent = 'Ver el detalle línea por línea (' + d.lineas.length + ')';
+          var pre = document.createElement('pre');
+          pre.textContent = d.lineas.join('\n');
+          detalle.appendChild(resumen);
+          detalle.appendChild(pre);
+          var p = document.createElement('p');
+          p.className = 'alert ' + (d.simulacro ? 'alert--warning' : 'alert--ok');
+          p.textContent =
+            (d.simulacro ? 'SIMULACRO (no se escribió nada) — se importarían: ' : 'Importado: ') +
+            d.empresas + ' empresas, ' + d.contactos + ' contactos, ' + d.tickets + ' tickets, ' +
+            d.versiones + ' versiones, ' + d.kb + ' artículos de KB, ' + d.bitacora + ' entradas de bitácora.' +
+            (d.usuariosFaltantes ? ' ' + d.usuariosFaltantes + ' usuario(s) del respaldo aún sin cuenta en ds-hd.' : '') +
+            (d.contactosSinEmpresa.length ? ' ' + d.contactosSinEmpresa.length + ' contacto(s) sin empresa emparejada, quedan en "Sin empresa (revisar tras migración)".' : '');
+          salida.innerHTML = '';
+          salida.appendChild(p);
+          salida.appendChild(detalle);
+        })
+        .catch(function () {
+          salida.innerHTML = '<p class="alert alert--error">No se pudo importar. Revisa tu conexión e inténtalo de nuevo.</p>';
+        })
+        .finally(function () {
+          if (btn) { btn.disabled = false; btn.classList.remove('is-loading'); }
+        });
+    };
+    reader.readAsText(file);
+  });
+
   // ── Importar Excel (empresas/contactos): sube el archivo por FormData ──
   document.addEventListener('submit', function (e) {
     var form = e.target.closest('[data-importar-excel]');

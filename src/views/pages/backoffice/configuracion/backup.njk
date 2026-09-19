@@ -62,4 +62,44 @@
     <button class="btn btn--danger" type="submit">Restaurar backup</button>
   </form>
   <div id="resultado-restaurar-backup"></div>
+
+  <h2>📥 Importar respaldo del CRM viejo</h2>
+  <p class="muted">
+    Para el JSON que descarga el botón <strong>"Respaldar"</strong> del CRM DATTASOFT original
+    (el de arriba, "Restaurar", solo acepta respaldos de este mismo sistema). Traduce clientes,
+    contactos, tickets con sus notas y actividad, base de conocimiento, bitácora, versiones de
+    sistemas y la configuración de tickets/avisos/"Acerca de" al modelo de ds-hd.
+  </p>
+  <p class="muted">
+    Los ids se generan de forma determinista, así que <strong>importar el mismo respaldo dos
+    veces no duplica nada</strong>. Los <strong>adjuntos de tickets no se migran aquí</strong>
+    (viven en el Firestore del CRM viejo y hace falta su service account: eso sigue siendo
+    <code>scripts/migrate</code>). Los <strong>usuarios no se crean</strong> — solo se reporta
+    cuáles del respaldo aún no tienen cuenta; dalos de alta desde Usuarios.
+  </p>
+  <form data-importar-crm-viejo action="/app/configuracion/backup/importar-crm-viejo" class="form">
+    <label class="field"><span>Respaldo del CRM viejo (JSON)</span>
+      <input type="file" accept="application/json,.json" required />
+    </label>
+    <fieldset class="field">
+      <legend>¿Qué hacer con lo que ya existe en ds-hd?</legend>
+      <label class="field--check">
+        <input type="radio" name="modo" value="actualizar" checked />
+        <strong>Actualizar</strong> — agrega lo nuevo y actualiza lo que ya está. No borra nada.
+      </label>
+      <label class="field--check">
+        <input type="radio" name="modo" value="sustituir" />
+        <strong>Sustituir</strong> — borra empresas, contactos, tickets, base de conocimiento,
+        versiones y bitácora, y deja solo lo que traiga el archivo. Cotizaciones, eventos y
+        usuarios no se tocan.
+      </label>
+    </fieldset>
+    <label class="field--check">
+      <input type="checkbox" name="simulacro" checked />
+      <strong>Simulacro</strong> — recorre el archivo y reporta qué haría, sin escribir ni
+      borrar nada. Destilda esta casilla para importar de verdad.
+    </label>
+    <button class="btn btn--danger" type="submit">Importar respaldo del CRM viejo</button>
+  </form>
+  <div id="resultado-importar-crm-viejo"></div>
 {% endblock %}

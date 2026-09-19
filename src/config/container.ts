@@ -121,6 +121,7 @@ import { PortalTicketController } from '../interfaces/http/controllers/portal/Po
 import { TicketController } from '../interfaces/http/controllers/backoffice/TicketController.js';
 import { ConfiguracionController } from '../interfaces/http/controllers/backoffice/ConfiguracionController.js';
 import { BackupService } from '../application/configuracion/BackupService.js';
+import { MigracionCrmViejoService } from '../application/migracion/MigracionCrmViejoService.js';
 import { TicketPublicoController } from '../interfaces/http/controllers/public/TicketPublicoController.js';
 import { BrevoWebhookController } from '../interfaces/http/controllers/webhooks/BrevoWebhookController.js';
 import { EmpresaController } from '../interfaces/http/controllers/backoffice/EmpresaController.js';
@@ -304,6 +305,7 @@ export interface Cradle {
   ticketController: TicketController;
   configuracionController: ConfiguracionController;
   backupService: BackupService;
+  migracionCrmViejoService: MigracionCrmViejoService;
   ticketPublicoController: TicketPublicoController;
   brevoWebhookController: BrevoWebhookController;
   empresaController: EmpresaController;
@@ -1005,6 +1007,7 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
           c.configuracionTicketsService,
           c.configuracionIntegracionesService,
           c.backupService,
+          c.migracionCrmViejoService,
           c.acercaDeService,
           c.configuracionCotizacionesService,
           c.configuracionCalculadoraService,
@@ -1121,6 +1124,13 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
           c.correoEntranteService,
         ),
     ).singleton(),
+  });
+
+  // Aparte del bloque de arriba porque necesita el `container` mismo (no el cradle): los
+  // importadores del CRM viejo resuelven repositorios por nombre, igual que hacen los scripts
+  // de migración, que es lo que les permite compartir el mismo código.
+  container.register({
+    migracionCrmViejoService: asFunction(() => new MigracionCrmViejoService(container)).singleton(),
   });
 
   for (const [nombre, valor] of Object.entries(overrides)) {

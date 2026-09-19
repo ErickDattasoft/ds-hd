@@ -356,6 +356,9 @@ export function backofficeRoutes(container: Container): Router {
   r.post('/configuracion/backup/restaurar', requirePermission('configuracion:integraciones'), (req, res) =>
     configuracion().backupRestaurarPost(req, res),
   );
+  r.post('/configuracion/backup/importar-crm-viejo', requirePermission('configuracion:integraciones'), (req, res) =>
+    configuracion().importarCrmViejoPost(req, res),
+  );
   r.get('/configuracion/excel', requirePermission('configuracion:integraciones'), (req, res) =>
     configuracion().excelView(req, res),
   );
