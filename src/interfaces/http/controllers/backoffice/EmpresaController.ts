@@ -95,6 +95,10 @@ export class EmpresaController {
     if (soloPendientes) {
       filas = filas.filter((f) => f.vencidas || f.porVencer || f.desactualizadas);
     }
+    // Las favoritas van arriba, como en el CRM viejo: marcar una empresa es justamente decir
+    // "a esta la quiero a la mano". Dentro de cada grupo se mantiene el orden por nombre que
+    // ya traía el repositorio, para que la lista no cambie de criterio a media tabla.
+    filas.sort((a, b) => Number(b.empresa.favorita) - Number(a.empresa.favorita));
     res.render('pages/backoffice/empresas/list', {
       titulo: 'Empresas',
       filas,

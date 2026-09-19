@@ -20,7 +20,7 @@
     </div>
   </div>
   {% if can('empresas:editar') %}
-    <form id="fav-empresa" method="post" action="/app/empresas/{{ empresa.id }}/favorita" hidden>
+    <form id="fav-empresa" method="post" action="/app/empresas/{{ empresa.id }}/favorita" hx-boost="false" hidden>
       <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
       <input type="hidden" name="favorita" value="{{ 'false' if empresa.favorita else 'true' }}" />
       <input type="hidden" name="volver" value="/app/empresas/{{ empresa.id }}" />

@@ -94,7 +94,7 @@
       {% endif %}
     </form>
     {% for fila in filas %}
-      <form id="fav-{{ fila.empresa.id }}" method="post" action="/app/empresas/{{ fila.empresa.id }}/favorita" hidden>
+      <form id="fav-{{ fila.empresa.id }}" method="post" action="/app/empresas/{{ fila.empresa.id }}/favorita" hx-boost="false" hidden>
         <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
         <input type="hidden" name="favorita" value="{{ 'false' if fila.empresa.favorita else 'true' }}" />
         <input type="hidden" name="volver" value="/app/empresas{{ qs }}" />

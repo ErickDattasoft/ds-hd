@@ -1589,15 +1589,21 @@
   });
 
   // ── Favoritas: alternar sin recargar la página ────────────────────────────
-  document.addEventListener('submit', function (ev) {
-    var form = ev.target;
-    if (!form.id || form.id.indexOf('fav-') !== 0 || !window.fetch) return;
+  // Se intercepta el CLIC del botón, no el "submit" del formulario. Enganchados al submit,
+  // htmx llegaba a mandar también su propia petición del formulario boosteado y volvía a
+  // pintar la página con el estado anterior — la estrella se revertía sola y solo se veía el
+  // cambio al salir y volver a entrar. El formulario además lleva hx-boost="false" escrito en
+  // la plantilla, para no depender de en qué orden corran htmx y este archivo.
+  document.addEventListener('click', function (ev) {
+    var boton = ev.target.closest && ev.target.closest('button[form^="fav-"]');
+    if (!boton || !window.fetch) return;
+    var form = document.getElementById(boton.getAttribute('form'));
+    if (!form) return;
+    // Sin submit no hay navegación ni petición de htmx que compita con la nuestra.
     ev.preventDefault();
     var input = form.querySelector('input[name="favorita"]');
-    var boton = document.querySelector('button[form="' + form.id + '"]');
     var marcar = input.value === 'true';
     var pintar = function (on) {
-      if (!boton) return;
       boton.textContent = on ? '⭐' : '☆';
       boton.setAttribute('aria-pressed', on ? 'true' : 'false');
       boton.title = on ? 'Quitar de favoritas' : 'Marcar como favorita';
