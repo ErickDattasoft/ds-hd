@@ -30,6 +30,11 @@ export interface ITicketRepository {
    */
   guardarConDetalle(ticket: Ticket, notas: NotaTicket[], eventos: EventoTicket[]): Promise<void>;
 
+  /** Muchos tickets con su detalle, en el menor número de escrituras posible. */
+  guardarVariosConDetalle(
+    items: { ticket: Ticket; notas: NotaTicket[]; eventos: EventoTicket[] }[],
+  ): Promise<void>;
+
   /** Borrado permanente de varios tickets (con sus notas y eventos), agrupando las llamadas. */
   eliminarVarios(ids: string[]): Promise<void>;
 }

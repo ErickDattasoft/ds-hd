@@ -1,4 +1,4 @@
-import type { Firestore } from 'firebase-admin/firestore';
+import type { DocumentData, DocumentReference, Firestore, WriteBatch } from 'firebase-admin/firestore';
 import type { ITicketRepository } from '../../core/ports/repositories/ITicketRepository.js';
 import type { Ticket } from '../../core/entities/Ticket.js';
 import type { EventoTicket, NotaTicket } from '../../core/entities/NotaTicket.js';
@@ -30,36 +30,69 @@ export class FirestoreTicketRepository implements ITicketRepository {
   }
 
   /**
-   * Borrado permanente agrupando las llamadas: leer las dos subcolecciones de cada ticket y
-   * borrar hijo por hijo son cientos de peticiones HTTP cuando se vacía la tabla entera (modo
-   * "sustituir" de la importación), y un worker tiene un tope por request.
+   * Borrado permanente de varios tickets con sus notas y eventos.
+   *
+   * El coste está en las LECTURAS: preguntar por las dos subcolecciones de cada ticket son dos
+   * peticiones por ticket (112 para vaciar una tabla de 56), y un worker tiene un tope por
+   * request bastante más bajo que eso. Con una consulta de grupo por subcolección son dos
+   * lecturas en total, se filtran por ticket en memoria y los borrados van en tandas.
    */
   async eliminarVarios(ids: string[]): Promise<void> {
     if (!ids.length) return;
-    const batch = this.db.batch();
-    for (const id of ids) {
-      const ref = this.db.collection(COL).doc(id);
-      for (const sub of ['notas', 'eventos']) {
-        const hijos = await ref.collection(sub).get();
-        for (const h of hijos.docs) batch.delete(h.ref);
+    const objetivo = new Set(ids);
+    const refs = [];
+    for (const sub of ['notas', 'eventos']) {
+      const hijos = await this.db.collectionGroup(sub).get();
+      for (const h of hijos.docs) {
+        // `tickets/<id>/<sub>/<doc>`: solo los hijos de los tickets que se están borrando.
+        const partes = h.ref.path.split('/');
+        if (partes[0] === COL && objetivo.has(partes[1] ?? '')) refs.push(h.ref);
       }
-      batch.delete(ref);
     }
-    await batch.commit();
+    for (const id of ids) refs.push(this.db.collection(COL).doc(id));
+    await this.enTandas(refs, (batch, ref) => batch.delete(ref));
   }
 
-  /** Ticket + sus notas + sus eventos en UNA sola escritura (ver `RestWriteBatch`). */
+  /** Ticket + sus notas + sus eventos en una sola escritura. */
   async guardarConDetalle(
     ticket: Ticket,
     notas: NotaTicket[],
     eventos: EventoTicket[],
   ): Promise<void> {
-    const ref = this.db.collection(COL).doc(ticket.id);
-    const batch = this.db.batch();
-    batch.set(ref, TicketMapper.toDocument(ticket), { merge: true });
-    for (const n of notas) batch.set(ref.collection('notas').doc(n.id), TicketMapper.notaToDoc(n));
-    for (const e of eventos) batch.set(ref.collection('eventos').doc(e.id), TicketMapper.eventoToDoc(e));
-    await batch.commit();
+    await this.guardarVariosConDetalle([{ ticket, notas, eventos }]);
+  }
+
+  /**
+   * Muchos tickets con su detalle, agrupados en tandas de 500 escrituras.
+   *
+   * Un commit por ticket ya eran 56 peticiones en el respaldo real, por encima del tope de
+   * subpeticiones de un worker por sí solas. Así, los 56 tickets con sus 148 entradas de
+   * actividad caben en una sola llamada.
+   */
+  async guardarVariosConDetalle(
+    items: { ticket: Ticket; notas: NotaTicket[]; eventos: EventoTicket[] }[],
+  ): Promise<void> {
+    const escrituras: { ref: DocumentReference; datos: DocumentData; merge: boolean }[] = [];
+    for (const { ticket, notas, eventos } of items) {
+      const ref = this.db.collection(COL).doc(ticket.id);
+      escrituras.push({ ref, datos: TicketMapper.toDocument(ticket), merge: true });
+      for (const n of notas) {
+        escrituras.push({ ref: ref.collection('notas').doc(n.id), datos: TicketMapper.notaToDoc(n), merge: false });
+      }
+      for (const e of eventos) {
+        escrituras.push({ ref: ref.collection('eventos').doc(e.id), datos: TicketMapper.eventoToDoc(e), merge: false });
+      }
+    }
+    await this.enTandas(escrituras, (batch, w) => batch.set(w.ref, w.datos, { merge: w.merge }));
+  }
+
+  /** Aplica `op` a cada elemento repartiéndolos en lotes de 500 (el máximo de un commit). */
+  private async enTandas<T>(items: T[], op: (batch: WriteBatch, item: T) => void): Promise<void> {
+    for (let i = 0; i < items.length; i += 500) {
+      const batch = this.db.batch();
+      for (const item of items.slice(i, i + 500)) op(batch, item);
+      await batch.commit();
+    }
   }
 
   async agregarNota(ticketId: string, nota: NotaTicket): Promise<void> {

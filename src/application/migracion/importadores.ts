@@ -306,6 +306,9 @@ export function crearImportadores({ dryRun: DRY_RUN, log }: OpcionesImportacion)
     items: { d: Dato; numero: number; archivado: boolean }[],
   ): Promise<number> {
     const repo = c.resolve('ticketRepo');
+    // Se acumulan TODOS y se escriben juntos al final: un commit por ticket ya eran 56
+    // peticiones con el respaldo real, por encima del tope de subpeticiones de un worker.
+    const porGuardar: { ticket: Ticket; notas: NotaTicket[]; eventos: EventoTicket[] }[] = [];
     let ok = 0;
     for (const { d, numero, archivado } of items) {
       const asunto = s(d.asunto) || 'Sin asunto';
@@ -399,13 +402,14 @@ export function crearImportadores({ dryRun: DRY_RUN, log }: OpcionesImportacion)
               at: fecha(a.fecha),
             });
           }
-          await repo.guardarConDetalle(ticket, notas, eventos);
+          porGuardar.push({ ticket, notas, eventos });
         }
         ok++;
       } catch (err) {
         log('tickets', `ERROR con #${numero} "${asunto}": ${err instanceof Error ? err.message : err}`);
       }
     }
+    if (!DRY_RUN) await repo.guardarVariosConDetalle(porGuardar);
     return ok;
   }
 

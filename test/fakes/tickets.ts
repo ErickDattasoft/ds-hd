@@ -72,6 +72,11 @@ export class InMemoryTicketRepository implements ITicketRepository {
   async eliminarVarios(ids: string[]): Promise<void> {
     for (const id of ids) await this.eliminar(id);
   }
+  async guardarVariosConDetalle(
+    items: { ticket: Ticket; notas: NotaTicket[]; eventos: EventoTicket[] }[],
+  ): Promise<void> {
+    for (const i of items) await this.guardarConDetalle(i.ticket, i.notas, i.eventos);
+  }
   async guardarConDetalle(
     ticket: Ticket,
     notas: NotaTicket[],
