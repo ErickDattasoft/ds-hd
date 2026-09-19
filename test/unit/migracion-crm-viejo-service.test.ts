@@ -354,4 +354,30 @@ describe('MigracionCrmViejoService', () => {
     });
     expect((await contactos.list()).map((c) => c.nombre).sort()).toEqual(['Luis', 'Martha']);
   });
+
+  it('dos contactos distintos nunca acaban en el mismo documento', async () => {
+    // Caso real del respaldo: dos personas con el mismo nombre y el mismo correo en empresas
+    // distintas ("ARQUITECTURA MODERNA" y "Q ARQUITECTURA MODERNA"). Una reutiliza el registro
+    // que ya existe y a la otra el hash le daba ese mismo id: la segunda escritura pisaba a la
+    // primera y se perdía un contacto sin avisar.
+    const dos = respaldo();
+    (dos.datos as Record<string, unknown>).clientes = [
+      { EMPRESA: 'ARQUITECTURA MODERNA' },
+      { EMPRESA: 'Q ARQUITECTURA MODERNA' },
+    ];
+    (dos.datos as Record<string, unknown>).contactos = [
+      { nombre: 'Martha', empresa: 'Q ARQUITECTURA MODERNA', correo: 'tesoreria@x.mx' },
+      { nombre: 'Martha', empresa: 'ARQUITECTURA MODERNA', correo: 'tesoreria@x.mx' },
+    ];
+    await servicio.importar(actor(), dos, {
+      modo: 'actualizar',
+      simulacro: false,
+      secciones: ['empresas', 'contactos'],
+    });
+
+    const lista = await contactos.list();
+    expect(lista).toHaveLength(2);
+    expect(new Set(lista.map((c) => c.id)).size).toBe(2);
+    expect(lista.map((c) => c.empresaId).sort()).toEqual(['arquitectura-moderna', 'q-arquitectura-moderna']);
+  });
 });

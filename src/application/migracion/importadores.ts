@@ -223,6 +223,8 @@ export function crearImportadores({ dryRun: DRY_RUN, log }: OpcionesImportacion)
     // solo por correo las fundía en una sola — se perdían contactos al importar.
     const porCorreo = new Map<string, string>();
     const porNombreEmpresa = new Map<string, string>();
+    /** Id de documento → identidad (empresa + nombre) que lo reclamó en ESTA corrida. */
+    const duenoDeId = new Map<string, string>();
     for (const c of existentes) {
       if (c.email) porCorreo.set(`${c.empresaId}|${norm(c.email)}`, c.id);
       porNombreEmpresa.set(`${c.empresaId}|${norm(c.nombre)}`, c.id);
@@ -246,10 +248,21 @@ export function crearImportadores({ dryRun: DRY_RUN, log }: OpcionesImportacion)
         const correo = primerCorreo(d.correo);
         // Se reusa el id del contacto que ya exista (mismo correo, o mismo nombre dentro de la
         // misma empresa); solo cuando no hay contra qué emparejar se genera uno nuevo.
-        const id =
+        const identidad = `${empresaId}|${norm(nombre)}`;
+        let id =
           (correo ? porCorreo.get(`${empresaId}|${norm(correo)}`) : undefined) ??
-          porNombreEmpresa.get(`${empresaId}|${norm(nombre)}`) ??
+          porNombreEmpresa.get(identidad) ??
           (await hashId('con', nombre, s(d.correo), empresaNombre));
+        // Dos personas DISTINTAS no pueden acabar en el mismo documento: la segunda escritura
+        // pisaba a la primera y se perdía un contacto en silencio. Pasa con dos personas del
+        // mismo nombre y correo en empresas distintas: a una el hash le da el id que la otra ya
+        // ocupa. Se compara por identidad (empresa + nombre), no por id: si quien ya reclamó
+        // ese documento es la MISMA persona —el respaldo la trae capturada dos veces— se
+        // comparte a propósito; si es otra, se desempata.
+        for (let i = 1; (duenoDeId.get(id) ?? identidad) !== identidad; i++) {
+          id = await hashId('con', nombre, s(d.correo), empresaNombre, empresaId, String(i));
+        }
+        duenoDeId.set(id, identidad);
         const contacto = new Contacto({
           id,
           nombre,
