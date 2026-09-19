@@ -57,6 +57,12 @@
       <button class="btn btn--sm btn--secondary" type="submit" name="accion" value="licencias-correo">Avisar licencias (correo)</button>
       <button class="btn btn--sm btn--ghost" type="submit" name="accion" value="versiones-whatsapp">Avisar versiones (WhatsApp)</button>
       <button class="btn btn--sm btn--ghost" type="submit" name="accion" value="licencias-whatsapp">Avisar licencias (WhatsApp)</button>
+      {# Cuántas hay con algo pendiente, como en el CRM viejo: se ve si vale la pena abrirlos
+         sin tener que filtrar primero, y cada uno lleva al listado ya filtrado. #}
+      <span class="acciones-lote__conteos">
+        <a href="/app/empresas?pendientes=1" class="badge {{ 'badge--danger' if conLicencias else '' }}">{{ conLicencias }} con licencias por vencer o vencidas</a>
+        <a href="/app/empresas?pendientes=1" class="badge {{ 'badge--warning' if conVersiones else '' }}">{{ conVersiones }} con sistemas desactualizados</a>
+      </span>
     </form>
   {% elif can('empresas:editar') %}
     <form id="avisar-form" method="post" action="/app/empresas/avisar" hidden>
@@ -68,7 +74,7 @@
     <thead>
       <tr>
         {% if can('empresas:editar') %}<th></th><th aria-label="Favorita"></th>{% endif %}
-        <th>Nombre</th><th>RFC</th><th>Teléfono</th><th>Sistemas</th><th>Licencias</th><th>Versiones</th><th>Estado</th>
+        <th>Nombre</th><th>Contacto principal</th><th>Correo</th><th>RFC</th><th>Teléfono</th><th>Sistemas</th><th>Licencias</th><th>Versiones</th><th>Estado</th>
       </tr>
     </thead>
     <tbody>
@@ -82,7 +88,12 @@
                       aria-pressed="{{ 'true' if e.favorita else 'false' }}">{{ '⭐' if e.favorita else '☆' }}</button>
             </td>
           {% endif %}
-          <td><a href="/app/empresas/{{ e.id }}">{{ e.nombre }}</a>{% if e.email %} <a href="mailto:{{ e.email }}" title="Escribir correo a {{ e.email }}" aria-label="Escribir correo">✉️</a>{% endif %}</td>
+          <td><a href="/app/empresas/{{ e.id }}">{{ e.nombre }}</a></td>
+          <td>{{ fila.contactoPrincipal.nombre if fila.contactoPrincipal else '—' }}</td>
+          <td>
+            {% set correo = e.email or (fila.contactoPrincipal.email if fila.contactoPrincipal) %}
+            {% if correo %}<a href="mailto:{{ correo }}" title="Escribir a {{ correo }}">{{ correo }}</a>{% else %}<span class="muted">—</span>{% endif %}
+          </td>
           <td>{{ e.rfc or '—' }}</td>
           <td>{{ e.telefono or '—' }}</td>
           <td>{{ e.sistemasContratados | length }}</td>
@@ -96,7 +107,7 @@
           </td>
           <td>{{ 'Activa' if e.activa else 'Archivada' }}</td>
         </tr>
-      {% else %}<tr><td colspan="9" class="muted">📭 Sin empresas que coincidan.{% if can('empresas:crear') %} Ajusta la búsqueda o <a href="/app/empresas/nueva">crea una nueva</a>.{% endif %}</td></tr>{% endfor %}
+      {% else %}<tr><td colspan="11" class="muted">📭 Sin empresas que coincidan.{% if can('empresas:crear') %} Ajusta la búsqueda o <a href="/app/empresas/nueva">crea una nueva</a>.{% endif %}</td></tr>{% endfor %}
     </tbody>
   </table>
 

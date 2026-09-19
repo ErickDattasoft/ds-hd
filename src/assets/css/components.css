@@ -1033,3 +1033,5 @@ fieldset.field {
 
 /* Acciones en lote sobre las filas marcadas de una tabla (p. ej. avisar a varias empresas). */
 .acciones-lote { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); margin-block: var(--space-3); }
+.acciones-lote__conteos { display: inline-flex; flex-wrap: wrap; gap: var(--space-2); margin-left: auto; }
+.acciones-lote__conteos a { text-decoration: none; }
