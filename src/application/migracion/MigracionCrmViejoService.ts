@@ -74,6 +74,8 @@ export interface ResultadoImportacion {
   empresas: number;
   contactos: number;
   tickets: number;
+  /** Cuántos tickets traía el archivo (si no coincide con `tickets`, algunos no entraron). */
+  ticketsEnArchivo: number;
   eventos: number;
   cotizaciones: number;
   versiones: number;
@@ -169,6 +171,7 @@ export class MigracionCrmViejoService {
       empresas: empresas?.ok ?? 0,
       contactos: contactos?.ok ?? 0,
       tickets: tickets?.ok ?? 0,
+      ticketsEnArchivo: tickets?.total ?? 0,
       eventos: eventos?.ok ?? 0,
       cotizaciones: cotizaciones?.ok ?? 0,
       versiones,
@@ -233,7 +236,15 @@ export class MigracionCrmViejoService {
       const repo = this.c.resolve('eventoRepo');
       const eventos = await repo.list();
       conteo.eventos = eventos.length;
-      if (!simulacro) for (const e of eventos) await repo.eliminar(e.id);
+      if (!simulacro) {
+        const inscripciones = this.c.resolve('inscripcionRepo');
+        for (const e of eventos) {
+          // Las inscripciones cuelgan del evento en una subcolección y no se borran solas:
+          // sin esto quedarían huérfanas, ocupando espacio y sin pantalla desde la que verlas.
+          await inscripciones.eliminarPorEvento(e.id);
+          await repo.eliminar(e.id);
+        }
+      }
     }
     if (trae('contactos')) {
       const repo = this.c.resolve('contactoRepo');

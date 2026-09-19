@@ -419,9 +419,15 @@ export function crearImportadores({ dryRun: DRY_RUN, log }: OpcionesImportacion)
     let siguienteLibre =
       Math.max(maxExistente, ...[...activos, ...papelera].map((d) => Number(d.numero ?? 0))) + 1;
     const renumerados: string[] = [];
+    const sinFolio: string[] = [];
     const asignar = (d: Dato, archivado: boolean) => {
       const original = Number(d.numero ?? 0);
-      if (!original) return null;
+      if (!original) {
+        // Sin folio no hay forma de darle identidad estable al ticket (el id es `tic-<folio>`),
+        // así que se omite — pero se dice cuál, que antes desaparecía sin dejar rastro.
+        sinFolio.push(`${s(d.asunto) || 'sin asunto'} (${s(d.empresa) || 'sin empresa'})`);
+        return null;
+      }
       let numero = original;
       if (usados.has(numero)) {
         numero = siguienteLibre++;
@@ -449,6 +455,17 @@ export function crearImportadores({ dryRun: DRY_RUN, log }: OpcionesImportacion)
     if (renumerados.length) {
       log('tickets', `${renumerados.length} folios colisionados, reasignados:`);
       for (const linea of renumerados) log('tickets', `  - ${linea}`);
+    }
+    if (sinFolio.length) {
+      log('tickets', `${sinFolio.length} OMITIDOS por no traer folio en el respaldo:`);
+      for (const linea of sinFolio) log('tickets', `  - ${linea}`);
+    }
+    const perdidos = total - ok;
+    if (perdidos > 0) {
+      log(
+        'tickets',
+        `ATENCIÓN: ${perdidos} de ${total} no se importaron (ver las líneas de arriba: sin folio o con ERROR).`,
+      );
     }
     return { ok, total };
   }

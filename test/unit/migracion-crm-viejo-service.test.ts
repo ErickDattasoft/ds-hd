@@ -83,6 +83,7 @@ describe('MigracionCrmViejoService', () => {
   let contactos: InMemoryContactoRepository;
   let ticketQueries: InMemoryTicketQueries;
   let eventos: InMemoryEventoRepository;
+  let inscripciones: { borrados: string[]; eliminarPorEvento(id: string): Promise<void> };
   let cotizaciones: InMemoryCotizacionRepository;
   let servicio: MigracionCrmViejoService;
 
@@ -90,6 +91,12 @@ describe('MigracionCrmViejoService', () => {
     empresas = new InMemoryEmpresaRepository();
     contactos = new InMemoryContactoRepository();
     eventos = new InMemoryEventoRepository();
+    inscripciones = {
+      borrados: [],
+      async eliminarPorEvento(id: string) {
+        this.borrados.push(id);
+      },
+    };
     cotizaciones = new InMemoryCotizacionRepository();
     const store = new InMemoryTicketStore();
     ticketQueries = new InMemoryTicketQueries(store);
@@ -105,6 +112,7 @@ describe('MigracionCrmViejoService', () => {
       bitacoraRepo: new InMemoryBitacoraRepository(),
       usuarioRepo: new InMemoryUsuarioRepository(),
       eventoRepo: eventos,
+      inscripcionRepo: inscripciones,
       cotizacionRepo: cotizaciones,
     };
     const container = { resolve: (n: string) => repos[n] } as unknown as Container;
@@ -282,5 +290,13 @@ describe('MigracionCrmViejoService', () => {
     ];
     await servicio.importar(actor(), doble, { modo: 'actualizar', simulacro: false, secciones: TODO });
     expect(await contactos.list()).toHaveLength(1);
+  });
+
+  it('al sustituir eventos también borra sus inscripciones (no las deja huérfanas)', async () => {
+    await servicio.importar(actor(), respaldo(), { modo: 'actualizar', simulacro: false, secciones: ['eventos'] });
+    const [ev] = await eventos.list();
+
+    await servicio.importar(actor(), respaldo(), { modo: 'sustituir', simulacro: false, secciones: ['eventos'] });
+    expect(inscripciones.borrados).toContain(ev!.id);
   });
 });

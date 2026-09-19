@@ -318,10 +318,12 @@
           p.className = 'alert ' + (d.simulacro ? 'alert--warning' : 'alert--ok');
           p.textContent =
             (d.simulacro ? 'SIMULACRO (no se escribió nada) — se importarían: ' : 'Importado: ') +
-            d.empresas + ' empresas, ' + d.contactos + ' contactos, ' + d.tickets + ' tickets, ' +
+            d.empresas + ' empresas, ' + d.contactos + ' contactos, ' +
+            d.tickets + (d.ticketsEnArchivo && d.ticketsEnArchivo !== d.tickets ? ' de ' + d.ticketsEnArchivo : '') + ' tickets, ' +
             d.eventos + ' eventos, ' + d.cotizaciones + ' cotizaciones, ' +
             d.versiones + ' versiones, ' + d.kb + ' artículos de KB, ' + d.bitacora + ' entradas de bitácora.' +
             (d.usuariosFaltantes ? ' ' + d.usuariosFaltantes + ' usuario(s) del respaldo aún sin cuenta en ds-hd.' : '') +
+            (d.ticketsEnArchivo > d.tickets ? ' ⚠️ ' + (d.ticketsEnArchivo - d.tickets) + ' ticket(s) del archivo NO se importaron — abre el detalle para ver cuáles y por qué.' : '') +
             (d.contactosSinEmpresa.length ? ' ' + d.contactosSinEmpresa.length + ' contacto(s) sin empresa emparejada, quedan en "Sin empresa (revisar tras migración)".' : '') +
             (d.cotizacionesSinEmpresa.length ? ' ' + d.cotizacionesSinEmpresa.length + ' cotización(es) sin empresa emparejada.' : '');
           salida.innerHTML = '';
