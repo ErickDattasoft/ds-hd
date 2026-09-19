@@ -17,6 +17,15 @@ import {
 } from '../fakes/tickets.js';
 import { InMemoryVersionRepository, InMemoryKnowledgeRepository } from '../fakes/kb.js';
 import { InMemoryUsuarioRepository } from '../fakes/InMemoryUsuarioRepository.js';
+import { InMemoryCotizacionRepository } from '../fakes/cotizaciones.js';
+import { InMemoryEventoRepository } from '../fakes/eventos.js';
+import {
+  SECCIONES_IMPORTACION,
+  type SeccionImportacion,
+} from '../../src/application/migracion/MigracionCrmViejoService.js';
+
+/** Todas las secciones: el comportamiento previo a poder elegirlas una por una. */
+const TODO: SeccionImportacion[] = [...SECCIONES_IMPORTACION];
 
 const actor = (permisos: string[] = ['configuracion:integraciones']): SessionUser => ({
   uid: 'admin1',
@@ -43,6 +52,28 @@ const respaldo = (): Record<string, unknown> => ({
     usuarios: [{ email: 'nuevo@dattasoft.mx', nombre: 'Nuevo' }],
     versionesMercado: { CONTPAQi: '2.0' },
     bitacora: [{ msg: 'algo pasó', fecha: '2026-01-01T00:00:00Z', usuario: 'erick' }],
+    eventos: [
+      {
+        id: 'ev_1700000000000',
+        nombre: 'Webinar de cierre anual',
+        fecha: '2026-11-20',
+        hora: '17:00',
+        sistema: 'CONTPAQi',
+        empresas: [{ nombre: 'ACME SA', sistema: 'CONTPAQi', invitado: true, respuesta: 'ASISTIRA' }],
+        extras: [{ nombre: 'Luis Referido', fuente: 'Redes Sociales', invitado: false, respuesta: 'PENDIENTE' }],
+      },
+    ],
+    cotizaciones: [
+      {
+        id: 'cot_1700000000001',
+        numero: 'COT-2026-007',
+        estado: 'enviada',
+        empresaNombre: 'ACME SA',
+        fechaCreacion: '2026-03-01',
+        fechaVigencia: '2026-03-16',
+        conceptos: [{ descripcion: 'Licencia', cantidad: 2, precioUnitario: 1000, descuento: 0, tieneIVA: true }],
+      },
+    ],
   },
 });
 
@@ -51,11 +82,15 @@ describe('MigracionCrmViejoService', () => {
   let empresas: InMemoryEmpresaRepository;
   let contactos: InMemoryContactoRepository;
   let ticketQueries: InMemoryTicketQueries;
+  let eventos: InMemoryEventoRepository;
+  let cotizaciones: InMemoryCotizacionRepository;
   let servicio: MigracionCrmViejoService;
 
   beforeEach(() => {
     empresas = new InMemoryEmpresaRepository();
     contactos = new InMemoryContactoRepository();
+    eventos = new InMemoryEventoRepository();
+    cotizaciones = new InMemoryCotizacionRepository();
     const store = new InMemoryTicketStore();
     ticketQueries = new InMemoryTicketQueries(store);
     repos = {
@@ -69,6 +104,8 @@ describe('MigracionCrmViejoService', () => {
       knowledgeRepo: new InMemoryKnowledgeRepository(),
       bitacoraRepo: new InMemoryBitacoraRepository(),
       usuarioRepo: new InMemoryUsuarioRepository(),
+      eventoRepo: eventos,
+      cotizacionRepo: cotizaciones,
     };
     const container = { resolve: (n: string) => repos[n] } as unknown as Container;
     servicio = new MigracionCrmViejoService(container);
@@ -76,7 +113,7 @@ describe('MigracionCrmViejoService', () => {
 
   it('rechaza a quien no tiene el permiso de integraciones', async () => {
     await expect(
-      servicio.importar(actor([]), respaldo(), { modo: 'actualizar', simulacro: true }),
+      servicio.importar(actor([]), respaldo(), { modo: 'actualizar', simulacro: true, secciones: TODO }),
     ).rejects.toBeInstanceOf(ForbiddenError);
   });
 
@@ -87,13 +124,13 @@ describe('MigracionCrmViejoService', () => {
       servicio.importar(
         actor(),
         { version: 1, generadoEn: '2026-09-18T00:00:00Z', empresas: [], contactos: [], tickets: [] },
-        { modo: 'actualizar', simulacro: true },
+        { modo: 'actualizar', simulacro: true, secciones: TODO },
       ),
     ).rejects.toBeInstanceOf(ValidationError);
   });
 
   it('en simulacro reporta lo que importaría sin escribir nada', async () => {
-    const r = await servicio.importar(actor(), respaldo(), { modo: 'actualizar', simulacro: true });
+    const r = await servicio.importar(actor(), respaldo(), { modo: 'actualizar', simulacro: true, secciones: TODO });
     expect(r.empresas).toBe(1);
     expect(r.contactos).toBe(1);
     expect(r.tickets).toBe(1);
@@ -102,35 +139,41 @@ describe('MigracionCrmViejoService', () => {
   });
 
   it('importa de verdad y es idempotente (reimportar no duplica)', async () => {
-    await servicio.importar(actor(), respaldo(), { modo: 'actualizar', simulacro: false });
+    await servicio.importar(actor(), respaldo(), { modo: 'actualizar', simulacro: false, secciones: TODO });
     expect(await empresas.list()).toHaveLength(1);
     expect(await contactos.list()).toHaveLength(1);
 
-    await servicio.importar(actor(), respaldo(), { modo: 'actualizar', simulacro: false });
+    await servicio.importar(actor(), respaldo(), { modo: 'actualizar', simulacro: false, secciones: TODO });
     expect(await empresas.list()).toHaveLength(1);
     expect(await contactos.list()).toHaveLength(1);
   });
 
   it('modo actualizar conserva lo que ya existía y no viene en el archivo', async () => {
-    await servicio.importar(actor(), respaldo(), { modo: 'actualizar', simulacro: false });
+    await servicio.importar(actor(), respaldo(), { modo: 'actualizar', simulacro: false, secciones: TODO });
     const previas = (await empresas.list()).length;
 
     const otro = respaldo();
     (otro.datos as Record<string, unknown>).clientes = [{ EMPRESA: 'OTRA SA' }];
     (otro.datos as Record<string, unknown>).contactos = [];
-    await servicio.importar(actor(), otro, { modo: 'actualizar', simulacro: false });
+    // Sin cotizaciones: las del respaldo son de ACME SA y, al no venir ya esa empresa,
+    // crearían el buzón "Sin empresa (revisar tras migración)" — ruido para esta prueba.
+    (otro.datos as Record<string, unknown>).cotizaciones = [];
+    await servicio.importar(actor(), otro, { modo: 'actualizar', simulacro: false, secciones: TODO });
 
     expect((await empresas.list()).map((e) => e.nombre).sort()).toEqual(['ACME SA', 'OTRA SA']);
     expect(previas).toBe(1);
   });
 
   it('modo sustituir borra lo previo y deja solo lo del archivo', async () => {
-    await servicio.importar(actor(), respaldo(), { modo: 'actualizar', simulacro: false });
+    await servicio.importar(actor(), respaldo(), { modo: 'actualizar', simulacro: false, secciones: TODO });
 
     const otro = respaldo();
     (otro.datos as Record<string, unknown>).clientes = [{ EMPRESA: 'OTRA SA' }];
     (otro.datos as Record<string, unknown>).contactos = [];
-    const r = await servicio.importar(actor(), otro, { modo: 'sustituir', simulacro: false });
+    // Sin cotizaciones: las del respaldo son de ACME SA y, al no venir ya esa empresa,
+    // crearían el buzón "Sin empresa (revisar tras migración)" — ruido para esta prueba.
+    (otro.datos as Record<string, unknown>).cotizaciones = [];
+    const r = await servicio.importar(actor(), otro, { modo: 'sustituir', simulacro: false, secciones: TODO });
 
     const nombres = (await empresas.list()).map((e) => e.nombre);
     expect(nombres).toEqual(['OTRA SA']);
@@ -139,14 +182,79 @@ describe('MigracionCrmViejoService', () => {
   });
 
   it('en simulacro el modo sustituir cuenta lo que borraría pero no borra', async () => {
-    await servicio.importar(actor(), respaldo(), { modo: 'actualizar', simulacro: false });
-    const r = await servicio.importar(actor(), respaldo(), { modo: 'sustituir', simulacro: true });
+    await servicio.importar(actor(), respaldo(), { modo: 'actualizar', simulacro: false, secciones: TODO });
+    const r = await servicio.importar(actor(), respaldo(), { modo: 'sustituir', simulacro: true, secciones: TODO });
     expect(r.borrado?.empresas).toBe(1);
     expect(await empresas.list()).toHaveLength(1);
   });
 
   it('reporta los usuarios del respaldo que aún no tienen cuenta en ds-hd', async () => {
-    const r = await servicio.importar(actor(), respaldo(), { modo: 'actualizar', simulacro: true });
+    const r = await servicio.importar(actor(), respaldo(), { modo: 'actualizar', simulacro: true, secciones: TODO });
     expect(r.usuariosFaltantes).toBe(1);
+  });
+
+  it('solo toca las secciones marcadas', async () => {
+    const r = await servicio.importar(actor(), respaldo(), {
+      modo: 'actualizar',
+      simulacro: false,
+      secciones: ['empresas'],
+    });
+    expect(r.empresas).toBe(1);
+    expect(r.contactos).toBe(0);
+    expect(r.tickets).toBe(0);
+    expect(await contactos.list()).toHaveLength(0);
+    expect(await ticketQueries.listar({})).toHaveLength(0);
+    expect(await eventos.list()).toHaveLength(0);
+  });
+
+  it('exige marcar al menos una sección', async () => {
+    await expect(
+      servicio.importar(actor(), respaldo(), { modo: 'actualizar', simulacro: false, secciones: [] }),
+    ).rejects.toBeInstanceOf(ValidationError);
+  });
+
+  it('sustituir borra solo lo marcado: traer tickets no se lleva las empresas', async () => {
+    await servicio.importar(actor(), respaldo(), { modo: 'actualizar', simulacro: false, secciones: TODO });
+
+    const otro = respaldo();
+    (otro.datos as Record<string, unknown>).tickets = [{ numero: 99, asunto: 'Otro', descripcion: 'y' }];
+    const r = await servicio.importar(actor(), otro, {
+      modo: 'sustituir',
+      simulacro: false,
+      secciones: ['tickets'],
+    });
+
+    expect(r.borrado?.tickets).toBe(1);
+    expect(r.borrado?.empresas).toBeUndefined();
+    expect(await empresas.list()).toHaveLength(1);
+    expect((await ticketQueries.listar({})).map((t) => t.numero)).toEqual([99]);
+  });
+
+  it('importa eventos con sus invitaciones, siempre como borrador', async () => {
+    await servicio.importar(actor(), respaldo(), { modo: 'actualizar', simulacro: false, secciones: ['eventos'] });
+    const [ev] = await eventos.list();
+    expect(ev?.titulo).toBe('Webinar de cierre anual');
+    expect(ev?.estado).toBe('borrador');
+    expect(ev?.invitaciones[0]).toMatchObject({
+      empresaNombre: 'ACME SA',
+      contactado: true,
+      respuesta: 'asistira',
+    });
+    expect(ev?.invitadosExternos[0]).toMatchObject({ nombre: 'Luis Referido', respuesta: 'pendiente' });
+  });
+
+  it('importa cotizaciones conservando su folio original', async () => {
+    const r = await servicio.importar(actor(), respaldo(), {
+      modo: 'actualizar',
+      simulacro: false,
+      secciones: ['empresas', 'cotizaciones'],
+    });
+    expect(r.cotizaciones).toBe(1);
+    const [cot] = await cotizaciones.list();
+    expect(cot?.folio).toBe('COT-2026-007');
+    expect(cot?.empresaId).toBe('acme-sa');
+    expect(cot?.estado).toBe('enviada');
+    expect(cot?.subtotal).toBe(2000);
+    expect(cot?.vigenciaDias).toBe(15);
   });
 });

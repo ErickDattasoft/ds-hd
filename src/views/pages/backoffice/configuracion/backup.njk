@@ -67,8 +67,9 @@
   <p class="muted">
     Para el JSON que descarga el botón <strong>"Respaldar"</strong> del CRM DATTASOFT original
     (el de arriba, "Restaurar", solo acepta respaldos de este mismo sistema). Traduce clientes,
-    contactos, tickets con sus notas y actividad, base de conocimiento, bitácora, versiones de
-    sistemas y la configuración de tickets/avisos/"Acerca de" al modelo de ds-hd.
+    contactos, tickets con sus notas y actividad, eventos con sus invitaciones, cotizaciones,
+    base de conocimiento, bitácora, versiones de sistemas y la configuración de
+    tickets/avisos/"Acerca de" al modelo de ds-hd.
   </p>
   <p class="muted">
     Los ids se generan de forma determinista, así que <strong>importar el mismo respaldo dos
@@ -82,6 +83,30 @@
       <input type="file" accept="application/json,.json" required />
     </label>
     <fieldset class="field">
+      <legend>¿Qué traer del respaldo?</legend>
+      <p class="muted">
+        Solo se lee, se escribe (y, en modo sustituir, se borra) lo que marques aquí. Como el CRM
+        viejo sigue en uso, lo normal es traer una parte: p. ej. solo tickets, o solo empresas y
+        contactos, sin tocar nada más de ds-hd.
+      </p>
+      <label class="field--check">
+        <input type="checkbox" data-marcar-todo-secciones checked />
+        <strong>Todo</strong> — marcar o desmarcar la lista completa
+      </label>
+      {% for s in secciones %}
+        <label class="field--check">
+          <input type="checkbox" name="seccion" value="{{ s.clave }}" checked />
+          {{ s.etiqueta }}
+        </label>
+      {% endfor %}
+      <p class="muted">
+        Los <strong>folios se respetan</strong>: los tickets conservan su número y las cotizaciones
+        su folio <code>COT-…</code> (solo se reasigna folio cuando dos tickets distintos del
+        respaldo traen el mismo, y se reporta cuál cambió). Los eventos entran siempre como
+        <strong>borrador</strong>, para que importar no abra un registro público por accidente.
+      </p>
+    </fieldset>
+    <fieldset class="field">
       <legend>¿Qué hacer con lo que ya existe en ds-hd?</legend>
       <label class="field--check">
         <input type="radio" name="modo" value="actualizar" checked />
@@ -89,9 +114,9 @@
       </label>
       <label class="field--check">
         <input type="radio" name="modo" value="sustituir" />
-        <strong>Sustituir</strong> — borra empresas, contactos, tickets, base de conocimiento,
-        versiones y bitácora, y deja solo lo que traiga el archivo. Cotizaciones, eventos y
-        usuarios no se tocan.
+        <strong>Sustituir</strong> — borra <em>solo lo que marcaste arriba</em> y lo deja como
+        venga en el archivo. Lo no marcado no se toca. Usuarios y configuración nunca se borran
+        (el respaldo viejo no puede restituirlos).
       </label>
     </fieldset>
     <label class="field--check">

@@ -235,6 +235,25 @@
     reader.readAsText(file);
   });
 
+  // Casilla "Todo" de las secciones a importar: marca/desmarca la lista completa, y ella
+  // misma refleja si las de abajo quedaron todas marcadas, todas no, o a medias.
+  document.addEventListener('change', function (e) {
+    var form = e.target.closest('[data-importar-crm-viejo]');
+    if (!form) return;
+    var todo = form.querySelector('[data-marcar-todo-secciones]');
+    var casillas = [].slice.call(form.querySelectorAll('input[name="seccion"]'));
+    if (!todo || !casillas.length) return;
+    if (e.target === todo) {
+      casillas.forEach(function (c) { c.checked = todo.checked; });
+      todo.indeterminate = false;
+      return;
+    }
+    if (e.target.name !== 'seccion') return;
+    var marcadas = casillas.filter(function (c) { return c.checked; }).length;
+    todo.checked = marcadas === casillas.length;
+    todo.indeterminate = marcadas > 0 && marcadas < casillas.length;
+  });
+
   // ── Importar respaldo del CRM viejo: mismo motor que scripts/migrate, desde la UI ──
   document.addEventListener('submit', function (e) {
     var form = e.target.closest('[data-importar-crm-viejo]');
@@ -247,11 +266,22 @@
     var modoEl = form.querySelector('input[name="modo"]:checked');
     var modo = modoEl ? modoEl.value : 'actualizar';
     var simulacro = form.querySelector('input[name="simulacro"]').checked;
+    var secciones = [].slice
+      .call(form.querySelectorAll('input[name="seccion"]:checked'))
+      .map(function (el) { return el.value; });
+    if (!secciones.length) {
+      salida.innerHTML = '<p class="alert alert--error">Marca al menos una cosa que traer (tickets, empresas, contactos…).</p>';
+      return;
+    }
+    var nombres = [].slice
+      .call(form.querySelectorAll('input[name="seccion"]:checked'))
+      .map(function (el) { return el.parentNode.textContent.trim(); })
+      .join(', ');
     if (!simulacro) {
       var aviso =
         modo === 'sustituir'
-          ? 'SUSTITUIR borra empresas, contactos, tickets, base de conocimiento, versiones y bitácora, y deja solo lo que traiga este archivo. No se puede deshacer. ¿Continuar?'
-          : '¿Importar este respaldo? Se agregará y actualizará lo que traiga el archivo (no se borra nada).';
+          ? 'SUSTITUIR borra de ds-hd lo que marcaste (' + nombres + ') y lo deja como venga en este archivo. No se puede deshacer. ¿Continuar?'
+          : '¿Importar ' + nombres + ' de este respaldo? Se agregará y actualizará lo que traiga el archivo (no se borra nada).';
       if (!window.confirm(aviso)) return;
     }
     var btn = e.submitter || form.querySelector('button[type="submit"]');
@@ -259,7 +289,7 @@
     var reader = new FileReader();
     reader.onload = function () {
       salida.innerHTML = '<p class="muted">' + (simulacro ? 'Simulando…' : 'Importando…') + ' esto puede tardar varios minutos, no cierres la página.</p>';
-      fetch(form.getAttribute('action') + '?modo=' + modo + (simulacro ? '&simulacro=1' : ''), {
+      fetch(form.getAttribute('action') + '?modo=' + modo + (simulacro ? '&simulacro=1' : '') + '&secciones=' + secciones.join(','), {
         method: 'POST',
         headers: { 'content-type': 'application/json', 'x-csrf-token': cookie('x-csrf-token') },
         body: reader.result,
@@ -283,9 +313,11 @@
           p.textContent =
             (d.simulacro ? 'SIMULACRO (no se escribió nada) — se importarían: ' : 'Importado: ') +
             d.empresas + ' empresas, ' + d.contactos + ' contactos, ' + d.tickets + ' tickets, ' +
+            d.eventos + ' eventos, ' + d.cotizaciones + ' cotizaciones, ' +
             d.versiones + ' versiones, ' + d.kb + ' artículos de KB, ' + d.bitacora + ' entradas de bitácora.' +
             (d.usuariosFaltantes ? ' ' + d.usuariosFaltantes + ' usuario(s) del respaldo aún sin cuenta en ds-hd.' : '') +
-            (d.contactosSinEmpresa.length ? ' ' + d.contactosSinEmpresa.length + ' contacto(s) sin empresa emparejada, quedan en "Sin empresa (revisar tras migración)".' : '');
+            (d.contactosSinEmpresa.length ? ' ' + d.contactosSinEmpresa.length + ' contacto(s) sin empresa emparejada, quedan en "Sin empresa (revisar tras migración)".' : '') +
+            (d.cotizacionesSinEmpresa.length ? ' ' + d.cotizacionesSinEmpresa.length + ' cotización(es) sin empresa emparejada.' : '');
           salida.innerHTML = '';
           salida.appendChild(p);
           salida.appendChild(detalle);

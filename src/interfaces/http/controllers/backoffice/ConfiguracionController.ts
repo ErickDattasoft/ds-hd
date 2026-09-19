@@ -1,7 +1,13 @@
 import type { Request, Response } from 'express';
 import type { ConfiguracionTicketsService } from '../../../../application/configuracion/ConfiguracionTicketsService.js';
 import { ConfiguracionIntegracionesService } from '../../../../application/configuracion/ConfiguracionIntegracionesService.js';
-import type { MigracionCrmViejoService, ModoImportacion } from '../../../../application/migracion/MigracionCrmViejoService.js';
+import {
+  SECCIONES_IMPORTACION,
+  SECCION_ETIQUETA,
+  type MigracionCrmViejoService,
+  type ModoImportacion,
+  type SeccionImportacion,
+} from '../../../../application/migracion/MigracionCrmViejoService.js';
 import type { BackupService } from '../../../../application/configuracion/BackupService.js';
 import type { AcercaDeService } from '../../../../application/configuracion/AcercaDeService.js';
 import type { ConfiguracionCotizacionesService } from '../../../../application/configuracion/ConfiguracionCotizacionesService.js';
@@ -134,6 +140,7 @@ export class ConfiguracionController {
     res.render('pages/backoffice/configuracion/backup', {
       titulo: 'Backup',
       cuotaAdjuntos: await this.adjuntos.cuotaEspacio(),
+      secciones: SECCIONES_IMPORTACION.map((clave) => ({ clave, etiqueta: SECCION_ETIQUETA[clave] })),
     });
   };
 
@@ -162,8 +169,21 @@ export class ConfiguracionController {
   importarCrmViejoPost = async (req: Request, res: Response): Promise<void> => {
     const modo: ModoImportacion = req.query.modo === 'sustituir' ? 'sustituir' : 'actualizar';
     const simulacro = req.query.simulacro === '1';
+    // `?secciones=tickets,empresas`. Sin el parámetro se traen todas, que es como se comportaba
+    // antes de que la pantalla ofreciera marcarlas una por una.
+    const pedidas = String(req.query.secciones ?? '')
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+    const secciones: SeccionImportacion[] = pedidas.length
+      ? SECCIONES_IMPORTACION.filter((s) => pedidas.includes(s))
+      : [...SECCIONES_IMPORTACION];
     try {
-      const resultado = await this.migracionCrmViejo.importar(req.user!, req.body ?? {}, { modo, simulacro });
+      const resultado = await this.migracionCrmViejo.importar(req.user!, req.body ?? {}, {
+        modo,
+        simulacro,
+        secciones,
+      });
       res.json({ ok: true, resultado });
     } catch (err) {
       res.status(422).json({ ok: false, error: err instanceof Error ? err.message : 'No se pudo importar' });

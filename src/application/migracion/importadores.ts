@@ -13,9 +13,12 @@ import { Contacto } from '../../core/entities/Contacto.js';
 import { Ticket } from '../../core/entities/Ticket.js';
 import { VersionSistema } from '../../core/entities/VersionSistema.js';
 import { ArticuloKB } from '../../core/entities/ArticuloKB.js';
+import { Evento, type RespuestaInvitacion, RESPUESTAS_INVITACION } from '../../core/entities/Evento.js';
+import { Cotizacion, type EstadoCotizacion } from '../../core/entities/Cotizacion.js';
 import type { EntradaBitacora } from '../../core/entities/EntradaBitacora.js';
 import { PRIORIDADES, type Prioridad } from '../../core/entities/value-objects/Prioridad.js';
 import type { EstadoFacturacion } from '../../core/entities/value-objects/EstadoFacturacion.js';
+import type { IEmpresaRepository } from '../../core/ports/repositories/IEmpresaRepository.js';
 import { sanearAcercaDe } from '../../core/entities/AcercaDe.js';
 import { CONFIG_TICKETS_POR_DEFECTO, type ConfiguracionTickets } from '../../core/entities/ConfiguracionTickets.js';
 import { CONFIG_AVISOS_POR_DEFECTO, type ConfiguracionAvisos, type ContactoSoporte } from '../../core/entities/ConfiguracionAvisos.js';
@@ -53,6 +56,58 @@ export function crearImportadores({ dryRun: DRY_RUN, log }: OpcionesImportacion)
   const NO_APLICA = 'no aplica';
   /** El CRM viejo a veces guarda varios correos separados por coma en un solo campo. */
   const primerCorreo = (v: unknown): string => s(v).split(/[,;]/)[0]?.trim() ?? '';
+
+  /** Entero positivo de un campo opcional del respaldo; `null` si viene vacío o no es número. */
+  const entero = (v: unknown): number | null => {
+    const n = Number(v);
+    return Number.isFinite(n) && n > 0 ? Math.trunc(n) : null;
+  };
+
+  /**
+   * Id del registro nuevo: se respeta el del respaldo cuando es utilizable como id de
+   * documento (`ev_1730madeup`, `cot_...`), y si no se deriva uno determinista de sus campos.
+   * Respetarlo es lo que hace que reimportar el mismo respaldo no duplique nada.
+   */
+  const idEstable = async (prefijo: string, idOriginal: string, ...partes: string[]): Promise<string> =>
+    /^[A-Za-z0-9_-]{1,120}$/.test(idOriginal) ? idOriginal : hashId(prefijo, ...partes);
+
+  /** `fecha` (YYYY-MM-DD) + `hora` (HH:MM) del CRM viejo → un solo `Date`. */
+  const fechaHoraDe = (dia: string, hora: string): Date => {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(dia)) return new Date();
+    const d = new Date(`${dia}T${/^\d{2}:\d{2}$/.test(hora) ? hora : '09:00'}:00`);
+    return Number.isNaN(d.getTime()) ? new Date() : d;
+  };
+
+  /** Días entre la fecha de la cotización y su fecha de vigencia (`null` si no se puede). */
+  const diasEntre = (desde: Date, hasta: string): number | null => {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(hasta)) return null;
+    const fin = new Date(`${hasta}T00:00:00`);
+    if (Number.isNaN(fin.getTime())) return null;
+    const dias = Math.round((fin.getTime() - desde.getTime()) / 86_400_000);
+    return dias > 0 ? dias : null;
+  };
+
+  /** `"NO_ASISTIRA"` del CRM viejo → `'no_asistira'` del catálogo de ds-hd. */
+  const respuestaInvitacionDe = (v: unknown): RespuestaInvitacion => {
+    const t = s(v).toLowerCase();
+    return (RESPUESTAS_INVITACION as readonly string[]).includes(t) ? (t as RespuestaInvitacion) : 'pendiente';
+  };
+
+  /** Estado de cotización del viejo, que ya usa el mismo catálogo textual que ds-hd. */
+  const estadoCotizacionDe = (v: unknown): EstadoCotizacion => {
+    const t = s(v).toLowerCase();
+    const validos = ['borrador', 'enviada', 'aceptada', 'rechazada', 'vencida'];
+    return validos.includes(t) ? (t as EstadoCotizacion) : 'borrador';
+  };
+
+  /** Nombre de empresa del respaldo (minúsculas) → id que le tocará en ds-hd. */
+  const mapaEmpresasPorNombre = (datos: Dato): Map<string, string> =>
+    new Map(
+      arr(datos.clientes)
+        .map((d) => s(d.EMPRESA))
+        .filter(Boolean)
+        .map((nombre) => [nombre.toLowerCase(), slug(nombre)]),
+    );
 
   /**
    * Empresas (`clientes`, campos en MAYÚSCULAS)
@@ -107,6 +162,22 @@ export function crearImportadores({ dryRun: DRY_RUN, log }: OpcionesImportacion)
   const EMPRESA_PLACEHOLDER_ID = 'sin-empresa-migracion';
 
   /**
+   * Empresa "buzón" para los registros del respaldo cuyo nombre de empresa no emparejó con
+   * ninguna empresa real: el dominio exige que contactos y cotizaciones cuelguen de una
+   * empresa, así que se crea una vez y desde la UI se reasignan a mano.
+   */
+  async function crearEmpresaPlaceholder(repo: IEmpresaRepository): Promise<void> {
+    if (await repo.findById(EMPRESA_PLACEHOLDER_ID)) return;
+    await repo.save(
+      new Empresa({
+        id: EMPRESA_PLACEHOLDER_ID,
+        nombre: 'Sin empresa (revisar tras migración)',
+        notas: 'Registros migrados cuyo nombre de empresa en el respaldo viejo no emparejó con ninguna empresa real. Reasígnalos desde aquí.',
+      }),
+    );
+  }
+
+  /**
    * Contactos (empareja `empresa` de texto contra el nombre real de la empresa)
    */
   async function importarContactos(
@@ -115,14 +186,9 @@ export function crearImportadores({ dryRun: DRY_RUN, log }: OpcionesImportacion)
   ): Promise<{ ok: number; sinEmpresa: string[]; total: number }> {
     const empresaRepo = c.resolve('empresaRepo');
     const contactoRepo = c.resolve('contactoRepo');
-    // Se arma el mapa desde el respaldo mismo (no con una lectura a Firestore tras importar
+    // El mapa se arma desde el respaldo mismo (no con una lectura a Firestore tras importar
     // empresas) — así funciona igual en --dry-run que en la corrida real.
-    const porNombre = new Map(
-      arr(datos.clientes)
-        .map((d) => s(d.EMPRESA))
-        .filter(Boolean)
-        .map((nombre) => [nombre.toLowerCase(), slug(nombre)]),
-    );
+    const porNombre = mapaEmpresasPorNombre(datos);
 
     const items = arr(datos.contactos);
     let ok = 0;
@@ -137,14 +203,8 @@ export function crearImportadores({ dryRun: DRY_RUN, log }: OpcionesImportacion)
         empresaId = EMPRESA_PLACEHOLDER_ID;
         // El dominio exige que todo contacto tenga una empresa real — se crea una sola vez
         // como "buzón" para revisar y reasignar los que no emparejaron, desde la propia UI.
-        if (!placeholderCreado && !DRY_RUN && !(await empresaRepo.findById(EMPRESA_PLACEHOLDER_ID))) {
-          await empresaRepo.save(
-            new Empresa({
-              id: EMPRESA_PLACEHOLDER_ID,
-              nombre: 'Sin empresa (revisar tras migración)',
-              notas: 'Contactos migrados cuyo nombre de empresa en el respaldo viejo no emparejó con ninguna empresa real. Reasígnalos desde aquí.',
-            }),
-          );
+        if (!placeholderCreado && !DRY_RUN) {
+          await crearEmpresaPlaceholder(empresaRepo);
           placeholderCreado = true;
         }
       }
@@ -563,10 +623,181 @@ export function crearImportadores({ dryRun: DRY_RUN, log }: OpcionesImportacion)
     return faltantes;
   }
 
+
+  /**
+   * Eventos (`eventos`: los del módulo de invitaciones del CRM viejo, con su lista de empresas
+   * invitadas y sus invitados externos "extras").
+   *
+   * Entran SIEMPRE como borrador: publicar abre el registro público de ds-hd, que el CRM viejo
+   * no tenía, y eso no puede pasar como efecto colateral de una importación. Las inscripciones
+   * no vienen en el respaldo (viven en otra colección del Firestore viejo), solo las
+   * invitaciones dirigidas — que es justo el seguimiento que se quiere conservar.
+   */
+  async function importarEventos(c: Container, datos: Dato): Promise<{ ok: number; total: number }> {
+    const repo = c.resolve('eventoRepo');
+    const items = arr(datos.eventos);
+    const porNombre = mapaEmpresasPorNombre(datos);
+    let ok = 0;
+    for (const d of items) {
+      const nombre = s(d.nombre) || s(d.titulo);
+      try {
+        const id = await idEstable('evt', s(d.id), nombre);
+        const evento = new Evento({
+          id,
+          titulo: nombre,
+          descripcion: s(d.notas) || null,
+          fechaHora: fechaHoraDe(s(d.fecha), s(d.hora)),
+          estado: 'borrador',
+          urlWebinar: s(d.link) || null,
+          horasRecordatorio: entero(d.horasRecordatorio) ?? 24,
+          horasSeguimiento: entero(d.horasSeguimiento),
+          limiteRegistrosPorIp: entero(d.limiteRegistrosPorIp),
+          sistema: s(d.sistema) || null,
+          contactoNombre: s(d.contactoNombre) || null,
+          contactoWhatsapp: s(d.contactoWhatsapp) || null,
+          plantilla: s(d.plantilla) || null,
+          mensajeSeguimiento: s(d.mensajeSeguimiento) || null,
+          invitaciones: await Promise.all(
+            arr(d.empresas).map(async (e) => {
+              const empresaNombre = s(e.nombre);
+              return {
+                id: await hashId('inv', id, empresaNombre),
+                empresaId: porNombre.get(empresaNombre.toLowerCase()) ?? null,
+                empresaNombre,
+                sistemas: s(e.sistema) ? [s(e.sistema)] : [],
+                invitadoPor: s(e.invitadoPor) || s(e.invitadoPorManual) || null,
+                contactado: e.invitado === true,
+                respuesta: respuestaInvitacionDe(e.respuesta),
+                notas: s(e.notas) || null,
+              };
+            }),
+          ),
+          invitadosExternos: await Promise.all(
+            arr(d.extras).map(async (x, i) => ({
+              id: await hashId('ext', id, s(x.nombre), String(i)),
+              nombre: s(x.nombre),
+              fuente: s(x.fuente) || null,
+              contactado: x.invitado === true,
+              respuesta: respuestaInvitacionDe(x.respuesta),
+              notas: s(x.notas) || null,
+            })),
+          ),
+        });
+        if (!DRY_RUN) await repo.save(evento);
+        ok++;
+      } catch (err) {
+        log('eventos', `ERROR con "${nombre || '(sin nombre)'}": ${err instanceof Error ? err.message : err}`);
+      }
+    }
+    log('eventos', `${ok}/${items.length} importados (todos como BORRADOR — publícalos a mano para abrir el registro)`);
+    return { ok, total: items.length };
+  }
+
+  /**
+   * Cotizaciones (`cotizaciones`), conservando el folio original (`numero`, p. ej.
+   * "COT-2026-007") — el mismo criterio que con los folios de tickets.
+   *
+   * El CRM viejo marcaba el IVA por renglón (`tieneIVA`) y ds-hd lleva una sola tasa por
+   * cotización: si ningún renglón llevaba IVA la cotización queda con tasa 0, y si el archivo
+   * mezcla renglones con y sin IVA se avisa por bitácora para revisarla a mano.
+   */
+  async function importarCotizaciones(
+    c: Container,
+    datos: Dato,
+  ): Promise<{ ok: number; total: number; sinEmpresa: string[] }> {
+    const repo = c.resolve('cotizacionRepo');
+    const empresaRepo = c.resolve('empresaRepo');
+    const items = arr(datos.cotizaciones);
+    const porNombre = mapaEmpresasPorNombre(datos);
+    const sinEmpresa: string[] = [];
+    // Folio más alto por año, para dejar el contador de ds-hd por encima de lo importado y que
+    // la siguiente cotización nueva no reutilice un folio que ya existe. Se arranca con lo que
+    // YA hay en ds-hd (igual que el contador de tickets): un respaldo viejo con folios más
+    // bajos no debe hacer retroceder el consecutivo.
+    const maxPorAnio = new Map<string, number>();
+    const anotarFolio = (folio: string): void => {
+      const m = /^COT-(\d{4})-(\d+)$/.exec(folio);
+      if (m) maxPorAnio.set(m[1]!, Math.max(maxPorAnio.get(m[1]!) ?? 0, Number(m[2])));
+    };
+    for (const existente of await repo.list()) anotarFolio(existente.folio);
+    let ok = 0;
+    let placeholderCreado = false;
+    for (const d of items) {
+      const folio = s(d.numero) || s(d.folio);
+      const empresaNombre = s(d.empresaNombre);
+      try {
+        if (!folio) {
+          log('cotizaciones', `omitida sin folio: ${empresaNombre || JSON.stringify(d).slice(0, 60)}`);
+          continue;
+        }
+        let empresaId = porNombre.get(empresaNombre.toLowerCase()) ?? null;
+        if (!empresaId) {
+          sinEmpresa.push(`${folio} (empresa del respaldo: "${empresaNombre}")`);
+          empresaId = EMPRESA_PLACEHOLDER_ID;
+          if (!placeholderCreado && !DRY_RUN) {
+            await crearEmpresaPlaceholder(empresaRepo);
+            placeholderCreado = true;
+          }
+        }
+        const conceptos = arr(d.conceptos).map((x) => ({
+          descripcion: s(x.descripcion),
+          cantidad: Number(x.cantidad) || 0,
+          precioUnitario: Number(x.precioUnitario) || 0,
+          descuento: Number(x.descuento) || 0,
+          importe: 0, // lo recalcula la entidad
+        }));
+        const conIva = arr(d.conceptos).filter((x) => x.tieneIVA !== false).length;
+        if (conIva && conIva !== conceptos.length) {
+          log(
+            'cotizaciones',
+            `${folio}: ${conceptos.length - conIva} de ${conceptos.length} renglones venían sin IVA; ` +
+              'ds-hd usa una sola tasa por cotización, quedó con IVA — revísala a mano.',
+          );
+        }
+        const creada = fecha(d.fechaCreacion);
+        const cotizacion = new Cotizacion({
+          id: await idEstable('cot', s(d.id), folio),
+          folio,
+          empresaId,
+          empresaNombre: empresaNombre || null,
+          fecha: creada,
+          vigenciaDias: diasEntre(creada, s(d.fechaVigencia)) ?? 15,
+          estado: estadoCotizacionDe(d.estado),
+          ivaTasa: conIva ? 0.16 : 0,
+          conceptos,
+          notas: s(d.notas) || null,
+          emisorNombre: s(d.emisorNombre) || null,
+          emisorCargo: s(d.emisorCargo) || null,
+          emisorTelefono: s(d.emisorTel ?? d.emisorTelefono) || null,
+          emisorCorreo: s(d.emisorCorreo) || null,
+          rfc: s(d.empresaRFC) || null,
+          contactoNombre: s(d.empresaContacto) || null,
+          contactoCorreo: primerCorreo(d.empresaCorreo) || null,
+          ticketNumero: Number(d.ticketNumero) || null,
+          createdAt: creada,
+        });
+        if (!DRY_RUN) await repo.save(cotizacion);
+        anotarFolio(folio);
+        ok++;
+      } catch (err) {
+        log('cotizaciones', `ERROR con "${folio || empresaNombre}": ${err instanceof Error ? err.message : err}`);
+      }
+    }
+    for (const [anio, max] of maxPorAnio) {
+      const clave = `cotizaciones-${anio}`;
+      if (!DRY_RUN) await c.resolve('contadorRepo').fijar(clave, max);
+      log('cotizaciones', `folio más alto de ${anio}: ${max}, contador "${clave}" fijado ahí`);
+    }
+    log('cotizaciones', `${ok}/${items.length} importadas, ${sinEmpresa.length} sin empresa emparejada`);
+    return { ok, total: items.length, sinEmpresa };
+  }
+
   return {
     importarEmpresas,
     importarContactos,
     importarTickets,
+    importarEventos,
+    importarCotizaciones,
     importarVersiones,
     importarKB,
     importarBitacora,

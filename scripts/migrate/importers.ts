@@ -23,6 +23,8 @@ export const {
   importarEmpresas,
   importarContactos,
   importarTickets,
+  importarEventos,
+  importarCotizaciones,
   importarVersiones,
   importarKB,
   importarBitacora,
