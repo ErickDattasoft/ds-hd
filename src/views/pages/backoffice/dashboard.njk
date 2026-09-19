@@ -1,15 +1,67 @@
 {% extends "layouts/backoffice.njk" %}
 {% block title %}Dashboard{% endblock %}
-{% macro barras(datos, max) %}
-  <div class="bars">
-    {% for d in datos %}
-      <div class="bars__row">
-        <span class="bars__label">{{ d.etiqueta }}</span>
-        <span class="bars__track"><span class="bars__fill" style="width: {{ (d.valor / (max or 1) * 100) | round }}%"></span></span>
-        <span class="bars__val">{{ d.valor }}</span>
-      </div>
-    {% endfor %}
+{#
+  Gráficas del dashboard. Se dibujan con CSS (ver "Gráficas" en components.css): el servidor
+  manda los conteos y aquí solo se traducen a porcentajes, así que no entra ninguna librería
+  de charts al worker.
+#}
+
+{# Columnas: una serie sobre el tiempo, de una sola tinta — los meses no son identidades
+   distintas, así que darle un color a cada uno sería ruido. El eje se redondea a un múltiplo
+   de 4 para que las cuatro marcas caigan en números enteros. #}
+{% macro columnas(datos) %}
+  {% set max = (datos | sort(true, false, 'valor') | first).valor or 0 %}
+  {% set tope = (((max / 4) | round(0, 'ceil')) * 4) if max else 4 %}
+  <div class="chart chart-cols">
+    <div class="chart-cols__y" aria-hidden="true">
+      {% for i in [4, 3, 2, 1, 0] %}<span>{{ (tope * i / 4) | round }}</span>{% endfor %}
+    </div>
+    <div class="chart-cols__plot">
+      <span class="chart-cols__rejilla"></span>
+      {% for d in datos %}
+        <div class="chart-cols__col">
+          <span class="chart-cols__medida" style="height: {{ (d.valor / tope * 100) | round(2) }}%">
+            <span class="chart-cols__val">{{ d.valor }}</span>
+            <span class="chart-cols__bar{{ ' chart-cols__bar--cero' if not d.valor }}"></span>
+          </span>
+        </div>
+      {% endfor %}
+    </div>
+    <div class="chart-cols__x">
+      {% for d in datos %}<span>{{ d.etiqueta }}</span>{% endfor %}
+    </div>
   </div>
+{% endmacro %}
+
+{# Reparto (parte sobre el total): barra apilada horizontal con leyenda. Se prefiere a una
+   dona porque las etiquetas de estado son largas y aquí se leen completas, y porque comparar
+   longitudes es más fácil que comparar ángulos. El color va por posición (el servidor manda
+   los segmentos ya ordenados) y el valor siempre va escrito, para no depender del tono. #}
+{% macro reparto(datos) %}
+  {% set total = datos | sum('valor') %}
+  {% if total %}
+    <div class="chart">
+      <div class="chart-stack" role="img"
+           aria-label="{% for d in datos %}{{ d.etiqueta }}: {{ d.valor }}. {% endfor %}">
+        {% for d in datos %}
+          <span class="chart-stack__seg serie-{{ loop.index if loop.index < 7 else 'otros' }}"
+                style="width: {{ (d.valor / total * 100) | round(2) }}%"></span>
+        {% endfor %}
+      </div>
+      <div class="chart-legend">
+        {% for d in datos %}
+          <span class="chart-legend__item">
+            <span class="chart-legend__dot serie-{{ loop.index if loop.index < 7 else 'otros' }}"></span>
+            {{ d.etiqueta }}
+            <span class="chart-legend__val">{{ d.valor }}</span>
+            <span class="chart-legend__pct">({{ (d.valor / total * 100) | round }}%)</span>
+          </span>
+        {% endfor %}
+      </div>
+    </div>
+  {% else %}
+    <p class="chart-vacio">Nada que mostrar todavía.</p>
+  {% endif %}
 {% endmacro %}
 {% block content %}
   <div class="page-head">
@@ -80,20 +132,20 @@
 
   <div class="dash-grid">
     <div class="card">
-      <h2>Tickets por mes</h2>
-      {{ barras(m.tickets.porMes, (m.tickets.porMes | sort(true, false, 'valor') | first).valor) }}
+      <h2>Tickets por mes <span class="muted">(últimos 6 meses)</span></h2>
+      {{ columnas(m.tickets.porMes) }}
     </div>
     <div class="card">
       <h2>Tickets abiertos por estado</h2>
-      {{ barras(m.tickets.porEstado, m.tickets.abiertos) }}
+      {{ reparto(m.tickets.porEstado) }}
     </div>
     <div class="card">
-      <h2>Por prioridad</h2>
-      {{ barras(m.tickets.porPrioridad, m.tickets.abiertos) }}
+      <h2>Tickets abiertos por prioridad</h2>
+      {{ reparto(m.tickets.porPrioridad) }}
     </div>
     <div class="card">
       <h2>Cotizaciones por estado</h2>
-      {{ barras(m.cotizaciones.porEstado, 0) }}
+      {{ reparto(m.cotizaciones.porEstado) }}
     </div>
     <div class="card">
       <h2>Próximos eventos</h2>

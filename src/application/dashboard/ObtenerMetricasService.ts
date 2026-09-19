@@ -61,9 +61,16 @@ function agruparPorMes(fechas: Date[], ahora: Date): { etiqueta: string; valor: 
   const buckets: { clave: string; etiqueta: string; valor: number }[] = [];
   for (let i = MESES_GRAFICA - 1; i >= 0; i--) {
     const d = new Date(ahora.getFullYear(), ahora.getMonth() - i, 1);
+    // El año solo se escribe cuando aporta algo (enero, y el primer mes de la serie): en las
+    // seis columnas de la gráfica repetirlo en todas no distingue nada y hace que la etiqueta
+    // no quepa en la columna.
+    const mes = d.toLocaleDateString('es-MX', { month: 'short' }).replace('.', '');
     buckets.push({
       clave: `${d.getFullYear()}-${d.getMonth()}`,
-      etiqueta: d.toLocaleDateString('es-MX', { month: 'short', year: '2-digit' }),
+      etiqueta:
+        d.getMonth() === 0 || i === MESES_GRAFICA - 1
+          ? `${mes} ${String(d.getFullYear()).slice(2)}`
+          : mes,
       valor: 0,
     });
   }
@@ -73,6 +80,26 @@ function agruparPorMes(fechas: Date[], ahora: Date): { etiqueta: string; valor: 
     if (i !== undefined) buckets[i]!.valor += 1;
   }
   return buckets.map(({ etiqueta, valor }) => ({ etiqueta, valor }));
+}
+
+/**
+ * Tope de segmentos de una gráfica de reparto. Más allá de esto los colores dejan de
+ * distinguirse entre sí (y con daltonismo, antes), así que la cola se suma en "Otros" en vez
+ * de inventar tonos nuevos.
+ */
+const MAX_SEGMENTOS = 6;
+
+/**
+ * Deja una lista de conteos lista para pintarse como reparto: de mayor a menor y con la cola
+ * agrupada en "Otros". Ordenar importa porque el color se asigna por posición, así que lo
+ * grande se queda con los tonos que mejor se distinguen.
+ */
+function enSegmentos(datos: { etiqueta: string; valor: number }[]): { etiqueta: string; valor: number }[] {
+  const ordenados = [...datos].filter((d) => d.valor > 0).sort((a, b) => b.valor - a.valor);
+  if (ordenados.length <= MAX_SEGMENTOS) return ordenados;
+  const cabeza = ordenados.slice(0, MAX_SEGMENTOS - 1);
+  const otros = ordenados.slice(MAX_SEGMENTOS - 1).reduce((s, d) => s + d.valor, 0);
+  return [...cabeza, { etiqueta: 'Otros', valor: otros }];
 }
 
 /** Caso de uso: métricas del dashboard, acotadas al alcance del actor. */
@@ -126,15 +153,17 @@ export class ObtenerMetricasService {
         vencidos: abiertos.filter((t) => t.estaVencido(ahora)).length,
         sinAsignar: abiertos.filter((t) => !t.agenteAsignadoUid).length,
         creadosSemana: abiertos.filter((t) => t.abiertoEn >= haceUnaSemana).length,
-        porEstado: [...porEstado].map(([etiqueta, valor]) => ({ etiqueta, valor })),
-        porPrioridad: [...porPrioridad].map(([etiqueta, valor]) => ({ etiqueta, valor })),
+        porEstado: enSegmentos([...porEstado].map(([etiqueta, valor]) => ({ etiqueta, valor }))),
+        porPrioridad: enSegmentos([...porPrioridad].map(([etiqueta, valor]) => ({ etiqueta, valor }))),
         porMes: agruparPorMes(
           todos.map((t) => t.abiertoEn),
           ahora,
         ),
       },
       cotizaciones: {
-        porEstado: Object.entries(contarPorEstado).map(([etiqueta, valor]) => ({ etiqueta, valor })),
+        porEstado: enSegmentos(
+          Object.entries(contarPorEstado).map(([etiqueta, valor]) => ({ etiqueta, valor })),
+        ),
         totalAbiertas:
           (contarPorEstado.borrador ?? 0) + (contarPorEstado.enviada ?? 0),
       },
