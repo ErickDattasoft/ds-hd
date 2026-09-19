@@ -74,7 +74,7 @@
     <tbody>
       {% for fila in filas %}
         {% set e = fila.empresa %}
-        <tr class="{{ 'tr-danger' if fila.vencidas }}">
+        <tr class="{{ 'tr-danger' if fila.vencidas }}" data-orden="{{ fila.orden }}" data-favorita="{{ 'true' if e.favorita else 'false' }}">
           {% if can('empresas:editar') %}
             <td><input type="checkbox" form="avisar-form" name="empresaIds" value="{{ e.id }}" aria-label="Seleccionar {{ e.nombre }}" /></td>
             <td>

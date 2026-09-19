@@ -1609,11 +1609,30 @@
     ev.preventDefault();
     var input = form.querySelector('input[name="favorita"]');
     var marcar = input.value === 'true';
+    // La fila se reacomoda en el momento con el mismo criterio del servidor (favoritas
+    // arriba; dentro de cada grupo, el orden original que viene en data-orden). Así marcar
+    // una empresa la sube al instante, sin recargar toda la lista ni perder el scroll.
+    var fila = boton.closest('tr');
+    var cuerpo = fila && fila.parentNode;
+    var reordenar = function () {
+      if (!cuerpo || !fila.hasAttribute('data-orden')) return;
+      var filas = [].slice.call(cuerpo.rows).filter(function (f) { return f.hasAttribute('data-orden'); });
+      filas
+        .sort(function (a, b) {
+          var favA = a.getAttribute('data-favorita') === 'true' ? 1 : 0;
+          var favB = b.getAttribute('data-favorita') === 'true' ? 1 : 0;
+          if (favA !== favB) return favB - favA;
+          return Number(a.getAttribute('data-orden')) - Number(b.getAttribute('data-orden'));
+        })
+        .forEach(function (f) { cuerpo.appendChild(f); });
+    };
     var pintar = function (on) {
       boton.textContent = on ? '⭐' : '☆';
       boton.setAttribute('aria-pressed', on ? 'true' : 'false');
       boton.title = on ? 'Quitar de favoritas' : 'Marcar como favorita';
       input.value = on ? 'false' : 'true';
+      if (fila) fila.setAttribute('data-favorita', on ? 'true' : 'false');
+      reordenar();
     };
     pintar(marcar);
     fetch(form.action, {
