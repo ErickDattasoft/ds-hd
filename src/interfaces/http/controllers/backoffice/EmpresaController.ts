@@ -327,7 +327,10 @@ export class EmpresaController {
 
   archivarPost = async (req: Request, res: Response): Promise<void> => {
     await this.empresas.archivar(req.user!, str(req.params.id), req.body?.archivar !== 'false');
-    res.redirect('/app/empresas');
+    // Se vuelve a la lista tal como estaba (filtros y búsqueda incluidos) cuando la acción sale
+    // de ahí; desde la ficha no viene `volver` y se cae al listado sin filtros, como antes.
+    const volver = str(req.body?.volver);
+    res.redirect(volver.startsWith('/app/') ? volver : '/app/empresas');
   };
 
   exportarExcel = async (req: Request, res: Response): Promise<void> => {

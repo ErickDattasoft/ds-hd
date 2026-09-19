@@ -105,7 +105,15 @@
           <td>
             {% if fila.desactualizadas %}<span class="badge badge--warning">{{ fila.desactualizadas }} desactualizada{{ 's' if fila.desactualizadas != 1 }}</span>{% else %}<span class="muted">—</span>{% endif %}
           </td>
-          <td>{{ 'Activa' if e.activa else 'Archivada' }}</td>
+          <td>
+            {{ 'Activa' if e.activa else 'Archivada' }}
+            {% if can('empresas:eliminar') %}
+              <button type="submit" form="arch-{{ e.id }}" class="btn btn--ghost btn--sm"
+                      title="{{ 'Restaurar esta empresa' if not e.activa else 'Pasar esta empresa a archivada: deja de salir en la lista y en los avisos, y se puede restaurar' }}">
+                {{ 'Restaurar' if not e.activa else 'Archivar' }}
+              </button>
+            {% endif %}
+          </td>
         </tr>
       {% else %}<tr><td colspan="11" class="muted">📭 Sin empresas que coincidan.{% if can('empresas:crear') %} Ajusta la búsqueda o <a href="/app/empresas/nueva">crea una nueva</a>.{% endif %}</td></tr>{% endfor %}
     </tbody>
@@ -118,6 +126,16 @@
         <input type="hidden" name="favorita" value="{{ 'false' if fila.empresa.favorita else 'true' }}" />
         <input type="hidden" name="volver" value="/app/empresas{{ qs }}" />
       </form>
+      {% if can('empresas:eliminar') %}
+        {# Archivar sí recarga (a diferencia de favoritas): la empresa sale o entra en la lista
+           según el filtro activo, así que la tabla tiene que volver a pintarse igual. #}
+        <form id="arch-{{ fila.empresa.id }}" method="post" action="/app/empresas/{{ fila.empresa.id }}/archivar" hidden
+              data-confirm="{{ '¿Restaurar ' + fila.empresa.nombre + '?' if not fila.empresa.activa else '¿Archivar ' + fila.empresa.nombre + '? Deja de salir en la lista y en los avisos. Se puede restaurar.' }}">
+          <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+          <input type="hidden" name="archivar" value="{{ 'false' if not fila.empresa.activa else 'true' }}" />
+          <input type="hidden" name="volver" value="/app/empresas{{ qs }}" />
+        </form>
+      {% endif %}
     {% endfor %}
   {% endif %}
 {% endblock %}
