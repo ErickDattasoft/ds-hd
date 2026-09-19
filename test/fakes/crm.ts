@@ -13,6 +13,9 @@ export class InMemoryEmpresaRepository implements IEmpresaRepository {
   async findById(id: string): Promise<Empresa | null> {
     return this.items.get(id) ?? null;
   }
+  async contar(soloActivas = true): Promise<number> {
+    return (await this.list(soloActivas ? { activa: true } : {})).length;
+  }
   async list(f: ListarEmpresasFiltro = {}): Promise<Empresa[]> {
     let out = [...this.items.values()];
     if (f.activa !== undefined) out = out.filter((e) => e.activa === f.activa);
@@ -47,6 +50,9 @@ export class InMemoryContactoRepository implements IContactoRepository {
   }
   async findByEmail(email: string): Promise<Contacto | null> {
     return [...this.items.values()].find((c) => c.email === email.trim().toLowerCase()) ?? null;
+  }
+  async contar(): Promise<number> {
+    return (await this.list()).length;
   }
   async list(f: ListarContactosFiltro = {}): Promise<Contacto[]> {
     let out = [...this.items.values()];

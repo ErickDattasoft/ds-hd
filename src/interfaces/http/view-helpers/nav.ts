@@ -14,7 +14,12 @@ export const NAV_GRUPO_ETIQUETA: Record<NavGrupo, string> = {
 const ORDEN_GRUPOS: readonly NavGrupo[] = ['principal', 'soporte', 'comercial', 'admin'];
 
 /** Claves de los contadores de la barra lateral (ver `ContadoresNav`). */
-export type ContadorNavKey = 'ticketsAbiertos' | 'cotizacionesBorrador' | 'solicitudesAccesoPendientes';
+export type ContadorNavKey =
+  | 'ticketsAbiertos'
+  | 'cotizacionesBorrador'
+  | 'solicitudesAccesoPendientes'
+  | 'empresasTotal'
+  | 'contactosTotal';
 
 export interface NavItem {
   etiqueta: string;
@@ -51,8 +56,8 @@ export const NAV_BACKOFFICE: readonly NavItem[] = [
   { etiqueta: 'Tickets', href: '/app/tickets', icono: '🎫', permiso: 'tickets:leer', grupo: 'soporte', contadorKey: 'ticketsAbiertos' },
   { etiqueta: 'Reportes', href: '/app/reportes', icono: '📈', permiso: 'tickets:leer_todos', grupo: 'soporte' },
 
-  { etiqueta: 'Empresas', href: '/app/empresas', icono: '🏢', permiso: 'empresas:leer', grupo: 'comercial' },
-  { etiqueta: 'Contactos', href: '/app/contactos', icono: '👥', permiso: 'contactos:leer', grupo: 'comercial' },
+  { etiqueta: 'Empresas', href: '/app/empresas', icono: '🏢', permiso: 'empresas:leer', grupo: 'comercial', contadorKey: 'empresasTotal' },
+  { etiqueta: 'Contactos', href: '/app/contactos', icono: '👥', permiso: 'contactos:leer', grupo: 'comercial', contadorKey: 'contactosTotal' },
   { etiqueta: 'Cotizaciones', href: '/app/cotizaciones', icono: '📄', permiso: 'cotizaciones:leer', grupo: 'comercial', contadorKey: 'cotizacionesBorrador' },
   { etiqueta: 'Embudo de ventas', href: '/app/ventas', icono: '💼', permiso: 'cotizaciones:leer', grupo: 'comercial' },
   { etiqueta: 'Tareas', href: '/app/tareas', icono: '✅', permiso: 'seguimiento:leer', grupo: 'comercial' },

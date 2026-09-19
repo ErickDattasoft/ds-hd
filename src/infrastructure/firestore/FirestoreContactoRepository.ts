@@ -45,6 +45,10 @@ export class FirestoreContactoRepository implements IContactoRepository {
     return doc ? toDomain(doc.id, doc.data()) : null;
   }
 
+  async contar(): Promise<number> {
+    return (await this.db.collection(COL).count().get()).data().count;
+  }
+
   async list(filtro: ListarContactosFiltro = {}): Promise<Contacto[]> {
     let q: Query = this.db.collection(COL);
     if (filtro.empresaId) q = q.where('empresaId', '==', filtro.empresaId);

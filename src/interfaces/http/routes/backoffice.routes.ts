@@ -39,6 +39,13 @@ export function backofficeRoutes(container: Container): Router {
       const porEstado = await container.resolve('cotizacionRepo').contarPorEstado();
       contadores.cotizacionesBorrador = porEstado.borrador ?? 0;
     }
+    // Conteos agregados: los resuelve el servidor de Firestore, no traen los documentos.
+    if (claves.includes('empresasTotal')) {
+      contadores.empresasTotal = await container.resolve('empresaRepo').contar();
+    }
+    if (claves.includes('contactosTotal')) {
+      contadores.contactosTotal = await container.resolve('contactoRepo').contar();
+    }
     if (claves.includes('solicitudesAccesoPendientes')) {
       contadores.solicitudesAccesoPendientes = (
         await container.resolve('solicitudAccesoService').listarPendientes(req.user!)

@@ -14,6 +14,8 @@ export interface ListarEmpresasFiltro {
 export interface IEmpresaRepository {
   findById(id: string): Promise<Empresa | null>;
   list(filtro?: ListarEmpresasFiltro): Promise<Empresa[]>;
+  /** Cuántas hay, sin traerlas: lo resuelve el servidor con un conteo agregado. */
+  contar(soloActivas?: boolean): Promise<number>;
   save(empresa: Empresa): Promise<void>;
   /** Borrado permanente (solo desde la papelera). */
   eliminar(id: string): Promise<void>;

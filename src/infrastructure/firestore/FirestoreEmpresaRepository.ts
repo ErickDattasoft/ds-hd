@@ -40,6 +40,12 @@ export class FirestoreEmpresaRepository implements IEmpresaRepository {
     return s.exists ? toDomain(s.id, s.data()!) : null;
   }
 
+  async contar(soloActivas = true): Promise<number> {
+    let q: Query = this.db.collection(COL);
+    if (soloActivas) q = q.where('activa', '==', true);
+    return (await q.count().get()).data().count;
+  }
+
   async list(filtro: ListarEmpresasFiltro = {}): Promise<Empresa[]> {
     let q: Query = this.db.collection(COL);
     if (filtro.activa !== undefined) q = q.where('activa', '==', filtro.activa);

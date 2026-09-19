@@ -14,6 +14,8 @@ export interface IContactoRepository {
   findByUid(uid: string): Promise<Contacto | null>;
   findByEmail(email: string): Promise<Contacto | null>;
   list(filtro?: ListarContactosFiltro): Promise<Contacto[]>;
+  /** Cuántos hay, sin traerlos: lo resuelve el servidor con un conteo agregado. */
+  contar(): Promise<number>;
   save(contacto: Contacto): Promise<void>;
   /** Borrado permanente (solo desde la papelera). */
   eliminar(id: string): Promise<void>;
