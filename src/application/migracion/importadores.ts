@@ -218,10 +218,13 @@ export function crearImportadores({ dryRun: DRY_RUN, log }: OpcionesImportacion)
         .toLowerCase()
         .replace(/\s+/g, ' ')
         .trim();
+    // Las dos claves llevan la empresa: un correo compartido (el del despacho contable, el
+    // genérico de la oficina) lo usan personas DISTINTAS de empresas distintas, y emparejar
+    // solo por correo las fundía en una sola — se perdían contactos al importar.
     const porCorreo = new Map<string, string>();
     const porNombreEmpresa = new Map<string, string>();
     for (const c of existentes) {
-      if (c.email) porCorreo.set(norm(c.email), c.id);
+      if (c.email) porCorreo.set(`${c.empresaId}|${norm(c.email)}`, c.id);
       porNombreEmpresa.set(`${c.empresaId}|${norm(c.nombre)}`, c.id);
     }
 
@@ -244,7 +247,7 @@ export function crearImportadores({ dryRun: DRY_RUN, log }: OpcionesImportacion)
         // Se reusa el id del contacto que ya exista (mismo correo, o mismo nombre dentro de la
         // misma empresa); solo cuando no hay contra qué emparejar se genera uno nuevo.
         const id =
-          (correo ? porCorreo.get(norm(correo)) : undefined) ??
+          (correo ? porCorreo.get(`${empresaId}|${norm(correo)}`) : undefined) ??
           porNombreEmpresa.get(`${empresaId}|${norm(nombre)}`) ??
           (await hashId('con', nombre, s(d.correo), empresaNombre));
         const contacto = new Contacto({
@@ -259,7 +262,7 @@ export function crearImportadores({ dryRun: DRY_RUN, log }: OpcionesImportacion)
         // El recién importado también entra al índice: si el mismo respaldo trae dos renglones
         // de la misma persona (pasa cuando la capturaron dos veces), el segundo actualiza al
         // primero en vez de sumar otro duplicado.
-        if (correo) porCorreo.set(norm(correo), id);
+        if (correo) porCorreo.set(`${empresaId}|${norm(correo)}`, id);
         porNombreEmpresa.set(`${empresaId}|${norm(nombre)}`, id);
         ok++;
       } catch (err) {

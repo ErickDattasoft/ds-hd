@@ -339,4 +339,19 @@ describe('MigracionCrmViejoService', () => {
     expect(await real.listarNotas('tic-10')).toHaveLength(1);
     expect(await real.listarEventos('tic-12')).toHaveLength(2);
   });
+
+  it('no funde personas distintas que comparten un correo (despacho, correo de oficina)', async () => {
+    const compartido = respaldo();
+    (compartido.datos as Record<string, unknown>).clientes = [{ EMPRESA: 'ACME SA' }, { EMPRESA: 'OTRA SA' }];
+    (compartido.datos as Record<string, unknown>).contactos = [
+      { nombre: 'Martha', empresa: 'ACME SA', correo: 'despacho@contable.mx' },
+      { nombre: 'Luis', empresa: 'OTRA SA', correo: 'despacho@contable.mx' },
+    ];
+    await servicio.importar(actor(), compartido, {
+      modo: 'actualizar',
+      simulacro: false,
+      secciones: ['empresas', 'contactos'],
+    });
+    expect((await contactos.list()).map((c) => c.nombre).sort()).toEqual(['Luis', 'Martha']);
+  });
 });

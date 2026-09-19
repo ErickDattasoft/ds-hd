@@ -294,48 +294,82 @@
     if (btn) { btn.disabled = true; btn.classList.add('is-loading'); }
     var reader = new FileReader();
     reader.onload = function () {
-      salida.innerHTML = '<p class="muted">' + (simulacro ? 'Simulando…' : 'Importando…') + ' esto puede tardar varios minutos, no cierres la página.</p>';
-      fetch(form.getAttribute('action') + '?modo=' + modo + (simulacro ? '&simulacro=1' : '') + '&secciones=' + secciones.join(','), {
-        method: 'POST',
-        headers: { 'content-type': 'application/json', 'x-csrf-token': cookie('x-csrf-token') },
-        body: reader.result,
-      })
-        .then(function (r) { return r.json(); })
-        .then(function (data) {
-          if (!data.ok) {
-            salida.innerHTML = '<p class="alert alert--error">' + data.error + '</p>';
-            return;
-          }
-          var d = data.resultado;
-          var detalle = document.createElement('details');
-          var resumen = document.createElement('summary');
-          resumen.textContent = 'Ver el detalle línea por línea (' + d.lineas.length + ')';
-          var pre = document.createElement('pre');
-          pre.textContent = d.lineas.join('\n');
-          detalle.appendChild(resumen);
-          detalle.appendChild(pre);
-          var p = document.createElement('p');
-          p.className = 'alert ' + (d.simulacro ? 'alert--warning' : 'alert--ok');
-          p.textContent =
-            (d.simulacro ? 'SIMULACRO (no se escribió nada) — se importarían: ' : 'Importado: ') +
-            d.empresas + ' empresas, ' + d.contactos + ' contactos, ' +
-            d.tickets + (d.ticketsEnArchivo && d.ticketsEnArchivo !== d.tickets ? ' de ' + d.ticketsEnArchivo : '') + ' tickets, ' +
-            d.eventos + ' eventos, ' + d.cotizaciones + ' cotizaciones, ' +
-            d.versiones + ' versiones, ' + d.kb + ' artículos de KB, ' + d.bitacora + ' entradas de bitácora.' +
-            (d.usuariosFaltantes ? ' ' + d.usuariosFaltantes + ' usuario(s) del respaldo aún sin cuenta en ds-hd.' : '') +
-            (d.ticketsEnArchivo > d.tickets ? ' ⚠️ ' + (d.ticketsEnArchivo - d.tickets) + ' ticket(s) del archivo NO se importaron — abre el detalle para ver cuáles y por qué.' : '') +
-            (d.contactosSinEmpresa.length ? ' ' + d.contactosSinEmpresa.length + ' contacto(s) sin empresa emparejada, quedan en "Sin empresa (revisar tras migración)".' : '') +
-            (d.cotizacionesSinEmpresa.length ? ' ' + d.cotizacionesSinEmpresa.length + ' cotización(es) sin empresa emparejada.' : '');
-          salida.innerHTML = '';
-          salida.appendChild(p);
-          salida.appendChild(detalle);
-        })
-        .catch(function () {
-          salida.innerHTML = '<p class="alert alert--error">No se pudo importar. Revisa tu conexión e inténtalo de nuevo.</p>';
-        })
-        .finally(function () {
-          if (btn) { btn.disabled = false; btn.classList.remove('is-loading'); }
-        });
+      // Una petición POR SECCIÓN, en cadena, en vez de una sola con todo.
+      //
+      // El worker tiene un presupuesto por request (tiempo de CPU y número de subpeticiones)
+      // y el archivo completo no cabía: la corrida moría a media carga —con el borrado ya
+      // hecho— y dejaba la base a medias sin decir por qué. Troceado, cada sección entra
+      // holgada, se ve el avance una por una, y si alguna falla las anteriores ya están.
+      var total = { empresas: 0, contactos: 0, tickets: 0, ticketsEnArchivo: 0, eventos: 0,
+        cotizaciones: 0, versiones: 0, kb: 0, bitacora: 0, usuariosFaltantes: 0,
+        contactosSinEmpresa: [], cotizacionesSinEmpresa: [], lineas: [], simulacro: simulacro };
+      var fallo = null;
+
+      function etiqueta(clave) {
+        var el = form.querySelector('input[name="seccion"][value="' + clave + '"]');
+        return el ? el.parentNode.textContent.trim() : clave;
+      }
+
+      function paso(i) {
+        if (i >= secciones.length || fallo) return pintar();
+        salida.innerHTML =
+          '<p class="muted">' + (simulacro ? 'Simulando' : 'Importando') + ' ' + etiqueta(secciones[i]) +
+          ' — ' + (i + 1) + ' de ' + secciones.length + '. No cierres la página.</p>';
+        return fetch(
+          form.getAttribute('action') + '?modo=' + modo + (simulacro ? '&simulacro=1' : '') +
+            '&secciones=' + secciones[i],
+          {
+            method: 'POST',
+            headers: { 'content-type': 'application/json', 'x-csrf-token': cookie('x-csrf-token') },
+            body: reader.result,
+          },
+        )
+          .then(function (r) { return r.json(); })
+          .then(function (data) {
+            if (!data.ok) { fallo = etiqueta(secciones[i]) + ': ' + data.error; return pintar(); }
+            var d = data.resultado;
+            ['empresas','contactos','tickets','ticketsEnArchivo','eventos','cotizaciones','versiones','kb','bitacora','usuariosFaltantes']
+              .forEach(function (k) { total[k] += d[k] || 0; });
+            total.contactosSinEmpresa = total.contactosSinEmpresa.concat(d.contactosSinEmpresa || []);
+            total.cotizacionesSinEmpresa = total.cotizacionesSinEmpresa.concat(d.cotizacionesSinEmpresa || []);
+            total.lineas = total.lineas.concat(d.lineas || []);
+            return paso(i + 1);
+          })
+          .catch(function () {
+            fallo = 'Se cortó al traer ' + etiqueta(secciones[i]) + '. Lo anterior sí quedó guardado; vuelve a intentarlo marcando solo lo que falte.';
+            return pintar();
+          });
+      }
+
+      function pintar() {
+        var d = total;
+        var detalle = document.createElement('details');
+        var resumen = document.createElement('summary');
+        resumen.textContent = 'Ver el detalle línea por línea (' + d.lineas.length + ')';
+        var pre = document.createElement('pre');
+        pre.textContent = d.lineas.join('\n');
+        detalle.appendChild(resumen);
+        detalle.appendChild(pre);
+        var p = document.createElement('p');
+        p.className = 'alert ' + (fallo ? 'alert--error' : d.simulacro ? 'alert--warn' : 'alert--ok');
+        p.textContent =
+          (fallo ? 'Se interrumpió — ' + fallo + ' Alcanzó a traer: ' :
+            d.simulacro ? 'SIMULACRO (no se escribió nada) — se importarían: ' : 'Importado: ') +
+          d.empresas + ' empresas, ' + d.contactos + ' contactos, ' +
+          d.tickets + (d.ticketsEnArchivo && d.ticketsEnArchivo !== d.tickets ? ' de ' + d.ticketsEnArchivo : '') + ' tickets, ' +
+          d.eventos + ' eventos, ' + d.cotizaciones + ' cotizaciones, ' +
+          d.versiones + ' versiones, ' + d.kb + ' artículos de KB, ' + d.bitacora + ' entradas de bitácora.' +
+          (d.usuariosFaltantes ? ' ' + d.usuariosFaltantes + ' usuario(s) del respaldo aún sin cuenta en ds-hd.' : '') +
+          (d.ticketsEnArchivo > d.tickets ? ' ⚠️ ' + (d.ticketsEnArchivo - d.tickets) + ' ticket(s) del archivo NO se importaron — abre el detalle para ver cuáles y por qué.' : '') +
+          (d.contactosSinEmpresa.length ? ' ' + d.contactosSinEmpresa.length + ' contacto(s) sin empresa emparejada, quedan en "Sin empresa (revisar tras migración)".' : '') +
+          (d.cotizacionesSinEmpresa.length ? ' ' + d.cotizacionesSinEmpresa.length + ' cotización(es) sin empresa emparejada.' : '');
+        salida.innerHTML = '';
+        salida.appendChild(p);
+        salida.appendChild(detalle);
+        if (btn) { btn.disabled = false; btn.classList.remove('is-loading'); }
+      }
+
+      paso(0);
     };
     reader.readAsText(file);
   });
