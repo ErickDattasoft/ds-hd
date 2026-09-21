@@ -145,6 +145,20 @@ export class TicketController {
       this.contactosRepo.list({ activo: true }),
     ]);
     const nombreEmpresa = new Map(empresas.map((e) => [e.id, e.nombre]));
+    // La solicitud de soporte la puede hacer el principal o el alternativo de la empresa: se
+    // marca cuál es cuál para que se elija a quien de verdad la pidió.
+    // Y a veces piden copia para la otra de las dos: se deja a mano su correo para ponerla en CC.
+    const rol = new Map<string, string>();
+    const contraparte = new Map<string, string>();
+    for (const e of empresas) {
+      if (e.contactoAlternativoId) rol.set(e.contactoAlternativoId, 'alternativo');
+      if (e.contactoPrincipalId) rol.set(e.contactoPrincipalId, 'principal');
+      if (e.contactoPrincipalId && e.contactoAlternativoId && e.contactoPrincipalId !== e.contactoAlternativoId) {
+        contraparte.set(e.contactoPrincipalId, e.contactoAlternativoId);
+        contraparte.set(e.contactoAlternativoId, e.contactoPrincipalId);
+      }
+    }
+    const porId = new Map(contactos.map((c) => [c.id, c]));
     const puedeAsignar = user.permisos.includes('tickets:asignar');
     return {
       config,
@@ -159,6 +173,10 @@ export class TicketController {
           nombre: c.nombre,
           email: c.email ?? '',
           empresa: nombreEmpresa.get(c.empresaId) ?? '',
+          rol: rol.get(c.id) ?? '',
+          otroNombre: porId.get(contraparte.get(c.id) ?? '')?.nombre ?? '',
+          otroEmail: porId.get(contraparte.get(c.id) ?? '')?.email ?? '',
+          otroRol: rol.get(contraparte.get(c.id) ?? '') ?? '',
         })),
     };
   }

@@ -913,6 +913,16 @@
     var nombre = wrap.querySelector('[data-c-nombre]');
     var correo = wrap.querySelector('[data-c-correo]');
     var empresa = wrap.querySelector('[data-c-empresa]');
+    var sugerir = wrap.querySelector('[data-c-sugerir-cc]');
+    var otroEmail = opt ? opt.getAttribute('data-otro-email') : '';
+    if (sugerir) {
+      sugerir.hidden = !otroEmail;
+      var btnCc = sugerir.querySelector('[data-c-agregar-cc]');
+      if (btnCc && otroEmail) {
+        btnCc.textContent = '＋ Copia (CC) a ' + opt.getAttribute('data-otro-nombre') + ' — contacto ' + opt.getAttribute('data-otro-rol');
+        btnCc.setAttribute('data-email', otroEmail);
+      }
+    }
     if (opt) {
       if (nombre) nombre.value = opt.value;
       if (correo && opt.getAttribute('data-email')) correo.value = opt.getAttribute('data-email');
@@ -920,6 +930,18 @@
     } else if (nombre) {
       nombre.value = busca.value;
     }
+  });
+
+  // El principal o el alternativo, en copia con un clic (sin repetirlo si ya está).
+  document.addEventListener('click', function (e) {
+    var btn = e.target.closest('[data-c-agregar-cc]');
+    if (!btn) return;
+    var cc = btn.closest('[data-contacto-picker]').querySelector('[data-c-cc]');
+    var email = btn.getAttribute('data-email');
+    if (!cc || !email) return;
+    var ya = cc.value.split(/[,;\s]+/).filter(Boolean);
+    if (ya.map(function (x) { return x.toLowerCase(); }).indexOf(email.toLowerCase()) === -1) ya.push(email);
+    cc.value = ya.join(', ');
   });
 
   // ── Form de ticket: "Otro" sistema + "Guardar y crear otro" ──────────────

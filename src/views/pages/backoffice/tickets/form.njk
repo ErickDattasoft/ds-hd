@@ -20,7 +20,7 @@
         <input list="ticket-contactos" data-buscar-contacto autocomplete="off" placeholder="Empieza a escribir…" value="{{ valores.contactoNombre }}" />
       </label>
       <datalist id="ticket-contactos">
-        {% for c in contactos %}<option value="{{ c.nombre }}" data-email="{{ c.email }}" data-empresa="{{ c.empresa }}">{{ c.empresa }}{% if c.email %} · {{ c.email }}{% endif %}</option>{% endfor %}
+        {% for c in contactos %}<option value="{{ c.nombre }}" data-email="{{ c.email }}" data-empresa="{{ c.empresa }}" data-otro-nombre="{{ c.otroNombre }}" data-otro-email="{{ c.otroEmail }}" data-otro-rol="{{ c.otroRol }}">{{ c.empresa }}{% if c.rol %} · contacto {{ c.rol }}{% endif %}{% if c.email %} · {{ c.email }}{% endif %}</option>{% endfor %}
       </datalist>
       <div class="form-grid">
         <label class="field"><span>Contacto</span><input name="contactoNombre" value="{{ valores.contactoNombre }}" data-c-nombre placeholder="Nombre del contacto" /></label>
@@ -28,7 +28,8 @@
         <label class="field"><span>Empresa</span><input name="empresaNombre" value="{{ valores.empresaNombre }}" data-c-empresa placeholder="Nombre de la empresa" /></label>
       </div>
       <div class="form-grid">
-        <label class="field"><span>CC</span><input name="cc" value="{{ valores.cc }}" placeholder="correo1@x.com, correo2@x.com" /></label>
+        <label class="field"><span>CC</span><input name="cc" value="{{ valores.cc }}" data-c-cc placeholder="correo1@x.com, correo2@x.com" /></label>
+        <p data-c-sugerir-cc hidden><button type="button" class="btn btn--ghost btn--sm" data-c-agregar-cc></button></p>
         <label class="field"><span>CCO</span><input name="cco" value="{{ valores.cco }}" placeholder="correo@x.com" /></label>
       </div>
     </div>
