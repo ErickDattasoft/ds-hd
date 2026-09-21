@@ -518,7 +518,8 @@ export function crearImportadores({ dryRun: DRY_RUN, log }: OpcionesImportacion)
         // folio nuevo asignado en importarTickets). Así los tickets que no colisionaron quedan
         // con exactamente el mismo id que ya tenían de la corrida anterior (reimportar es un
         // no-op para ellos) y solo los que sí colisionaron generan documentos nuevos.
-        const id = `tic-${numero}`;
+        // El marcador de un ticket en la papelera comparte folio con él: va en su propio id.
+        const id = d.eliminadoPorAdmin === true ? Ticket.idMarcador(`tic-${numero}`) : `tic-${numero}`;
         const ticket = new Ticket({
           id,
           numero,
@@ -646,6 +647,9 @@ export function crearImportadores({ dryRun: DRY_RUN, log }: OpcionesImportacion)
         return null;
       }
       let numero = original;
+      // Un marcador "eliminado por administrador" comparte folio con su ticket real (que está
+      // en la papelera): no es una colisión, no se renumera a ninguno de los dos.
+      if (d.eliminadoPorAdmin === true) return { d, numero, archivado: false };
       if (usados.has(numero)) {
         numero = siguienteLibre++;
         renumerados.push(`#${original} → #${numero} (${s(d.asunto) || 'sin asunto'})`);
@@ -657,6 +661,16 @@ export function crearImportadores({ dryRun: DRY_RUN, log }: OpcionesImportacion)
       ...activos.map((d) => asignar(d, false)),
       ...papelera.map((d) => asignar(d, true)),
     ].filter((x): x is { d: Dato; numero: number; archivado: boolean } => x !== null);
+
+    // Marcadores importados antes con el id normal (`tic-<folio>`): ahora van en su propio id,
+    // así que el viejo sobra y dejaría el folio repetido.
+    const marcadoresViejos = existentes
+      .filter((t) => t.eliminadoPorAdmin && !t.id.endsWith('-eliminado'))
+      .map((t) => t.id);
+    if (marcadoresViejos.length) {
+      log('tickets', `marcadores de folio eliminado con id anterior, se reemplazan: ${marcadoresViejos.join(', ')}`);
+      if (!DRY_RUN) await c.resolve('ticketRepo').eliminarVarios(marcadoresViejos);
+    }
 
     const ok = await importarListaTickets(c, items);
 

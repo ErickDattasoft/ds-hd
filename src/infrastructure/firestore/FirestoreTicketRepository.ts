@@ -16,8 +16,9 @@ export class FirestoreTicketRepository implements ITicketRepository {
   }
 
   async findByNumero(numero: number): Promise<Ticket | null> {
-    const q = await this.db.collection(COL).where('numero', '==', numero).limit(1).get();
-    const doc = q.docs[0];
+    // Un folio puede tener su ticket real y su marcador "eliminado": gana el real.
+    const q = await this.db.collection(COL).where('numero', '==', numero).limit(2).get();
+    const doc = q.docs.find((d) => d.data().eliminadoPorAdmin !== true) ?? q.docs[0];
     return doc ? TicketMapper.toDomain(doc.id, doc.data()) : null;
   }
 

@@ -171,7 +171,7 @@ describe('ActualizarEstadoTicketService', () => {
 });
 
 describe('ArchivarTicketService', () => {
-  it('manda a la papelera y se puede restaurar; queda fuera de las listas normales', async () => {
+  it('manda a la papelera y se puede restaurar; en la lista solo queda el marcador de su folio', async () => {
     seq = 0;
     const store = new InMemoryTicketStore();
     const clock = new FixedClock(new Date());
@@ -184,7 +184,8 @@ describe('ArchivarTicketService', () => {
     await archivar.ejecutar({ actor: actor({ permisos: ['tickets:eliminar'] }), ticketId: t.id, archivar: true });
     let recargado = await repo.findById(t.id);
     expect(recargado?.archivado).toBe(true);
-    expect(await queries.listar({ archivado: false })).toHaveLength(0);
+    const visibles = await queries.listar({ archivado: false });
+    expect(visibles.map((x) => [x.numero, x.eliminadoPorAdmin])).toEqual([[t.numero, true]]);
     expect(await queries.listar({ archivado: true })).toHaveLength(1);
 
     await archivar.ejecutar({ actor: actor({ permisos: ['tickets:eliminar'] }), ticketId: t.id, archivar: false });

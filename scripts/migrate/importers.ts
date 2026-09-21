@@ -99,7 +99,15 @@ export async function importarAdjuntos(c: Container, datos: Dato): Promise<numbe
   let ok = 0;
   let saltados = 0;
   for (const t of [...arr(datos.tickets), ...arr(datos.papelera)]) {
-    const refs = arr(t.adjuntos);
+    // Además de la lista de adjuntos, las imágenes pegadas en la descripción: el viejo las
+    // guarda igual en `tickets_adjuntos` y en el texto solo deja `<img data-adj-id="…">`. Esas
+    // se copian con su MISMO id, que es el que la descripción ya nombra y el que ds-hd busca
+    // para pintarla (ver `resolverImagenesDescripcion`).
+    const enDescripcion = [...s(t.descripcion).matchAll(/data-adj-id="([A-Za-z0-9_-]+)"/g)].map((m) => ({
+      adjId: m[1],
+      enTexto: true,
+    }));
+    const refs = [...arr(t.adjuntos), ...enDescripcion] as Dato[];
     const numero = Number(t.numero ?? 0);
     if (!refs.length || !numero) continue;
     const ticketId = `tic-${numero}`;
@@ -129,9 +137,9 @@ export async function importarAdjuntos(c: Container, datos: Dato): Promise<numbe
         const base64 = dataUrl.includes(',') ? dataUrl.slice(dataUrl.indexOf(',') + 1) : dataUrl;
         if (!DRY_RUN) {
           await adjRepo.crear({
-            id: `mig-${adjId}`,
+            id: ref.enTexto ? adjId : `mig-${adjId}`,
             ticketId,
-            nombre: s(d?.nombre) || s(ref.nombre) || 'adjunto',
+            nombre: s(d?.nombre) || s(ref.nombre) || (ref.enTexto ? 'Imagen pegada' : 'adjunto'),
             contentType,
             tamano: Number(d?.size ?? ref.size ?? Math.floor((base64.length * 3) / 4)),
             data: `data:${contentType};base64,${base64}`,

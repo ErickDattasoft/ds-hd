@@ -243,13 +243,19 @@ export class Ticket {
     this.eliminadoPorAdmin = props.eliminadoPorAdmin ?? false;
   }
 
+  /** Id del marcador de un ticket: aparte del ticket real, que sigue vivo en la papelera. */
+  static idMarcador(ticketId: string): string {
+    return `${ticketId}-eliminado`;
+  }
+
   /**
-   * Lo que queda de un ticket al eliminarlo: su folio, cerrado y sin datos. Así la lista sigue
-   * sin huecos y el total coincide con el último folio, como hacía el CRM viejo.
+   * Marcador que ocupa el folio de un ticket mandado a la papelera, como en el CRM viejo: la
+   * lista sigue sin huecos y el orden por folio/fecha se conserva. El ticket real queda intacto
+   * en la papelera; al restaurarlo, el marcador se quita.
    */
-  static folioEliminado(original: Ticket, ahora: Date): Ticket {
+  static marcadorDe(original: Ticket, ahora: Date): Ticket {
     return new Ticket({
-      id: original.id,
+      id: Ticket.idMarcador(original.id),
       numero: original.numero,
       asunto: 'Ticket eliminado por administrador',
       descripcion: '<p>Ticket eliminado por el administrador. Se conserva el folio para mantener la numeración consecutiva.</p>',

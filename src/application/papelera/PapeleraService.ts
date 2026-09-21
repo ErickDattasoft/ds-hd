@@ -107,13 +107,16 @@ export class PapeleraService {
       if (c && !c.activo) await this.contactoRepo.eliminar(id);
       return;
     }
-    // Un ticket no desaparece: se borra su contenido (notas, eventos, adjuntos) y su folio se
-    // queda como "Ticket eliminado por administrador", para que no haya huecos en la numeración.
+    // El folio no desaparece: su marcador "Ticket eliminado por administrador" (creado al
+    // mandarlo a la papelera) se queda en la lista. Los tickets archivados antes de que existiera
+    // el marcador no lo tienen: se crea aquí.
     const t = await this.ticketRepo.findById(id);
     if (t && t.archivado) {
       await this.adjuntoRepo.eliminarPorTicket(id);
       await this.ticketRepo.eliminar(id);
-      await this.ticketRepo.save(Ticket.folioEliminado(t, this.clock.now()));
+      if (!(await this.ticketRepo.findById(Ticket.idMarcador(id)))) {
+        await this.ticketRepo.save(Ticket.marcadorDe(t, this.clock.now()));
+      }
     }
   }
 

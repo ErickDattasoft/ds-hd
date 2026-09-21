@@ -59,7 +59,8 @@ export class InMemoryTicketRepository implements ITicketRepository {
     return this.store.tickets.get(id) ?? null;
   }
   async findByNumero(numero: number): Promise<Ticket | null> {
-    return [...this.store.tickets.values()].find((t) => t.numero === numero) ?? null;
+    const todos = [...this.store.tickets.values()].filter((t) => t.numero === numero);
+    return todos.find((t) => !t.eliminadoPorAdmin) ?? todos[0] ?? null;
   }
   async save(ticket: Ticket): Promise<void> {
     this.store.tickets.set(ticket.id, ticket);
