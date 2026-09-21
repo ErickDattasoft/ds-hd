@@ -314,7 +314,7 @@
         if (i >= secciones.length || fallo) return pintar();
         salida.innerHTML =
           '<p class="muted">' + (simulacro ? 'Simulando' : 'Importando') + ' ' + etiqueta(secciones[i]) +
-          ' — ' + (i + 1) + ' de ' + secciones.length + '. No cierres la página.</p>';
+          ' — sección ' + (i + 1) + ' de ' + secciones.length + '. No cierres la página.</p>';
         return fetch(
           form.getAttribute('action') + '?modo=' + modo + (simulacro ? '&simulacro=1' : '') +
             '&secciones=' + secciones[i],
