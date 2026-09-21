@@ -75,6 +75,7 @@ import { MisTicketsService } from '../application/portal/MisTicketsService.js';
 import { ResponderMiTicketService } from '../application/portal/ResponderMiTicketService.js';
 import { CrearTicketService } from '../application/tickets/CrearTicketService.js';
 import { EditarTicketService } from '../application/tickets/EditarTicketService.js';
+import { ImagenesRespaldoService } from '../application/configuracion/ImagenesRespaldoService.js';
 import { ActualizarGestionTicketService } from '../application/tickets/ActualizarGestionTicketService.js';
 import { ActualizarEstadoTicketService } from '../application/tickets/ActualizarEstadoTicketService.js';
 import { AsignarAgenteService } from '../application/tickets/AsignarAgenteService.js';
@@ -1025,6 +1026,7 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
           c.adjuntoTicketService,
           c.excelUnificadoService,
           c.correoEntranteService,
+          new ImagenesRespaldoService(c.adjuntoTicketRepo, c.ticketQueries),
         ),
     ).singleton(),
     ticketPublicoController: asFunction(

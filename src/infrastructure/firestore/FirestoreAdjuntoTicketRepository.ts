@@ -74,4 +74,11 @@ export class FirestoreAdjuntoTicketRepository implements IAdjuntoTicketRepositor
     const snap = await this.db.collection(COL).get();
     return snap.docs.reduce((total, d) => total + Number((d.data() as Doc).tamano ?? 0), 0);
   }
+
+  async listarImagenes(): Promise<AdjuntoTicket[]> {
+    const snap = await this.db.collection(COL).get();
+    return snap.docs
+      .map((d) => ({ ...meta(d.id, d.data() as Doc), data: String((d.data() as Doc).data ?? '') }))
+      .filter((a) => a.contentType.startsWith('image/') && a.data.startsWith('data:'));
+  }
 }

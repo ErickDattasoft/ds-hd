@@ -1,3 +1,4 @@
+import type { ImagenesRespaldoService } from '../../../../application/configuracion/ImagenesRespaldoService.js';
 import type { Request, Response } from 'express';
 import type { ConfiguracionTicketsService } from '../../../../application/configuracion/ConfiguracionTicketsService.js';
 import { ConfiguracionIntegracionesService } from '../../../../application/configuracion/ConfiguracionIntegracionesService.js';
@@ -45,6 +46,7 @@ export class ConfiguracionController {
     private readonly adjuntos: AdjuntoTicketService,
     private readonly excelUnificado: ExcelUnificadoService,
     private readonly correoEntrante: CorreoEntranteService,
+    private readonly imagenesRespaldo: ImagenesRespaldoService,
   ) {}
 
   cotizacionesView = async (_req: Request, res: Response): Promise<void> => {
@@ -149,6 +151,18 @@ export class ConfiguracionController {
     const fecha = new Date().toISOString().slice(0, 10);
     res.setHeader('Content-Disposition', `attachment; filename="ds-hd-backup-${fecha}.json"`);
     res.type('application/json').send(JSON.stringify(datos, null, 2));
+  };
+
+  /** Qué tickets tienen imágenes — el botón "Respaldar" lo consulta para ofrecer bajarlas. */
+  backupImagenesResumen = async (req: Request, res: Response): Promise<void> => {
+    res.json(await this.imagenesRespaldo.resumen(req.user!));
+  };
+
+  backupImagenesZip = async (req: Request, res: Response): Promise<void> => {
+    const zip = await this.imagenesRespaldo.zip(req.user!);
+    const fecha = new Date().toISOString().slice(0, 10);
+    res.setHeader('Content-Disposition', `attachment; filename="ds-hd-imagenes-tickets-${fecha}.zip"`);
+    res.type('application/zip').send(zip);
   };
 
   /** El archivo llega como JSON crudo en el body (lo sube el JS del navegador con `fetch`,

@@ -365,6 +365,12 @@ export function backofficeRoutes(container: Container): Router {
   r.get('/configuracion/backup/descargar', requirePermission('configuracion:integraciones'), (req, res) =>
     configuracion().backupDescargar(req, res),
   );
+  r.get('/configuracion/backup/imagenes', requirePermission('configuracion:integraciones'), (req, res) =>
+    configuracion().backupImagenesResumen(req, res),
+  );
+  r.get('/configuracion/backup/imagenes.zip', requirePermission('configuracion:integraciones'), (req, res) =>
+    configuracion().backupImagenesZip(req, res),
+  );
   r.post('/configuracion/backup/restaurar', requirePermission('configuracion:integraciones'), (req, res) =>
     configuracion().backupRestaurarPost(req, res),
   );

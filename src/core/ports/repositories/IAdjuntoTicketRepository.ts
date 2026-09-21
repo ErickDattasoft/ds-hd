@@ -15,4 +15,6 @@ export interface IAdjuntoTicketRepository {
   /** Suma de `tamano` (bytes del archivo original, antes de base64) de TODOS los adjuntos —
    *  para estimar el uso de la cuota gratis de Firestore, ver `AdjuntoTicketService.cuotaEspacio`. */
   sumarBytesTotal(): Promise<number>;
+  /** Todas las imágenes de todos los tickets, con su contenido (para guardarlas con el respaldo). */
+  listarImagenes(): Promise<AdjuntoTicket[]>;
 }

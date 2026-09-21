@@ -76,6 +76,28 @@
     }
   }
 
+  // ── Respaldar: además del JSON, ofrecer las imágenes de los tickets ─────
+  // El JSON no las lleva (viven aparte, como adjuntos). Se deja que la descarga del JSON siga
+  // su curso y luego se pregunta si también se quieren las imágenes, en un .zip con el folio
+  // de cada ticket en el nombre de cada imagen.
+  document.addEventListener('click', function (e) {
+    var link = e.target.closest('[data-respaldar]');
+    if (!link) return;
+    fetch('/app/configuracion/backup/imagenes', { headers: { accept: 'application/json' } })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) {
+        if (!d || !d.total) return;
+        var folios = d.tickets.map(function (t) { return '#' + t.numero + (t.imagenes > 1 ? ' (' + t.imagenes + ')' : ''); });
+        var msg = (d.tickets.length === 1 ? 'El ticket ' : 'Los tickets ') + folios.join(', ') +
+          (d.tickets.length === 1 ? ' tiene ' : ' tienen ') + d.total + (d.total === 1 ? ' imagen' : ' imágenes') +
+          ', que no van dentro del JSON.\n\n¿Deseas guardarlas también? Se descargan en un .zip, cada una con el número de su ticket (ticket-1059-1.png…).';
+        setTimeout(function () {
+          if (window.confirm(msg)) window.location.href = '/app/configuracion/backup/imagenes.zip';
+        }, 600);
+      })
+      .catch(function () {});
+  });
+
   // ── Confirmación en acciones destructivas ───────────────────────────────
   document.addEventListener('submit', function (e) {
     var msg = e.target.getAttribute && e.target.getAttribute('data-confirm');

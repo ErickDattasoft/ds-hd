@@ -32,6 +32,10 @@ export class InMemoryAdjuntoTicketRepository implements IAdjuntoTicketRepository
     for (const [id, a] of this.docs) if (a.ticketId === ticketId) this.docs.delete(id);
   }
 
+  async listarImagenes(): Promise<AdjuntoTicket[]> {
+    return [...this.docs.values()].filter((a) => a.contentType.startsWith('image/')).map((a) => ({ ...a }));
+  }
+
   async sumarBytesTotal(): Promise<number> {
     return [...this.docs.values()].reduce((total, a) => total + a.tamano, 0);
   }
