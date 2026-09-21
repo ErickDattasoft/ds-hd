@@ -2,6 +2,7 @@ import type { ListarEmpresasFiltro } from '../../core/ports/repositories/IEmpres
 import type { SessionUser } from '../shared/SessionUser.js';
 import type { EmpresaService } from './EmpresaService.js';
 import type { ColumnaExcel, IExcelIO } from '../../core/ports/services/IExcelIO.js';
+import { celda, columnasDe, correosDe } from '../excel/celdas.js';
 
 export const COLUMNAS_EMPRESAS: ColumnaExcel[] = [
   { header: 'Nombre', key: 'nombre', width: 30 },
@@ -9,9 +10,12 @@ export const COLUMNAS_EMPRESAS: ColumnaExcel[] = [
   { header: 'Razón social', key: 'razonSocial', width: 30 },
   { header: 'Dirección', key: 'direccion', width: 30 },
   { header: 'Teléfono', key: 'telefono' },
+  { header: 'Teléfono alternativo', key: 'telefonoAlternativo' },
   { header: 'Correo', key: 'email', width: 26 },
+  { header: 'Correo alternativo', key: 'emailAlternativo', width: 26 },
   { header: 'Sistemas contratados', key: 'sistemasContratados', width: 30 },
   { header: 'Activa', key: 'activa' },
+  { header: 'Notas', key: 'notas', width: 30 },
 ];
 
 /** Resumen de una importación de Excel. */
@@ -43,9 +47,12 @@ export class EmpresaExcelService {
       razonSocial: e.razonSocial ?? '',
       direccion: e.direccion ?? '',
       telefono: e.telefono ?? '',
+      telefonoAlternativo: e.telefonoAlternativo ?? '',
       email: e.email ?? '',
+      emailAlternativo: e.emailAlternativo ?? '',
       sistemasContratados: e.sistemasContratados.join(', '),
       activa: e.activa ? 'Sí' : 'No',
+      notas: e.notas ?? '',
     }));
   }
 
@@ -59,28 +66,49 @@ export class EmpresaExcelService {
     const existentes = await this.empresas.listar();
     const porNombre = new Map(existentes.map((e) => [e.nombre.toLowerCase(), e]));
 
+    const columnas = columnasDe(filas);
     const resumen: ResumenImportacionExcel = { total: filas.length, creadas: 0, actualizadas: 0, errores: [] };
     for (const [i, fila] of filas.entries()) {
       const numeroFila = i + 2;
-      const nombre = (fila.Nombre ?? '').trim();
+      // "Empresa", "Teléfono 1/2" y "Correo 2" son los encabezados del Excel del CRM viejo.
+      const nombre = celda(fila, columnas, 'Nombre', 'Empresa') ?? '';
       if (!nombre) {
         resumen.errores.push(`Fila ${numeroFila}: falta el nombre`);
         continue;
       }
+      const existente = porNombre.get(nombre.toLowerCase());
+      // Varios correos en una celda: primero principal, luego alternativo, el resto a notas.
+      const correoCelda = celda(fila, columnas, 'Correo');
+      const altCelda = celda(fila, columnas, 'Correo alternativo', 'Correo 2');
+      const correos = [...new Set([...correosDe(correoCelda), ...correosDe(altCelda)])];
+      const hayCorreos = correoCelda !== undefined || altCelda !== undefined;
+      let notas = celda(fila, columnas, 'Notas') ?? existente?.notas ?? '';
+      const faltan = correos.slice(2).filter((x) => !notas.includes(x));
+      if (faltan.length) notas = [notas, `Otros correos: ${faltan.join(', ')}`].filter(Boolean).join('\n');
+      const sistemas = celda(fila, columnas, 'Sistemas contratados');
       const datos = {
         nombre,
-        rfc: fila.RFC ?? '',
-        razonSocial: fila['Razón social'] ?? '',
-        direccion: fila['Dirección'] ?? '',
-        telefono: fila['Teléfono'] ?? '',
-        email: fila.Correo ?? '',
-        sistemasContratados: (fila['Sistemas contratados'] ?? '')
-          .split(/[,;]/)
-          .map((s) => s.trim())
-          .filter(Boolean),
+        rfc: celda(fila, columnas, 'RFC') ?? existente?.rfc ?? '',
+        razonSocial: celda(fila, columnas, 'Razón social') ?? existente?.razonSocial ?? '',
+        direccion: celda(fila, columnas, 'Dirección') ?? existente?.direccion ?? '',
+        telefono: celda(fila, columnas, 'Teléfono', 'Teléfono 1') ?? existente?.telefono ?? '',
+        telefonoAlternativo: celda(fila, columnas, 'Teléfono alternativo', 'Teléfono 2') ?? existente?.telefonoAlternativo ?? '',
+        email: hayCorreos ? (correos[0] ?? '') : (existente?.email ?? ''),
+        emailAlternativo: hayCorreos ? (correos[1] ?? '') : (existente?.emailAlternativo ?? ''),
+        sistemasContratados:
+          sistemas === undefined
+            ? (existente?.sistemasContratados ?? [])
+            : sistemas
+                .split(/[,;]/)
+                .map((s) => s.trim())
+                .filter(Boolean),
+        // Lo que este Excel no maneja se conserva tal cual al actualizar.
+        vigencias: existente?.vigencias,
+        versionesInstaladas: existente?.versionesInstaladas,
+        camposExtra: existente?.camposExtra,
+        notas,
       };
       try {
-        const existente = porNombre.get(nombre.toLowerCase());
         if (existente) {
           await this.empresas.actualizar(actor, existente.id, datos);
           resumen.actualizadas++;

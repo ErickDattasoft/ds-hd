@@ -114,6 +114,20 @@ export class EmpresaService {
     return empresa;
   }
 
+  /** Marca qué contacto es el principal y cuál el alternativo (lo que no se pase no cambia). */
+  async marcarContactos(
+    actor: SessionUser,
+    id: string,
+    marcas: { principal?: string | null; alternativo?: string | null },
+  ): Promise<void> {
+    this.assertPuedeEscribir(actor);
+    const empresa = await this.obtener(id);
+    if (marcas.principal !== undefined) empresa.contactoPrincipalId = marcas.principal;
+    if (marcas.alternativo !== undefined) empresa.contactoAlternativoId = marcas.alternativo;
+    empresa.updatedAt = this.clock.now();
+    await this.repo.save(empresa);
+  }
+
   async alternarFavorita(actor: SessionUser, id: string, favorita: boolean): Promise<void> {
     if (!actor.permisos.includes('empresas:editar')) {
       throw new ForbiddenError('No puedes marcar empresas como favoritas');

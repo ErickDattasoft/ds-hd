@@ -206,7 +206,11 @@ export function crearImportadores({ dryRun: DRY_RUN, log }: OpcionesImportacion)
           versionesInstaladas,
           contactoPrincipalId: yaMarcados.get(id)?.contactoPrincipalId ?? null,
           contactoAlternativoId: yaMarcados.get(id)?.contactoAlternativoId ?? null,
-          notas: notas.join('\n') || null,
+          // Se conservan las notas escritas en ds-hd; solo se agregan las líneas del respaldo que falten.
+          notas:
+            [yaMarcados.get(id)?.notas ?? '', ...notas.filter((l) => !(yaMarcados.get(id)?.notas ?? '').includes(l))]
+              .filter(Boolean)
+              .join('\n') || null,
         });
         porGuardar.push(empresa);
         ok++;
@@ -329,6 +333,12 @@ export function crearImportadores({ dryRun: DRY_RUN, log }: OpcionesImportacion)
     const porNombreEmpresa = new Map<string, string>();
     /** Id de documento → identidad (empresa + nombre) que lo reclamó en ESTA corrida. */
     const duenoDeId = new Map<string, string>();
+    // Las notas que alguien escribió en ds-hd no vienen en el respaldo: al reimportar se conservan.
+    const notasPrevias = new Map(existentes.map((c) => [c.id, c.notas ?? '']));
+    const notasCon = (previas: string, sobrantes: string[]): string | null => {
+      const faltan = sobrantes.filter((x) => !previas.includes(x));
+      return [previas, faltan.length ? `Otros correos del CRM viejo: ${faltan.join(', ')}` : ''].filter(Boolean).join('\n') || null;
+    };
     for (const c of existentes) {
       if (c.email) porCorreo.set(`${c.empresaId}|${norm(c.email)}`, c.id);
       porNombreEmpresa.set(`${c.empresaId}|${norm(c.nombre)}`, c.id);
@@ -407,7 +417,7 @@ export function crearImportadores({ dryRun: DRY_RUN, log }: OpcionesImportacion)
           emailAlternativo: correos.alternativo || null,
           telefono: s(d.telefono1) || null,
           celular: s(d.telefono2) || null,
-          notas: correos.sobrantes.length ? `Otros correos del CRM viejo: ${correos.sobrantes.join(', ')}` : null,
+          notas: notasCon(notasPrevias.get(id) ?? '', correos.sobrantes),
         });
         const rol = rolDe.get(claveRol(empresaNombre, nombre));
         if (rol && empresaId !== EMPRESA_PLACEHOLDER_ID) {

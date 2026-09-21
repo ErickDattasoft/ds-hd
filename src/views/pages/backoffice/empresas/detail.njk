@@ -17,6 +17,7 @@
       {% endif %}
       {% if can('empresas:editar') %}<a class="btn btn--sm" href="/app/empresas/{{ empresa.id }}/editar">Editar</a>{% endif %}
       {% if can('contactos:crear') %}<a class="btn btn--sm btn--secondary" href="/app/contactos/nuevo?empresa={{ empresa.id }}">Agregar contacto</a>{% endif %}
+      {% if can('empresas:eliminar') %}<button type="submit" form="archivar-empresa" class="btn btn--sm btn--ghost" title="{{ 'Restaurar empresa' if not empresa.activa else 'Archivar empresa' }}">{{ '♻️ Restaurar' if not empresa.activa else '🗄️ Archivar' }}</button>{% endif %}
     </div>
   </div>
   {% if can('empresas:editar') %}
@@ -67,14 +68,10 @@
   {% endif %}
 
   {% if can('empresas:eliminar') %}
-    <details class="disclosure">
-      <summary class="disclosure__summary">Administración</summary>
-      <form method="post" action="/app/empresas/{{ empresa.id }}/archivar" class="disclosure__body" data-confirm="¿{{ 'Restaurar' if not empresa.activa else 'Archivar' }} esta empresa?">
-        <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
-        <input type="hidden" name="archivar" value="{{ 'false' if not empresa.activa else 'true' }}" />
-        <button class="btn btn--sm {{ 'btn--secondary' if not empresa.activa else 'btn--danger' }}" type="submit">{{ 'Restaurar empresa' if not empresa.activa else 'Archivar empresa' }}</button>
-      </form>
-    </details>
+    <form id="archivar-empresa" method="post" action="/app/empresas/{{ empresa.id }}/archivar" hidden data-confirm="¿{{ 'Restaurar' if not empresa.activa else 'Archivar' }} esta empresa?">
+      <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+      <input type="hidden" name="archivar" value="{{ 'false' if not empresa.activa else 'true' }}" />
+    </form>
   {% endif %}
 
   {% if empresa.camposExtra | length %}
