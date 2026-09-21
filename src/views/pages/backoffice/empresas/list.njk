@@ -105,13 +105,12 @@
           <td>
             {% if fila.desactualizadas %}<span class="badge badge--warning">{{ fila.desactualizadas }} desactualizada{{ 's' if fila.desactualizadas != 1 }}</span>{% else %}<span class="muted">—</span>{% endif %}
           </td>
-          <td>
+          <td style="white-space:nowrap">
             {{ 'Activa' if e.activa else 'Archivada' }}
             {% if can('empresas:eliminar') %}
-              <button type="submit" form="arch-{{ e.id }}" class="btn btn--ghost btn--sm"
-                      title="{{ 'Restaurar esta empresa' if not e.activa else 'Pasar esta empresa a archivada: deja de salir en la lista y en los avisos, y se puede restaurar' }}">
-                {{ 'Restaurar' if not e.activa else 'Archivar' }}
-              </button>
+              <button type="submit" form="arch-{{ e.id }}" class="star-btn"
+                      aria-label="{{ 'Restaurar' if not e.activa else 'Archivar' }}"
+                      title="{{ 'Restaurar esta empresa' if not e.activa else 'Archivar: deja de salir en la lista y en los avisos, y se puede restaurar' }}">{{ '♻️' if not e.activa else '🗄️' }}</button>
             {% endif %}
           </td>
         </tr>
