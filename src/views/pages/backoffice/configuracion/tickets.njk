@@ -14,7 +14,7 @@
     <p class="muted">Un valor por línea.</p>
 
     <details class="disclosure" open>
-      <summary class="disclosure__summary">Catálogos</summary>
+      <summary class="disclosure__summary">📋 Catálogos</summary>
       <div class="disclosure__body form">
         <label class="field"><span>Tipos</span><textarea name="tipos" rows="6">{{ config.tipos | join('\n') }}</textarea></label>
         <label class="field"><span>Sistemas</span><textarea name="sistemas" rows="6">{{ config.sistemas | join('\n') }}</textarea></label>
@@ -23,7 +23,7 @@
     </details>
 
     <details class="disclosure"{{ ' open' if errores.estados or errores.estadoInicial }}>
-      <summary class="disclosure__summary">Flujo de estados</summary>
+      <summary class="disclosure__summary">🔀 Flujo de estados</summary>
       <div class="disclosure__body form">
         <label class="field"><span>Estados (en orden del flujo)</span><textarea name="estados" rows="5">{{ config.estados | join('\n') }}</textarea>
           {% if errores.estados %}<em class="field__error">{{ errores.estados }}</em>{% endif %}
@@ -36,7 +36,7 @@
     </details>
 
     <details class="disclosure">
-      <summary class="disclosure__summary">SLA por prioridad</summary>
+      <summary class="disclosure__summary">⏱️ SLA por prioridad</summary>
       <fieldset class="field disclosure__body">
         <legend>Horas de SLA por prioridad</legend>
         {% for p in config.prioridades %}
@@ -48,7 +48,7 @@
     </details>
 
     <details class="disclosure">
-      <summary class="disclosure__summary">Facturación y avisos</summary>
+      <summary class="disclosure__summary">🧾 Facturación y avisos</summary>
       <div class="disclosure__body form">
         <label class="field"><span>Tipos facturables</span><textarea name="tiposFacturables" rows="3">{{ config.tiposFacturables | join('\n') }}</textarea></label>
         <label class="field"><span>Correos de notificación de tickets</span><textarea name="correosNotificacion" rows="3">{{ config.correosNotificacion | join('\n') }}</textarea></label>

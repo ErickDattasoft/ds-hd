@@ -287,6 +287,18 @@ a.topbar__name:hover { color: var(--color-text); text-decoration: underline; }
   [data-sidebar="mini"] .sidebar__badge { position: absolute; top: 0; right: 0; font-size: 0.65rem; }
   [data-sidebar="mini"] .sidebar__badge--total { display: none; }
 }
+/* En escritorio el menú lateral se queda fijo al bajar por listas largas (tickets, empresas):
+   así los demás apartados siguen a la mano sin volver arriba. Si el menú es más alto que la
+   ventana, se desplaza por su cuenta. */
+@media (min-width: 861px) {
+  .sidebar {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+    align-self: start;
+  }
+}
 @media (max-width: 860px) { .nav-collapse { display: none; } }
 
 @media (max-width: 860px) {

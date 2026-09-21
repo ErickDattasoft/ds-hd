@@ -13,7 +13,7 @@
     <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
 
     <details class="disclosure" open>
-      <summary class="disclosure__summary">Webhooks n8n</summary>
+      <summary class="disclosure__summary">🔗 Webhooks n8n</summary>
       <div class="disclosure__body form">
         <label class="field"><span>Webhook de tickets</span>
           <input type="url" name="n8nWebhookTickets" value="{{ config.n8nWebhookTickets }}" placeholder="https://..." data-n8n-url="tickets" />
@@ -44,7 +44,7 @@
     </details>
 
     <details class="disclosure">
-      <summary class="disclosure__summary">WhatsApp (CallMeBot)</summary>
+      <summary class="disclosure__summary">💬 WhatsApp (CallMeBot)</summary>
       <div class="disclosure__body form">
         <label class="field--check">
           <input type="checkbox" name="whatsappHabilitado" {{ 'checked' if config.whatsappHabilitado }} />
@@ -71,7 +71,7 @@
     </details>
 
     <details class="disclosure"{{ ' open' if wa.proveedor == 'meta' or wa.proveedor == 'twilio' }}>
-      <summary class="disclosure__summary">WhatsApp a clientes (avisos de versiones y licencias)</summary>
+      <summary class="disclosure__summary">📲 WhatsApp a clientes (avisos de versiones y licencias)</summary>
       <div class="disclosure__body form">
         <p class="muted">CallMeBot (arriba) solo sirve para avisos internos a tu equipo. Para escribirle a clientes elige cómo:</p>
         <label class="field"><span>Envío</span>
@@ -118,7 +118,7 @@
     </details>
 
     <details class="disclosure">
-      <summary class="disclosure__summary">Correo saliente</summary>
+      <summary class="disclosure__summary">📤 Correo saliente</summary>
       <div class="disclosure__body form">
         {% if infoCorreo.modo == 'log' %}
           <p class="alert alert--warn">
@@ -140,7 +140,7 @@
     </details>
 
     <details class="disclosure">
-      <summary class="disclosure__summary">Matriz de reglas por evento</summary>
+      <summary class="disclosure__summary">🗂️ Matriz de reglas por evento</summary>
       <div class="disclosure__body">
         <table class="data-table">
           <thead>
