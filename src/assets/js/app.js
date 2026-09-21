@@ -302,7 +302,8 @@
       // holgada, se ve el avance una por una, y si alguna falla las anteriores ya están.
       var total = { empresas: 0, contactos: 0, tickets: 0, ticketsEnArchivo: 0, eventos: 0,
         cotizaciones: 0, versiones: 0, kb: 0, bitacora: 0, usuariosFaltantes: 0,
-        contactosSinEmpresa: [], cotizacionesSinEmpresa: [], lineas: [], simulacro: simulacro };
+        contactosSinEmpresa: [], cotizacionesSinEmpresa: [], empresasSobrantes: [], contactosSobrantes: [],
+        lineas: [], simulacro: simulacro };
       var fallo = null;
 
       function etiqueta(clave) {
@@ -332,6 +333,8 @@
               .forEach(function (k) { total[k] += d[k] || 0; });
             total.contactosSinEmpresa = total.contactosSinEmpresa.concat(d.contactosSinEmpresa || []);
             total.cotizacionesSinEmpresa = total.cotizacionesSinEmpresa.concat(d.cotizacionesSinEmpresa || []);
+            total.empresasSobrantes = total.empresasSobrantes.concat(d.empresasSobrantes || []);
+            total.contactosSobrantes = total.contactosSobrantes.concat(d.contactosSobrantes || []);
             total.lineas = total.lineas.concat(d.lineas || []);
             return paso(i + 1);
           })
@@ -365,6 +368,20 @@
           (d.cotizacionesSinEmpresa.length ? ' ' + d.cotizacionesSinEmpresa.length + ' cotización(es) sin empresa emparejada.' : '');
         salida.innerHTML = '';
         salida.appendChild(p);
+        // Lo que ds-hd tiene y el respaldo ya no: no se borra, se lista para revisarlo a mano.
+        [['empresas', d.empresasSobrantes], ['contactos', d.contactosSobrantes]].forEach(function (par) {
+          if (!par[1].length) return;
+          var caja = document.createElement('div');
+          caja.className = 'alert alert--warn';
+          var t = document.createElement('p');
+          t.textContent = par[1].length + ' ' + par[0] + ' están en ds-hd pero ya NO vienen en este respaldo ' +
+            '(se borraron o renombraron en el CRM viejo, o se dieron de alta solo aquí). No se tocaron; revísalos y archívalos si sobran:';
+          var ul = document.createElement('ul');
+          par[1].forEach(function (x) { var li = document.createElement('li'); li.textContent = x; ul.appendChild(li); });
+          caja.appendChild(t);
+          caja.appendChild(ul);
+          salida.appendChild(caja);
+        });
         salida.appendChild(detalle);
         if (btn) { btn.disabled = false; btn.classList.remove('is-loading'); }
       }

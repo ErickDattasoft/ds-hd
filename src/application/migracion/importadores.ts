@@ -148,7 +148,10 @@ export function crearImportadores({ dryRun: DRY_RUN, log }: OpcionesImportacion)
   /**
    * Empresas (`clientes`, campos en MAYÚSCULAS)
    */
-  async function importarEmpresas(c: Container, datos: Dato): Promise<{ ok: number; total: number }> {
+  async function importarEmpresas(
+    c: Container,
+    datos: Dato,
+  ): Promise<{ ok: number; total: number; sobrantes: string[] }> {
     const repo = c.resolve('empresaRepo');
     // El contacto principal/alternativo lo fija la sección de contactos (o alguien a mano en
     // ds-hd); reimportar solo empresas no debe borrarlo.
@@ -222,7 +225,14 @@ export function crearImportadores({ dryRun: DRY_RUN, log }: OpcionesImportacion)
     // un tope por request que la importación completa se comía entero.
     if (!DRY_RUN) await repo.guardarVarias(porGuardar);
     log('empresas', `${ok}/${items.length} importadas`);
-    return { ok, total: items.length };
+    // Lo que está en ds-hd y ya no viene en el respaldo: restos de una restauración anterior
+    // (algo que luego se borró o renombró allá) o altas hechas solo aquí. No se borra: se avisa.
+    const delRespaldo = new Set(porNombre.values());
+    const sobrantes = [...yaMarcados.values()]
+      .filter((e) => !delRespaldo.has(e.id) && e.id !== EMPRESA_PLACEHOLDER_ID)
+      .map((e) => e.nombre);
+    if (sobrantes.length) log('empresas', `en ds-hd pero no en el respaldo: ${sobrantes.join('; ')}`);
+    return { ok, total: items.length, sobrantes };
   }
 
   const EMPRESA_PLACEHOLDER_ID = 'sin-empresa-migracion';
@@ -267,7 +277,7 @@ export function crearImportadores({ dryRun: DRY_RUN, log }: OpcionesImportacion)
   async function importarContactos(
     c: Container,
     datos: Dato,
-  ): Promise<{ ok: number; sinEmpresa: string[]; total: number }> {
+  ): Promise<{ ok: number; sinEmpresa: string[]; total: number; sobrantes: string[] }> {
     const empresaRepo = c.resolve('empresaRepo');
     const contactoRepo = c.resolve('contactoRepo');
     // El mapa se arma desde el respaldo mismo (no con una lectura a Firestore tras importar
@@ -452,7 +462,13 @@ export function crearImportadores({ dryRun: DRY_RUN, log }: OpcionesImportacion)
     // de más que no existe en el CRM viejo. Si nadie quedó dentro, se retira solo.
     if (!DRY_RUN && !sinEmpresa.length) await retirarPlaceholderVacio(c);
     log('contactos', `${ok}/${items.length} importados, ${sinEmpresa.length} sin empresa emparejada`);
-    return { ok, sinEmpresa, total: items.length };
+    const tocados = new Set(duenoDeId.keys());
+    const nombreEmpresa = new Map((await empresaRepo.list()).map((e) => [e.id, e.nombre]));
+    const sobrantes = existentes
+      .filter((x) => !tocados.has(x.id))
+      .map((x) => `${x.nombre} (${nombreEmpresa.get(x.empresaId) ?? 'sin empresa'})`);
+    if (sobrantes.length) log('contactos', `en ds-hd pero no en el respaldo: ${sobrantes.join('; ')}`);
+    return { ok, sinEmpresa, total: items.length, sobrantes };
   }
 
   /**

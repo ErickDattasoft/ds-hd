@@ -1125,6 +1125,7 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
           c.bitacoraService,
           c.resumenDiarioService,
           c.correoEntranteService,
+          c.empresaRepo,
         ),
     ).singleton(),
   });

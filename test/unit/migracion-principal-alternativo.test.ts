@@ -59,4 +59,21 @@ describe('migración: principal y alternativo del CRM viejo', () => {
     await imp.importarEmpresas(c, respaldo);
     expect((await empresaRepo.list())[0]!.contactoPrincipalId).toBe(ana.id);
   });
+
+  it('avisa lo que está en ds-hd y ya no viene en el respaldo, sin borrarlo', async () => {
+    const { empresaRepo, contactoRepo, c, imp } = montar();
+    await imp.importarEmpresas(c, respaldo);
+    await imp.importarContactos(c, respaldo);
+    const sinBeto = {
+      clientes: [{ ...respaldo.clientes[0]!, CONTACTO_2: '', CORREO_2: '' }, { EMPRESA: 'NUEVA', SISTEMAS: {} }],
+      contactos: respaldo.contactos,
+    };
+    const otro = { clientes: [sinBeto.clientes[1]!], contactos: [] };
+    const e = await imp.importarEmpresas(c, otro);
+    expect(e.sobrantes).toEqual(['ACME']);
+    const r = await imp.importarContactos(c, sinBeto);
+    expect(r.sobrantes).toEqual(['Beto (ACME)']);
+    expect(await empresaRepo.list()).toHaveLength(2);
+    expect(await contactoRepo.list()).toHaveLength(2);
+  });
 });

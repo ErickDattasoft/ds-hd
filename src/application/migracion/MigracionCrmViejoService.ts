@@ -84,6 +84,9 @@ export interface ResultadoImportacion {
   usuariosFaltantes: number;
   contactosSinEmpresa: string[];
   cotizacionesSinEmpresa: string[];
+  /** Lo que está en ds-hd y no viene en el respaldo (restos o altas hechas solo aquí). */
+  empresasSobrantes: string[];
+  contactosSobrantes: string[];
   borrado: Record<string, number> | null;
   /** Bitácora de la corrida, línea por línea, tal como la imprime el script por terminal. */
   lineas: string[];
@@ -180,6 +183,8 @@ export class MigracionCrmViejoService {
       usuariosFaltantes,
       contactosSinEmpresa: contactos?.sinEmpresa ?? [],
       cotizacionesSinEmpresa: cotizaciones?.sinEmpresa ?? [],
+      empresasSobrantes: empresas?.sobrantes ?? [],
+      contactosSobrantes: contactos?.sobrantes ?? [],
       borrado,
       lineas,
     };

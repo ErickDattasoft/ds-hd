@@ -1,3 +1,4 @@
+import type { IEmpresaRepository } from '../../../../core/ports/repositories/IEmpresaRepository.js';
 import type { Request, Response } from 'express';
 import type { EventoService } from '../../../../application/eventos/EventoService.js';
 import type { ITicketRepository } from '../../../../core/ports/repositories/ITicketRepository.js';
@@ -24,6 +25,7 @@ export class JobsController {
     private readonly bitacora: BitacoraService,
     private readonly resumen: ResumenDiarioService,
     private readonly correoEntrante: CorreoEntranteService,
+    private readonly empresas: IEmpresaRepository,
   ) {}
 
   private autorizado(req: Request): boolean {
@@ -77,6 +79,31 @@ export class JobsController {
     }
     this.logger.info('Recalculo de SLA', { revisados: abiertos.length, vencidos });
     res.json({ ok: true, revisados: abiertos.length, vencidos });
+  };
+
+  /**
+   * Los tickets del portal se guardaban sin el nombre de su empresa (solo el id), y en las
+   * listas del staff la empresa salía vacía. Se completa aquí; los que ya lo tienen no se tocan,
+   * así que correrlo de nuevo no hace nada.
+   */
+  completarEmpresaTickets = async (req: Request, res: Response): Promise<void> => {
+    if (!this.autorizado(req)) return void res.status(401).json({ error: 'no autorizado' });
+    const pendientes = (await this.ticketQueries.listar({ canal: 'portal' })).filter(
+      (t) => t.empresaId && !t.empresaNombre,
+    );
+    let completados = 0;
+    if (pendientes.length) {
+      const nombres = new Map((await this.empresas.list()).map((e) => [e.id, e.nombre]));
+      for (const t of pendientes) {
+        const nombre = nombres.get(t.empresaId!);
+        if (!nombre) continue;
+        t.empresaNombre = nombre;
+        await this.ticketRepo.save(t);
+        completados++;
+      }
+    }
+    this.logger.info('Empresa completada en tickets del portal', { completados });
+    res.json({ ok: true, completados });
   };
 
   /** Retención de bitácora: borra entradas más viejas que la ventana de retención. */
