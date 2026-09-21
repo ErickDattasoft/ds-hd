@@ -1,3 +1,5 @@
+import type { Ticket } from '../../../../core/entities/Ticket.js';
+import type { EditarTicketService } from '../../../../application/tickets/EditarTicketService.js';
 import type { IContadorRepository } from '../../../../core/ports/repositories/IContadorRepository.js';
 import { CONTADOR_TICKETS } from '../../../../application/tickets/constantes.js';
 import type { Request, Response } from 'express';
@@ -68,6 +70,7 @@ export class TicketController {
     private readonly clock: IClock,
     private readonly excel: TicketExcelService,
     private readonly contadores: IContadorRepository,
+    private readonly editar: EditarTicketService,
   ) {}
 
   private filtroDeQuery(req: Request): FiltroTickets {
@@ -278,6 +281,117 @@ export class TicketController {
         // Nunca se reinyecta la descripción tal cual venía del POST — puede no haber pasado
         // por sanitizarDescripcionHtml todavía si el error fue en otro campo (p. ej. tipo
         // inválido, antes de llegar a Ticket.crear). Se sanea aquí para el "reflejo" del form.
+        valores: { ...b, descripcion: sanitizarDescripcionHtml(str(b.descripcion)) },
+        errores: camposDeError(err),
+      });
+    }
+  };
+
+  /** Valores del formulario a partir de un ticket guardado (para "Editar"). */
+  private valoresDe(t: Ticket, descripcionHtml: string): Record<string, unknown> {
+    return {
+      asunto: t.asunto,
+      descripcion: descripcionHtml,
+      tipo: t.tipo,
+      sistema: t.sistema ?? '',
+      prioridad: t.prioridad,
+      estado: t.estado,
+      grupo: t.grupo ?? '',
+      estadoFacturacion: t.facturacion.estado,
+      empresaNombre: t.empresaNombre ?? '',
+      contactoNombre: t.contactoNombre ?? '',
+      contactoCorreo: t.contactoCorreo ?? '',
+      cc: t.cc.join(', '),
+      cco: t.cco.join(', '),
+      solicitadoPor: t.solicitadoPor ?? '',
+      canalizadoA: t.canalizadoA ?? '',
+      notasInternas: t.notasInternas ?? '',
+      agenteUid: t.agenteAsignadoUid ?? '',
+      agendaFecha: t.agenda?.fecha ?? '',
+      agendaHora: t.agenda?.hora ?? '',
+      agendaRecordatorio: t.agenda?.recordatorioWhatsapp ? 'on' : '',
+    };
+  }
+
+  editarForm = async (req: Request, res: Response): Promise<void> => {
+    const d = await this.ver.ejecutar(req.user!, str(req.params.id));
+    res.render('pages/backoffice/tickets/form', {
+      titulo: `Editar ticket #${d.ticket.numero}`,
+      modo: 'editar',
+      ticket: d.ticket,
+      ...(await this.datosFormNuevo(req.user!)),
+      folioSiguiente: null,
+      // La descripción va con sus imágenes resueltas para que el editor las muestre; al guardar,
+      // las que ya son adjuntos conservan su referencia y no se vuelven a subir.
+      valores: this.valoresDe(d.ticket, d.descripcionHtml),
+      errores: {},
+    });
+  };
+
+  editarPost = async (req: Request, res: Response): Promise<void> => {
+    const id = str(req.params.id);
+    const b = req.body ?? {};
+    const actor = req.user!;
+    const lista = (v: unknown) =>
+      str(v)
+        .split(/[,;\n]/)
+        .map((x) => x.trim())
+        .filter(Boolean);
+    try {
+      const empresaNombre = str(b.empresaNombre) || null;
+      const ticket = await this.editar.ejecutar({
+        actor,
+        ticketId: id,
+        asunto: str(b.asunto),
+        descripcion: str(b.descripcion),
+        tipo: str(b.tipo),
+        prioridad: str(b.prioridad) || 'Media',
+        sistema: (str(b.sistema) === '__otro__' ? str(b.sistemaOtro) : str(b.sistema)) || null,
+        grupo: str(b.grupo) || null,
+        empresaId: empresaNombre ? await this.resolverEmpresaId(empresaNombre) : null,
+        empresaNombre,
+        contactoNombre: str(b.contactoNombre) || null,
+        contactoCorreo: str(b.contactoCorreo) || null,
+        cc: lista(b.cc),
+        cco: lista(b.cco),
+        solicitadoPor: str(b.solicitadoPor),
+        canalizadoA: str(b.canalizadoA),
+        ...(b.notasInternas !== undefined ? { notasInternas: str(b.notasInternas) } : {}),
+      });
+      // Estado, agente, facturación y agenda van por sus servicios (avisos al cliente, SLA,
+      // carga de agentes…), y solo si cambiaron — para no generar avisos de más.
+      if (str(b.estado) && str(b.estado) !== ticket.estado && actor.permisos.includes('tickets:cambiar_estado')) {
+        await this.cambiarEstado.ejecutar({ actor, ticketId: id, nuevoEstado: str(b.estado) });
+      }
+      if (
+        b.agenteUid !== undefined &&
+        str(b.agenteUid) &&
+        str(b.agenteUid) !== (ticket.agenteAsignadoUid ?? '') &&
+        actor.permisos.includes('tickets:asignar')
+      ) {
+        await this.asignar.ejecutar({ actor, ticketId: id, agenteUid: str(b.agenteUid), forzar: true });
+      }
+      if (esEstadoFacturacion(b.estadoFacturacion) && b.estadoFacturacion !== ticket.facturacion.estado) {
+        await this.facturar.ejecutar({ actor, ticketId: id, estado: b.estadoFacturacion });
+      }
+      const fecha = str(b.agendaFecha);
+      const hora = str(b.agendaHora);
+      const recordatorio = b.agendaRecordatorio === 'on';
+      if (
+        fecha &&
+        (fecha !== ticket.agenda?.fecha || hora !== ticket.agenda?.hora || recordatorio !== ticket.agenda?.recordatorioWhatsapp)
+      ) {
+        await this.programarAtencion.ejecutar({ actor, ticketId: id, fecha, hora, recordatorioWhatsapp: recordatorio });
+      }
+      res.redirect(`/app/tickets/${id}`);
+    } catch (err) {
+      const d = await this.ver.ejecutar(actor, id);
+      res.status(422).render('pages/backoffice/tickets/form', {
+        titulo: `Editar ticket #${d.ticket.numero}`,
+        modo: 'editar',
+        ticket: d.ticket,
+        ...(await this.datosFormNuevo(actor)),
+        folioSiguiente: null,
         valores: { ...b, descripcion: sanitizarDescripcionHtml(str(b.descripcion)) },
         errores: camposDeError(err),
       });

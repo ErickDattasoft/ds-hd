@@ -915,7 +915,11 @@
         editor.focus();
         return;
       }
-      oculto.value = editor.innerHTML;
+      // Las imágenes que ya son adjuntos del ticket (al editar) viajan solo con su referencia:
+      // el servidor ya las tiene, y reenviar su contenido puede pasar el límite del formulario.
+      var copia = editor.cloneNode(true);
+      copia.querySelectorAll('img[data-adj-id]').forEach(function (img) { img.removeAttribute('src'); });
+      oculto.value = copia.innerHTML;
     });
   })();
 

@@ -31,6 +31,9 @@ export async function desinflarImagenesDescripcion(
   const reemplazos = await Promise.all(
     matches.map(async (m) => {
       const [, antes, contentType, base64, despues] = m;
+      // Imagen que ya es un adjunto (al editar, el editor la recibe con su `src` resuelto): se
+      // conserva su referencia y no se vuelve a subir, o cada guardado la duplicaría.
+      if (/\bdata-adj-id="[A-Za-z0-9_-]+"/.test(`${antes}${despues}`)) return `<img${antes}${despues}>`;
       try {
         const tamano = Math.floor((base64!.length * 3) / 4);
         validarAdjunto(contentType!, tamano);

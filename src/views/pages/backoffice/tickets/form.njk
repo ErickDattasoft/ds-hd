@@ -1,15 +1,21 @@
 {% extends "layouts/backoffice.njk" %}
 {% import "components/tickets.njk" as tk %}
-{% block title %}Nuevo ticket{% endblock %}
+{% block title %}{{ titulo or 'Nuevo ticket' }}{% endblock %}
 {% block content %}
+  {% set editando = modo == 'editar' %}
   <div class="page-head">
-    <h1>Nuevo ticket{% if folioSiguiente %} <span class="muted" title="Folio que le tocará al guardar. Si alguien más guarda un ticket antes, será el siguiente.">#{{ folioSiguiente }}</span>{% endif %}</h1>
-    <a class="btn btn--sm btn--ghost" href="/app/tickets">← Tickets</a>
+    {% if editando %}
+      <h1>Editar ticket <span class="muted">#{{ ticket.numero }}</span></h1>
+      <a class="btn btn--sm btn--ghost" href="/app/tickets/{{ ticket.id }}">← Volver al ticket</a>
+    {% else %}
+      <h1>Nuevo ticket{% if folioSiguiente %} <span class="muted" title="Folio que le tocará al guardar. Si alguien más guarda un ticket antes, será el siguiente.">#{{ folioSiguiente }}</span>{% endif %}</h1>
+      <a class="btn btn--sm btn--ghost" href="/app/tickets">← Tickets</a>
+    {% endif %}
   </div>
   {% if errores.general %}<p class="alert alert--error">{{ errores.general }}</p>{% endif %}
   {% if aviso == 'ok' %}<p class="alert alert--ok">Ticket creado. Puedes capturar el siguiente.</p>{% endif %}
 
-  <form method="post" action="/app/tickets" class="form form--wide" data-form-ticket>
+  <form method="post" action="{{ '/app/tickets/' + ticket.id + '/editar' if editando else '/app/tickets' }}" class="form form--wide" data-form-ticket>
     <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
     <input type="hidden" name="guardarYNuevo" value="0" data-guardar-y-nuevo />
     <input type="hidden" name="adjuntosNuevos" value="" data-adjuntos-nuevos />
@@ -42,13 +48,13 @@
 
       <div class="form-grid">
         <label class="field"><span>Tipo</span>
-          <select name="tipo">{% for t in config.tipos %}<option {{ 'selected' if valores.tipo == t }}>{{ t }}</option>{% endfor %}</select>
+          <select name="tipo">{% if editando and valores.tipo and valores.tipo not in config.tipos %}<option selected>{{ valores.tipo }}</option>{% endif %}{% for t in config.tipos %}<option {{ 'selected' if valores.tipo == t }}>{{ t }}</option>{% endfor %}</select>
         </label>
         <label class="field"><span>Prioridad</span>
           <select name="prioridad">{% for p in config.prioridades %}<option {{ 'selected' if valores.prioridad == p }}>{{ p }}</option>{% endfor %}</select>
         </label>
-        <label class="field"><span>Estado inicial</span>
-          <select name="estado">{% for e in config.estados %}<option {{ 'selected' if valores.estado == e or (not valores.estado and config.estadoInicial == e) }}>{{ e }}</option>{% endfor %}</select>
+        <label class="field"><span>{{ 'Estado' if editando else 'Estado inicial' }}</span>
+          <select name="estado">{% if editando and valores.estado not in config.estados %}<option selected>{{ valores.estado }}</option>{% endif %}{% for e in config.estados %}<option {{ 'selected' if valores.estado == e or (not valores.estado and config.estadoInicial == e) }}>{{ e }}</option>{% endfor %}</select>
         </label>
         <label class="field"><span>Sistema</span>
           <select name="sistema" data-sistema-select>
@@ -105,7 +111,7 @@
             </label>
           {% endif %}
         </div>
-        {% if user.esTecnico %}
+        {% if user.esTecnico and not editando %}
           <label class="field--check"><input type="checkbox" name="asignarAMi" {{ 'checked' if valores.asignarAMi == 'on' }} /> <span>Asignármelo a mí</span></label>
         {% endif %}
       </div>
@@ -131,6 +137,7 @@
       </div>
     </details>
 
+    {% if not editando %}
     <details class="disclosure">
       <summary class="disclosure__summary">📎 Adjuntos <span class="disclosure__hint">— imágenes y PDF, máx 700 KB c/u</span></summary>
       <div class="disclosure__body" data-adjuntos data-adjuntos-modo="crear">
@@ -141,11 +148,18 @@
         </label>
       </div>
     </details>
+    {% endif %}
 
     <div class="page-head__actions">
-      <button class="btn" type="submit">Crear ticket</button>
-      <button class="btn btn--secondary" type="submit" data-submit-y-nuevo>Guardar y crear otro</button>
-      <a class="btn btn--ghost" href="/app/tickets">Cancelar</a>
+      {% if editando %}
+        <button class="btn" type="submit">💾 Guardar cambios</button>
+        <a class="btn btn--ghost" href="/app/tickets/{{ ticket.id }}">Cancelar</a>
+        <span class="muted">Los adjuntos se agregan o quitan desde el detalle del ticket.</span>
+      {% else %}
+        <button class="btn" type="submit">Crear ticket</button>
+        <button class="btn btn--secondary" type="submit" data-submit-y-nuevo>Guardar y crear otro</button>
+        <a class="btn btn--ghost" href="/app/tickets">Cancelar</a>
+      {% endif %}
     </div>
   </form>
 {% endblock %}

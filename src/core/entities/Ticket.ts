@@ -398,6 +398,49 @@ export class Ticket {
     this.updatedAt = ahora;
   }
 
+  /** Edita los datos del ticket (lo que se captura al crearlo). Estado, agente, facturación y
+   *  agenda tienen sus propios métodos, porque disparan efectos (SLA, avisos, carga). */
+  editarDatos(
+    datos: {
+      asunto: string;
+      descripcion: string;
+      tipo: string;
+      sistema: string | null;
+      prioridad: Prioridad;
+      grupo: string | null;
+      empresaId: string | null;
+      empresaNombre: string | null;
+      contactoNombre: string | null;
+      contactoCorreo: string | null;
+      cc: string[];
+      cco: string[];
+      /** Horas de SLA de la nueva prioridad, si cambió. */
+      horasSla?: number;
+    },
+    ahora: Date,
+  ): void {
+    if (datos.asunto.trim().length < 3) {
+      throw new ValidationError('El asunto es muy corto', { asunto: 'Mínimo 3 caracteres' });
+    }
+    if (descripcionATextoPlano(datos.descripcion).length < 5 && !datos.descripcion.includes('<img')) {
+      throw new ValidationError('Describe el problema', { descripcion: 'Mínimo 5 caracteres' });
+    }
+    if (datos.prioridad !== this.prioridad && datos.horasSla) this.sla.horasResolucion = datos.horasSla;
+    this.asunto = datos.asunto.trim();
+    this.descripcion = sanitizarDescripcionHtml(datos.descripcion);
+    this.tipo = datos.tipo;
+    this.sistema = datos.sistema?.trim() || null;
+    this.prioridad = datos.prioridad;
+    this.grupo = datos.grupo?.trim() || null;
+    this.empresaId = datos.empresaId;
+    this.empresaNombre = datos.empresaNombre?.trim() || null;
+    this.contactoNombre = datos.contactoNombre?.trim() || null;
+    this.contactoCorreo = datos.contactoCorreo?.trim().toLowerCase() || null;
+    this.cc = datos.cc.map((c) => c.trim()).filter(Boolean);
+    this.cco = datos.cco.map((c) => c.trim()).filter(Boolean);
+    this.updatedAt = ahora;
+  }
+
   /** Actualiza los campos de gestión interna del ticket (solicitado por / canalizado a / notas). */
   actualizarGestion(
     datos: { solicitadoPor?: string; canalizadoA?: string; notasInternas?: string },

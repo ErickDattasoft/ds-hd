@@ -5,6 +5,7 @@
   <div class="page-head">
     <h1>#{{ ticket.numero }} — {{ ticket.asunto }}</h1>
     <div class="page-head__actions">
+      {% if permisos.editar and not ticket.eliminadoPorAdmin %}<a class="btn btn--sm" href="/app/tickets/{{ ticket.id }}/editar">✏️ Editar</a>{% endif %}
       <a class="btn btn--sm btn--ghost" href="/app/tickets/{{ ticket.id }}/imprimir?auto=1" target="_blank" rel="noopener">🖨️ Imprimir</a>
       {% if permisos.cotizar %}
         <a class="btn btn--sm btn--ghost" href="/app/cotizaciones/nueva?empresa={{ ticket.empresaId or '' }}&conceptos=[{{ '{' }}&quot;descripcion&quot;:&quot;{{ ticket.asunto }}&quot;,&quot;cantidad&quot;:1,&quot;precioUnitario&quot;:0{{ '}' }}]">🧾 Cotizar</a>

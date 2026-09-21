@@ -120,6 +120,8 @@ export function backofficeRoutes(container: Container): Router {
   r.get('/tickets/exportar', leerTickets, (req, res) => tickets().exportarExcel(req, res));
   r.get('/tickets/:id', leerTickets, (req, res) => tickets().detalleView(req, res));
   r.get('/tickets/:id/imprimir', leerTickets, (req, res) => tickets().imprimirView(req, res));
+  r.get('/tickets/:id/editar', requirePermission('tickets:editar'), (req, res) => tickets().editarForm(req, res));
+  r.post('/tickets/:id/editar', requirePermission('tickets:editar'), (req, res) => tickets().editarPost(req, res));
   r.post('/tickets/:id/gestion', requirePermission('tickets:editar'), (req, res) =>
     tickets().gestionPost(req, res),
   );
