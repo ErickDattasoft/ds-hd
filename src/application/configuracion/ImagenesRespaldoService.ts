@@ -37,9 +37,12 @@ export class ImagenesRespaldoService {
     };
   }
 
-  async zip(actor: SessionUser): Promise<Buffer> {
+  /** Zip con las imágenes de los folios indicados (todos, si no se indica ninguno). */
+  async zip(actor: SessionUser, soloFolios?: readonly number[]): Promise<Buffer> {
     const archivos: Record<string, Uint8Array> = {};
+    const elegidos = soloFolios?.length ? new Set(soloFolios) : null;
     for (const g of await this.agrupar(actor)) {
+      if (elegidos && !elegidos.has(g.numero)) continue;
       g.imagenes.forEach((img, i) => {
         const base64 = img.data.slice(img.data.indexOf(',') + 1);
         const ext = EXTENSION[img.contentType] ?? img.contentType.split('/')[1] ?? 'img';

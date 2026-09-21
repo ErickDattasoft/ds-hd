@@ -159,7 +159,11 @@ export class ConfiguracionController {
   };
 
   backupImagenesZip = async (req: Request, res: Response): Promise<void> => {
-    const zip = await this.imagenesRespaldo.zip(req.user!);
+    const folios = String(req.query.tickets ?? '')
+      .split(',')
+      .map(Number)
+      .filter((n) => Number.isInteger(n) && n > 0);
+    const zip = await this.imagenesRespaldo.zip(req.user!, folios);
     const fecha = new Date().toISOString().slice(0, 10);
     res.setHeader('Content-Disposition', `attachment; filename="ds-hd-imagenes-tickets-${fecha}.zip"`);
     res.type('application/zip').send(zip);

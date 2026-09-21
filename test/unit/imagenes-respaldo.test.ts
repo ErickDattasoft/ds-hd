@@ -33,6 +33,8 @@ describe('imágenes de los tickets al respaldar', () => {
     const zip = unzipSync(new Uint8Array(await svc.zip(admin)));
     expect(Object.keys(zip).sort()).toEqual(['ticket-1033-1.png', 'ticket-1059-1.jpg', 'ticket-1059-2.png']);
     expect([...zip['ticket-1059-1.jpg']!]).toEqual([0, 1, 2]);
+    const solo = unzipSync(new Uint8Array(await svc.zip(admin, [1033])));
+    expect(Object.keys(solo)).toEqual(['ticket-1033-1.png']);
   });
 
   it('sin permiso no deja bajar nada', async () => {

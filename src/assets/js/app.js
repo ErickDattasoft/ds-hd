@@ -78,22 +78,88 @@
 
   // ── Respaldar: además del JSON, ofrecer las imágenes de los tickets ─────
   // El JSON no las lleva (viven aparte, como adjuntos). Se deja que la descarga del JSON siga
-  // su curso y luego se pregunta si también se quieren las imágenes, en un .zip con el folio
-  // de cada ticket en el nombre de cada imagen.
+  // su curso y luego se muestra qué tickets tienen imágenes, con una casilla por ticket, para
+  // bajar en un .zip solo las que hagan falta (cada una con el folio de su ticket en el nombre).
+  // Este navegador recuerda cuáles ya se bajaron: esas salen desmarcadas para no repetirlas.
+  var CLAVE_IMG_BAJADAS = 'respaldo-imagenes-bajadas';
+  function leerBajadas() {
+    try { return JSON.parse(localStorage.getItem(CLAVE_IMG_BAJADAS) || '{}') || {}; } catch (_) { return {}; }
+  }
+  function guardarBajadas(v) {
+    try { localStorage.setItem(CLAVE_IMG_BAJADAS, JSON.stringify(v)); } catch (_) { /* sin almacenamiento */ }
+  }
+  function ventanaImagenes(d) {
+    var bajadas = leerBajadas();
+    var dlg = document.createElement('dialog');
+    dlg.className = 'card';
+    dlg.style.maxWidth = '32rem';
+    var h = document.createElement('h3');
+    h.textContent = '🖼️ Imágenes de tickets';
+    var p = document.createElement('p');
+    p.className = 'muted';
+    p.textContent = d.total + (d.total === 1 ? ' imagen' : ' imágenes') + ' en ' + d.tickets.length +
+      (d.tickets.length === 1 ? ' ticket' : ' tickets') + '. No van dentro del JSON: marca las que quieras guardar (se bajan en un .zip, cada una con el número de su ticket).';
+    var lista = document.createElement('div');
+    lista.style.cssText = 'max-height:18rem;overflow:auto;margin:0.5rem 0';
+    d.tickets.forEach(function (t) {
+      var ya = bajadas[t.numero];
+      var lbl = document.createElement('label');
+      lbl.className = 'field--check';
+      lbl.style.display = 'flex';
+      var chk = document.createElement('input');
+      chk.type = 'checkbox';
+      chk.value = t.numero;
+      // Ya bajadas con el mismo número de imágenes: desmarcadas. Si el ticket tiene nuevas, marcado.
+      chk.checked = !ya || ya.n !== t.imagenes;
+      var span = document.createElement('span');
+      span.textContent = 'Ticket #' + t.numero + ' — ' + t.imagenes + (t.imagenes === 1 ? ' imagen' : ' imágenes') +
+        (ya ? ' · ya bajadas el ' + ya.fecha + (ya.n !== t.imagenes ? ' (tiene nuevas)' : '') : '');
+      lbl.appendChild(chk);
+      lbl.appendChild(span);
+      lista.appendChild(lbl);
+    });
+    var acciones = document.createElement('div');
+    acciones.className = 'page-head__actions';
+    function boton(texto, clase, fn) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'btn btn--sm ' + clase;
+      b.textContent = texto;
+      b.addEventListener('click', fn);
+      acciones.appendChild(b);
+    }
+    function casillas() { return [].slice.call(lista.querySelectorAll('input[type=checkbox]')); }
+    boton('Descargar seleccionadas', '', function () {
+      var marcadas = casillas().filter(function (c) { return c.checked; });
+      if (!marcadas.length) { toast('Marca al menos un ticket'); return; }
+      var hoy = new Date().toLocaleDateString('es-MX');
+      marcadas.forEach(function (c) {
+        var t = d.tickets.filter(function (x) { return String(x.numero) === c.value; })[0];
+        bajadas[c.value] = { n: t ? t.imagenes : 0, fecha: hoy };
+      });
+      guardarBajadas(bajadas);
+      window.location.href = '/app/configuracion/backup/imagenes.zip?tickets=' +
+        marcadas.map(function (c) { return c.value; }).join(',');
+      dlg.close();
+    });
+    boton('Marcar todas', 'btn--ghost', function () { casillas().forEach(function (c) { c.checked = true; }); });
+    boton('Ninguna', 'btn--ghost', function () { casillas().forEach(function (c) { c.checked = false; }); });
+    boton('Ahora no', 'btn--ghost', function () { dlg.close(); });
+    dlg.appendChild(h);
+    dlg.appendChild(p);
+    dlg.appendChild(lista);
+    dlg.appendChild(acciones);
+    dlg.addEventListener('close', function () { dlg.remove(); });
+    document.body.appendChild(dlg);
+    dlg.showModal();
+  }
   document.addEventListener('click', function (e) {
     var link = e.target.closest('[data-respaldar]');
     if (!link) return;
     fetch('/app/configuracion/backup/imagenes', { headers: { accept: 'application/json' } })
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (d) {
-        if (!d || !d.total) return;
-        var folios = d.tickets.map(function (t) { return '#' + t.numero + (t.imagenes > 1 ? ' (' + t.imagenes + ')' : ''); });
-        var msg = (d.tickets.length === 1 ? 'El ticket ' : 'Los tickets ') + folios.join(', ') +
-          (d.tickets.length === 1 ? ' tiene ' : ' tienen ') + d.total + (d.total === 1 ? ' imagen' : ' imágenes') +
-          ', que no van dentro del JSON.\n\n¿Deseas guardarlas también? Se descargan en un .zip, cada una con el número de su ticket (ticket-1059-1.png…).';
-        setTimeout(function () {
-          if (window.confirm(msg)) window.location.href = '/app/configuracion/backup/imagenes.zip';
-        }, 600);
+        if (d && d.total) setTimeout(function () { ventanaImagenes(d); }, 600);
       })
       .catch(function () {});
   });
