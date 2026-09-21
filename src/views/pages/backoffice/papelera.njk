@@ -7,7 +7,7 @@
       <h2>{{ titulo }} ({{ filas | length }})</h2>
       {% if filas | length %}
         <form method="post" action="/app/papelera/vaciar" class="inline"
-              data-confirm="¿Vaciar la papelera de {{ tipo }}? Se borran definitivamente {{ filas | length }} elemento(s). No se puede deshacer.">
+              data-confirm="¿Vaciar la papelera de {{ tipo }}? Se borran definitivamente {{ filas | length }} elemento(s).{{ ' Los folios se conservan como «Ticket eliminado por administrador».' if tipo == 'tickets' }} No se puede deshacer.">
           <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
           <input type="hidden" name="tipo" value="{{ tipo }}" />
           <button class="btn btn--sm btn--danger" type="submit">Vaciar</button>
@@ -38,7 +38,7 @@
         <div class="page-head__actions">
           <button class="btn btn--sm btn--secondary" type="submit" formaction="/app/papelera/restaurar">Restaurar seleccionados</button>
           <button class="btn btn--sm btn--danger" type="submit" formaction="/app/papelera/eliminar"
-                  data-confirm="¿Borrar definitivamente los elementos seleccionados? No se puede deshacer.">Eliminar definitivo</button>
+                  data-confirm="¿Borrar definitivamente los elementos seleccionados?{{ ' Los folios se conservan como «Ticket eliminado por administrador».' if tipo == 'tickets' }} No se puede deshacer.">Eliminar definitivo</button>
         </div>
       </form>
     {% else %}
@@ -49,7 +49,7 @@
 
 {% block content %}
   <h1>Papelera de reciclaje</h1>
-  <p class="muted">Elementos archivados. Restáuralos, bórralos definitivamente o vacía la papelera.</p>
+  <p class="muted">Elementos archivados. Restáuralos, bórralos definitivamente o vacía la papelera. Al borrar un ticket su folio se conserva como «Ticket eliminado por administrador», para que la numeración siga completa.</p>
 
   {% if aviso %}<div class="alert alert--ok" role="status">{{ aviso }}</div>{% endif %}
 

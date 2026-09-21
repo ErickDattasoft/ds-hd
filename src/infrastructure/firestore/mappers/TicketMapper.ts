@@ -75,6 +75,7 @@ export const TicketMapper = {
       updatedAt: fecha(d.updatedAt) ?? new Date(),
       historialEstados: historial,
       archivado: Boolean(d.archivado),
+      eliminadoPorAdmin: d.eliminadoPorAdmin === true,
     });
   },
 
@@ -133,6 +134,7 @@ export const TicketMapper = {
       updatedAt: Timestamp.fromDate(t.updatedAt),
       historialEstados: t.historialEstados.map((h) => ({ estado: h.estado, at: Timestamp.fromDate(h.at) })),
       archivado: t.archivado,
+      eliminadoPorAdmin: t.eliminadoPorAdmin,
     };
   },
 

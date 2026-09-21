@@ -113,6 +113,8 @@ export interface TicketProps {
   updatedAt?: Date;
   historialEstados?: CambioEstado[];
   archivado?: boolean;
+  /** Folio de un ticket que se eliminó: se conserva para que la numeración siga consecutiva. */
+  eliminadoPorAdmin?: boolean;
 }
 
 /** Resultado de una mutación: describe qué pasó para la bitácora y los efectos colaterales. */
@@ -174,6 +176,7 @@ export class Ticket {
   updatedAt: Date;
   historialEstados: CambioEstado[];
   archivado: boolean;
+  eliminadoPorAdmin: boolean;
 
   constructor(props: TicketProps) {
     this.id = props.id;
@@ -237,6 +240,31 @@ export class Ticket {
     };
     this.agenda = sanearAgenda(props.agenda);
     this.archivado = props.archivado ?? false;
+    this.eliminadoPorAdmin = props.eliminadoPorAdmin ?? false;
+  }
+
+  /**
+   * Lo que queda de un ticket al eliminarlo: su folio, cerrado y sin datos. Así la lista sigue
+   * sin huecos y el total coincide con el último folio, como hacía el CRM viejo.
+   */
+  static folioEliminado(original: Ticket, ahora: Date): Ticket {
+    return new Ticket({
+      id: original.id,
+      numero: original.numero,
+      asunto: 'Ticket eliminado por administrador',
+      descripcion: '<p>Ticket eliminado por el administrador. Se conserva el folio para mantener la numeración consecutiva.</p>',
+      tipo: original.tipo,
+      estado: 'Cerrado',
+      prioridad: original.prioridad,
+      canal: original.canal,
+      facturacion: { estado: 'no_aplica' },
+      abiertoEn: original.abiertoEn,
+      cerradoEn: ahora,
+      createdAt: original.createdAt,
+      updatedAt: ahora,
+      historialEstados: [{ estado: 'Cerrado', at: ahora }],
+      eliminadoPorAdmin: true,
+    });
   }
 
   // ── Fábrica ────────────────────────────────────────────────────────────────

@@ -1093,6 +1093,7 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
           c.adjuntoTicketRepo,
           c.bitacoraService,
           c.logger,
+          c.clock,
         ),
     ).singleton(),
     papeleraController: asFunction(

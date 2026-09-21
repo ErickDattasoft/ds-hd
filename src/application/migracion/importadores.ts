@@ -530,6 +530,7 @@ export function crearImportadores({ dryRun: DRY_RUN, log }: OpcionesImportacion)
           createdAt: fecha(d.fechaCreacion),
           updatedAt: fecha(d.fechaActualizacion ?? d.fechaCreacion),
           archivado,
+          eliminadoPorAdmin: d.eliminadoPorAdmin === true,
         });
         if (!DRY_RUN) {
           // Notas y eventos se juntan y se escriben CON el ticket en una sola llamada: uno por

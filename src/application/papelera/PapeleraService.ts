@@ -8,6 +8,8 @@ import type { ITicketQueries } from '../../core/ports/repositories/ITicketQuerie
 import type { IAdjuntoTicketRepository } from '../../core/ports/repositories/IAdjuntoTicketRepository.js';
 import type { BitacoraService } from '../shared/BitacoraService.js';
 import type { ILogger } from '../../core/ports/services/ILogger.js';
+import type { IClock } from '../../core/ports/services/IClock.js';
+import { Ticket } from '../../core/entities/Ticket.js';
 import { ForbiddenError } from '../../core/errors/DomainError.js';
 import type { SessionUser } from '../shared/SessionUser.js';
 
@@ -39,6 +41,7 @@ export class PapeleraService {
     private readonly adjuntoRepo: IAdjuntoTicketRepository,
     private readonly bitacora: BitacoraService,
     private readonly logger: ILogger,
+    private readonly clock: IClock,
   ) {}
 
   static esTipo(v: unknown): v is TipoPapelera {
@@ -104,10 +107,13 @@ export class PapeleraService {
       if (c && !c.activo) await this.contactoRepo.eliminar(id);
       return;
     }
+    // Un ticket no desaparece: se borra su contenido (notas, eventos, adjuntos) y su folio se
+    // queda como "Ticket eliminado por administrador", para que no haya huecos en la numeración.
     const t = await this.ticketRepo.findById(id);
     if (t && t.archivado) {
       await this.adjuntoRepo.eliminarPorTicket(id);
       await this.ticketRepo.eliminar(id);
+      await this.ticketRepo.save(Ticket.folioEliminado(t, this.clock.now()));
     }
   }
 
