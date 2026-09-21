@@ -156,6 +156,9 @@
         <a class="btn btn--ghost" href="/app/tickets/{{ ticket.id }}">Cancelar</a>
         <span class="muted">Los adjuntos se agregan o quitan desde el detalle del ticket.</span>
       {% else %}
+        <label class="field--check" title="Manda al cliente el correo con la descripción (y sus imágenes), con copia a los CC del ticket">
+          <input type="checkbox" name="enviarCorreo" {{ 'checked' if (not valores.asunto) or valores.enviarCorreo == 'on' }} /> <span>✉️ Enviar correo al cliente</span>
+        </label>
         <button class="btn" type="submit">Crear ticket</button>
         <button class="btn btn--secondary" type="submit" data-submit-y-nuevo>Guardar y crear otro</button>
         <a class="btn btn--ghost" href="/app/tickets">Cancelar</a>

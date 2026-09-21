@@ -87,6 +87,7 @@ export class RegistrarNotaService {
         await this.email.enviar({
           para: dest.para,
           ...(dest.cc.length ? { cc: dest.cc } : {}),
+          ...(dest.cco.length ? { cco: dest.cco } : {}),
           ...(dest.responderA ? { responderA: dest.responderA } : {}),
           asunto: `Actualización de tu ticket #${ticket.numero}`,
           html: `${avisoSinContacto}<p>${cuerpo}</p>${firma}<hr /><p class="muted">Ticket #${ticket.numero} — ${ticket.asunto}</p>${historial}`,

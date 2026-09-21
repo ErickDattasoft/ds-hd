@@ -15,6 +15,8 @@ import type { SessionUser } from '../shared/SessionUser.js';
 export interface ReenviarCorreoInput {
   actor: SessionUser;
   ticketId: string;
+  /** `false` = correo al crear el ticket (casilla "Enviar correo al cliente"), no un reenvío. */
+  esReenvio?: boolean;
 }
 
 /** Caso de uso: reenviar al cliente el correo con el resumen actual del ticket. */
@@ -28,6 +30,7 @@ export class ReenviarCorreoTicketService {
     private readonly clock: IClock,
     private readonly email: IEmailSender,
     private readonly logger: ILogger,
+    private readonly baseUrl = '',
   ) {}
 
   async ejecutar(input: ReenviarCorreoInput): Promise<{ enviadoA: string[] }> {
@@ -71,16 +74,22 @@ export class ReenviarCorreoTicketService {
     await this.email.enviar({
       para: dest.para,
       ...(dest.cc.length ? { cc: dest.cc } : {}),
+      ...(dest.cco.length ? { cco: dest.cco } : {}),
       ...(dest.responderA ? { responderA: dest.responderA } : {}),
       asunto: `[Ticket #${ticket.numero}] ${ticket.asunto}`,
-      html: resumenTicketHtml(ticket, eventos, { reenvio: true, sinContacto: dest.sinContacto, adjuntos }),
-      tags: ['ticket-reenvio', `ticket-${ticket.numero}`],
+      html: resumenTicketHtml(ticket, eventos, {
+        reenvio: input.esReenvio !== false,
+        sinContacto: dest.sinContacto,
+        adjuntos,
+        baseUrl: this.baseUrl,
+      }),
+      tags: [input.esReenvio === false ? 'ticket-nuevo' : 'ticket-reenvio', `ticket-${ticket.numero}`],
     });
 
     const enviadoA = dest.para.map((p) => p.email);
     await registrarEvento(this.tickets, this.ids, ticket.id, {
       tipo: 'correo',
-      resumen: `Reenvío de correo a ${enviadoA.join(', ')}`,
+      resumen: `${input.esReenvio === false ? 'Correo del ticket nuevo' : 'Reenvío de correo'} a ${enviadoA.join(', ')}`,
       actor: input.actor,
       at: ahora,
     });

@@ -126,6 +126,7 @@ export class ActualizarEstadoTicketService {
     await this.email.enviar({
       para: dest.para,
       ...(dest.cc.length ? { cc: dest.cc } : {}),
+      ...(dest.cco.length ? { cco: dest.cco } : {}),
       ...(dest.responderA ? { responderA: dest.responderA } : {}),
       asunto: `Ticket #${ticket.numero} — ${estado}`,
       html:
@@ -167,6 +168,7 @@ export class ActualizarEstadoTicketService {
     await this.email.enviar({
       para: dest.para,
       ...(dest.cc.length ? { cc: dest.cc } : {}),
+      ...(dest.cco.length ? { cco: dest.cco } : {}),
       ...(dest.responderA ? { responderA: dest.responderA } : {}),
       asunto: `Ticket #${ticket.numero} — ${tipo}`,
       html: `${avisoSinContacto}<p>El ticket <strong>#${ticket.numero} — ${ticket.asunto}</strong> fue marcado como <strong>${tipo}</strong>.</p>${historial}${

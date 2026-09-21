@@ -36,6 +36,25 @@ export async function resolverImagenesDescripcion(
   });
 }
 
+/**
+ * Descripción lista para un correo: cada `<img data-adj-id>` apunta a `/adjunto/<id>` (la ruta
+ * pública que sirve solo imágenes), porque Gmail, Outlook y Zoho no muestran `data:` URI.
+ * Devuelve también las URLs, para poner enlaces por si el programa de correo bloquea imágenes.
+ */
+export function imagenesParaCorreo(html: string, baseUrl: string): { html: string; urls: string[] } {
+  if (!html || !html.includes('data-adj-id')) return { html: html || '', urls: [] };
+  const base = baseUrl.replace(/\/+$/, '');
+  const urls: string[] = [];
+  const out = html.replace(IMG_RE, (completo, atributos: string) => {
+    const idMatch = ADJ_ID_RE.exec(atributos);
+    if (!idMatch) return '';
+    const url = `${base}/adjunto/${idMatch[1]}`;
+    urls.push(url);
+    return `<img src="${url}" alt="Imagen ${urls.length}" style="max-width:100%;height:auto;display:block;margin:8px 0">`;
+  });
+  return { html: out, urls };
+}
+
 /** Quita las imágenes de una descripción (ya saneada) — para correos: `data-adj-id` no significa
  *  nada fuera de la app, e incrustar el `data:` URI infla el correo sin garantía de que el
  *  cliente de correo lo muestre. El ticket sigue listando sus adjuntos aparte. */

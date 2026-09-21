@@ -272,6 +272,11 @@ export class TicketController {
         await this.asignar.ejecutar({ actor: req.user!, ticketId: ticket.id, agenteUid: str(b.agenteUid) }).catch(() => {});
       }
       await this.subirAdjuntosIniciales(req.user!, ticket.id, b.adjuntosNuevos);
+      // Casilla "Enviar correo al cliente" (como en el CRM viejo): el correo con la descripción y
+      // sus imágenes. Si no hay a quién mandarlo, el ticket igual queda creado.
+      if (b.enviarCorreo === 'on') {
+        await this.reenviarCorreo.ejecutar({ actor: req.user!, ticketId: ticket.id, esReenvio: false }).catch(() => {});
+      }
 
       res.redirect(b.guardarYNuevo === '1' ? '/app/tickets/nuevo?ok=1' : `/app/tickets/${ticket.id}`);
     } catch (err) {

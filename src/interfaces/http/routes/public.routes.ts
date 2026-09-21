@@ -43,5 +43,19 @@ export function publicRoutes(container: Container): Router {
   const configuracion = () => container.resolve('configuracionController');
   r.get('/logo', (req, res) => configuracion().logoArchivoGet(req, res));
 
+  // Imagen de un ticket para los correos (los programas de correo no muestran `data:` URI).
+  // Como `/adjunto` del CRM viejo: solo imágenes, por id aleatorio, sin listar ni buscar nada.
+  r.get('/adjunto/:id', async (req, res) => {
+    const id = String(req.params.id ?? '');
+    const adj = /^[A-Za-z0-9_-]{15,64}$/.test(id) ? await container.resolve('adjuntoTicketRepo').obtener(id) : null;
+    const m = adj ? /^data:(image\/(?:jpeg|png|gif|webp));base64,(.+)$/s.exec(adj.data) : null;
+    if (!m) return void res.status(404).type('text/plain').send('No encontrado');
+    res.setHeader('Content-Type', m[1]!);
+    res.setHeader('Content-Disposition', 'inline');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('Cache-Control', 'public, max-age=86400');
+    res.send(Buffer.from(m[2]!, 'base64'));
+  });
+
   return r;
 }

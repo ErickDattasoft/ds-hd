@@ -719,6 +719,7 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
           c.clock,
           c.emailSender,
           c.logger,
+          c.config.baseUrl,
         ),
     ).singleton(),
     marcarFacturacionService: asFunction(

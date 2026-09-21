@@ -2,7 +2,7 @@ import type { Ticket } from '../../core/entities/Ticket.js';
 import type { EventoTicket } from '../../core/entities/NotaTicket.js';
 import type { AdjuntoTicketMeta } from '../../core/entities/AdjuntoTicket.js';
 import { escaparHtml as esc, historialActividadHtml } from './historialCorreo.js';
-import { quitarImagenesDescripcion } from './descripcionImagenes.js';
+import { imagenesParaCorreo, quitarImagenesDescripcion } from './descripcionImagenes.js';
 
 /** Normaliza, valida (contiene `@`) y deduplica una lista de correos. */
 function correosValidos(lista: readonly string[]): string[] {
@@ -23,6 +23,8 @@ function correosValidos(lista: readonly string[]): string[] {
 export interface DestinatariosTicket {
   para: { email: string; nombre?: string }[];
   cc: { email: string; nombre?: string }[];
+  /** CCO capturado en el ticket (copia oculta). */
+  cco: { email: string }[];
   responderA?: { email: string; nombre?: string };
   /** `true` si el ticket no tiene correo de contacto (el cliente no recibió nada directo). */
   sinContacto: boolean;
@@ -35,24 +37,31 @@ export interface DestinatariosTicket {
  * no se pierda. `responderA` = primer correo de la lista de configuración.
  */
 export function destinatariosTicket(
-  ticket: Pick<Ticket, 'contactoCorreo' | 'contactoNombre'>,
+  ticket: Pick<Ticket, 'contactoCorreo' | 'contactoNombre'> & Partial<Pick<Ticket, 'cc' | 'cco'>>,
   correosNotificacion: readonly string[],
   copiaInterna: string | null,
 ): DestinatariosTicket {
   const config = correosValidos(correosNotificacion);
-  const copias = correosValidos([...config, ...(copiaInterna ? [copiaInterna] : [])]);
+  // El CC del ticket (p. ej. el contacto alternativo que pidió copia) va junto a las copias
+  // internas, como en el CRM viejo; el CCO va aparte y nunca repite a quien ya recibe el correo.
+  const copias = correosValidos([...config, ...(copiaInterna ? [copiaInterna] : []), ...(ticket.cc ?? [])]);
   const responderA = config[0] ? { email: config[0] } : undefined;
   const contacto = ticket.contactoCorreo?.trim() || '';
 
+  const visibles = new Set([contacto, ...copias].map((e) => e.toLowerCase()));
+  const cco = correosValidos(ticket.cco ?? [])
+    .filter((e) => !visibles.has(e.toLowerCase()))
+    .map((email) => ({ email }));
   if (contacto) {
     return {
       para: [{ email: contacto, ...(ticket.contactoNombre ? { nombre: ticket.contactoNombre } : {}) }],
       cc: copias.filter((e) => e.toLowerCase() !== contacto.toLowerCase()).map((email) => ({ email })),
+      cco,
       responderA,
       sinContacto: false,
     };
   }
-  return { para: copias.map((email) => ({ email })), cc: [], responderA, sinContacto: true };
+  return { para: copias.map((email) => ({ email })), cc: [], cco, responderA, sinContacto: true };
 }
 
 /** Una fila `<tr>` de la tabla de datos del ticket en el correo. */
@@ -70,8 +79,23 @@ function fila(k: string, v: string | null | undefined): string {
 export function resumenTicketHtml(
   ticket: Ticket,
   eventos: readonly EventoTicket[],
-  opts: { reenvio?: boolean; sinContacto?: boolean; adjuntos?: readonly AdjuntoTicketMeta[] } = {},
+  opts: {
+    reenvio?: boolean;
+    sinContacto?: boolean;
+    adjuntos?: readonly AdjuntoTicketMeta[];
+    /** URL pública de la app: con ella las imágenes de la descripción se muestran enlazadas. */
+    baseUrl?: string;
+  } = {},
 ): string {
+  const desc = opts.baseUrl
+    ? imagenesParaCorreo(ticket.descripcion, opts.baseUrl)
+    : { html: quitarImagenesDescripcion(ticket.descripcion), urls: [] };
+  // Por si el programa de correo bloquea las imágenes remotas: siempre hay un enlace para verlas.
+  const enlaces = desc.urls.length
+    ? `<p style="font-family:sans-serif;font-size:13px;color:#555">Las imágenes de este ticket se pueden ver en: ${desc.urls
+        .map((u, i) => `<a href="${u}">Imagen ${i + 1}</a>`)
+        .join(' · ')}</p>`
+    : '';
   const avisoSinContacto = opts.sinContacto
     ? `<p style="background:#fef3c7;color:#92400e;padding:8px 12px;border-radius:6px;font-size:13px">⚠️ El contacto no tiene correo registrado — este ticket no se notificó al cliente.</p>`
     : '';
@@ -90,9 +114,8 @@ export function resumenTicketHtml(
       ${fila('Agente', ticket.agenteAsignadoNombre)}
     </table>
     <h3 style="font-family:sans-serif;margin-top:16px">Descripción</h3>
-    <div style="background:#f9fafb;padding:12px;border-radius:6px;font-family:sans-serif;white-space:pre-wrap">${quitarImagenesDescripcion(
-      ticket.descripcion,
-    )}</div>
+    <div style="background:#f9fafb;padding:12px;border-radius:6px;font-family:sans-serif;white-space:pre-wrap">${desc.html}</div>
+    ${enlaces}
     ${
       opts.adjuntos && opts.adjuntos.length
         ? `<p style="font-family:sans-serif;font-size:14px"><strong>Adjuntos:</strong> ${opts.adjuntos
