@@ -355,6 +355,67 @@ describe('MigracionCrmViejoService', () => {
     expect((await contactos.list()).map((c) => c.nombre).sort()).toEqual(['Luis', 'Martha']);
   });
 
+  it('un contacto que nombra una empresa ya borrada se reconoce por su correo', async () => {
+    // Caso real: en el CRM viejo borraron "Q ARQUITECTURA MODERNA" pero dejaron el contacto que
+    // la nombraba. Iba al buzón, y el buzón salía en la lista como una empresa de más.
+    const huerfano = respaldo();
+    (huerfano.datos as Record<string, unknown>).clientes = [{ EMPRESA: 'ARQUITECTURA MODERNA' }];
+    (huerfano.datos as Record<string, unknown>).contactos = [
+      { nombre: 'Martha Zaldivar', empresa: 'Q ARQUITECTURA MODERNA', correo: 'tesoreria@q.mx' },
+      { nombre: 'Martha Zaldivar', empresa: 'ARQUITECTURA MODERNA', correo: 'tesoreria@q.mx' },
+    ];
+    const r = await servicio.importar(actor(), huerfano, {
+      modo: 'actualizar',
+      simulacro: false,
+      secciones: ['empresas', 'contactos'],
+    });
+
+    expect(r.contactosSinEmpresa).toEqual([]);
+    expect(await empresas.list()).toHaveLength(1);
+    const lista = await contactos.list();
+    expect(lista).toHaveLength(1);
+    expect(lista[0]?.empresaId).toBe((await empresas.list())[0]?.id);
+  });
+
+  it('no adivina la empresa cuando la misma persona aparece en varias', async () => {
+    const ambiguo = respaldo();
+    (ambiguo.datos as Record<string, unknown>).clientes = [{ EMPRESA: 'UNA SA' }, { EMPRESA: 'OTRA SA' }];
+    (ambiguo.datos as Record<string, unknown>).contactos = [
+      { nombre: 'Martha', empresa: 'BORRADA SA', correo: 'm@x.mx' },
+      { nombre: 'Martha', empresa: 'UNA SA', correo: 'm@x.mx' },
+      { nombre: 'Martha', empresa: 'OTRA SA', correo: 'm@x.mx' },
+    ];
+    const r = await servicio.importar(actor(), ambiguo, {
+      modo: 'actualizar',
+      simulacro: false,
+      secciones: ['empresas', 'contactos'],
+    });
+    expect(r.contactosSinEmpresa).toHaveLength(1);
+    expect((await empresas.list()).some((e) => e.nombre.startsWith('Sin empresa'))).toBe(true);
+  });
+
+  it('retira la empresa buzón cuando ya no cuelga nadie de ella', async () => {
+    const conHuerfano = respaldo();
+    (conHuerfano.datos as Record<string, unknown>).contactos = [
+      { nombre: 'Diana', empresa: 'NO EXISTE SA', correo: 'diana@x.mx' },
+    ];
+    await servicio.importar(actor(), conHuerfano, {
+      modo: 'actualizar',
+      simulacro: false,
+      secciones: ['empresas', 'contactos'],
+    });
+    expect((await empresas.list()).some((e) => e.nombre.startsWith('Sin empresa'))).toBe(true);
+
+    // En el CRM viejo le asignan su empresa y se vuelve a importar: el buzón sobra.
+    const corregido = respaldo();
+    await servicio.importar(actor(), corregido, {
+      modo: 'sustituir',
+      simulacro: false,
+      secciones: ['empresas', 'contactos'],
+    });
+    expect((await empresas.list()).some((e) => e.nombre.startsWith('Sin empresa'))).toBe(false);
+  });
+
   it('dos empresas con nombres parecidos no acaban en el mismo documento', async () => {
     // Caso real del respaldo: "NIUTEC (SERVICLIMAS)" y "NIUTEC - SERVICLIMAS" dan el mismo
     // slug, así que la segunda pisaba a la primera y desaparecía de la lista de empresas.

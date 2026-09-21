@@ -208,6 +208,24 @@ export function crearImportadores({ dryRun: DRY_RUN, log }: OpcionesImportacion)
   }
 
   /**
+   * Borra la empresa buzón si ya no cuelga nadie de ella: es un apunte de trabajo de la
+   * migración, no una empresa del negocio, y mientras exista se cuenta en la lista.
+   */
+  async function retirarPlaceholderVacio(c: Container): Promise<void> {
+    const repo = c.resolve('empresaRepo');
+    if (!(await repo.findById(EMPRESA_PLACEHOLDER_ID))) return;
+    const ocupado =
+      (await c.resolve('contactoRepo').list()).some((x) => x.empresaId === EMPRESA_PLACEHOLDER_ID) ||
+      (await c.resolve('ticketQueries').listar({ soloAbiertos: false })).some(
+        (t) => t.empresaId === EMPRESA_PLACEHOLDER_ID,
+      ) ||
+      (await c.resolve('cotizacionRepo').list()).some((x) => x.empresaId === EMPRESA_PLACEHOLDER_ID);
+    if (ocupado) return;
+    await repo.eliminar(EMPRESA_PLACEHOLDER_ID);
+    log('contactos', 'la empresa "Sin empresa (revisar tras migración)" quedó vacía y se retiró');
+  }
+
+  /**
    * Contactos (empareja `empresa` de texto contra el nombre real de la empresa)
    */
   async function importarContactos(
@@ -255,10 +273,41 @@ export function crearImportadores({ dryRun: DRY_RUN, log }: OpcionesImportacion)
       porNombreEmpresa.set(`${c.empresaId}|${norm(c.nombre)}`, c.id);
     }
 
+    /**
+     * La MISMA persona, vista desde un renglón del respaldo que sí tiene empresa real.
+     *
+     * Al borrar una empresa en el CRM viejo sus contactos se quedan apuntando al nombre que
+     * ya no existe, y esos caían al buzón — que aparece en la lista como una empresa de más.
+     * Cuando el respaldo trae a esa misma persona (mismo nombre Y mismo correo) colgando de
+     * una empresa que sí existe, y de una sola, se le devuelve esa: es ella, no un registro
+     * huérfano que revisar a mano. Si hay varias candidatas no se adivina, va al buzón.
+     */
+    const empresasDeLaPersona = new Map<string, Set<string>>();
+    for (const d of items) {
+      const empresaId = porNombre.get(s(d.empresa).toLowerCase());
+      if (!empresaId) continue;
+      const correo = primerCorreo(d.correo);
+      if (!correo) continue;
+      const clave = `${norm(s(d.nombre))}|${norm(correo)}`;
+      empresasDeLaPersona.set(clave, (empresasDeLaPersona.get(clave) ?? new Set()).add(empresaId));
+    }
+
     for (const d of items) {
       const nombre = s(d.nombre) || 'Sin nombre';
       const empresaNombre = s(d.empresa);
       let empresaId = porNombre.get(empresaNombre.toLowerCase()) ?? null;
+      if (!empresaId) {
+        const correoDe = primerCorreo(d.correo);
+        const candidatas = correoDe ? empresasDeLaPersona.get(`${norm(nombre)}|${norm(correoDe)}`) : undefined;
+        if (candidatas?.size === 1) {
+          empresaId = [...candidatas][0]!;
+          log(
+            'contactos',
+            `"${nombre}" nombraba la empresa "${empresaNombre}", que ya no está en el respaldo; ` +
+              `se reconoce por su correo y se queda en la empresa donde el respaldo ya lo tiene`,
+          );
+        }
+      }
       if (!empresaId) {
         sinEmpresa.push(`${nombre} (empresa del respaldo: "${empresaNombre}")`);
         empresaId = EMPRESA_PLACEHOLDER_ID;
@@ -308,6 +357,9 @@ export function crearImportadores({ dryRun: DRY_RUN, log }: OpcionesImportacion)
       }
     }
     if (!DRY_RUN) await contactoRepo.guardarVarios(porGuardar);
+    // El buzón de una corrida anterior, ya vacío, seguía saliendo en la lista como una empresa
+    // de más que no existe en el CRM viejo. Si nadie quedó dentro, se retira solo.
+    if (!DRY_RUN && !sinEmpresa.length) await retirarPlaceholderVacio(c);
     log('contactos', `${ok}/${items.length} importados, ${sinEmpresa.length} sin empresa emparejada`);
     return { ok, sinEmpresa, total: items.length };
   }
