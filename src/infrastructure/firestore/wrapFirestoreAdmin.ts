@@ -9,8 +9,8 @@ import { aDominio, aFirestore } from './timestampBoundary.js';
  * vez del `Timestamp` propio del SDK, y cada escritura haga la conversión inversa. Cubre
  * exactamente los métodos que usan los repositorios de `infrastructure/firestore/` hoy:
  * `collection`, `collectionGroup`, `doc`, `where`, `orderBy`, `limit`, `get`, `set`, `count`,
- * `runTransaction` (con `tx.get`/`tx.set`). Si algún repo empieza a usar un método nuevo del
- * SDK, esta envoltura lo deja pasar sin tocar (proxy transparente por defecto) — solo
+ * `runTransaction` (con `tx.get`/`tx.set`) y `batch` (para las cargas masivas). Si algún repo
+ * empieza a usar un método nuevo del SDK, esta envoltura lo deja pasar sin tocar (proxy transparente por defecto) — solo
  * intercepta los puntos donde puede viajar un Timestamp.
  */
 export function wrapFirestoreAdmin(db: Firestore): Firestore {
@@ -18,6 +18,9 @@ export function wrapFirestoreAdmin(db: Firestore): Firestore {
     get(target: any, prop, receiver) {
       if (prop === 'collection' || prop === 'collectionGroup') {
         return (...args: any[]) => wrapQuery(target[prop](...args));
+      }
+      if (prop === 'batch') {
+        return () => wrapBatch(target.batch());
       }
       if (prop === 'runTransaction') {
         return (fn: (tx: any) => Promise<any>) => target.runTransaction((tx: any) => fn(wrapTransaction(tx)));
@@ -82,6 +85,31 @@ function wrapQuerySnapshot(snap: any): any {
   return new Proxy(snap, {
     get(target: any, prop, receiver) {
       if (prop === 'docs') return target.docs.map((d: any) => wrapDocSnapshot(d));
+      return Reflect.get(target, prop, receiver);
+    },
+  });
+}
+
+/** Igual que `wrapTransaction`, para las cargas masivas (`guardarVarias`, `eliminarVarias`):
+ *  sin esto el Admin SDK rechaza el lote entero al ver nuestro `Timestamp`. */
+function wrapBatch(batch: any): any {
+  return new Proxy(batch, {
+    get(target: any, prop, receiver) {
+      if (prop === 'set') {
+        return (ref: any, data: any, opts?: any) => {
+          target.set(ref, aFirestore(data), opts);
+          return receiver;
+        };
+      }
+      if (prop === 'update') {
+        return (ref: any, data: any) => {
+          target.update(ref, aFirestore(data));
+          return receiver;
+        };
+      }
+      if (prop === 'commit') {
+        return () => target.commit();
+      }
       return Reflect.get(target, prop, receiver);
     },
   });

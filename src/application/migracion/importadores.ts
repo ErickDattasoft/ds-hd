@@ -101,14 +101,31 @@ export function crearImportadores({ dryRun: DRY_RUN, log }: OpcionesImportacion)
     return validos.includes(t) ? (t as EstadoCotizacion) : 'borrador';
   };
 
-  /** Nombre de empresa del respaldo (minúsculas) → id que le tocará en ds-hd. */
-  const mapaEmpresasPorNombre = (datos: Dato): Map<string, string> =>
-    new Map(
-      arr(datos.clientes)
-        .map((d) => s(d.EMPRESA))
-        .filter(Boolean)
-        .map((nombre) => [nombre.toLowerCase(), slug(nombre)]),
-    );
+  /**
+   * Nombre de empresa del respaldo (minúsculas) → id que le tocará en ds-hd.
+   *
+   * El id sale del nombre, y dos nombres distintos pueden dar el mismo slug
+   * ("NIUTEC (SERVICLIMAS)" y "NIUTEC - SERVICLIMAS" son los dos `niutec-serviclimas`): sin
+   * desempatar, la segunda empresa pisaba a la primera y desaparecía de la lista. Al
+   * repetido se le añade un sufijo, siempre en el orden del respaldo, para que el id de cada
+   * una siga siendo el mismo en cada reimportación.
+   */
+  const mapaEmpresasPorNombre = (datos: Dato): Map<string, string> => {
+    const porNombre = new Map<string, string>();
+    const usados = new Set<string>();
+    for (const d of arr(datos.clientes)) {
+      const nombre = s(d.EMPRESA);
+      if (!nombre) continue;
+      const clave = nombre.toLowerCase();
+      if (porNombre.has(clave)) continue;
+      const base = slug(nombre);
+      let id = base;
+      for (let n = 2; usados.has(id); n++) id = `${base}-${n}`;
+      usados.add(id);
+      porNombre.set(clave, id);
+    }
+    return porNombre;
+  };
 
   /**
    * Empresas (`clientes`, campos en MAYÚSCULAS)
@@ -116,6 +133,7 @@ export function crearImportadores({ dryRun: DRY_RUN, log }: OpcionesImportacion)
   async function importarEmpresas(c: Container, datos: Dato): Promise<{ ok: number; total: number }> {
     const repo = c.resolve('empresaRepo');
     const items = arr(datos.clientes);
+    const porNombre = mapaEmpresasPorNombre(datos);
     const porGuardar: Empresa[] = [];
     let ok = 0;
     for (const d of items) {
@@ -139,9 +157,16 @@ export function crearImportadores({ dryRun: DRY_RUN, log }: OpcionesImportacion)
       for (const [sistema, fechaIso] of Object.entries(vencimientos)) {
         if (s(fechaIso)) vigencias[sistema] = s(fechaIso);
       }
+      const id = porNombre.get(nombre.toLowerCase()) ?? slug(nombre);
+      if (porGuardar.some((e) => e.id === id)) {
+        // Mismo nombre repetido tal cual en el respaldo: es la misma empresa, y meterla dos
+        // veces en el mismo lote hace que Firestore rechace la escritura entera.
+        log('empresas', `repetida en el respaldo, se importa una sola vez: ${nombre}`);
+        continue;
+      }
       try {
         const empresa = new Empresa({
-          id: slug(nombre),
+          id,
           nombre,
           rfc: s(d.RFC) || null,
           telefono: s(d.TELEFONO_1) || s(d.TELEFONO_2) || null,

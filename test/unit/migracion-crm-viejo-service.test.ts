@@ -355,6 +355,43 @@ describe('MigracionCrmViejoService', () => {
     expect((await contactos.list()).map((c) => c.nombre).sort()).toEqual(['Luis', 'Martha']);
   });
 
+  it('dos empresas con nombres parecidos no acaban en el mismo documento', async () => {
+    // Caso real del respaldo: "NIUTEC (SERVICLIMAS)" y "NIUTEC - SERVICLIMAS" dan el mismo
+    // slug, así que la segunda pisaba a la primera y desaparecía de la lista de empresas.
+    const parecidas = respaldo();
+    (parecidas.datos as Record<string, unknown>).clientes = [
+      { EMPRESA: 'NIUTEC (SERVICLIMAS)' },
+      { EMPRESA: 'NIUTEC - SERVICLIMAS' },
+    ];
+    (parecidas.datos as Record<string, unknown>).contactos = [
+      { nombre: 'Geovani', empresa: 'NIUTEC (SERVICLIMAS)', correo: 'info@serviclimas.com' },
+    ];
+    await servicio.importar(actor(), parecidas, {
+      modo: 'actualizar',
+      simulacro: false,
+      secciones: ['empresas', 'contactos'],
+    });
+
+    const lista = await empresas.list();
+    expect(lista.map((e) => e.nombre).sort()).toEqual(['NIUTEC (SERVICLIMAS)', 'NIUTEC - SERVICLIMAS']);
+    expect(new Set(lista.map((e) => e.id)).size).toBe(2);
+    // El contacto sigue colgando de la empresa que nombra el respaldo, no de la otra.
+    const niutec = lista.find((e) => e.nombre === 'NIUTEC (SERVICLIMAS)')!;
+    expect((await contactos.list())[0]?.empresaId).toBe(niutec.id);
+  });
+
+  it('la misma empresa repetida tal cual en el respaldo se importa una sola vez', async () => {
+    const repetida = respaldo();
+    (repetida.datos as Record<string, unknown>).clientes = [{ EMPRESA: 'ACME SA' }, { EMPRESA: 'ACME SA' }];
+    (repetida.datos as Record<string, unknown>).contactos = [];
+    await servicio.importar(actor(), repetida, {
+      modo: 'actualizar',
+      simulacro: false,
+      secciones: ['empresas'],
+    });
+    expect(await empresas.list()).toHaveLength(1);
+  });
+
   it('dos contactos distintos nunca acaban en el mismo documento', async () => {
     // Caso real del respaldo: dos personas con el mismo nombre y el mismo correo en empresas
     // distintas ("ARQUITECTURA MODERNA" y "Q ARQUITECTURA MODERNA"). Una reutiliza el registro
