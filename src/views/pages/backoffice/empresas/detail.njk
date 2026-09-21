@@ -28,7 +28,7 @@
   {% endif %}
 
   <div class="card">
-    <p><strong>RFC:</strong> {{ empresa.rfc or '—' }} · <strong>Tel:</strong> {{ empresa.telefono or '—' }} · <strong>Correo:</strong> {{ empresa.email or '—' }}</p>
+    <p><strong>RFC:</strong> {{ empresa.rfc or '—' }} · <strong>Tel:</strong> {{ empresa.telefono or '—' }}{% if empresa.telefonoAlternativo %} / {{ empresa.telefonoAlternativo }}{% endif %} · <strong>Correo:</strong> {{ empresa.email or '—' }}{% if empresa.emailAlternativo %} / {{ empresa.emailAlternativo }}{% endif %}</p>
     {% if empresa.direccion %}<p>{{ empresa.direccion }}</p>{% endif %}
     {% if empresa.notas %}<p class="muted">{{ empresa.notas }}</p>{% endif %}
   </div>
@@ -90,10 +90,10 @@
     <tbody>
       {% for c in contactos %}
         <tr>
-          <td><a href="/app/contactos/{{ c.id }}/editar">{{ c.nombre }}</a></td>
+          <td><a href="/app/contactos/{{ c.id }}/editar">{{ c.nombre }}</a>{% if c.id == empresa.contactoPrincipalId %} <span class="badge">Principal</span>{% elif c.id == empresa.contactoAlternativoId %} <span class="badge">Alternativo</span>{% endif %}</td>
           <td>{{ c.puesto or '—' }}</td>
-          <td>{% if c.email %}<a href="mailto:{{ c.email }}" title="Escribir correo">✉️ {{ c.email }}</a>{% else %}—{% endif %}</td>
-          <td>{{ c.telefono or c.celular or '—' }}</td>
+          <td>{% if c.email %}<a href="mailto:{{ c.email }}" title="Escribir correo">✉️ {{ c.email }}</a>{% else %}—{% endif %}{% if c.emailAlternativo %}<br><a href="mailto:{{ c.emailAlternativo }}" title="Correo alternativo">✉️ {{ c.emailAlternativo }}</a>{% endif %}</td>
+          <td>{{ c.telefono or '—' }}{% if c.celular %}{{ ' / ' if c.telefono }}{{ c.celular }}{% endif %}{% if not c.telefono and not c.celular %}—{% endif %}</td>
           <td>
             {% set tel = (c.celular or c.telefono) | replace(' ', '') | replace('-', '') | replace('(', '') | replace(')', '') | replace('+', '') %}
             {% if tel %}<a class="btn btn--ghost btn--sm" target="_blank" rel="noopener" href="https://wa.me/{{ '52' if tel|length == 10 else '' }}{{ tel }}">💬 WhatsApp</a>{% else %}—{% endif %}

@@ -13,7 +13,12 @@ export interface DatosEmpresa {
   razonSocial?: string;
   direccion?: string;
   telefono?: string;
+  telefonoAlternativo?: string;
   email?: string;
+  emailAlternativo?: string;
+  /** Contactos marcados como principal y alternativo; deben ser de esta empresa (lo cuida el controlador). */
+  contactoPrincipalId?: string | null;
+  contactoAlternativoId?: string | null;
   sistemasContratados?: string[];
   /** Fecha de vigencia de licencia por sistema, formato ISO `YYYY-MM-DD`. */
   vigencias?: Record<string, string>;
@@ -84,7 +89,11 @@ export class EmpresaService {
     empresa.razonSocial = datos.razonSocial?.trim() || null;
     empresa.direccion = datos.direccion?.trim() || null;
     empresa.telefono = datos.telefono?.trim() || null;
+    empresa.telefonoAlternativo = datos.telefonoAlternativo?.trim() || null;
     empresa.email = datos.email?.trim().toLowerCase() || null;
+    empresa.emailAlternativo = datos.emailAlternativo?.trim().toLowerCase() || null;
+    if (datos.contactoPrincipalId !== undefined) empresa.contactoPrincipalId = datos.contactoPrincipalId || null;
+    if (datos.contactoAlternativoId !== undefined) empresa.contactoAlternativoId = datos.contactoAlternativoId || null;
     empresa.sistemasContratados = [...new Set((datos.sistemasContratados ?? []).map((s) => s.trim()).filter(Boolean))];
     empresa.vigencias = Empresa.sanearVigencias(datos.vigencias, empresa.sistemasContratados);
     empresa.versionesInstaladas = Empresa.sanearMapaSistemas(datos.versionesInstaladas, empresa.sistemasContratados);

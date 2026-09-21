@@ -14,6 +14,7 @@ function toDomain(id: string, d: DocumentData): Contacto {
     puesto: d.puesto ?? null,
     rfc: d.rfc ?? null,
     email: d.email ?? null,
+    emailAlternativo: d.emailAlternativo ?? null,
     telefono: d.telefono ?? null,
     celular: d.celular ?? null,
     esPortal: Boolean(d.esPortal),
@@ -59,7 +60,7 @@ export class FirestoreContactoRepository implements IContactoRepository {
     if (filtro.texto) {
       const t = filtro.texto.toLowerCase();
       contactos = contactos.filter(
-        (c) => c.nombre.toLowerCase().includes(t) || (c.email ?? '').includes(t),
+        (c) => c.nombre.toLowerCase().includes(t) || (c.email ?? '').includes(t) || (c.emailAlternativo ?? '').includes(t),
       );
     }
     return contactos.sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
@@ -73,6 +74,7 @@ export class FirestoreContactoRepository implements IContactoRepository {
       puesto: c.puesto,
       rfc: c.rfc,
       email: c.email,
+      emailAlternativo: c.emailAlternativo,
       telefono: c.telefono,
       celular: c.celular,
       esPortal: c.esPortal,

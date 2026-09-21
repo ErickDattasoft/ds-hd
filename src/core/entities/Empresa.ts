@@ -32,13 +32,18 @@ export interface EmpresaProps {
   razonSocial?: string | null;
   direccion?: string | null;
   telefono?: string | null;
+  /** Teléfono alternativo (TELEFONO_2 del CRM viejo). */
+  telefonoAlternativo?: string | null;
   email?: string | null;
+  /** Correo alternativo (CORREO_2 del CRM viejo). */
+  emailAlternativo?: string | null;
   sistemasContratados?: string[];
   /** Vigencia de licencia por sistema, formato ISO `YYYY-MM-DD`. */
   vigencias?: Record<string, string>;
   /** Versión instalada por sistema (texto libre, p. ej. `16.3.1 SP2`). */
   versionesInstaladas?: Record<string, string>;
   contactoPrincipalId?: string | null;
+  contactoAlternativoId?: string | null;
   notas?: string | null;
   activa?: boolean;
   /** Marcada como favorita (⭐) por el equipo — atajo para la lista. */
@@ -61,11 +66,14 @@ export class Empresa {
   razonSocial: string | null;
   direccion: string | null;
   telefono: string | null;
+  telefonoAlternativo: string | null;
   email: string | null;
+  emailAlternativo: string | null;
   sistemasContratados: string[];
   vigencias: Record<string, string>;
   versionesInstaladas: Record<string, string>;
   contactoPrincipalId: string | null;
+  contactoAlternativoId: string | null;
   notas: string | null;
   activa: boolean;
   favorita: boolean;
@@ -86,11 +94,14 @@ export class Empresa {
     this.razonSocial = props.razonSocial?.trim() || null;
     this.direccion = props.direccion?.trim() || null;
     this.telefono = props.telefono?.trim() || null;
+    this.telefonoAlternativo = props.telefonoAlternativo?.trim() || null;
     this.email = props.email?.trim().toLowerCase() || null;
+    this.emailAlternativo = props.emailAlternativo?.trim().toLowerCase() || null;
     this.sistemasContratados = [...new Set((props.sistemasContratados ?? []).map((s) => s.trim()).filter(Boolean))];
     this.vigencias = Empresa.sanearVigencias(props.vigencias, this.sistemasContratados);
     this.versionesInstaladas = Empresa.sanearMapaSistemas(props.versionesInstaladas, this.sistemasContratados);
     this.contactoPrincipalId = props.contactoPrincipalId ?? null;
+    this.contactoAlternativoId = props.contactoAlternativoId ?? null;
     this.notas = props.notas?.trim() || null;
     this.activa = props.activa ?? true;
     this.favorita = props.favorita ?? false;

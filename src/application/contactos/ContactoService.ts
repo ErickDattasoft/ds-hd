@@ -14,6 +14,7 @@ export interface DatosContacto {
   puesto?: string;
   rfc?: string;
   email?: string;
+  emailAlternativo?: string;
   telefono?: string;
   celular?: string;
   notas?: string;
@@ -77,6 +78,7 @@ export class ContactoService {
     contacto.puesto = datos.puesto?.trim() || null;
     contacto.rfc = datos.rfc?.trim().toUpperCase() || null;
     contacto.email = datos.email?.trim().toLowerCase() || null;
+    contacto.emailAlternativo = datos.emailAlternativo?.trim() ? Contacto.normalizarEmail(datos.emailAlternativo) : null;
     contacto.telefono = datos.telefono?.trim() || null;
     contacto.celular = datos.celular?.trim() || null;
     contacto.notas = datos.notas?.trim() || null;

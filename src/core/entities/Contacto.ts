@@ -9,7 +9,10 @@ export interface ContactoProps {
   puesto?: string | null;
   rfc?: string | null;
   email?: string | null;
+  /** Correo alternativo del contacto. */
+  emailAlternativo?: string | null;
   telefono?: string | null;
+  /** Teléfono alternativo (en pantalla se llama así; el campo conserva su nombre histórico). */
   celular?: string | null;
   /** Si el contacto tiene (o tendrá) acceso al portal de clientes. */
   esPortal?: boolean;
@@ -29,6 +32,7 @@ export class Contacto {
   puesto: string | null;
   rfc: string | null;
   email: string | null;
+  emailAlternativo: string | null;
   telefono: string | null;
   celular: string | null;
   esPortal: boolean;
@@ -51,6 +55,7 @@ export class Contacto {
     this.puesto = props.puesto?.trim() || null;
     this.rfc = props.rfc?.trim().toUpperCase() || null;
     this.email = props.email ? Email.create(props.email).value : null;
+    this.emailAlternativo = props.emailAlternativo ? Email.create(props.emailAlternativo).value : null;
     this.telefono = props.telefono?.trim() || null;
     this.celular = props.celular?.trim() || null;
     this.esPortal = props.esPortal ?? false;
@@ -59,6 +64,11 @@ export class Contacto {
     this.activo = props.activo ?? true;
     this.createdAt = props.createdAt ?? new Date();
     this.updatedAt = props.updatedAt ?? this.createdAt;
+  }
+
+  /** Valida y normaliza un correo con las mismas reglas que el principal. */
+  static normalizarEmail(email: string): string {
+    return Email.create(email).value;
   }
 
   vincularPortal(uid: string, ahora: Date): void {

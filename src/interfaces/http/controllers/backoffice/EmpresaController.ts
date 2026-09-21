@@ -298,10 +298,12 @@ export class EmpresaController {
 
   editar = async (req: Request, res: Response): Promise<void> => {
     const empresa = await this.empresas.obtener(str(req.params.id));
+    const contactos = await this.contactos.listar({ empresaId: empresa.id });
     res.render('pages/backoffice/empresas/form', {
       titulo: `Editar ${empresa.nombre}`,
       modo: 'editar',
       empresa,
+      contactos,
       valores: { ...empresa, sistemasContratados: empresa.sistemasContratados.join('\n') },
       errores: {},
     });
@@ -311,14 +313,23 @@ export class EmpresaController {
     const id = str(req.params.id);
     const b = req.body ?? {};
     try {
-      await this.empresas.actualizar(req.user!, id, this.datos(b));
+      // Principal y alternativo solo pueden ser contactos de esta misma empresa.
+      const deLaEmpresa = new Set((await this.contactos.listar({ empresaId: id })).map((c) => c.id));
+      const elegido = (v: unknown): string | null => (deLaEmpresa.has(str(v)) ? str(v) : null);
+      await this.empresas.actualizar(req.user!, id, {
+        ...this.datos(b),
+        contactoPrincipalId: elegido(b.contactoPrincipalId),
+        contactoAlternativoId: elegido(b.contactoAlternativoId),
+      });
       res.redirect(`/app/empresas/${id}`);
     } catch (err) {
       const empresa = await this.empresas.obtener(id).catch(() => null);
+      const contactos = await this.contactos.listar({ empresaId: id }).catch(() => []);
       res.status(422).render('pages/backoffice/empresas/form', {
         titulo: 'Editar empresa',
         modo: 'editar',
         empresa,
+        contactos,
         valores: b,
         errores: camposDeError(err),
       });
@@ -378,7 +389,9 @@ export class EmpresaController {
       razonSocial: str(b.razonSocial),
       direccion: str(b.direccion),
       telefono: str(b.telefono),
+      telefonoAlternativo: str(b.telefonoAlternativo),
       email: str(b.email),
+      emailAlternativo: str(b.emailAlternativo),
       sistemasContratados: lista(b.sistemasContratados),
       vigencias: mapaConPrefijo(b, 'vigencia:'),
       versionesInstaladas: mapaConPrefijo(b, 'version:'),

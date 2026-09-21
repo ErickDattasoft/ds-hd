@@ -154,6 +154,7 @@ export class ContactoController {
       puesto: str(b.puesto),
       rfc: str(b.rfc),
       email: str(b.email),
+      emailAlternativo: str(b.emailAlternativo),
       telefono: str(b.telefono),
       celular: str(b.celular),
       notas: str(b.notas),

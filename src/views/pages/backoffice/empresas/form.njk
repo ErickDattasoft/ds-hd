@@ -8,7 +8,21 @@
     <label class="field"><span>Nombre</span><input name="nombre" value="{{ valores.nombre }}" required />
       {% if errores.nombre %}<em class="field__error">{{ errores.nombre }}</em>{% endif %}</label>
     <label class="field"><span>Teléfono</span><input type="tel" inputmode="tel" name="telefono" value="{{ valores.telefono }}" /></label>
+    <label class="field"><span>Teléfono alternativo</span><input type="tel" inputmode="tel" name="telefonoAlternativo" value="{{ valores.telefonoAlternativo }}" /></label>
     <label class="field"><span>Correo</span><input type="email" name="email" autocomplete="email" value="{{ valores.email }}" /></label>
+    <label class="field"><span>Correo alternativo</span><input type="email" name="emailAlternativo" autocomplete="off" value="{{ valores.emailAlternativo }}" /></label>
+    {% if modo == 'editar' and contactos and contactos.length %}
+      <label class="field"><span>Contacto principal</span>
+        <select name="contactoPrincipalId">
+          <option value="">— Ninguno —</option>
+          {% for c in contactos %}<option value="{{ c.id }}"{{ ' selected' if c.id == valores.contactoPrincipalId }}>{{ c.nombre }}</option>{% endfor %}
+        </select></label>
+      <label class="field"><span>Contacto alternativo</span>
+        <select name="contactoAlternativoId">
+          <option value="">— Ninguno —</option>
+          {% for c in contactos %}<option value="{{ c.id }}"{{ ' selected' if c.id == valores.contactoAlternativoId }}>{{ c.nombre }}</option>{% endfor %}
+        </select></label>
+    {% endif %}
 
     <details class="disclosure"{{ ' open' if valores.rfc or valores.razonSocial or valores.direccion }}>
       <summary class="disclosure__summary">Datos fiscales</summary>
@@ -60,7 +74,7 @@
         <label class="field"><span>Puesto</span><input name="contactoPuesto" value="{{ valores.contactoPuesto }}" /></label>
         <label class="field"><span>Correo</span><input type="email" name="contactoEmail" autocomplete="off" value="{{ valores.contactoEmail }}" /></label>
         <label class="field"><span>Teléfono</span><input type="tel" name="contactoTelefono" value="{{ valores.contactoTelefono }}" /></label>
-        <label class="field"><span>Celular</span><input type="tel" name="contactoCelular" value="{{ valores.contactoCelular }}" /></label>
+        <label class="field"><span>Teléfono alternativo</span><input type="tel" name="contactoCelular" value="{{ valores.contactoCelular }}" /></label>
       </div>
     </details>
     {% endif %}

@@ -20,6 +20,7 @@
       </label>
     {% endif %}
     <label class="field"><span>Correo</span><input type="email" name="email" autocomplete="email" value="{{ valores.email }}" /></label>
+    <label class="field"><span>Correo alternativo</span><input type="email" name="emailAlternativo" autocomplete="off" value="{{ valores.emailAlternativo }}" /></label>
 
     <details class="disclosure"{{ ' open' if valores.puesto or valores.rfc or valores.telefono or valores.celular or valores.notas }}>
       <summary class="disclosure__summary">Detalles <span class="disclosure__hint">— puesto, RFC, teléfonos, notas</span></summary>
@@ -27,7 +28,7 @@
         <label class="field"><span>Puesto</span><input name="puesto" value="{{ valores.puesto }}" /></label>
         <label class="field"><span>RFC</span><input name="rfc" value="{{ valores.rfc }}" placeholder="XAXX010101000" /></label>
         <label class="field"><span>Teléfono</span><input type="tel" inputmode="tel" name="telefono" value="{{ valores.telefono }}" /></label>
-        <label class="field"><span>Celular</span><input type="tel" inputmode="tel" name="celular" value="{{ valores.celular }}" /></label>
+        <label class="field"><span>Teléfono alternativo</span><input type="tel" inputmode="tel" name="celular" value="{{ valores.celular }}" /></label>
         <label class="field"><span>Notas</span><textarea name="notas" rows="3">{{ valores.notas }}</textarea></label>
       </div>
     </details>

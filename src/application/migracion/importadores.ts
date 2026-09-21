@@ -57,6 +57,24 @@ export function crearImportadores({ dryRun: DRY_RUN, log }: OpcionesImportacion)
   const NO_APLICA = 'no aplica';
   /** El CRM viejo a veces guarda varios correos separados por coma en un solo campo. */
   const primerCorreo = (v: unknown): string => s(v).split(/[,;]/)[0]?.trim() ?? '';
+  const RE_CORREO = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  /**
+   * Reparte los correos de uno o varios campos del respaldo en principal y alternativo, como
+   * los maneja el CRM viejo. Un campo puede traer varios separados por coma: el primero válido
+   * es el principal, el segundo el alternativo, y lo que sobre (o no parezca correo) vuelve en
+   * `sobrantes` para dejarlo en las notas y que no se pierda.
+   */
+  const repartirCorreos = (
+    ...campos: unknown[]
+  ): { principal: string; alternativo: string; sobrantes: string[] } => {
+    const todos = [...new Set(campos.flatMap((v) => s(v).split(/[,;\s]+/)).map((x) => x.trim().toLowerCase()).filter(Boolean))];
+    const validos = todos.filter((x) => RE_CORREO.test(x));
+    return {
+      principal: validos[0] ?? '',
+      alternativo: validos[1] ?? '',
+      sobrantes: [...validos.slice(2), ...todos.filter((x) => !RE_CORREO.test(x))],
+    };
+  };
 
   /** Entero positivo de un campo opcional del respaldo; `null` si viene vacío o no es número. */
   const entero = (v: unknown): number | null => {
@@ -132,6 +150,9 @@ export function crearImportadores({ dryRun: DRY_RUN, log }: OpcionesImportacion)
    */
   async function importarEmpresas(c: Container, datos: Dato): Promise<{ ok: number; total: number }> {
     const repo = c.resolve('empresaRepo');
+    // El contacto principal/alternativo lo fija la sección de contactos (o alguien a mano en
+    // ds-hd); reimportar solo empresas no debe borrarlo.
+    const yaMarcados = new Map((await repo.list()).map((e) => [e.id, e] as const));
     const items = arr(datos.clientes);
     const porNombre = mapaEmpresasPorNombre(datos);
     const porGuardar: Empresa[] = [];
@@ -164,17 +185,28 @@ export function crearImportadores({ dryRun: DRY_RUN, log }: OpcionesImportacion)
         log('empresas', `repetida en el respaldo, se importa una sola vez: ${nombre}`);
         continue;
       }
+      const telefonos = [s(d.TELEFONO_1), s(d.TELEFONO_2)].filter(Boolean);
+      const correos = repartirCorreos(d.CORREO, d.CORREO_2);
+      const notas = [
+        s(d.CONTACTO) ? `Contacto original del CRM viejo: ${s(d.CONTACTO)}` : '',
+        s(d.CONTACTO_2) ? `Contacto alternativo del CRM viejo: ${s(d.CONTACTO_2)}` : '',
+        correos.sobrantes.length ? `Otros correos del CRM viejo: ${correos.sobrantes.join(', ')}` : '',
+      ].filter(Boolean);
       try {
         const empresa = new Empresa({
           id,
           nombre,
           rfc: s(d.RFC) || null,
-          telefono: s(d.TELEFONO_1) || s(d.TELEFONO_2) || null,
-          email: s(d.CORREO) || s(d.CORREO_2) || null,
+          telefono: telefonos[0] ?? null,
+          telefonoAlternativo: telefonos[1] ?? null,
+          email: correos.principal || null,
+          emailAlternativo: correos.alternativo || null,
           sistemasContratados,
           vigencias,
           versionesInstaladas,
-          notas: s(d.CONTACTO) ? `Contacto original del CRM viejo: ${s(d.CONTACTO)}` : null,
+          contactoPrincipalId: yaMarcados.get(id)?.contactoPrincipalId ?? null,
+          contactoAlternativoId: yaMarcados.get(id)?.contactoAlternativoId ?? null,
+          notas: notas.join('\n') || null,
         });
         porGuardar.push(empresa);
         ok++;
@@ -238,7 +270,36 @@ export function crearImportadores({ dryRun: DRY_RUN, log }: OpcionesImportacion)
     // empresas) — así funciona igual en --dry-run que en la corrida real.
     const porNombre = mapaEmpresasPorNombre(datos);
 
-    const items = arr(datos.contactos);
+    const items = [...arr(datos.contactos)];
+    /**
+     * El CRM viejo guarda en la empresa misma su contacto principal (CONTACTO/CORREO/
+     * TELEFONO_1) y alternativo (CONTACTO_2/CORREO_2/TELEFONO_2), aparte de la lista de
+     * contactos. Su botón "Sincronizar contactos desde empresas" los pasaba a la lista si no
+     * estaban; aquí se hace lo mismo para que nadie se quede fuera, y se recuerda quién es
+     * cuál para marcarlo en la empresa.
+     */
+    const claveRol = (empresa: string, nombre: string): string => `${empresa.toLowerCase()}|${nombre.toLowerCase()}`;
+    const rolDe = new Map<string, 'principal' | 'alternativo'>();
+    const enLista = new Set(items.map((d) => claveRol(s(d.empresa), s(d.nombre))));
+    for (const e of arr(datos.clientes)) {
+      const empresa = s(e.EMPRESA);
+      if (!empresa) continue;
+      const roles = [
+        { rol: 'principal', nombre: s(e.CONTACTO), correo: s(e.CORREO), tel: s(e.TELEFONO_1) },
+        { rol: 'alternativo', nombre: s(e.CONTACTO_2), correo: s(e.CORREO_2), tel: s(e.TELEFONO_2) },
+      ] as const;
+      for (const r of roles) {
+        if (!r.nombre) continue;
+        const clave = claveRol(empresa, r.nombre);
+        if (!rolDe.has(clave)) rolDe.set(clave, r.rol);
+        if (enLista.has(clave)) continue;
+        enLista.add(clave);
+        items.push({ empresa, nombre: r.nombre, correo: r.correo, telefono1: r.tel, telefono2: '' });
+        log('contactos', `"${r.nombre}" era el contacto ${r.rol} de "${empresa}" y no estaba en la lista; se agrega`);
+      }
+    }
+    /** empresaId → ids de su contacto principal y alternativo, según el respaldo. */
+    const marcados = new Map<string, { principal?: string; alternativo?: string }>();
     const porGuardar: Contacto[] = [];
     let ok = 0;
     const sinEmpresa: string[] = [];
@@ -319,7 +380,8 @@ export function crearImportadores({ dryRun: DRY_RUN, log }: OpcionesImportacion)
         }
       }
       try {
-        const correo = primerCorreo(d.correo);
+        const correos = repartirCorreos(d.correo);
+        const correo = correos.principal;
         // Se reusa el id del contacto que ya exista (mismo correo, o mismo nombre dentro de la
         // misma empresa); solo cuando no hay contra qué emparejar se genera uno nuevo.
         const identidad = `${empresaId}|${norm(nombre)}`;
@@ -342,9 +404,17 @@ export function crearImportadores({ dryRun: DRY_RUN, log }: OpcionesImportacion)
           nombre,
           empresaId,
           email: correo || null,
+          emailAlternativo: correos.alternativo || null,
           telefono: s(d.telefono1) || null,
           celular: s(d.telefono2) || null,
+          notas: correos.sobrantes.length ? `Otros correos del CRM viejo: ${correos.sobrantes.join(', ')}` : null,
         });
+        const rol = rolDe.get(claveRol(empresaNombre, nombre));
+        if (rol && empresaId !== EMPRESA_PLACEHOLDER_ID) {
+          const m = marcados.get(empresaId) ?? {};
+          m[rol] ??= id;
+          marcados.set(empresaId, m);
+        }
         porGuardar.push(contacto);
         // El recién importado también entra al índice: si el mismo respaldo trae dos renglones
         // de la misma persona (pasa cuando la capturaron dos veces), el segundo actualiza al
@@ -357,6 +427,17 @@ export function crearImportadores({ dryRun: DRY_RUN, log }: OpcionesImportacion)
       }
     }
     if (!DRY_RUN) await contactoRepo.guardarVarios(porGuardar);
+    // Se marca en cada empresa quién es su principal y su alternativo, como en el CRM viejo.
+    const empresasMarcadas: Empresa[] = [];
+    for (const e of await empresaRepo.list()) {
+      const m = marcados.get(e.id);
+      if (!m) continue;
+      e.contactoPrincipalId = m.principal ?? e.contactoPrincipalId;
+      e.contactoAlternativoId = m.alternativo ?? e.contactoAlternativoId;
+      empresasMarcadas.push(e);
+    }
+    if (!DRY_RUN && empresasMarcadas.length) await empresaRepo.guardarVarias(empresasMarcadas);
+    log('contactos', `${empresasMarcadas.length} empresas con contacto principal/alternativo marcado`);
     // El buzón de una corrida anterior, ya vacío, seguía saliendo en la lista como una empresa
     // de más que no existe en el CRM viejo. Si nadie quedó dentro, se retira solo.
     if (!DRY_RUN && !sinEmpresa.length) await retirarPlaceholderVacio(c);
