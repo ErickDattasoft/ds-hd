@@ -23,6 +23,7 @@ function aSessionUser(u: Usuario): SessionUser {
     roles: u.roles,
     rol: u.rolPrincipal,
     empresaId: u.empresaId,
+    empresaIds: u.empresaIds,
     activo: u.activo,
     esStaff: u.esStaff,
     esCliente: u.esCliente,

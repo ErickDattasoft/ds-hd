@@ -61,9 +61,28 @@
 
       <label class="field">
         <span>Empresa asociada (obligatoria para clientes)</span>
-        <input name="empresaId" value="{{ valores.empresaId or '' }}" placeholder="ID de empresa" />
+        <select name="empresaId">
+          <option value="">— Ninguna —</option>
+          {% for e in empresas %}<option value="{{ e.id }}"{{ ' selected' if e.id == valores.empresaId }}>{{ e.nombre }}</option>{% endfor %}
+        </select>
         {% if errores.empresaId %}<em class="field__error">{{ errores.empresaId }}</em>{% endif %}
       </label>
+
+      {% if usuario.esCliente %}
+        <details class="disclosure"{{ ' open' if valores.empresasAdicionales and valores.empresasAdicionales.length }}>
+          <summary class="disclosure__summary">Otras empresas en el portal <span class="disclosure__hint">— para quien administra varias que se facturan aparte</span></summary>
+          <div class="disclosure__body">
+            <input type="hidden" name="empresasAdicionalesEnviado" value="1" />
+            <p class="muted">Al crear un ticket en el portal elegirá para cuál de sus empresas es.</p>
+            <input type="search" placeholder="Filtrar empresas…" data-filtro-casillas autocomplete="off" />
+            <div class="casillas-empresas" style="max-height:16rem;overflow:auto">
+              {% for e in empresas %}{% if e.id != valores.empresaId %}
+                <label class="field field--check" data-casilla="{{ e.nombre | lower }}"><input type="checkbox" name="empresasAdicionales" value="{{ e.id }}"{{ ' checked' if e.id in (valores.empresasAdicionales or []) }} /> <span>{{ e.nombre }}</span></label>
+              {% endif %}{% endfor %}
+            </div>
+          </div>
+        </details>
+      {% endif %}
 
       <details class="disclosure"{{ ' open' if usuario.agente.grupo or usuario.agente.capacidadMax or usuario.agente.disponibleAsignacion }}>
         <summary class="disclosure__summary">Configuración de agente <span class="disclosure__hint">— solo para roles de soporte</span></summary>

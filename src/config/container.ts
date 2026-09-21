@@ -956,6 +956,7 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
           c.responderMiTicketService,
           c.adjuntoTicketService,
           c.clock,
+          c.empresaRepo,
         ),
     ).singleton(),
     ticketController: asFunction(

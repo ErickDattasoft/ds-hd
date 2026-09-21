@@ -12,18 +12,19 @@
   </p>
 
   <table class="data-table">
-    <thead><tr><th>#</th><th>Asunto</th><th>Estado</th><th>Prioridad</th><th>SLA</th></tr></thead>
+    <thead><tr><th>#</th>{% if variasEmpresas %}<th>Empresa</th>{% endif %}<th>Asunto</th><th>Estado</th><th>Prioridad</th><th>SLA</th></tr></thead>
     <tbody>
       {% for vm in tickets %}
         <tr>
           <td><a href="/portal/tickets/{{ vm.id }}">#{{ vm.numero }}</a></td>
+          {% if variasEmpresas %}<td>{{ vm.empresaNombre or '—' }}</td>{% endif %}
           <td>{{ vm.asunto }}</td>
           <td><span class="{{ vm.estado | estadoClase }}">{{ vm.estado }}</span></td>
           <td><span class="{{ vm.prioridad | prioridadClase }}">{{ vm.prioridad }}</span></td>
           <td class="muted">{{ vm.slaTexto }}</td>
         </tr>
       {% else %}
-        <tr><td colspan="5" class="muted">📭 No tienes tickets aquí. <a href="/portal/tickets/nuevo">Crea uno</a> si necesitas ayuda.</td></tr>
+        <tr><td colspan="{{ 6 if variasEmpresas else 5 }}" class="muted">📭 No tienes tickets aquí. <a href="/portal/tickets/nuevo">Crea uno</a> si necesitas ayuda.</td></tr>
       {% endfor %}
     </tbody>
   </table>

@@ -14,6 +14,8 @@ export interface SessionUser {
   /** Rol de mayor alcance (para badges y `data-role`). Equivale a `roles[0]`. */
   readonly rol: Rol;
   readonly empresaId: string | null;
+  /** Todas las empresas del cliente (la principal primero). Si falta, solo cuenta `empresaId`. */
+  readonly empresaIds?: readonly string[];
   readonly activo: boolean;
   readonly esStaff: boolean;
   readonly esCliente: boolean;
@@ -27,6 +29,11 @@ export interface SessionUser {
   readonly encabezado?: string | null;
   /** ¿Tiene activa la verificación en dos pasos? */
   readonly totpActivo?: boolean;
+}
+
+/** Empresas a las que el actor puede levantar tickets o ver en el portal. */
+export function empresasDe(user: SessionUser): readonly string[] {
+  return user.empresaIds ?? (user.empresaId ? [user.empresaId] : []);
 }
 
 /** ¿El actor tiene este permiso concreto? */

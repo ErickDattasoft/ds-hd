@@ -22,7 +22,8 @@ export interface InvitarClienteInput {
 /** Resultado de la invitación: el usuario creado y el link para fijar su contraseña. */
 export interface InvitarClienteResultado {
   usuario: Usuario;
-  urlInvitacion: string;
+  /** `null` cuando la cuenta ya existía y solo se le sumó la empresa (ya tiene contraseña). */
+  urlInvitacion: string | null;
 }
 
 /**
@@ -51,8 +52,21 @@ export class InvitarClienteService {
       throw new ValidationError('Selecciona la empresa del cliente', { empresaId: 'Requerido' });
     }
 
-    if (await this.usuarios.findByEmail(correo.value)) {
-      throw new ConflictError(`Ya existe una cuenta con el correo ${correo.value}`);
+    const existente = await this.usuarios.findByEmail(correo.value);
+    if (existente) {
+      // Un mismo cliente puede llevar varias empresas que se facturan aparte (un administrador
+      // de varios negocios): invitarlo desde otra empresa le suma esa empresa a su cuenta.
+      if (!existente.esCliente) {
+        throw new ConflictError(`Ya existe una cuenta de staff con el correo ${correo.value}`);
+      }
+      if (existente.empresaIds.includes(input.empresaId)) {
+        throw new ConflictError(`${correo.value} ya tiene acceso al portal para esa empresa`);
+      }
+      existente.agregarEmpresa(input.empresaId);
+      existente.updatedAt = this.clock.now();
+      await this.usuarios.save(existente);
+      this.logger.info('Empresa agregada a cliente del portal', { uid: existente.uid, empresaId: input.empresaId, por: input.actor.uid });
+      return { usuario: existente, urlInvitacion: null };
     }
 
     const { uid } = await this.auth.createAccount({

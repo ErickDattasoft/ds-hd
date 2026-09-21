@@ -36,6 +36,8 @@ export interface UsuarioProps {
   activo?: boolean;
   /** Empresa asociada; obligatoria para `rol === 'cliente'`. */
   empresaId?: string | null;
+  /** Otras empresas del cliente (p. ej. un administrador que lleva varias que se facturan aparte). */
+  empresasAdicionales?: string[];
   agente?: Partial<PerfilAgente>;
   /** Firma que se agrega a las respuestas públicas de tickets, si la tiene configurada. */
   firma?: string | null;
@@ -74,6 +76,7 @@ export class Usuario {
   permisosRevocados: string[];
   activo: boolean;
   empresaId: string | null;
+  empresasAdicionales: string[];
   agente: PerfilAgente;
   firma: string | null;
   encabezado: string | null;
@@ -98,6 +101,7 @@ export class Usuario {
     this.permisosRevocados = [...new Set(props.permisosRevocados ?? [])];
     this.activo = props.activo ?? true;
     this.empresaId = props.empresaId ?? null;
+    this.empresasAdicionales = [...new Set(props.empresasAdicionales ?? [])].filter((id) => id && id !== this.empresaId);
     this.agente = { ...AGENTE_POR_DEFECTO, ...props.agente };
     this.firma = props.firma?.trim() || null;
     this.encabezado = props.encabezado?.trim() || null;
@@ -108,6 +112,17 @@ export class Usuario {
     this.createdAt = props.createdAt ?? new Date();
     this.updatedAt = props.updatedAt ?? this.createdAt;
     this.lastLoginAt = props.lastLoginAt ?? null;
+  }
+
+  /** Todas las empresas a las que puede levantar tickets en el portal (la principal primero). */
+  get empresaIds(): string[] {
+    return this.empresaId ? [this.empresaId, ...this.empresasAdicionales] : [...this.empresasAdicionales];
+  }
+
+  /** Suma una empresa a la cuenta; si no tenía principal, esa pasa a ser la principal. */
+  agregarEmpresa(empresaId: string): void {
+    if (!this.empresaId) this.empresaId = empresaId;
+    else if (!this.empresaIds.includes(empresaId)) this.empresasAdicionales.push(empresaId);
   }
 
   /** El rol de mayor alcance. Se usa donde antes se leía un solo `rol` (badges, `data-role`…). */

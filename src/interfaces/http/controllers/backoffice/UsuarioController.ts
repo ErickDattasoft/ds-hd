@@ -185,6 +185,7 @@ export class UsuarioController {
       ROL_ETIQUETA,
       ROL_GRUPOS,
       permisosModulo: permisosPorModulo(),
+      empresas: await this.empresas.list({ activa: true }),
       valores: { ...usuario, roles: [...usuario.roles], esCliente: usuario.esCliente },
       errores: {},
       passGuardada: req.query.pass === 'ok',
@@ -205,6 +206,8 @@ export class UsuarioController {
         roles: parseRoles(roles),
         activo: body.activo === undefined ? undefined : body.activo === 'on' || body.activo === 'true',
         empresaId: body.empresaId ?? undefined,
+        // Las casillas desmarcadas no llegan: el marcador indica que la sección sí se envió.
+        empresasAdicionales: body.empresasAdicionalesEnviado ? (aArreglo(body.empresasAdicionales) ?? []) : undefined,
         permisosExtra: aArreglo(body.permisosExtra),
         permisosRevocados: aArreglo(body.permisosRevocados),
         agente: {
@@ -229,7 +232,8 @@ export class UsuarioController {
         ROL_ETIQUETA,
         ROL_GRUPOS,
         permisosModulo: permisosPorModulo(),
-        valores: { ...usuario, ...body, roles, esCliente },
+        empresas: await this.empresas.list({ activa: true }),
+        valores: { ...usuario, ...body, roles, esCliente, empresasAdicionales: aArreglo(body.empresasAdicionales) ?? [] },
         errores,
       });
     }
@@ -254,7 +258,8 @@ export class UsuarioController {
         empresaId,
       });
       res.render('pages/backoffice/usuarios/creado', {
-        titulo: 'Cliente invitado',
+        titulo: urlInvitacion ? 'Cliente invitado' : 'Empresa agregada al cliente',
+        empresaAgregada: !urlInvitacion,
         nombre,
         email,
         urlInvitacion,

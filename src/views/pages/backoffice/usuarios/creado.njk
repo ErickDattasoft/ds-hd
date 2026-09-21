@@ -2,10 +2,14 @@
 {% block title %}{{ titulo }}{% endblock %}
 {% block content %}
   <h1>{{ titulo }}</h1>
+  {% if empresaAgregada %}
+    <p><strong>{{ email }}</strong> ya tenía cuenta en el portal. Se le agregó esta empresa: al crear un ticket elegirá para cuál de sus empresas es. Entra con la misma contraseña de siempre.</p>
+  {% else %}
   <p>Se creó la cuenta de <strong>{{ nombre }}</strong> ({{ email }}) y se envió el correo de invitación.</p>
   <div class="card">
     <p class="muted">Enlace de invitación (por si necesitas compartirlo manualmente):</p>
     <code class="code-block">{{ urlInvitacion }}</code>
   </div>
+  {% endif %}
   <p><a class="btn" href="/app/usuarios">Volver a usuarios</a></p>
 {% endblock %}

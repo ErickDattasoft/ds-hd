@@ -4,6 +4,8 @@ import type { MisTicketsService } from '../../../../application/portal/MisTicket
 import type { ResponderMiTicketService } from '../../../../application/portal/ResponderMiTicketService.js';
 import type { AdjuntoTicketService } from '../../../../application/tickets/AdjuntoTicketService.js';
 import type { IClock } from '../../../../core/ports/services/IClock.js';
+import type { IEmpresaRepository } from '../../../../core/ports/repositories/IEmpresaRepository.js';
+import { empresasDe, type SessionUser } from '../../../../application/shared/SessionUser.js';
 import { ticketVM } from '../../presenters/TicketPresenter.js';
 import { camposDeError } from '../../support/errores.js';
 import { ValidationError } from '../../../../core/errors/DomainError.js';
@@ -18,7 +20,15 @@ export class PortalTicketController {
     private readonly responder: ResponderMiTicketService,
     private readonly adjuntos: AdjuntoTicketService,
     private readonly clock: IClock,
+    private readonly empresas: IEmpresaRepository,
   ) {}
+
+  /** Empresas de la cuenta, con nombre, para elegir a cuál va el ticket (si lleva varias). */
+  private async misEmpresas(user: SessionUser): Promise<{ id: string; nombre: string }[]> {
+    const ids = empresasDe(user);
+    const encontradas = await Promise.all(ids.map((id) => this.empresas.findById(id)));
+    return encontradas.filter((e) => e !== null).map((e) => ({ id: e.id, nombre: e.nombre }));
+  }
 
   listar = async (req: Request, res: Response): Promise<void> => {
     const incluirCerrados = req.query.cerrados === '1';
@@ -27,14 +37,16 @@ export class PortalTicketController {
     res.render('pages/portal/tickets-list', {
       titulo: 'Mis tickets',
       tickets: tickets.map((t) => ticketVM(t, ahora)),
+      variasEmpresas: empresasDe(req.user!).length > 1,
       incluirCerrados,
     });
   };
 
-  nuevoForm = async (_req: Request, res: Response): Promise<void> => {
+  nuevoForm = async (req: Request, res: Response): Promise<void> => {
     const cfg = await this.misTickets.catalogoParaCrear();
     res.render('pages/portal/ticket-new', {
       titulo: 'Nuevo ticket',
+      empresas: await this.misEmpresas(req.user!),
       tipos: cfg.tipos,
       sistemas: cfg.sistemas,
       prioridades: cfg.prioridades,
@@ -46,8 +58,12 @@ export class PortalTicketController {
   crearPost = async (req: Request, res: Response): Promise<void> => {
     const b = req.body ?? {};
     try {
+      const empresas = await this.misEmpresas(req.user!);
+      const elegida = empresas.find((e) => e.id === str(b.empresaId)) ?? empresas[0];
       const ticket = await this.crear.ejecutar({
         actor: req.user!,
+        empresaId: str(b.empresaId) || undefined,
+        empresaNombre: elegida?.nombre ?? null,
         asunto: str(b.asunto),
         descripcion: str(b.descripcion),
         tipo: str(b.tipo),
@@ -59,6 +75,7 @@ export class PortalTicketController {
       const cfg = await this.misTickets.catalogoParaCrear();
       res.status(422).render('pages/portal/ticket-new', {
         titulo: 'Nuevo ticket',
+        empresas: await this.misEmpresas(req.user!),
         tipos: cfg.tipos,
         sistemas: cfg.sistemas,
         prioridades: cfg.prioridades,

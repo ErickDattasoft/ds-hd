@@ -16,6 +16,8 @@ export interface ActualizarUsuarioInput {
   roles?: Rol[];
   activo?: boolean;
   empresaId?: string | null;
+  /** Otras empresas del cliente (reemplaza la lista actual). */
+  empresasAdicionales?: string[];
   permisosExtra?: string[];
   permisosRevocados?: string[];
   agente?: Partial<PerfilAgente>;
@@ -56,6 +58,10 @@ export class ActualizarUsuarioService {
     }
     if (rolesNuevos !== null) usuario.cambiarRoles(rolesNuevos, this.clock.now());
     if (input.empresaId !== undefined) usuario.empresaId = input.empresaId || null;
+    if (input.empresasAdicionales !== undefined || input.empresaId !== undefined) {
+      const lista = input.empresasAdicionales ?? usuario.empresasAdicionales;
+      usuario.empresasAdicionales = [...new Set(lista)].filter((id) => id && id !== usuario.empresaId);
+    }
     if (input.permisosExtra !== undefined) usuario.permisosExtra = [...new Set(input.permisosExtra)];
     if (input.permisosRevocados !== undefined) {
       usuario.permisosRevocados = [...new Set(input.permisosRevocados)];

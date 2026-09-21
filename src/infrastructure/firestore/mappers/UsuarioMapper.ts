@@ -21,6 +21,7 @@ export const UsuarioMapper = {
         : [],
       activo: data.activo !== false,
       empresaId: data.empresaId ?? null,
+      empresasAdicionales: Array.isArray(data.empresasAdicionales) ? data.empresasAdicionales.map(String) : [],
       agente: {
         grupo: data.agente?.grupo ?? null,
         capacidadMax: Number(data.agente?.capacidadMax ?? 0),
@@ -47,6 +48,7 @@ export const UsuarioMapper = {
       permisosRevocados: u.permisosRevocados,
       activo: u.activo,
       empresaId: u.empresaId,
+      empresasAdicionales: u.empresasAdicionales,
       agente: {
         grupo: u.agente.grupo,
         capacidadMax: u.agente.capacidadMax,

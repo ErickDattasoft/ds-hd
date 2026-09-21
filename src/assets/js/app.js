@@ -944,6 +944,16 @@
     cc.value = ya.join(', ');
   });
 
+  // Filtro de una lista larga de casillas (p. ej. empresas adicionales de un cliente).
+  document.addEventListener('input', function (e) {
+    var f = e.target.closest('[data-filtro-casillas]');
+    if (!f) return;
+    var q = f.value.trim().toLowerCase();
+    f.parentNode.querySelectorAll('[data-casilla]').forEach(function (el) {
+      el.hidden = q && el.getAttribute('data-casilla').indexOf(q) === -1;
+    });
+  });
+
   // ── Form de ticket: "Otro" sistema + "Guardar y crear otro" ──────────────
   document.addEventListener('change', function (e) {
     var sel = e.target.closest('[data-sistema-select]');

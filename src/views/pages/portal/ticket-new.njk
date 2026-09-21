@@ -5,6 +5,14 @@
   {% if errores.general %}<p class="alert alert--error">{{ errores.general }}</p>{% endif %}
   <form method="post" action="/portal/tickets" class="form">
     <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+    {% if empresas and empresas.length > 1 %}
+      <label class="field"><span>¿Para qué empresa es?</span>
+        <select name="empresaId" required>
+          {% for e in empresas %}<option value="{{ e.id }}"{{ ' selected' if e.id == valores.empresaId }}>{{ e.nombre }}</option>{% endfor %}
+        </select>
+        {% if errores.empresaId %}<em class="field__error">{{ errores.empresaId }}</em>{% endif %}
+      </label>
+    {% endif %}
     <label class="field"><span>Asunto</span>
       <input name="asunto" value="{{ valores.asunto }}" required />
       {% if errores.asunto %}<em class="field__error">{{ errores.asunto }}</em>{% endif %}

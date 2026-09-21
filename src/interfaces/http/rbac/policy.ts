@@ -1,5 +1,5 @@
 import type { Usuario } from '../../../core/entities/Usuario.js';
-import type { SessionUser } from '../../../application/shared/SessionUser.js';
+import { empresasDe, type SessionUser } from '../../../application/shared/SessionUser.js';
 import { esPermiso, type Permiso } from './permissions.js';
 import { permisosDeRol } from './roles.js';
 
@@ -51,7 +51,7 @@ export function can(user: SessionUser, permiso: Permiso, recurso?: RecursoContex
   }
 
   if (permiso.startsWith('portal:') && recurso.empresaId != null) {
-    if (user.empresaId == null || user.empresaId !== recurso.empresaId) return false;
+    if (!empresasDe(user).includes(recurso.empresaId)) return false;
   }
 
   return true;
