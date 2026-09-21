@@ -3,7 +3,7 @@
 {% block title %}Nuevo ticket{% endblock %}
 {% block content %}
   <div class="page-head">
-    <h1>Nuevo ticket</h1>
+    <h1>Nuevo ticket{% if folioSiguiente %} <span class="muted" title="Folio que le tocará al guardar. Si alguien más guarda un ticket antes, será el siguiente.">#{{ folioSiguiente }}</span>{% endif %}</h1>
     <a class="btn btn--sm btn--ghost" href="/app/tickets">← Tickets</a>
   </div>
   {% if errores.general %}<p class="alert alert--error">{{ errores.general }}</p>{% endif %}

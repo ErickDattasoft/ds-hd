@@ -184,6 +184,9 @@ export class InMemoryContadorRepository implements IContadorRepository {
     this.valores.set(nombre, n);
     return n;
   }
+  async actual(nombre: string): Promise<number> {
+    return this.valores.get(nombre) ?? 0;
+  }
   async fijar(nombre: string, valor: number): Promise<void> {
     this.valores.set(nombre, valor);
   }

@@ -1,3 +1,5 @@
+import type { IContadorRepository } from '../../../../core/ports/repositories/IContadorRepository.js';
+import { CONTADOR_TICKETS } from '../../../../application/tickets/constantes.js';
 import type { Request, Response } from 'express';
 import type { CrearTicketService } from '../../../../application/tickets/CrearTicketService.js';
 import type { ActualizarEstadoTicketService } from '../../../../application/tickets/ActualizarEstadoTicketService.js';
@@ -65,6 +67,7 @@ export class TicketController {
     private readonly empresasRepo: IEmpresaRepository,
     private readonly clock: IClock,
     private readonly excel: TicketExcelService,
+    private readonly contadores: IContadorRepository,
   ) {}
 
   private filtroDeQuery(req: Request): FiltroTickets {
@@ -139,10 +142,11 @@ export class TicketController {
   };
 
   private async datosFormNuevo(user: NonNullable<Request['user']>) {
-    const [{ config }, empresas, contactos] = await Promise.all([
+    const [{ config }, empresas, contactos, ultimoFolio] = await Promise.all([
       this.listar.listar(user, { limite: 0 }),
       this.empresasRepo.list({ activa: true }),
       this.contactosRepo.list({ activo: true }),
+      this.contadores.actual(CONTADOR_TICKETS),
     ]);
     const nombreEmpresa = new Map(empresas.map((e) => [e.id, e.nombre]));
     // La solicitud de soporte la puede hacer el principal o el alternativo de la empresa: se
@@ -162,6 +166,8 @@ export class TicketController {
     const puedeAsignar = user.permisos.includes('tickets:asignar');
     return {
       config,
+      // Folio que le tocará si nadie más guarda uno antes; el definitivo se asigna al guardar.
+      folioSiguiente: ultimoFolio + 1,
       estadosFacturacion: catalogoFacturacion(),
       agentes: puedeAsignar ? await this.usuarios.list({ roles: ROLES_TECNICOS, activo: true }) : [],
       puedeAsignar,

@@ -19,6 +19,11 @@ export class FirestoreContadorRepository implements IContadorRepository {
     });
   }
 
+  async actual(nombre: string): Promise<number> {
+    const snap = await this.db.collection(COL).doc(nombre).get();
+    return snap.exists ? Number(snap.data()!.valor ?? 0) : 0;
+  }
+
   async fijar(nombre: string, valor: number): Promise<void> {
     await this.db.collection(COL).doc(nombre).set({ valor }, { merge: true });
   }

@@ -983,6 +983,7 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
           c.empresaRepo,
           c.clock,
           c.ticketExcelService,
+          c.contadorRepo,
         ),
     ).singleton(),
     backupService: asFunction(
