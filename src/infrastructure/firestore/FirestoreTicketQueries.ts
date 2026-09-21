@@ -69,6 +69,16 @@ export class FirestoreTicketQueries implements ITicketQueries {
       const agg = await this.aplicar(filtro).count().get();
       return agg.data().count;
     }
+    // "Sin la papelera" también se resuelve con conteos del servidor: todos menos los
+    // archivados (los documentos viejos no traen el campo, así que no se filtra por `false`).
+    if (!filtro.texto && filtro.archivado === false && !filtro.soloProgramados) {
+      const base = this.aplicar({ ...filtro, archivado: undefined });
+      const [todos, enPapelera] = await Promise.all([
+        base.count().get(),
+        base.where('archivado', '==', true).count().get(),
+      ]);
+      return todos.data().count - enPapelera.data().count;
+    }
     return (await this.listar(filtro)).length;
   }
 

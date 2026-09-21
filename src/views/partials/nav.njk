@@ -22,7 +22,8 @@
         <li>
           <a class="sidebar__link {{ cls }}" href="{{ item.href }}" title="{{ item.etiqueta }}"{% if cls %} aria-current="page"{% endif %}>
             <span class="sidebar__icon" aria-hidden="true">{{ item.icono }}</span><span class="sidebar__text">{{ item.etiqueta }}</span>
-            {% if item.contador %}<span class="badge sidebar__badge">{{ item.contador }}</span>{% endif %}
+            {% if item.contadorTotal %}<span class="badge sidebar__badge sidebar__badge--total" title="{{ (item.contadorTotalTitulo or '{n}') | replace('{n}', item.contadorTotal) }}">{{ item.contadorTotal }}</span>{% endif %}
+            {% if item.contador %}<span class="badge sidebar__badge" title="{{ (item.contadorTitulo or '{n}') | replace('{n}', item.contador) }}">{{ item.contador }}</span>{% endif %}
           </a>
         </li>
       {% endfor %}

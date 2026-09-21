@@ -35,6 +35,9 @@ export function backofficeRoutes(container: Container): Router {
         .resolve('ticketQueries')
         .contar({ soloAbiertos: true, archivado: false });
     }
+    if (claves.includes('ticketsTotal')) {
+      contadores.ticketsTotal = await container.resolve('ticketQueries').contar({ archivado: false });
+    }
     if (claves.includes('cotizacionesBorrador')) {
       const porEstado = await container.resolve('cotizacionRepo').contarPorEstado();
       contadores.cotizacionesBorrador = porEstado.borrador ?? 0;

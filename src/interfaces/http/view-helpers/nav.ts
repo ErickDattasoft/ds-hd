@@ -16,6 +16,7 @@ const ORDEN_GRUPOS: readonly NavGrupo[] = ['principal', 'soporte', 'comercial', 
 /** Claves de los contadores de la barra lateral (ver `ContadoresNav`). */
 export type ContadorNavKey =
   | 'ticketsAbiertos'
+  | 'ticketsTotal'
   | 'cotizacionesBorrador'
   | 'solicitudesAccesoPendientes'
   | 'empresasTotal'
@@ -31,8 +32,14 @@ export interface NavItem {
   grupo: NavGrupo;
   /** Si tiene badge de conteo, qué valor de `ContadoresNav` usar. */
   contadorKey?: ContadorNavKey;
-  /** Valor del badge para esta request — lo llena `conContadores`, nunca el catálogo estático. */
+  /** Texto al pasar el mouse sobre el badge; `{n}` se sustituye por el número. */
+  contadorTitulo?: string;
+  /** Segundo badge opcional, que va antes del principal (p. ej. total junto a pendientes). */
+  contadorTotalKey?: ContadorNavKey;
+  contadorTotalTitulo?: string;
+  /** Valores de los badges para esta request — los llena `conContadores`, nunca el catálogo estático. */
   contador?: number;
+  contadorTotal?: number;
 }
 
 /** Conteos para los badges del sidebar, uno por `ContadorNavKey`. */
@@ -53,11 +60,13 @@ export const NAV_BACKOFFICE: readonly NavItem[] = [
   { etiqueta: 'Versiones', href: '/app/versiones', icono: '🧩', permiso: 'versiones:leer', grupo: 'principal' },
   { etiqueta: 'Eventos', href: '/app/eventos', icono: '📅', permiso: 'eventos:leer', grupo: 'principal' },
 
-  { etiqueta: 'Tickets', href: '/app/tickets', icono: '🎫', permiso: 'tickets:leer', grupo: 'soporte', contadorKey: 'ticketsAbiertos' },
+  { etiqueta: 'Tickets', href: '/app/tickets', icono: '🎫', permiso: 'tickets:leer', grupo: 'soporte',
+    contadorKey: 'ticketsAbiertos', contadorTitulo: '{n} tickets sin cerrar (ni resueltos ni cerrados)',
+    contadorTotalKey: 'ticketsTotal', contadorTotalTitulo: '{n} tickets en total (sin contar la papelera)' },
   { etiqueta: 'Reportes', href: '/app/reportes', icono: '📈', permiso: 'tickets:leer_todos', grupo: 'soporte' },
 
-  { etiqueta: 'Empresas', href: '/app/empresas', icono: '🏢', permiso: 'empresas:leer', grupo: 'comercial', contadorKey: 'empresasTotal' },
-  { etiqueta: 'Contactos', href: '/app/contactos', icono: '👥', permiso: 'contactos:leer', grupo: 'comercial', contadorKey: 'contactosTotal' },
+  { etiqueta: 'Empresas', href: '/app/empresas', icono: '🏢', permiso: 'empresas:leer', grupo: 'comercial', contadorKey: 'empresasTotal', contadorTitulo: '{n} empresas' },
+  { etiqueta: 'Contactos', href: '/app/contactos', icono: '👥', permiso: 'contactos:leer', grupo: 'comercial', contadorKey: 'contactosTotal', contadorTitulo: '{n} contactos' },
   { etiqueta: 'Cotizaciones', href: '/app/cotizaciones', icono: '📄', permiso: 'cotizaciones:leer', grupo: 'comercial', contadorKey: 'cotizacionesBorrador' },
   { etiqueta: 'Embudo de ventas', href: '/app/ventas', icono: '💼', permiso: 'cotizaciones:leer', grupo: 'comercial' },
   { etiqueta: 'Tareas', href: '/app/tareas', icono: '✅', permiso: 'seguimiento:leer', grupo: 'comercial' },
@@ -99,7 +108,11 @@ export function construirNavSecciones(user: SessionUser): NavSeccion[] {
  * conteos que el usuario no va a ver. */
 export function contadoresNecesarios(secciones: NavSeccion[]): ContadorNavKey[] {
   const claves = new Set<ContadorNavKey>();
-  for (const s of secciones) for (const i of s.items) if (i.contadorKey) claves.add(i.contadorKey);
+  for (const s of secciones)
+    for (const i of s.items) {
+      if (i.contadorKey) claves.add(i.contadorKey);
+      if (i.contadorTotalKey) claves.add(i.contadorTotalKey);
+    }
   return [...claves];
 }
 
@@ -109,6 +122,14 @@ export function contadoresNecesarios(secciones: NavSeccion[]): ContadorNavKey[] 
 export function conContadores(secciones: NavSeccion[], contadores: ContadoresNav): NavSeccion[] {
   return secciones.map((s) => ({
     ...s,
-    items: s.items.map((i) => (i.contadorKey ? { ...i, contador: contadores[i.contadorKey] } : i)),
+    items: s.items.map((i) =>
+      i.contadorKey || i.contadorTotalKey
+        ? {
+            ...i,
+            contador: i.contadorKey ? contadores[i.contadorKey] : undefined,
+            contadorTotal: i.contadorTotalKey ? contadores[i.contadorTotalKey] : undefined,
+          }
+        : i,
+    ),
   }));
 }
