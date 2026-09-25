@@ -83,10 +83,10 @@
   // Este navegador recuerda cuáles ya se bajaron: esas salen desmarcadas para no repetirlas.
   var CLAVE_IMG_BAJADAS = 'respaldo-imagenes-bajadas';
   function leerBajadas() {
-    try { return JSON.parse(localStorage.getItem(CLAVE_IMG_BAJADAS) || '{}') || {}; } catch (_) { return {}; }
+    try { return JSON.parse(localStorage.getItem(CLAVE_IMG_BAJADAS) || '{}') || {}; } catch (e) { void e; return {}; }
   }
   function guardarBajadas(v) {
-    try { localStorage.setItem(CLAVE_IMG_BAJADAS, JSON.stringify(v)); } catch (_) { /* sin almacenamiento */ }
+    try { localStorage.setItem(CLAVE_IMG_BAJADAS, JSON.stringify(v)); } catch (e) { void e; /* sin almacenamiento */ }
   }
   function ventanaImagenes(d) {
     var bajadas = leerBajadas();
