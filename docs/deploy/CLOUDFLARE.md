@@ -70,7 +70,11 @@ contra `ds-hd-b4939` (ver `firestore.rules`/`firestore.indexes.json`). Si cambia
 futuro:
 
 ```bash
-npx firebase deploy --only firestore:indexes,firestore:rules --project ds-hd-b4939
+# El paquete se llama firebase-tools (el comando, firebase). `npx firebase` baja otro
+# paquete distinto —el SDK cliente, sin ejecutable— y falla con
+# "could not determine executable to run".
+npx firebase-tools login          # en WSL, si el navegador falla: --no-localhost
+npx firebase-tools deploy --only firestore:indexes,firestore:rules --project ds-hd-b4939
 ```
 
 ## 5. Primer despliegue
