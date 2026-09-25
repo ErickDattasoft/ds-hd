@@ -1,0 +1,73 @@
+{% extends "layouts/backoffice.njk" %}
+{% block title %}Historial de avisos{% endblock %}
+{% block content %}
+  <div class="page-head">
+    <h1>Historial de avisos enviados</h1>
+    <div class="page-head__actions">
+      <a class="btn btn--sm btn--ghost" href="/app/versiones">Volver a versiones</a>
+      {% if avisos | length %}
+        <a class="btn btn--sm btn--secondary" href="/app/versiones/historial.xlsx?{{ qs }}">Exportar Excel</a>
+      {% endif %}
+    </div>
+  </div>
+  <p class="muted">
+    Una fila por empresa y sistema avisado. Registra de qué versión a cuál se avisó (o la fecha de
+    vencimiento, en licencias), por qué canal y quién lo mandó.
+  </p>
+
+  <form method="get" action="/app/versiones/historial" class="filterbar">
+    <label class="field"><span>Empresa</span>
+      <input name="empresa" value="{{ f.empresa }}" placeholder="Filtrar por empresa…" autocomplete="off" />
+    </label>
+    <label class="field"><span>Desde</span><input type="date" name="desde" value="{{ f.desde }}" /></label>
+    <label class="field"><span>Hasta</span><input type="date" name="hasta" value="{{ f.hasta }}" /></label>
+    <button class="btn btn--sm" type="submit">Filtrar</button>
+    {% if f.empresa or f.desde or f.hasta %}
+      <a class="btn btn--sm btn--ghost" href="/app/versiones/historial">Quitar filtros</a>
+    {% endif %}
+  </form>
+
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Empresa</th><th>Sistema</th><th>Tipo</th><th>Detalle</th>
+          <th>Canal</th><th>Fecha y hora</th><th>Enviado por</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for a in avisos %}
+          <tr>
+            <td><a href="/app/empresas/{{ a.empresaId }}">{{ a.empresaNombre }}</a></td>
+            <td>{{ a.sistema }}</td>
+            <td>
+              {% if a.tipo == 'licencia' %}
+                <span class="badge" title="Aviso de licencia">Licencia</span>
+              {% else %}
+                <span class="badge" title="Aviso de versión desactualizada">Versión</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if a.tipo == 'licencia' %}
+                Vence: {{ a.fechaVencimiento | fecha if a.fechaVencimiento else '—' }}
+              {% else %}
+                {{ a.versionInstalada or 'sin dato' }} → <strong>{{ a.versionOficial or '—' }}</strong>
+              {% endif %}
+            </td>
+            <td>{{ 'WhatsApp' if a.canal == 'whatsapp' else 'Correo' }}{% if a.destino %}<div class="muted" style="font-size:.78em">{{ a.destino }}</div>{% endif %}</td>
+            <td>{{ a.createdAt | fechahora }}</td>
+            <td>{{ a.enviadoPorNombre or '—' }}</td>
+          </tr>
+        {% else %}
+          <tr><td colspan="7" class="muted">
+            {% if f.empresa or f.desde or f.hasta %}
+              Ningún aviso coincide con el filtro.
+            {% else %}
+              Sin avisos registrados todavía. Se llena solo al enviar avisos desde <a href="/app/empresas">Empresas</a>.
+            {% endif %}
+          </td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endblock %}

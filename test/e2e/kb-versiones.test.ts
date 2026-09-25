@@ -262,3 +262,77 @@ describe('base de conocimiento — historial de búsquedas (portal)', () => {
     expect((await agent.get('/portal/kb')).text).not.toContain('Búsquedas recientes');
   });
 });
+
+describe('versiones — historial de avisos enviados', () => {
+  const aviso = (over: Record<string, unknown> = {}) => ({
+    id: 'a1',
+    empresaId: 'e1',
+    empresaNombre: 'Empresa Alfa',
+    sistema: 'Contabilidad',
+    tipo: 'sistema' as const,
+    versionInstalada: '18.0.0',
+    versionOficial: '19.1.0',
+    fechaVencimiento: null,
+    canal: 'correo' as const,
+    destino: 'cliente@alfa.mx',
+    enviadoPorUid: 'u-a',
+    enviadoPorNombre: 'Admin',
+    createdAt: new Date('2026-09-20T15:00:00Z'),
+    ...over,
+  });
+
+  it('muestra el detalle por sistema, el canal y quién lo envió', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    await t.avisoRepo.registrar([aviso()]);
+    const { agent } = await login(t.app, ADMIN.email, ADMIN.password);
+
+    const res = await agent.get('/app/versiones/historial');
+    expect(res.status).toBe(200);
+    expect(res.text).toContain('Empresa Alfa');
+    expect(res.text).toContain('Contabilidad');
+    expect(res.text).toContain('18.0.0');
+    expect(res.text).toContain('19.1.0');
+    expect(res.text).toContain('Correo');
+    expect(res.text).toContain('Admin');
+  });
+
+  it('filtra por empresa', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    await t.avisoRepo.registrar([aviso(), aviso({ id: 'a2', empresaNombre: 'Empresa Beta' })]);
+    const { agent } = await login(t.app, ADMIN.email, ADMIN.password);
+
+    const res = await agent.get('/app/versiones/historial?empresa=beta');
+    expect(res.text).toContain('Empresa Beta');
+    expect(res.text).not.toContain('Empresa Alfa');
+  });
+
+  it('una licencia muestra su fecha de vencimiento en vez de versiones', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    await t.avisoRepo.registrar([
+      aviso({ tipo: 'licencia', versionInstalada: null, versionOficial: null, fechaVencimiento: '2026-10-15' }),
+    ]);
+    const { agent } = await login(t.app, ADMIN.email, ADMIN.password);
+
+    const res = await agent.get('/app/versiones/historial');
+    expect(res.text).toContain('Licencia');
+    expect(res.text).toContain('Vence:');
+  });
+
+  it('exporta el historial a .xlsx', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    await t.avisoRepo.registrar([aviso()]);
+    const { agent } = await login(t.app, ADMIN.email, ADMIN.password);
+
+    const res = await agent.get('/app/versiones/historial.xlsx').responseType('blob');
+    expect(res.status).toBe(200);
+    expect(res.body.subarray(0, 2).toString()).toBe('PK');
+  });
+
+  it('sin avisos, explica de dónde salen en vez de dejar la tabla muda', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    const { agent } = await login(t.app, ADMIN.email, ADMIN.password);
+
+    const res = await agent.get('/app/versiones/historial');
+    expect(res.text).toContain('Sin avisos registrados todavía');
+  });
+});

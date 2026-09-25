@@ -225,6 +225,8 @@ export function backofficeRoutes(container: Container): Router {
   r.post('/versiones/avisos', requirePermission('versiones:editar'), (req, res) => versiones().avisosPost(req, res));
   r.get('/versiones/mercado', requirePermission('versiones:editar'), (req, res) => versiones().mercadoView(req, res));
   r.post('/versiones/mercado', requirePermission('versiones:editar'), (req, res) => versiones().mercadoPost(req, res));
+  r.get('/versiones/historial', requirePermission('versiones:leer'), (req, res) => versiones().historialView(req, res));
+  r.get('/versiones/historial.xlsx', requirePermission('versiones:leer'), (req, res) => versiones().historialExcel(req, res));
   r.get('/versiones/reporte', requirePermission('versiones:leer'), (req, res) => versiones().reporteView(req, res));
   r.get('/versiones/reporte.xlsx', requirePermission('versiones:leer'), (req, res) => versiones().reporteExcel(req, res));
   r.get('/versiones/reporte/imprimir', requirePermission('versiones:leer'), (req, res) => versiones().reporteImprimir(req, res));

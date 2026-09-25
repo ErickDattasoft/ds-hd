@@ -31,6 +31,7 @@ import { InMemoryFiltroGuardadoRepository } from '../fakes/InMemoryFiltroGuardad
 import { InMemoryAdjuntoTicketRepository } from '../fakes/InMemoryAdjuntoTicketRepository.js';
 import {
   InMemoryVersionRepository,
+  InMemoryAvisoRepository,
   InMemoryKnowledgeRepository,
   InMemoryPizarraKBRepository,
   InMemoryBusquedaKBRepository,
@@ -57,6 +58,7 @@ export interface TestApp {
   contactoRepo: InMemoryContactoRepository;
   bitacoraRepo: InMemoryBitacoraRepository;
   versionRepo: InMemoryVersionRepository;
+  avisoRepo: InMemoryAvisoRepository;
   knowledgeRepo: InMemoryKnowledgeRepository;
   pizarraKBRepo: InMemoryPizarraKBRepository;
   busquedaKBRepo: InMemoryBusquedaKBRepository;
@@ -104,6 +106,7 @@ export function makeTestApp(opts: { usuarios?: { uid: string; email: string; pas
   const contactoRepo = new InMemoryContactoRepository();
   const bitacoraRepo = new InMemoryBitacoraRepository();
   const versionRepo = new InMemoryVersionRepository();
+  const avisoRepo = new InMemoryAvisoRepository();
   const knowledgeRepo = new InMemoryKnowledgeRepository();
   const pizarraKBRepo = new InMemoryPizarraKBRepository();
   const busquedaKBRepo = new InMemoryBusquedaKBRepository();
@@ -141,6 +144,7 @@ export function makeTestApp(opts: { usuarios?: { uid: string; email: string; pas
     contactoRepo,
     bitacoraRepo,
     versionRepo,
+    avisoRepo,
     knowledgeRepo,
     pizarraKBRepo,
     busquedaKBRepo,
@@ -167,6 +171,7 @@ export function makeTestApp(opts: { usuarios?: { uid: string; email: string; pas
     contactoRepo,
     bitacoraRepo,
     versionRepo,
+    avisoRepo,
     knowledgeRepo,
     pizarraKBRepo,
     busquedaKBRepo,

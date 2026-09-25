@@ -2,6 +2,9 @@ import type { IUsuarioRepository } from '../../core/ports/repositories/IUsuarioR
 import type { IEmpresaRepository } from '../../core/ports/repositories/IEmpresaRepository.js';
 import type { IContactoRepository } from '../../core/ports/repositories/IContactoRepository.js';
 import type { IVersionRepository } from '../../core/ports/repositories/IVersionRepository.js';
+import type { IAvisoRepository } from '../../core/ports/repositories/IAvisoRepository.js';
+import type { IIdGenerator } from '../../core/ports/services/IIdGenerator.js';
+import type { AvisoEnviado } from '../../core/entities/AvisoEnviado.js';
 import type { IConfiguracionRepository } from '../../core/ports/repositories/IConfiguracionRepository.js';
 import type { IEmailSender } from '../../core/ports/services/IEmailSender.js';
 import type { IIntegracionesGateway } from '../../core/ports/services/IIntegracionesGateway.js';
@@ -12,6 +15,7 @@ import {
   formatearContactoSoporte,
   formatearLicenciasPendientes,
   formatearSistemasPendientes,
+  filtrarPendientes,
   licenciasPendientes,
   renderizarPlantilla,
   sistemasPendientes,
@@ -52,6 +56,8 @@ export class AvisarEmpresasService {
     private readonly gateway: IIntegracionesGateway,
     private readonly bitacora: BitacoraService,
     private readonly clock: IClock,
+    private readonly avisos: IAvisoRepository,
+    private readonly ids: IIdGenerator,
     private readonly usuarios?: IUsuarioRepository,
   ) {}
 
@@ -204,6 +210,34 @@ export class AvisarEmpresasService {
       if (input.tipo === 'versiones') empresa.marcarAvisoVersiones(hoy);
       else empresa.marcarAvisoLicencias(hoy);
       await this.empresas.save(empresa);
+
+      // Historial: una fila por sistema avisado, no por envío — así queda registrado de qué
+      // versión a cuál se avisó, que es lo que la fecha de "último aviso" no puede decir.
+      const avisados = filtrarPendientes(
+        input.tipo === 'versiones'
+          ? sistemasPendientes(empresa, oficial, cartas)
+          : licenciasPendientes(empresa, hoy),
+        elegidos,
+      );
+      await this.avisos.registrar(
+        avisados.map(
+          (p): AvisoEnviado => ({
+            id: this.ids.newId(),
+            empresaId: empresa.id,
+            empresaNombre: empresa.nombre,
+            sistema: p.sistema,
+            tipo: input.tipo === 'versiones' ? 'sistema' : 'licencia',
+            versionInstalada: p.versionInstalada ?? null,
+            versionOficial: p.versionOficial ?? null,
+            fechaVencimiento: p.fechaVencimiento ?? null,
+            canal,
+            destino: (canal === 'whatsapp' ? telefono : contacto!.email) || null,
+            enviadoPorUid: input.actor.uid,
+            enviadoPorNombre: input.actor.nombre,
+            createdAt: this.clock.now(),
+          }),
+        ),
+      );
       await this.bitacora.registrar({
         actor: input.actor,
         accion: 'aviso',

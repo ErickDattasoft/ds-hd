@@ -6,6 +6,8 @@ import type { VersionSistema } from '../../src/core/entities/VersionSistema.js';
 import { coincideTexto, type ArticuloKB } from '../../src/core/entities/ArticuloKB.js';
 import type { PizarraKB } from '../../src/core/entities/PizarraKB.js';
 import type { BusquedaKB } from '../../src/core/entities/BusquedaKB.js';
+import type { IAvisoRepository } from '../../src/core/ports/repositories/IAvisoRepository.js';
+import { avisoCoincide, type AvisoEnviado, type FiltroAvisos } from '../../src/core/entities/AvisoEnviado.js';
 
 export class InMemoryVersionRepository implements IVersionRepository {
   readonly items = new Map<string, VersionSistema>();
@@ -78,5 +80,17 @@ export class InMemoryBusquedaKBRepository implements IBusquedaKBRepository {
   }
   async limpiar(uid: string): Promise<void> {
     for (const [id, b] of this.items) if (b.uid === uid) this.items.delete(id);
+  }
+}
+
+export class InMemoryAvisoRepository implements IAvisoRepository {
+  readonly items: AvisoEnviado[] = [];
+  async registrar(avisos: AvisoEnviado[]): Promise<void> {
+    this.items.push(...avisos);
+  }
+  async list(filtro: FiltroAvisos = {}): Promise<AvisoEnviado[]> {
+    return this.items
+      .filter((a) => avisoCoincide(a, filtro))
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
   }
 }

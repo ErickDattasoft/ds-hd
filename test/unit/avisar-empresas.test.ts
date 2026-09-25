@@ -13,6 +13,7 @@ import { InMemoryVersionRepository } from '../fakes/kb.js';
 import { InMemoryConfiguracionRepository } from '../fakes/tickets.js';
 import { FakeEmailSender } from '../fakes/FakeEmailSender.js';
 import { FixedClock, silentLogger } from '../fakes/support.js';
+import { InMemoryAvisoRepository } from '../fakes/kb.js';
 import { WHATSAPP_CLIENTES_POR_DEFECTO, type WhatsAppClientesConfig } from '../../src/core/entities/ConfiguracionIntegraciones.js';
 import type { IIntegracionesGateway, ResultadoPrueba } from '../../src/core/ports/services/IIntegracionesGateway.js';
 
@@ -60,6 +61,7 @@ describe('AvisarEmpresasService', () => {
   let gateway: FakeIntegracionesGateway;
   let bitacora: InMemoryBitacoraRepository;
   let clock: FixedClock;
+  let avisos: InMemoryAvisoRepository;
   let service: AvisarEmpresasService;
 
   beforeEach(() => {
@@ -72,6 +74,7 @@ describe('AvisarEmpresasService', () => {
     gateway = new FakeIntegracionesGateway();
     bitacora = new InMemoryBitacoraRepository();
     clock = new FixedClock(new Date('2026-09-01T12:00:00Z'));
+    avisos = new InMemoryAvisoRepository();
     service = new AvisarEmpresasService(
       empresas,
       contactos,
@@ -81,6 +84,8 @@ describe('AvisarEmpresasService', () => {
       gateway,
       new BitacoraService(bitacora, ids, clock, silentLogger),
       clock,
+      avisos,
+      ids,
     );
   });
 
@@ -299,6 +304,8 @@ describe('AvisarEmpresasService', () => {
       gateway,
       new BitacoraService(bitacora, ids, clock, silentLogger),
       clock,
+      avisos,
+      ids,
       usuarios,
     );
     const cfg = await config.obtenerAvisos();
@@ -313,5 +320,119 @@ describe('AvisarEmpresasService', () => {
     const texto = email.enviados[0]!.texto ?? '';
     expect(texto).toContain('Erick: 999 111 2222');
     expect(texto).not.toContain('General: 555');
+  });
+});
+
+describe('AvisarEmpresasService — historial de avisos enviados', () => {
+  it('registra una fila por sistema, con las versiones, el canal y quién lo mandó', async () => {
+    const empresas = new InMemoryEmpresaRepository();
+    const contactos = new InMemoryContactoRepository();
+    const versiones = new InMemoryVersionRepository();
+    const config = new InMemoryConfiguracionRepository();
+    const avisos = new InMemoryAvisoRepository();
+    const clock = new FixedClock(new Date('2026-09-25T12:00:00Z'));
+    const service = new AvisarEmpresasService(
+      empresas,
+      contactos,
+      versiones,
+      config,
+      new FakeEmailSender(),
+      new FakeIntegracionesGateway(),
+      new BitacoraService(new InMemoryBitacoraRepository(), ids, clock, silentLogger),
+      clock,
+      avisos,
+      ids,
+    );
+
+    await versiones.save(new VersionSistema({ id: 'v1', sistema: 'Contabilidad', versionActual: '19.1.0' }));
+    await versiones.save(new VersionSistema({ id: 'v2', sistema: 'Nóminas', versionActual: '12.0.0' }));
+    await empresas.save(
+      new Empresa({
+        id: 'e1',
+        nombre: 'Empresa Uno',
+        sistemasContratados: ['Contabilidad', 'Nóminas'],
+        versionesInstaladas: { Contabilidad: '18.0.0', 'Nóminas': '11.0.0' },
+      }),
+    );
+    await contactos.save(new Contacto({ id: 'c1', nombre: 'Cliente', empresaId: 'e1', email: 'c1@x.mx' }));
+
+    await service.ejecutar({ actor: actor(), empresaIds: ['e1'], tipo: 'versiones' });
+
+    // Dos sistemas desactualizados => dos filas, no un solo registro de "ya le avisé".
+    expect(avisos.items).toHaveLength(2);
+    const conta = avisos.items.find((a) => a.sistema === 'Contabilidad')!;
+    expect(conta.empresaNombre).toBe('Empresa Uno');
+    expect(conta.tipo).toBe('sistema');
+    expect(conta.versionInstalada).toBe('18.0.0');
+    expect(conta.versionOficial).toBe('19.1.0');
+    expect(conta.canal).toBe('correo');
+    expect(conta.destino).toBe('c1@x.mx');
+    expect(conta.enviadoPorNombre).toBeTruthy();
+  });
+
+  it('respeta la selección de sistemas: solo registra los elegidos', async () => {
+    const empresas = new InMemoryEmpresaRepository();
+    const contactos = new InMemoryContactoRepository();
+    const versiones = new InMemoryVersionRepository();
+    const avisos = new InMemoryAvisoRepository();
+    const clock = new FixedClock(new Date('2026-09-25T12:00:00Z'));
+    const service = new AvisarEmpresasService(
+      empresas,
+      contactos,
+      versiones,
+      new InMemoryConfiguracionRepository(),
+      new FakeEmailSender(),
+      new FakeIntegracionesGateway(),
+      new BitacoraService(new InMemoryBitacoraRepository(), ids, clock, silentLogger),
+      clock,
+      avisos,
+      ids,
+    );
+
+    await versiones.save(new VersionSistema({ id: 'v1', sistema: 'Contabilidad', versionActual: '19.1.0' }));
+    await versiones.save(new VersionSistema({ id: 'v2', sistema: 'Nóminas', versionActual: '12.0.0' }));
+    await empresas.save(
+      new Empresa({
+        id: 'e1',
+        nombre: 'Empresa Uno',
+        sistemasContratados: ['Contabilidad', 'Nóminas'],
+        versionesInstaladas: { Contabilidad: '18.0.0', 'Nóminas': '11.0.0' },
+      }),
+    );
+    await contactos.save(new Contacto({ id: 'c1', nombre: 'Cliente', empresaId: 'e1', email: 'c1@x.mx' }));
+
+    await service.ejecutar({
+      actor: actor(),
+      empresaIds: ['e1'],
+      tipo: 'versiones',
+      seleccion: { e1: ['Nóminas'] },
+    });
+
+    expect(avisos.items.map((a) => a.sistema)).toEqual(['Nóminas']);
+  });
+
+  it('el filtro del historial cruza por empresa y por rango de fechas', async () => {
+    const avisos = new InMemoryAvisoRepository();
+    const base = {
+      empresaId: 'e1',
+      sistema: 'Contabilidad',
+      tipo: 'sistema' as const,
+      versionInstalada: '1',
+      versionOficial: '2',
+      fechaVencimiento: null,
+      canal: 'correo' as const,
+      destino: 'x@x.mx',
+      enviadoPorUid: 'u1',
+      enviadoPorNombre: 'Admin',
+    };
+    await avisos.registrar([
+      { ...base, id: 'a1', empresaNombre: 'Alfa', createdAt: new Date('2026-09-01T10:00:00Z') },
+      { ...base, id: 'a2', empresaNombre: 'Beta', createdAt: new Date('2026-09-20T10:00:00Z') },
+    ]);
+
+    expect((await avisos.list({ empresa: 'alf' })).map((a) => a.id)).toEqual(['a1']);
+    expect((await avisos.list({ desde: new Date('2026-09-10T00:00:00Z') })).map((a) => a.id)).toEqual(['a2']);
+    // Más reciente primero.
+    expect((await avisos.list()).map((a) => a.id)).toEqual(['a2', 'a1']);
   });
 });

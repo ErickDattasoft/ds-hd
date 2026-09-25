@@ -17,7 +17,7 @@ que el CRM viejo: el cliente abre wa.me/WhatsApp Web con el mensaje ya redactado
 
 ### Constructor
 
-> **new AvisarEmpresasService**(`empresas`, `contactos`, `versiones`, `configuracion`, `email`, `gateway`, `bitacora`, `clock`, `usuarios?`): `AvisarEmpresasService`
+> **new AvisarEmpresasService**(`empresas`, `contactos`, `versiones`, `configuracion`, `email`, `gateway`, `bitacora`, `clock`, `avisos`, `ids`, `usuarios?`): `AvisarEmpresasService`
 
 #### Parameters
 
@@ -52,6 +52,14 @@ que el CRM viejo: el cliente abre wa.me/WhatsApp Web con el mensaje ya redactado
 ##### clock
 
 [`IClock`](../../../../core/ports/services/IClock/interfaces/IClock.md)
+
+##### avisos
+
+[`IAvisoRepository`](../../../../core/ports/repositories/IAvisoRepository/interfaces/IAvisoRepository.md)
+
+##### ids
+
+[`IIdGenerator`](../../../../core/ports/services/IIdGenerator/interfaces/IIdGenerator.md)
 
 ##### usuarios?
 

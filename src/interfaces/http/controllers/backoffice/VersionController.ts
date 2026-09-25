@@ -3,6 +3,9 @@ import type { VersionService, FilaMercado } from '../../../../application/versio
 import type { ReporteVersionesService } from '../../../../application/versiones/ReporteVersionesService.js';
 import type { EmpresaService } from '../../../../application/empresas/EmpresaService.js';
 import type { IConfiguracionRepository } from '../../../../core/ports/repositories/IConfiguracionRepository.js';
+import type { IAvisoRepository } from '../../../../core/ports/repositories/IAvisoRepository.js';
+import type { IUsuarioRepository } from '../../../../core/ports/repositories/IUsuarioRepository.js';
+import type { IExcelIO } from '../../../../core/ports/services/IExcelIO.js';
 import type { ContactoSoporte } from '../../../../core/entities/ConfiguracionAvisos.js';
 import { camposDeError } from '../../support/errores.js';
 
@@ -36,7 +39,70 @@ export class VersionController {
     private readonly configuracion: IConfiguracionRepository,
     private readonly reporte: ReporteVersionesService,
     private readonly empresas: EmpresaService,
+    private readonly avisos: IAvisoRepository,
+    private readonly excel: IExcelIO,
+    private readonly usuarios: IUsuarioRepository,
   ) {}
+
+  /** Filtros del historial: `desde`/`hasta` abarcan el día completo en hora local. */
+  private filtroHistorial(req: Request) {
+    const empresa = str(req.query.empresa).trim();
+    const desde = str(req.query.desde);
+    const hasta = str(req.query.hasta);
+    return {
+      crudo: { empresa, desde, hasta },
+      filtro: {
+        ...(empresa ? { empresa } : {}),
+        ...(desde ? { desde: new Date(`${desde}T00:00:00`) } : {}),
+        ...(hasta ? { hasta: new Date(`${hasta}T23:59:59`) } : {}),
+      },
+    };
+  }
+
+  historialView = async (req: Request, res: Response): Promise<void> => {
+    const { crudo, filtro } = this.filtroHistorial(req);
+    const avisos = await this.avisos.list(filtro);
+    res.render('pages/backoffice/versiones/historial', {
+      titulo: 'Historial de avisos',
+      avisos,
+      f: crudo,
+      qs: new URLSearchParams(Object.entries(crudo).filter(([, v]) => v)).toString(),
+    });
+  };
+
+  historialExcel = async (req: Request, res: Response): Promise<void> => {
+    const { filtro } = this.filtroHistorial(req);
+    const avisos = await this.avisos.list(filtro);
+    const buffer = await this.excel.escribir(
+      'Avisos enviados',
+      [
+        { header: 'Empresa', key: 'empresa', width: 30 },
+        { header: 'Sistema', key: 'sistema', width: 26 },
+        { header: 'Tipo', key: 'tipo', width: 12 },
+        { header: 'Detalle', key: 'detalle', width: 26 },
+        { header: 'Canal', key: 'canal', width: 12 },
+        { header: 'Destino', key: 'destino', width: 28 },
+        { header: 'Fecha y hora', key: 'fecha', width: 20 },
+        { header: 'Enviado por', key: 'por', width: 22 },
+      ],
+      avisos.map((a) => ({
+        empresa: a.empresaNombre,
+        sistema: a.sistema,
+        tipo: a.tipo === 'licencia' ? 'Licencia' : 'Versión',
+        detalle:
+          a.tipo === 'licencia'
+            ? `Vence: ${a.fechaVencimiento ?? '—'}`
+            : `${a.versionInstalada ?? 'sin dato'} → ${a.versionOficial ?? '—'}`,
+        canal: a.canal === 'whatsapp' ? 'WhatsApp' : 'Correo',
+        destino: a.destino ?? '',
+        fecha: a.createdAt.toLocaleString('es-MX'),
+        por: a.enviadoPorNombre,
+      })),
+    );
+    const hoy = new Date().toISOString().slice(0, 10);
+    res.setHeader('Content-Disposition', `attachment; filename="avisos-enviados-${hoy}.xlsx"`);
+    res.type('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet').send(buffer);
+  };
 
   // ── Grid "versiones del mercado" (edición masiva) ─────────────────────────
   mercadoView = async (_req: Request, res: Response): Promise<void> => {
@@ -73,11 +139,16 @@ export class VersionController {
 
   // ── Reporte de desactualizadas ───────────────────────────────────────────
   private async datosReporte(empresaId: string) {
-    const [filas, empresas] = await Promise.all([
+    const [filas, empresas, usuarios] = await Promise.all([
       this.reporte.generar(empresaId ? { empresaId } : {}),
       this.empresas.listar({ activa: true }),
+      this.usuarios.list({ activo: true }),
     ]);
-    return { filas, empresas, empresaId };
+    // Casillas con el equipo, como el CRM viejo: escribir los correos a mano invita a erratas.
+    const destinatariosSugeridos = usuarios
+      .map((u) => ({ nombre: u.nombre, email: u.email.value }))
+      .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
+    return { filas, empresas, empresaId, destinatariosSugeridos };
   }
 
   reporteView = async (req: Request, res: Response): Promise<void> => {
@@ -110,8 +181,8 @@ export class VersionController {
   reporteEnviarPost = async (req: Request, res: Response): Promise<void> => {
     const b = req.body ?? {};
     const empresaId = str(b.empresa);
-    const destinatarios = str(b.destinatarios)
-      .split(/[\s,;]+/)
+    const destinatarios = [...arr(b.destinatariosUsuarios), ...str(b.destinatarios).split(/[\s,;]+/)]
+      .map((d) => d.trim())
       .filter(Boolean);
     try {
       const { enviadoA } = await this.reporte.enviarPorCorreo(req.user!, {

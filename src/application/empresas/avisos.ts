@@ -8,6 +8,12 @@ export interface PendienteAviso {
   sistema: string;
   /** Línea como aparece en el mensaje. */
   linea: string;
+  /** Versión que tiene instalada la empresa (solo sistemas desactualizados). */
+  versionInstalada?: string | null;
+  /** Versión oficial vigente (solo sistemas desactualizados). */
+  versionOficial?: string | null;
+  /** Fecha de vencimiento `YYYY-MM-DD` (solo licencias). */
+  fechaVencimiento?: string | null;
 }
 
 /**
@@ -26,6 +32,8 @@ export function sistemasPendientes(
       linea:
         `- ${s}: instalada ${empresa.versionesInstaladas[s] || 'sin dato'}, oficial ${oficialPorSistema[s]}` +
         (cartaPorSistema[s] ? ` — Carta técnica: ${cartaPorSistema[s]}` : ''),
+      versionInstalada: empresa.versionesInstaladas[s] || null,
+      versionOficial: oficialPorSistema[s] ?? null,
     }));
 }
 
@@ -34,6 +42,7 @@ export function licenciasPendientes(empresa: Empresa, hoy: Date): PendienteAviso
   return empresa.licenciasEnRiesgo(hoy).map((l) => ({
     sistema: l.sistema,
     linea: `- ${l.sistema}: ${l.estado === 'vencida' ? `vencida hace ${Math.abs(l.dias)} días` : `vence en ${l.dias} días`} (${l.fecha})`,
+    fechaVencimiento: l.fecha,
   }));
 }
 

@@ -29,6 +29,7 @@ import { FirestoreTicketPublicoRepository } from '../infrastructure/firestore/Fi
 import { FirestoreEmpresaRepository } from '../infrastructure/firestore/FirestoreEmpresaRepository.js';
 import { FirestoreContactoRepository } from '../infrastructure/firestore/FirestoreContactoRepository.js';
 import { FirestoreBitacoraRepository } from '../infrastructure/firestore/FirestoreBitacoraRepository.js';
+import { FirestoreAvisoRepository } from '../infrastructure/firestore/FirestoreAvisoRepository.js';
 import { FirestoreVersionRepository } from '../infrastructure/firestore/FirestoreVersionRepository.js';
 import { FirestoreKnowledgeRepository } from '../infrastructure/firestore/FirestoreKnowledgeRepository.js';
 import { FirestorePizarraKBRepository } from '../infrastructure/firestore/FirestorePizarraKBRepository.js';
@@ -166,6 +167,7 @@ import type { IWebhookPublisher } from '../core/ports/services/IWebhookPublisher
 import type { ICaptchaVerifier } from '../core/ports/services/ICaptchaVerifier.js';
 import type { IIntegracionesGateway } from '../core/ports/services/IIntegracionesGateway.js';
 import type { IExcelIO } from '../core/ports/services/IExcelIO.js';
+import type { IAvisoRepository } from '../core/ports/repositories/IAvisoRepository.js';
 import type { IEmpresaRepository } from '../core/ports/repositories/IEmpresaRepository.js';
 import type { IContactoRepository } from '../core/ports/repositories/IContactoRepository.js';
 import type { IBitacoraRepository } from '../core/ports/repositories/IBitacoraRepository.js';
@@ -225,6 +227,7 @@ export interface Cradle {
   contactoRepo: IContactoRepository;
   bitacoraRepo: IBitacoraRepository;
   versionRepo: IVersionRepository;
+  avisoRepo: IAvisoRepository;
   knowledgeRepo: IKnowledgeRepository;
   pizarraKBRepo: IPizarraKBRepository;
   busquedaKBRepo: IBusquedaKBRepository;
@@ -518,6 +521,10 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
       ({ firestoreDb }: Cradle): IVersionRepository =>
         new FirestoreVersionRepository(requireFirestore(firestoreDb)),
     ).singleton(),
+    avisoRepo: asFunction(
+      ({ firestoreDb }: Cradle): IAvisoRepository =>
+        new FirestoreAvisoRepository(requireFirestore(firestoreDb)),
+    ).singleton(),
     knowledgeRepo: asFunction(
       ({ firestoreDb }: Cradle): IKnowledgeRepository =>
         new FirestoreKnowledgeRepository(requireFirestore(firestoreDb)),
@@ -806,6 +813,8 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
           c.integracionesGateway,
           c.bitacoraService,
           c.clock,
+          c.avisoRepo,
+          c.idGenerator,
           c.usuarioRepo,
         ),
     ).singleton(),
@@ -1070,6 +1079,9 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
           c.configuracionRepo,
           c.reporteVersionesService,
           c.empresaService,
+          c.avisoRepo,
+          c.excelIO,
+          c.usuarioRepo,
         ),
     ).singleton(),
     knowledgeController: asFunction(

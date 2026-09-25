@@ -55,8 +55,19 @@
     <form method="post" action="/app/versiones/reporte/enviar" class="form form--wide" data-confirm="¿Enviar el reporte por correo?">
       <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
       <input type="hidden" name="empresa" value="{{ empresaId }}" />
-      <label class="field"><span>Enviar por correo a</span>
-        <input name="destinatarios" placeholder="correo@ejemplo.mx, otro@ejemplo.mx" required />
+      {% if destinatariosSugeridos | length %}
+        <fieldset class="field">
+          <legend>Enviar al equipo</legend>
+          {% for u in destinatariosSugeridos %}
+            <label class="field--check">
+              <input type="checkbox" name="destinatariosUsuarios" value="{{ u.email }}" />
+              <span>{{ u.nombre }} <span class="muted">{{ u.email }}</span></span>
+            </label>
+          {% endfor %}
+        </fieldset>
+      {% endif %}
+      <label class="field"><span>Otros correos <span class="muted">(separados por coma)</span></span>
+        <input name="destinatarios" placeholder="correo@ejemplo.mx, otro@ejemplo.mx" />
         {% if errores.destinatarios %}<em class="field__error">{{ errores.destinatarios }}</em>{% endif %}
       </label>
       <button class="btn btn--sm btn--secondary" type="submit">Enviar reporte</button>
