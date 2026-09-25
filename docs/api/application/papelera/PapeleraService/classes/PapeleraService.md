@@ -14,7 +14,7 @@ módulo (que ya valida `<modulo>:eliminar` y registra en bitácora).
 
 ### Constructor
 
-> **new PapeleraService**(`empresasSvc`, `contactosSvc`, `archivarTicket`, `empresaRepo`, `contactoRepo`, `ticketRepo`, `ticketQueries`, `adjuntoRepo`, `bitacora`, `logger`): `PapeleraService`
+> **new PapeleraService**(`empresasSvc`, `contactosSvc`, `archivarTicket`, `empresaRepo`, `contactoRepo`, `ticketRepo`, `ticketQueries`, `adjuntoRepo`, `bitacora`, `logger`, `clock`): `PapeleraService`
 
 #### Parameters
 
@@ -57,6 +57,10 @@ módulo (que ya valida `<modulo>:eliminar` y registra en bitácora).
 ##### logger
 
 [`ILogger`](../../../../core/ports/services/ILogger/interfaces/ILogger.md)
+
+##### clock
+
+[`IClock`](../../../../core/ports/services/IClock/interfaces/IClock.md)
 
 #### Returns
 

@@ -18,4 +18,6 @@ Resultado de la invitación: el usuario creado y el link para fijar su contrase�
 
 ### urlInvitacion
 
-> **urlInvitacion**: `string`
+> **urlInvitacion**: `string` \| `null`
+
+`null` cuando la cuenta ya existía y solo se le sumó la empresa (ya tiene contraseña).

@@ -114,6 +114,38 @@ Gestión de empresas (CRUD + archivar).
 
 ***
 
+### marcarContactos()
+
+> **marcarContactos**(`actor`, `id`, `marcas`): `Promise`\<`void`\>
+
+Marca qué contacto es el principal y cuál el alternativo (lo que no se pase no cambia).
+
+#### Parameters
+
+##### actor
+
+[`SessionUser`](../../../shared/SessionUser/interfaces/SessionUser.md)
+
+##### id
+
+`string`
+
+##### marcas
+
+###### principal?
+
+`string` \| `null`
+
+###### alternativo?
+
+`string` \| `null`
+
+#### Returns
+
+`Promise`\<`void`\>
+
+***
+
 ### alternarFavorita()
 
 > **alternarFavorita**(`actor`, `id`, `favorita`): `Promise`\<`void`\>

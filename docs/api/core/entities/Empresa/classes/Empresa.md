@@ -62,9 +62,21 @@ Empresa/cliente del CRM.
 
 ***
 
+### telefonoAlternativo
+
+> **telefonoAlternativo**: `string` \| `null`
+
+***
+
 ### email
 
 > **email**: `string` \| `null`
+
+***
+
+### emailAlternativo
+
+> **emailAlternativo**: `string` \| `null`
 
 ***
 
@@ -89,6 +101,12 @@ Empresa/cliente del CRM.
 ### contactoPrincipalId
 
 > **contactoPrincipalId**: `string` \| `null`
+
+***
+
+### contactoAlternativoId
+
+> **contactoAlternativoId**: `string` \| `null`
 
 ***
 

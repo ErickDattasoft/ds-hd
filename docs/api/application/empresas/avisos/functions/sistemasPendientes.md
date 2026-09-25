@@ -6,9 +6,10 @@
 
 # Function: sistemasPendientes()
 
-> **sistemasPendientes**(`empresa`, `oficialPorSistema`): [`PendienteAviso`](../interfaces/PendienteAviso.md)[]
+> **sistemasPendientes**(`empresa`, `oficialPorSistema`, `cartaPorSistema?`): [`PendienteAviso`](../interfaces/PendienteAviso.md)[]
 
-Sistemas de `empresa` cuya versión instalada está por debajo de la oficial.
+Sistemas de `empresa` cuya versión instalada está por debajo de la oficial. Si el sistema
+tiene carta técnica registrada, se incluye su enlace (igual que el CRM viejo).
 
 ## Parameters
 
@@ -19,6 +20,10 @@ Sistemas de `empresa` cuya versión instalada está por debajo de la oficial.
 ### oficialPorSistema
 
 `Record`\<`string`, `string`\>
+
+### cartaPorSistema?
+
+`Record`\<`string`, `string` \| `null`\> = `{}`
 
 ## Returns
 

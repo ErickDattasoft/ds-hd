@@ -54,6 +54,12 @@ Caso de uso: un usuario de staff fija su propia firma y encabezado para redactar
 
 [`PredeterminadosTicket`](../../../../core/entities/ConfiguracionTickets/interfaces/PredeterminadosTicket.md)
 
+###### contactosSoporte?
+
+`string`
+
+Una línea "Nombre, teléfono" por contacto; sustituye la lista actual.
+
 #### Returns
 
 `Promise`\<`void`\>

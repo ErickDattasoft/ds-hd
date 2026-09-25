@@ -12,4 +12,5 @@
 
 ## Functions
 
+- [empresasDe](functions/empresasDe.md)
 - [actorPuede](functions/actorPuede.md)

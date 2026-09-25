@@ -42,6 +42,60 @@ Persistencia de empresas (`empresas/{id}`).
 
 ***
 
+### contar()
+
+> **contar**(`soloActivas?`): `Promise`\<`number`\>
+
+Cuántas hay, sin traerlas: lo resuelve el servidor con un conteo agregado.
+
+#### Parameters
+
+##### soloActivas?
+
+`boolean`
+
+#### Returns
+
+`Promise`\<`number`\>
+
+***
+
+### guardarVarias()
+
+> **guardarVarias**(`empresas`): `Promise`\<`void`\>
+
+Guarda muchas de golpe (importaciones), agrupando las llamadas.
+
+#### Parameters
+
+##### empresas
+
+[`Empresa`](../../../../entities/Empresa/classes/Empresa.md)[]
+
+#### Returns
+
+`Promise`\<`void`\>
+
+***
+
+### eliminarVarias()
+
+> **eliminarVarias**(`ids`): `Promise`\<`void`\>
+
+Borra muchas de golpe, agrupando las llamadas.
+
+#### Parameters
+
+##### ids
+
+`string`[]
+
+#### Returns
+
+`Promise`\<`void`\>
+
+***
+
 ### save()
 
 > **save**(`empresa`): `Promise`\<`void`\>

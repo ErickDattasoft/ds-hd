@@ -46,6 +46,14 @@ Props para construir un [Contacto](../classes/Contacto.md).
 
 ***
 
+### emailAlternativo?
+
+> `optional` **emailAlternativo?**: `string` \| `null`
+
+Correo alternativo del contacto.
+
+***
+
 ### telefono?
 
 > `optional` **telefono?**: `string` \| `null`
@@ -55,6 +63,8 @@ Props para construir un [Contacto](../classes/Contacto.md).
 ### celular?
 
 > `optional` **celular?**: `string` \| `null`
+
+Teléfono alternativo (en pantalla se llama así; el campo conserva su nombre histórico).
 
 ***
 

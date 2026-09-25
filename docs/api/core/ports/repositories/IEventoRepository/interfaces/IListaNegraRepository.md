@@ -26,6 +26,24 @@ Persistencia de la lista negra de correos bloqueados para registro a eventos.
 
 ***
 
+### contieneTelefono()
+
+> **contieneTelefono**(`telefono`): `Promise`\<`boolean`\>
+
+Igual que [contiene](#contiene) pero por teléfono — alguien bloqueado que vuelve con otro correo.
+
+#### Parameters
+
+##### telefono
+
+`string`
+
+#### Returns
+
+`Promise`\<`boolean`\>
+
+***
+
 ### list()
 
 > **list**(): `Promise`\<[`EntradaListaNegra`](../../../../entities/Inscripcion/interfaces/EntradaListaNegra.md)[]\>

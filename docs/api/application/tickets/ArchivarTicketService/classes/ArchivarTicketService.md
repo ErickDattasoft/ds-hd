@@ -6,7 +6,9 @@
 
 # Class: ArchivarTicketService
 
-Caso de uso: mandar un ticket a la papelera o restaurarlo.
+Caso de uso: mandar un ticket a la papelera o restaurarlo. Como en el CRM viejo, su folio no
+se libera: mientras está en la papelera, un marcador "Ticket eliminado por administrador"
+ocupa su lugar en la lista; al restaurarlo, el marcador se quita.
 
 ## Constructors
 

@@ -26,6 +26,24 @@ Registro de auditoría global (`bitacora/{id}`), solo escritura vía append.
 
 ***
 
+### registrarVarias()
+
+> **registrarVarias**(`entradas`): `Promise`\<`void`\>
+
+Registra muchas entradas de golpe (importaciones), agrupando las llamadas.
+
+#### Parameters
+
+##### entradas
+
+[`EntradaBitacora`](../../../../entities/EntradaBitacora/interfaces/EntradaBitacora.md)[]
+
+#### Returns
+
+`Promise`\<`void`\>
+
+***
+
 ### listar()
 
 > **listar**(`filtro?`): `Promise`\<[`EntradaBitacora`](../../../../entities/EntradaBitacora/interfaces/EntradaBitacora.md)[]\>

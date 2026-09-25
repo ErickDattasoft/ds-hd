@@ -40,9 +40,35 @@ Datos editables de una empresa (alta o edición).
 
 ***
 
+### telefonoAlternativo?
+
+> `optional` **telefonoAlternativo?**: `string`
+
+***
+
 ### email?
 
 > `optional` **email?**: `string`
+
+***
+
+### emailAlternativo?
+
+> `optional` **emailAlternativo?**: `string`
+
+***
+
+### contactoPrincipalId?
+
+> `optional` **contactoPrincipalId?**: `string` \| `null`
+
+Contactos marcados como principal y alternativo; deben ser de esta empresa (lo cuida el controlador).
+
+***
+
+### contactoAlternativoId?
+
+> `optional` **contactoAlternativoId?**: `string` \| `null`
 
 ***
 

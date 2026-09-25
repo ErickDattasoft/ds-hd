@@ -12,7 +12,7 @@ Eventos/webinars: gestión (staff), registro público, lista negra.
 
 ### Constructor
 
-> **new EventoService**(`eventos`, `inscripciones`, `listaNegra`, `empresas`, `captcha`, `email`, `ids`, `clock`, `logger`, `bitacora`, `baseUrl`): `EventoService`
+> **new EventoService**(`eventos`, `inscripciones`, `listaNegra`, `empresas`, `captcha`, `email`, `excel`, `ids`, `clock`, `logger`, `bitacora`, `baseUrl`, `exigirCaptcha?`): `EventoService`
 
 #### Parameters
 
@@ -40,6 +40,10 @@ Eventos/webinars: gestión (staff), registro público, lista negra.
 
 [`IEmailSender`](../../../../core/ports/services/IEmailSender/interfaces/IEmailSender.md)
 
+##### excel
+
+[`IExcelIO`](../../../../core/ports/services/IExcelIO/interfaces/IExcelIO.md)
+
 ##### ids
 
 [`IIdGenerator`](../../../../core/ports/services/IIdGenerator/interfaces/IIdGenerator.md)
@@ -59,6 +63,12 @@ Eventos/webinars: gestión (staff), registro público, lista negra.
 ##### baseUrl
 
 `string`
+
+##### exigirCaptcha?
+
+`boolean` = `false`
+
+En producción, sin Turnstile configurado el registro público se rechaza.
 
 #### Returns
 
@@ -209,6 +219,161 @@ Borra el evento y todas sus inscripciones. Permanente.
 #### Returns
 
 `Promise`\<`void`\>
+
+***
+
+### actualizarInscripcion()
+
+> **actualizarInscripcion**(`actor`, `eventoId`, `inscripcionId`, `cambios`): `Promise`\<`void`\>
+
+Corrige a mano los datos de un inscrito (el registro público los captura el propio
+interesado y a veces vienen con erratas), y las dos marcas de seguimiento del staff:
+`contactadoWsp` y `asistioReal`. Solo se tocan los campos presentes en `cambios`.
+
+#### Parameters
+
+##### actor
+
+[`SessionUser`](../../../shared/SessionUser/interfaces/SessionUser.md)
+
+##### eventoId
+
+`string`
+
+##### inscripcionId
+
+`string`
+
+##### cambios
+
+[`CambiosInscripcion`](../interfaces/CambiosInscripcion.md)
+
+#### Returns
+
+`Promise`\<`void`\>
+
+***
+
+### marcarContactadoWsp()
+
+> **marcarContactadoWsp**(`actor`, `eventoId`, `inscripcionId`): `Promise`\<`void`\>
+
+Marca como ya contactado por WhatsApp — lo usa el botón 💬 al abrir wa.me.
+
+#### Parameters
+
+##### actor
+
+[`SessionUser`](../../../shared/SessionUser/interfaces/SessionUser.md)
+
+##### eventoId
+
+`string`
+
+##### inscripcionId
+
+`string`
+
+#### Returns
+
+`Promise`\<`void`\>
+
+***
+
+### eliminarInscripcion()
+
+> **eliminarInscripcion**(`actor`, `eventoId`, `inscripcionId`): `Promise`\<`void`\>
+
+#### Parameters
+
+##### actor
+
+[`SessionUser`](../../../shared/SessionUser/interfaces/SessionUser.md)
+
+##### eventoId
+
+`string`
+
+##### inscripcionId
+
+`string`
+
+#### Returns
+
+`Promise`\<`void`\>
+
+***
+
+### marcarInscritoEnListaNegra()
+
+> **marcarInscritoEnListaNegra**(`actor`, `eventoId`, `inscripcionId`, `motivo?`): `Promise`\<`void`\>
+
+Manda a la lista negra a partir de una inscripción — así queda registrado también su
+teléfono, no solo el correo, y el 🚫 lo cruza si vuelve a registrarse en otro evento.
+
+#### Parameters
+
+##### actor
+
+[`SessionUser`](../../../shared/SessionUser/interfaces/SessionUser.md)
+
+##### eventoId
+
+`string`
+
+##### inscripcionId
+
+`string`
+
+##### motivo?
+
+`string`
+
+#### Returns
+
+`Promise`\<`void`\>
+
+***
+
+### historialAsistencias()
+
+> **historialAsistencias**(`eventoIdActual`): `Promise`\<`Record`\<`string`, `string`\>\>
+
+Por cada persona, si ya asistió de verdad (`asistioReal`) a OTRO evento: el título de ese
+evento. Indexado por correo y por teléfono, porque puede volver con uno u otro distinto.
+Sirve para no reinvitar a quien ya fue cuando un webinar se repite.
+
+#### Parameters
+
+##### eventoIdActual
+
+`string`
+
+#### Returns
+
+`Promise`\<`Record`\<`string`, `string`\>\>
+
+***
+
+### exportarInscritosExcel()
+
+> **exportarInscritosExcel**(`actor`, `eventoId`): `Promise`\<\{ `buffer`: `Buffer`; `nombre`: `string`; \}\>
+
+Inscritos del evento en `.xlsx` — mismas columnas que exportaba el CRM anterior.
+
+#### Parameters
+
+##### actor
+
+[`SessionUser`](../../../shared/SessionUser/interfaces/SessionUser.md)
+
+##### eventoId
+
+`string`
+
+#### Returns
+
+`Promise`\<\{ `buffer`: `Buffer`; `nombre`: `string`; \}\>
 
 ***
 
@@ -469,7 +634,7 @@ participó y a cuántos asistió (respuesta `asistira`). Sirve para no reinvitar
 
 ### agregarListaNegra()
 
-> **agregarListaNegra**(`actor`, `email`, `motivo?`): `Promise`\<`void`\>
+> **agregarListaNegra**(`actor`, `email`, `motivo?`, `telefono?`): `Promise`\<`void`\>
 
 #### Parameters
 
@@ -482,6 +647,10 @@ participó y a cuántos asistió (respuesta `asistira`). Sirve para no reinvitar
 `string`
 
 ##### motivo?
+
+`string`
+
+##### telefono?
 
 `string`
 

@@ -710,5 +710,7 @@ describe('página pública de un evento — es una landing, no el sitio navegabl
     const { agent } = await login(t.app, ADMIN.email, ADMIN.password);
     const conSesion = await agent.get('/eventos/ev1');
     expect(conSesion.text).toContain('Volver al CRM');
+    // Regresa al evento del que saliste, no al inicio del CRM.
+    expect(conSesion.text).toContain('href="/app/eventos/ev1"');
   });
 });

@@ -30,7 +30,10 @@ Inscripción de una persona a un evento (`eventos/{id}/inscripciones/{insId}`).
 
 ### email
 
-> **email**: `string`
+> **email**: `string` \| `null`
+
+Opcional: el registro público pide correo **o** teléfono, al menos uno. Sin correo no hay
+confirmación ni recordatorios por mail — a esa persona se le contacta por WhatsApp.
 
 ***
 
@@ -117,6 +120,23 @@ Cómo se enteró del evento (Facebook/Instagram/LinkedIn/...), texto libre.
 > **deseaCanalWhatsapp**: `boolean`
 
 Marcó que quiere unirse al canal de WhatsApp de avisos/novedades.
+
+***
+
+### contactadoWsp
+
+> **contactadoWsp**: `boolean`
+
+Ya se le mandó el mensaje de WhatsApp — se marca solo al usar el botón 💬, o a mano.
+
+***
+
+### asistioReal
+
+> **asistioReal**: `boolean`
+
+Asistencia real confirmada, distinta de `asistira` (la intención que declaró al
+registrarse) y de `estado`. Es la que alimenta el 🔁 "ya asistió antes" entre eventos.
 
 ***
 

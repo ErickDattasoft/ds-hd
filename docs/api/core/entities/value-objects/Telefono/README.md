@@ -9,3 +9,4 @@
 ## Functions
 
 - [normalizarTelefonoMx](functions/normalizarTelefonoMx.md)
+- [esTelefonoPlausible](functions/esTelefonoPlausible.md)

@@ -19,3 +19,11 @@ Datos para reenviar el correo de un ticket.
 ### ticketId
 
 > **ticketId**: `string`
+
+***
+
+### esReenvio?
+
+> `optional` **esReenvio?**: `boolean`
+
+`false` = correo al crear el ticket (casilla "Enviar correo al cliente"), no un reenvío.

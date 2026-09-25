@@ -265,6 +265,12 @@ de tiempo trabajado y el reloj de SLA con pausa. No conoce Firestore ni HTTP.
 
 > **archivado**: `boolean`
 
+***
+
+### eliminadoPorAdmin
+
+> **eliminadoPorAdmin**: `boolean`
+
 ## Accessors
 
 ### estaAbierto
@@ -316,6 +322,48 @@ La fecha/hora programada, o `null` si el ticket no tiene agenda.
 `boolean`
 
 ## Methods
+
+### idMarcador()
+
+> `static` **idMarcador**(`ticketId`): `string`
+
+Id del marcador de un ticket: aparte del ticket real, que sigue vivo en la papelera.
+
+#### Parameters
+
+##### ticketId
+
+`string`
+
+#### Returns
+
+`string`
+
+***
+
+### marcadorDe()
+
+> `static` **marcadorDe**(`original`, `ahora`): `Ticket`
+
+Marcador que ocupa el folio de un ticket mandado a la papelera, como en el CRM viejo: la
+lista sigue sin huecos y el orden por folio/fecha se conserva. El ticket real queda intacto
+en la papelera; al restaurarlo, el marcador se quita.
+
+#### Parameters
+
+##### original
+
+`Ticket`
+
+##### ahora
+
+`Date`
+
+#### Returns
+
+`Ticket`
+
+***
 
 ### crear()
 
@@ -514,6 +562,81 @@ readonly `string`[]
 > **registrarPrimeraRespuesta**(`ahora`): `void`
 
 #### Parameters
+
+##### ahora
+
+`Date`
+
+#### Returns
+
+`void`
+
+***
+
+### editarDatos()
+
+> **editarDatos**(`datos`, `ahora`): `void`
+
+Edita los datos del ticket (lo que se captura al crearlo). Estado, agente, facturación y
+ agenda tienen sus propios métodos, porque disparan efectos (SLA, avisos, carga).
+
+#### Parameters
+
+##### datos
+
+###### asunto
+
+`string`
+
+###### descripcion
+
+`string`
+
+###### tipo
+
+`string`
+
+###### sistema
+
+`string` \| `null`
+
+###### prioridad
+
+`"Baja"` \| `"Media"` \| `"Alta"` \| `"Urgente"`
+
+###### grupo
+
+`string` \| `null`
+
+###### empresaId
+
+`string` \| `null`
+
+###### empresaNombre
+
+`string` \| `null`
+
+###### contactoNombre
+
+`string` \| `null`
+
+###### contactoCorreo
+
+`string` \| `null`
+
+###### cc
+
+`string`[]
+
+###### cco
+
+`string`[]
+
+###### horasSla?
+
+`number`
+
+Horas de SLA de la nueva prioridad, si cambió.
 
 ##### ahora
 

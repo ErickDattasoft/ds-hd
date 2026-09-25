@@ -110,3 +110,15 @@ Suma de `tamano` (bytes del archivo original, antes de base64) de TODOS los adju
 #### Returns
 
 `Promise`\<`number`\>
+
+***
+
+### listarImagenes()
+
+> **listarImagenes**(): `Promise`\<[`AdjuntoTicket`](../../../../entities/AdjuntoTicket/interfaces/AdjuntoTicket.md)[]\>
+
+Todas las imágenes de todos los tickets, con su contenido (para guardarlas con el respaldo).
+
+#### Returns
+
+`Promise`\<[`AdjuntoTicket`](../../../../entities/AdjuntoTicket/interfaces/AdjuntoTicket.md)[]\>

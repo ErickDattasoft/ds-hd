@@ -48,6 +48,14 @@ Conjunto completo de roles a asignar (reemplaza los actuales).
 
 ***
 
+### empresasAdicionales?
+
+> `optional` **empresasAdicionales?**: `string`[]
+
+Otras empresas del cliente (reemplaza la lista actual).
+
+***
+
 ### permisosExtra?
 
 > `optional` **permisosExtra?**: `string`[]

@@ -52,6 +52,14 @@ Rol de mayor alcance (para badges y `data-role`). Equivale a `roles[0]`.
 
 ***
 
+### empresaIds?
+
+> `readonly` `optional` **empresaIds?**: readonly `string`[]
+
+Todas las empresas del cliente (la principal primero). Si falta, solo cuenta `empresaId`.
+
+***
+
 ### activo
 
 > `readonly` **activo**: `boolean`

@@ -38,6 +38,18 @@ A quién va un correo de notificación de un ticket.
 
 ***
 
+### cco
+
+> **cco**: `object`[]
+
+CCO capturado en el ticket (copia oculta).
+
+#### email
+
+> **email**: `string`
+
+***
+
 ### responderA?
 
 > `optional` **responderA?**: `object`

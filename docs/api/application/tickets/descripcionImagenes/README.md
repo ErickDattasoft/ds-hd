@@ -9,4 +9,5 @@
 ## Functions
 
 - [resolverImagenesDescripcion](functions/resolverImagenesDescripcion.md)
+- [imagenesParaCorreo](functions/imagenesParaCorreo.md)
 - [quitarImagenesDescripcion](functions/quitarImagenesDescripcion.md)

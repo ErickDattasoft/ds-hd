@@ -46,6 +46,32 @@ Persistencia de inscripciones a eventos (subcolección de cada evento).
 
 ***
 
+### findByContacto()
+
+> **findByContacto**(`eventoId`, `email`, `telefono`): `Promise`\<[`Inscripcion`](../../../../entities/Inscripcion/interfaces/Inscripcion.md) \| `null`\>
+
+Duplicado por correo **o** por teléfono, como el CRM anterior.
+
+#### Parameters
+
+##### eventoId
+
+`string`
+
+##### email
+
+`string` \| `null`
+
+##### telefono
+
+`string` \| `null`
+
+#### Returns
+
+`Promise`\<[`Inscripcion`](../../../../entities/Inscripcion/interfaces/Inscripcion.md) \| `null`\>
+
+***
+
 ### findGlobal()
 
 > **findGlobal**(`inscripcionId`): `Promise`\<[`Inscripcion`](../../../../entities/Inscripcion/interfaces/Inscripcion.md) \| `null`\>
@@ -134,6 +160,28 @@ Cuántas inscripciones a este evento vienen de una IP dada (para el límite anti
 
 ***
 
+### eliminar()
+
+> **eliminar**(`eventoId`, `inscripcionId`): `Promise`\<`void`\>
+
+Borra una sola inscripción (staff quitando un registro basura de la lista).
+
+#### Parameters
+
+##### eventoId
+
+`string`
+
+##### inscripcionId
+
+`string`
+
+#### Returns
+
+`Promise`\<`void`\>
+
+***
+
 ### eliminarPorEvento()
 
 > **eliminarPorEvento**(`eventoId`): `Promise`\<`void`\>
@@ -149,3 +197,16 @@ Borra todas las inscripciones de un evento (al eliminar el evento).
 #### Returns
 
 `Promise`\<`void`\>
+
+***
+
+### listAsistenciasReales()
+
+> **listAsistenciasReales**(): `Promise`\<[`Inscripcion`](../../../../entities/Inscripcion/interfaces/Inscripcion.md)[]\>
+
+Inscripciones con `asistioReal` de TODOS los eventos (collection-group) — para cruzar el
+🔁 "ya asistió antes" de una persona contra otros eventos.
+
+#### Returns
+
+`Promise`\<[`Inscripcion`](../../../../entities/Inscripcion/interfaces/Inscripcion.md)[]\>

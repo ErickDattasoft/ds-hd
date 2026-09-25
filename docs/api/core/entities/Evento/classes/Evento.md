@@ -164,6 +164,20 @@ Evento / webinar con registro público.
 
 ***
 
+### yaPaso
+
+#### Get Signature
+
+> **get** **yaPaso**(): `boolean`
+
+La fecha del evento ya quedó atrás — para explicar por qué cerró el registro.
+
+##### Returns
+
+`boolean`
+
+***
+
 ### sinCupo
 
 #### Get Signature

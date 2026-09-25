@@ -65,3 +65,21 @@ Persistencia de versiones de sistemas (`versiones_sistemas/{id}`).
 #### Returns
 
 `Promise`\<`void`\>
+
+***
+
+### eliminarVarios()
+
+> **eliminarVarios**(`ids`): `Promise`\<`void`\>
+
+Borra muchos de golpe, agrupando las llamadas.
+
+#### Parameters
+
+##### ids
+
+`string`[]
+
+#### Returns
+
+`Promise`\<`void`\>

@@ -269,3 +269,11 @@ Ajuste manual del tiempo trabajado; `null` = usar el cálculo automático.
 ### archivado?
 
 > `optional` **archivado?**: `boolean`
+
+***
+
+### eliminadoPorAdmin?
+
+> `optional` **eliminadoPorAdmin?**: `boolean`
+
+Folio de un ticket que se eliminó: se conserva para que la numeración siga consecutiva.

@@ -6,7 +6,7 @@
 
 # Function: formatearSistemasPendientes()
 
-> **formatearSistemasPendientes**(`empresa`, `oficialPorSistema`, `sistemas?`): `string`
+> **formatearSistemasPendientes**(`empresa`, `oficialPorSistema`, `sistemas?`, `cartaPorSistema?`): `string`
 
 Sistemas desactualizados, una línea por sistema.
 
@@ -23,6 +23,10 @@ Sistemas desactualizados, una línea por sistema.
 ### sistemas?
 
 readonly `string`[]
+
+### cartaPorSistema?
+
+`Record`\<`string`, `string` \| `null`\> = `{}`
 
 ## Returns
 

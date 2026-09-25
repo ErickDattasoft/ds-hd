@@ -76,6 +76,14 @@ Empresa asociada; obligatoria para `rol === 'cliente'`.
 
 ***
 
+### empresasAdicionales?
+
+> `optional` **empresasAdicionales?**: `string`[]
+
+Otras empresas del cliente (p. ej. un administrador que lleva varias que se facturan aparte).
+
+***
+
 ### agente?
 
 > `optional` **agente?**: `Partial`\<[`PerfilAgente`](PerfilAgente.md)\>
@@ -106,11 +114,25 @@ Predeterminados propios del ticket nuevo; ganan sobre los de Configuración → 
 
 ***
 
+### contactosSoporte?
+
+> `optional` **contactosSoporte?**: `object`[]
+
+Contactos de soporte propios; si los tiene, sustituyen a los de Configuración en los avisos.
+
+#### nombre
+
+> **nombre**: `string`
+
+#### telefono
+
+> **telefono**: `string`
+
+***
+
 ### totpSecreto?
 
 > `optional` **totpSecreto?**: `string` \| `null`
-
-Secreto TOTP (Base32) de la verificación en dos pasos; `totpActivo` indica si ya se confirmó.
 
 ***
 

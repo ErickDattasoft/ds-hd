@@ -36,6 +36,12 @@ readonly [`EventoTicket`](../../../../core/entities/NotaTicket/interfaces/Evento
 
 readonly [`AdjuntoTicketMeta`](../../../../core/entities/AdjuntoTicket/type-aliases/AdjuntoTicketMeta.md)[]
 
+#### baseUrl?
+
+`string`
+
+URL pública de la app: con ella las imágenes de la descripción se muestran enlazadas.
+
 ## Returns
 
 `string`

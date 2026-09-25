@@ -43,3 +43,19 @@ Datos del formulario del portal para que un cliente abra un ticket.
 ### sistema?
 
 > `optional` **sistema?**: `string`
+
+***
+
+### empresaId?
+
+> `optional` **empresaId?**: `string`
+
+Para qué empresa es, si la cuenta lleva varias; si no se indica, la principal.
+
+***
+
+### empresaNombre?
+
+> `optional` **empresaNombre?**: `string` \| `null`
+
+Nombre de esa empresa, para que el ticket la muestre en las listas del staff.

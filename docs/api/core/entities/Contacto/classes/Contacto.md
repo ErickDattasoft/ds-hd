@@ -62,6 +62,12 @@ Persona de contacto asociada a una empresa.
 
 ***
 
+### emailAlternativo
+
+> **emailAlternativo**: `string` \| `null`
+
+***
+
 ### telefono
 
 > **telefono**: `string` \| `null`
@@ -109,6 +115,24 @@ Persona de contacto asociada a una empresa.
 > **updatedAt**: `Date`
 
 ## Methods
+
+### normalizarEmail()
+
+> `static` **normalizarEmail**(`email`): `string`
+
+Valida y normaliza un correo con las mismas reglas que el principal.
+
+#### Parameters
+
+##### email
+
+`string`
+
+#### Returns
+
+`string`
+
+***
 
 ### vincularPortal()
 

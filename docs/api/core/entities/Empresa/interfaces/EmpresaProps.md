@@ -46,9 +46,25 @@ Props para construir una [Empresa](../classes/Empresa.md).
 
 ***
 
+### telefonoAlternativo?
+
+> `optional` **telefonoAlternativo?**: `string` \| `null`
+
+Teléfono alternativo (TELEFONO_2 del CRM viejo).
+
+***
+
 ### email?
 
 > `optional` **email?**: `string` \| `null`
+
+***
+
+### emailAlternativo?
+
+> `optional` **emailAlternativo?**: `string` \| `null`
+
+Correo alternativo (CORREO_2 del CRM viejo).
 
 ***
 
@@ -77,6 +93,12 @@ Versión instalada por sistema (texto libre, p. ej. `16.3.1 SP2`).
 ### contactoPrincipalId?
 
 > `optional` **contactoPrincipalId?**: `string` \| `null`
+
+***
+
+### contactoAlternativoId?
+
+> `optional` **contactoAlternativoId?**: `string` \| `null`
 
 ***
 

@@ -40,6 +40,12 @@ Datos editables de un contacto (alta o edición).
 
 ***
 
+### emailAlternativo?
+
+> `optional` **emailAlternativo?**: `string`
+
+***
+
 ### telefono?
 
 > `optional` **telefono?**: `string`

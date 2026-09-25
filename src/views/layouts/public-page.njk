@@ -11,8 +11,13 @@
       <a href="/eventos">Eventos</a>
       <a href="/ticket-publico">Levantar ticket</a>
     {% endif %}
-    {# Solo para quien ya trae sesión: un visitante no debe ver una puerta al CRM. #}
-    {% if user %}<a href="{{ '/portal' if user.esCliente else '/app' }}">← Volver al CRM</a>{% endif %}
+    {# Solo para quien ya trae sesión: un visitante no debe ver una puerta al CRM.
+       `volverA` deja que la página diga a dónde se regresa — desde el registro a un evento se
+       vuelve a ESE evento, que es de donde saliste, no al inicio. Un cliente del portal no
+       tiene back-office, así que siempre va a /portal. #}
+    {% if user %}
+      <a href="{{ '/portal' if user.esCliente else (volverA or '/app') }}">← Volver al CRM</a>
+    {% endif %}
     <button type="button" class="theme-toggle" data-theme-toggle aria-label="Cambiar tema">◐</button>
   </nav>
 </header>

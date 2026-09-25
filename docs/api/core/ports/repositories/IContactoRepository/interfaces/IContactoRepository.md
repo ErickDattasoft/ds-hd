@@ -74,6 +74,54 @@ Persistencia de contactos (`contactos/{id}`).
 
 ***
 
+### contar()
+
+> **contar**(): `Promise`\<`number`\>
+
+Cuántos hay, sin traerlos: lo resuelve el servidor con un conteo agregado.
+
+#### Returns
+
+`Promise`\<`number`\>
+
+***
+
+### guardarVarios()
+
+> **guardarVarios**(`contactos`): `Promise`\<`void`\>
+
+Guarda muchos de golpe (importaciones), agrupando las llamadas.
+
+#### Parameters
+
+##### contactos
+
+[`Contacto`](../../../../entities/Contacto/classes/Contacto.md)[]
+
+#### Returns
+
+`Promise`\<`void`\>
+
+***
+
+### eliminarVarios()
+
+> **eliminarVarios**(`ids`): `Promise`\<`void`\>
+
+Borra muchos de golpe, agrupando las llamadas.
+
+#### Parameters
+
+##### ids
+
+`string`[]
+
+#### Returns
+
+`Promise`\<`void`\>
+
+***
+
 ### save()
 
 > **save**(`contacto`): `Promise`\<`void`\>

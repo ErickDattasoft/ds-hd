@@ -8,7 +8,8 @@
 
 Caso de uso: un cliente del portal crea un ticket. Reutiliza [CrearTicketService](../../../tickets/CrearTicketService/classes/CrearTicketService.md)
 fijando `canal='portal'`, `solicitanteUid` y la empresa del cliente — el cliente no puede
-elegir a nombre de quién ni para qué empresa.
+elegir a nombre de quién, y la empresa solo entre las que tiene su cuenta (un administrador
+que lleva varias que se facturan por separado).
 
 ## Constructors
 

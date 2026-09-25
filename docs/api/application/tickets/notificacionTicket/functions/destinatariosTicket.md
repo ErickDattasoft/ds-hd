@@ -17,7 +17,7 @@ no se pierda. `responderA` = primer correo de la lista de configuración.
 
 ### ticket
 
-`Pick`\<[`Ticket`](../../../../core/entities/Ticket/classes/Ticket.md), `"contactoCorreo"` \| `"contactoNombre"`\>
+`Pick`\<[`Ticket`](../../../../core/entities/Ticket/classes/Ticket.md), `"contactoNombre"` \| `"contactoCorreo"`\> & `Partial`\<`Pick`\<[`Ticket`](../../../../core/entities/Ticket/classes/Ticket.md), `"cc"` \| `"cco"`\>\>
 
 ### correosNotificacion
 

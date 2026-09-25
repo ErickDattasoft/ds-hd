@@ -13,4 +13,5 @@
 ## Interfaces
 
 - [DatosEvento](interfaces/DatosEvento.md)
+- [CambiosInscripcion](interfaces/CambiosInscripcion.md)
 - [RegistroPublicoInput](interfaces/RegistroPublicoInput.md)

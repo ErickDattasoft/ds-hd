@@ -78,6 +78,12 @@ Roles asignados (fuente de verdad). Ver getters `rol`/`rolPrincipal`.
 
 ***
 
+### empresasAdicionales
+
+> **empresasAdicionales**: `string`[]
+
+***
+
 ### agente
 
 > **agente**: [`PerfilAgente`](../interfaces/PerfilAgente.md)
@@ -99,6 +105,20 @@ Roles asignados (fuente de verdad). Ver getters `rol`/`rolPrincipal`.
 ### predeterminadosTicket
 
 > **predeterminadosTicket**: [`PredeterminadosTicket`](../../ConfiguracionTickets/interfaces/PredeterminadosTicket.md) \| `null`
+
+***
+
+### contactosSoporte
+
+> **contactosSoporte**: `object`[]
+
+#### nombre
+
+> **nombre**: `string`
+
+#### telefono
+
+> **telefono**: `string`
 
 ***
 
@@ -131,6 +151,20 @@ Roles asignados (fuente de verdad). Ver getters `rol`/`rolPrincipal`.
 > **lastLoginAt**: `Date` \| `null`
 
 ## Accessors
+
+### empresaIds
+
+#### Get Signature
+
+> **get** **empresaIds**(): `string`[]
+
+Todas las empresas a las que puede levantar tickets en el portal (la principal primero).
+
+##### Returns
+
+`string`[]
+
+***
 
 ### rol
 
@@ -195,6 +229,24 @@ El rol de mayor alcance. Se usa donde antes se leía un solo `rol` (badges, `dat
 `boolean`
 
 ## Methods
+
+### agregarEmpresa()
+
+> **agregarEmpresa**(`empresaId`): `void`
+
+Suma una empresa a la cuenta; si no tenía principal, esa pasa a ser la principal.
+
+#### Parameters
+
+##### empresaId
+
+`string`
+
+#### Returns
+
+`void`
+
+***
 
 ### tieneRol()
 

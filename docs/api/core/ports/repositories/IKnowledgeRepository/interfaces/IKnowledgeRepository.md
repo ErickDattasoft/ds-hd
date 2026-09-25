@@ -87,3 +87,21 @@ Persistencia de la base de conocimiento (`knowledge_base/{id}`).
 #### Returns
 
 `Promise`\<`void`\>
+
+***
+
+### eliminarVarios()
+
+> **eliminarVarios**(`ids`): `Promise`\<`void`\>
+
+Borra muchos de golpe, agrupando las llamadas.
+
+#### Parameters
+
+##### ids
+
+`string`[]
+
+#### Returns
+
+`Promise`\<`void`\>

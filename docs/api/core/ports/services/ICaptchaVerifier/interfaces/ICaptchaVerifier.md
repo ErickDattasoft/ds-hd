@@ -8,6 +8,14 @@
 
 Verifica el token anti-bot de un formulario público (Cloudflare Turnstile).
 
+## Properties
+
+### activo
+
+> `readonly` **activo**: `boolean`
+
+`true` si hay un secreto de Turnstile configurado y la verificación es real.
+
 ## Methods
 
 ### verificar()

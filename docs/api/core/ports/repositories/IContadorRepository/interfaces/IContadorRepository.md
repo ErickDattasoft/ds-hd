@@ -28,6 +28,24 @@ Incrementa el contador de forma transaccional y devuelve el nuevo valor.
 
 ***
 
+### actual()
+
+> **actual**(`nombre`): `Promise`\<`number`\>
+
+Valor actual sin incrementarlo (0 si aún no existe).
+
+#### Parameters
+
+##### nombre
+
+`string`
+
+#### Returns
+
+`Promise`\<`number`\>
+
+***
+
 ### fijar()
 
 > **fijar**(`nombre`, `valor`): `Promise`\<`void`\>

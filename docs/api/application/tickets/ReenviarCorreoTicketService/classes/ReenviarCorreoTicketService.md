@@ -12,7 +12,7 @@ Caso de uso: reenviar al cliente el correo con el resumen actual del ticket.
 
 ### Constructor
 
-> **new ReenviarCorreoTicketService**(`tickets`, `config`, `usuarios`, `adjuntos`, `ids`, `clock`, `email`, `logger`): `ReenviarCorreoTicketService`
+> **new ReenviarCorreoTicketService**(`tickets`, `config`, `usuarios`, `adjuntos`, `ids`, `clock`, `email`, `logger`, `baseUrl?`): `ReenviarCorreoTicketService`
 
 #### Parameters
 
@@ -47,6 +47,10 @@ Caso de uso: reenviar al cliente el correo con el resumen actual del ticket.
 ##### logger
 
 [`ILogger`](../../../../core/ports/services/ILogger/interfaces/ILogger.md)
+
+##### baseUrl?
+
+`string` = `''`
 
 #### Returns
 

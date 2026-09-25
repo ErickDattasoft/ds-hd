@@ -149,3 +149,69 @@ Borrado permanente, incluidas notas y eventos (solo desde la papelera).
 #### Returns
 
 `Promise`\<[`EventoTicket`](../../../../entities/NotaTicket/interfaces/EventoTicket.md)[]\>
+
+***
+
+### guardarConDetalle()
+
+> **guardarConDetalle**(`ticket`, `notas`, `eventos`): `Promise`\<`void`\>
+
+Guarda el ticket con sus notas y eventos en UNA sola escritura.
+
+Es para cargas masivas (importar el respaldo del CRM viejo): hacerlo documento a documento
+son cientos de llamadas HTTP y la importación se corta al chocar con el tope de
+subpeticiones del worker.
+
+#### Parameters
+
+##### ticket
+
+[`Ticket`](../../../../entities/Ticket/classes/Ticket.md)
+
+##### notas
+
+[`NotaTicket`](../../../../entities/NotaTicket/interfaces/NotaTicket.md)[]
+
+##### eventos
+
+[`EventoTicket`](../../../../entities/NotaTicket/interfaces/EventoTicket.md)[]
+
+#### Returns
+
+`Promise`\<`void`\>
+
+***
+
+### guardarVariosConDetalle()
+
+> **guardarVariosConDetalle**(`items`): `Promise`\<`void`\>
+
+Muchos tickets con su detalle, en el menor número de escrituras posible.
+
+#### Parameters
+
+##### items
+
+`object`[]
+
+#### Returns
+
+`Promise`\<`void`\>
+
+***
+
+### eliminarVarios()
+
+> **eliminarVarios**(`ids`): `Promise`\<`void`\>
+
+Borrado permanente de varios tickets (con sus notas y eventos), agrupando las llamadas.
+
+#### Parameters
+
+##### ids
+
+`string`[]
+
+#### Returns
+
+`Promise`\<`void`\>
