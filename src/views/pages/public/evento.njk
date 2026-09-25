@@ -14,7 +14,7 @@
     {% if evento.flayer %}
       <img src="/eventos/{{ evento.id }}/flayer?v={{ evento.flayer.tamano }}" alt="{{ evento.titulo }}" style="max-width:100%" />
     {% endif %}
-    <p class="muted">{{ evento.fechaHora }}</p>
+    <p class="muted">{{ evento.fechaHora | fechahora }}</p>
     {% if evento.descripcion %}<p>{{ evento.descripcion }}</p>{% endif %}
 
     {% if duplicado %}
@@ -26,13 +26,16 @@
       {% endif %}
     {% elif evento.abiertoARegistro %}
       {% if errores.general %}<p class="alert alert--error">{{ errores.general }}</p>{% endif %}
-      <form method="post" action="/eventos/{{ evento.id }}" class="form">
+      <form method="post" action="/eventos/{{ evento.id }}" class="form" data-form-registro-evento>
         <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
         <label class="field"><span>Nombre</span><input name="nombre" value="{{ valores.nombre }}" required />
           {% if errores.nombre %}<em class="field__error">{{ errores.nombre }}</em>{% endif %}</label>
-        <label class="field"><span>Correo</span><input type="email" name="email" autocomplete="email" value="{{ valores.email }}" required /></label>
-        <label class="field"><span>Teléfono</span><input type="tel" inputmode="tel" name="telefono" value="{{ valores.telefono }}" /></label>
-        <label class="field"><span>Empresa</span><input name="empresa" value="{{ valores.empresa }}" /></label>
+        <label class="field"><span>Empresa / Organización</span><input name="empresa" autocomplete="organization" value="{{ valores.empresa }}" /></label>
+        <label class="field"><span>Correo electrónico</span><input type="email" name="email" autocomplete="email" placeholder="tu@correo.com" value="{{ valores.email }}" />
+          {% if errores.email %}<em class="field__error">{{ errores.email }}</em>{% endif %}</label>
+        <label class="field"><span>Teléfono</span><input type="tel" inputmode="tel" name="telefono" autocomplete="tel" placeholder="55 1234 5678" value="{{ valores.telefono }}" />
+          {% if errores.telefono %}<em class="field__error">{{ errores.telefono }}</em>{% endif %}</label>
+        <p class="muted">Ingresa al menos uno de los dos (correo o teléfono). Por ahí te mandamos el acceso al evento.</p>
 
         <label class="field"><span>¿Asistirás?</span>
           <select name="asistira" required>
@@ -64,11 +67,30 @@
           Quiero unirme al canal de WhatsApp para recibir avisos y novedades.
         </label>
 
-        {% if turnstileSiteKey %}<div class="cf-turnstile" data-sitekey="{{ turnstileSiteKey }}"></div>{% endif %}
-        <button class="btn" type="submit">Registrarme</button>
+        {% if turnstileSiteKey %}
+          <div class="field">
+            <span>Verificación de seguridad <span class="required">*</span></span>
+            <div class="cf-turnstile" data-sitekey="{{ turnstileSiteKey }}" data-action="registro_evento"></div>
+            <span class="muted">Es obligatoria: confirma que eres una persona y no un robot. Sin ella no podemos completar tu registro.</span>
+            {% if errores.captcha %}<em class="field__error">{{ errores.captcha }}</em>{% endif %}
+          </div>
+        {% endif %}
+        <button class="btn" type="submit">✅ Confirmar mi registro</button>
       </form>
     {% else %}
-      <p class="muted">El registro para este evento no está disponible.</p>
+      {# Decir por qué: "no disponible" a secas deja al visitante sin saber si esperar o no. #}
+      {% if evento.estado == 'cancelado' %}
+        <p class="alert alert--error">Este evento fue cancelado.</p>
+      {% elif evento.yaPaso %}
+        <p class="alert">Este evento ya se llevó a cabo. <a href="/eventos">Ver los próximos eventos</a>.</p>
+      {% else %}
+        <p class="alert">El registro para este evento todavía no está abierto. <a href="/eventos">Ver los próximos eventos</a>.</p>
+      {% endif %}
+      {% if user and can('eventos:gestionar') %}
+        <p class="muted">Lo estás viendo como staff: está en <strong>{{ evento.estado }}</strong>.
+          Para que el público pueda registrarse, ponlo en <strong>publicado</strong> desde
+          <a href="/app/eventos/{{ evento.id }}/editar">Editar evento</a>.</p>
+      {% endif %}
     {% endif %}
   {% endif %}
 {% endblock %}

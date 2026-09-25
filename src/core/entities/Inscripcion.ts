@@ -5,7 +5,11 @@ export interface Inscripcion {
   id: string;
   eventoId: string;
   nombre: string;
-  email: string;
+  /**
+   * Opcional: el registro público pide correo **o** teléfono, al menos uno. Sin correo no hay
+   * confirmación ni recordatorios por mail — a esa persona se le contacta por WhatsApp.
+   */
+  email: string | null;
   telefono: string | null;
   empresa: string | null;
   estado: EstadoInscripcion;

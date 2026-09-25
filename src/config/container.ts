@@ -889,6 +889,7 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
           c.logger,
           c.bitacoraService,
           c.config.baseUrl,
+          c.config.isProduction,
         ),
     ).singleton(),
     obtenerMetricasService: asFunction(

@@ -173,6 +173,18 @@ export class FirestoreInscripcionRepository implements IInscripcionRepository {
     return doc ? inscripcionToDomain(eventoId, doc.id, doc.data()) : null;
   }
 
+  async findByContacto(eventoId: string, email: string | null, telefono: string | null): Promise<Inscripcion | null> {
+    if (email) {
+      const porCorreo = await this.findByEmail(eventoId, email);
+      if (porCorreo) return porCorreo;
+    }
+    const tel = telefono?.trim();
+    if (!tel) return null;
+    const q = await this.col(eventoId).where('telefono', '==', tel).limit(1).get();
+    const doc = q.docs[0];
+    return doc ? inscripcionToDomain(eventoId, doc.id, doc.data()) : null;
+  }
+
   async findGlobal(inscripcionId: string): Promise<Inscripcion | null> {
     // El webhook de Brevo trae el id de la inscripción en un tag; se busca en todos los eventos.
     const snap = await this.db.collectionGroup('inscripciones').get();

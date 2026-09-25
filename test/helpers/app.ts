@@ -66,6 +66,7 @@ export interface TestApp {
   eventoRepo: InMemoryEventoRepository;
   inscripcionRepo: InMemoryInscripcionRepository;
   listaNegraRepo: InMemoryListaNegraRepository;
+  captchaVerifier: FakeCaptchaVerifier;
   filtroGuardadoRepo: InMemoryFiltroGuardadoRepository;
   oportunidadRepo: InMemoryOportunidadRepository;
   adjuntoTicketRepo: InMemoryAdjuntoTicketRepository;
@@ -94,6 +95,7 @@ export function makeTestApp(opts: { usuarios?: { uid: string; email: string; pas
   const usuarioRepo = new InMemoryUsuarioRepository(usuarios);
   const emailSender = new FakeEmailSender();
   const invitacionRepo = new InMemoryInvitacionRepository();
+  const captchaVerifier = new FakeCaptchaVerifier();
   const ticketStore = new InMemoryTicketStore();
   const ticketPublicoRepo = new InMemoryTicketPublicoRepository();
   const webhookPublisher = new FakeWebhookPublisher();
@@ -134,7 +136,7 @@ export function makeTestApp(opts: { usuarios?: { uid: string; email: string; pas
     configuracionRepo,
     ticketPublicoRepo,
     webhookPublisher,
-    captchaVerifier: new FakeCaptchaVerifier(),
+    captchaVerifier,
     empresaRepo,
     contactoRepo,
     bitacoraRepo,
@@ -174,6 +176,7 @@ export function makeTestApp(opts: { usuarios?: { uid: string; email: string; pas
     eventoRepo,
     inscripcionRepo,
     listaNegraRepo,
+    captchaVerifier,
     filtroGuardadoRepo: overrides.filtroGuardadoRepo as InMemoryFiltroGuardadoRepository,
     oportunidadRepo: overrides.oportunidadRepo as InMemoryOportunidadRepository,
     adjuntoTicketRepo,

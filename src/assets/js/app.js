@@ -1722,6 +1722,49 @@
     });
   });
 
+  // ── Registro público a un evento: avisar antes de enviar sin captcha ─────
+  // El servidor lo rechaza de todos modos; esto es solo para que la persona entienda por qué,
+  // en vez de mandar el formulario y que se le regrese con error.
+  document.addEventListener('submit', function (e) {
+    var form = e.target.closest && e.target.closest('[data-form-registro-evento]');
+    if (!form) return;
+    var widget = form.querySelector('.cf-turnstile');
+    if (!widget) return; // sin Turnstile configurado no hay nada que exigir aquí
+    var respuesta = form.querySelector('[name="cf-turnstile-response"]');
+    if (respuesta && respuesta.value) return;
+    e.preventDefault();
+    var aviso = form.querySelector('[data-captcha-aviso]');
+    if (!aviso) {
+      aviso = document.createElement('em');
+      aviso.className = 'field__error';
+      aviso.setAttribute('data-captcha-aviso', '');
+      widget.parentNode.appendChild(aviso);
+    }
+    aviso.textContent =
+      'Falta la verificación de seguridad. Marca la casilla de arriba (si aún está cargando, espera un momento) y vuelve a intentar.';
+    widget.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  });
+
+  // ── Copiar un link al portapapeles (Eventos → 🔗 Link Registro) ──────────
+  document.addEventListener('click', function (e) {
+    var btn = e.target.closest && e.target.closest('[data-copiar-link]');
+    if (!btn) return;
+    var url = btn.getAttribute('data-link');
+    if (!url) return;
+    navigator.clipboard
+      .writeText(url)
+      .then(function () {
+        var original = btn.textContent;
+        btn.textContent = '✅ Link copiado';
+        setTimeout(function () { btn.textContent = original; }, 1800);
+        toast('🔗 Link de registro copiado');
+      })
+      .catch(function () {
+        // Sin permiso de portapapeles (o sin HTTPS): al menos déjalo seleccionable a mano.
+        window.prompt('Copia este link para compartir:', url);
+      });
+  });
+
   // ── Eventos → Inscritos: motivo del 🚫, WhatsApp uno por uno y masivo ────
   // El motivo va en un campo oculto porque el CRM anterior lo pedía con un prompt() después
   // de confirmar; se conserva ese flujo para no cambiarle el hábito a quien ya lo usaba.

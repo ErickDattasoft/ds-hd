@@ -585,3 +585,98 @@ describe('eventos → inscritos: edición, borrado, lista negra y export', () =>
     expect(t.inscripcionRepo.items).toHaveLength(0);
   });
 });
+
+describe('registro público — correo o teléfono, y captcha obligatorio', () => {
+  const publicar = (t: ReturnType<typeof makeTestApp>) =>
+    t.eventoRepo.items.set('ev1', new Evento({
+      id: 'ev1', titulo: 'Webinar', fechaHora: enUnaSemana(), estado: 'publicado',
+    }));
+
+  const abrir = async (t: ReturnType<typeof makeTestApp>) => {
+    const anon = request.agent(t.app);
+    const page = await anon.get('/eventos/ev1');
+    return { anon, csrf: cookieValor(page.headers['set-cookie'] as unknown as string[], 'x-csrf-token')! };
+  };
+
+  it('acepta registrarse solo con teléfono, sin correo', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    publicar(t);
+    const { anon, csrf } = await abrir(t);
+
+    const reg = await anon.post('/eventos/ev1').type('form')
+      .send({ _csrf: csrf, nombre: 'Laura Méndez', telefono: '5551234567', asistira: 'Sí' });
+    expect(reg.status).toBe(200);
+    const i = t.inscripcionRepo.items[0]!;
+    expect(i.email).toBeNull();
+    expect(i.telefono).toBe('5551234567');
+    // Sin correo no se le manda nada: se le contacta por WhatsApp.
+    expect(t.emailSender.enviados).toHaveLength(0);
+    expect(i.correoEstado).toBeNull();
+  });
+
+  it('rechaza si no viene ni correo ni teléfono', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    publicar(t);
+    const { anon, csrf } = await abrir(t);
+
+    const reg = await anon.post('/eventos/ev1').type('form').send({ _csrf: csrf, nombre: 'Laura' });
+    expect(reg.status).toBe(422);
+    expect(reg.text).toContain('Ingresa al menos un correo o un teléfono');
+    expect(t.inscripcionRepo.items).toHaveLength(0);
+  });
+
+  it('rechaza un teléfono de relleno', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    publicar(t);
+    const { anon, csrf } = await abrir(t);
+
+    const reg = await anon.post('/eventos/ev1').type('form')
+      .send({ _csrf: csrf, nombre: 'Bot', telefono: '5555555555' });
+    expect(reg.status).toBe(422);
+    expect(t.inscripcionRepo.items).toHaveLength(0);
+  });
+
+  it('detecta el duplicado por teléfono aunque el correo sea otro', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    publicar(t);
+    const { anon, csrf } = await abrir(t);
+
+    await anon.post('/eventos/ev1').type('form')
+      .send({ _csrf: csrf, nombre: 'Laura', email: 'laura@x.com', telefono: '5551234567' });
+    expect(t.inscripcionRepo.items).toHaveLength(1);
+
+    const dup = await anon.post('/eventos/ev1').type('form')
+      .send({ _csrf: csrf, nombre: 'Laura', email: 'otro@x.com', telefono: '5551234567' });
+    expect(dup.status).toBe(422);
+    expect(dup.text).toContain('Ya estás registrado');
+    expect(t.inscripcionRepo.items).toHaveLength(1);
+  });
+
+  it('con Turnstile activo, sin token no registra y lo dice claro', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    t.captchaVerifier.activo = true;
+    publicar(t);
+    const { anon, csrf } = await abrir(t);
+
+    const sinToken = await anon.post('/eventos/ev1').type('form')
+      .send({ _csrf: csrf, nombre: 'Laura', email: 'laura@x.com' });
+    expect(sinToken.status).toBe(422);
+    expect(sinToken.text).toContain('Falta la verificación anti-bots');
+    expect(t.inscripcionRepo.items).toHaveLength(0);
+
+    // Con token, pero que Turnstile rechaza.
+    t.captchaVerifier.respuesta = false;
+    const tokenMalo = await anon.post('/eventos/ev1').type('form')
+      .send({ _csrf: csrf, nombre: 'Laura', email: 'laura@x.com', 'cf-turnstile-response': 'xxx' });
+    expect(tokenMalo.status).toBe(422);
+    expect(tokenMalo.text).toContain('No pudimos verificar que eres una persona real');
+    expect(t.inscripcionRepo.items).toHaveLength(0);
+
+    // Con token válido sí pasa.
+    t.captchaVerifier.respuesta = true;
+    const ok = await anon.post('/eventos/ev1').type('form')
+      .send({ _csrf: csrf, nombre: 'Laura', email: 'laura@x.com', 'cf-turnstile-response': 'ok' });
+    expect(ok.status).toBe(200);
+    expect(t.inscripcionRepo.items).toHaveLength(1);
+  });
+});

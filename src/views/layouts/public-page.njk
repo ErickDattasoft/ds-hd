@@ -6,6 +6,8 @@
     <a href="/kb">Base de conocimiento</a>
     <a href="/eventos">Eventos</a>
     <a href="/ticket-publico">Levantar ticket</a>
+    {# Solo para quien ya trae sesión: un visitante no debe ver una puerta al CRM. #}
+    {% if user %}<a href="{{ '/portal' if user.esCliente else '/app' }}">← Volver al CRM</a>{% endif %}
     <button type="button" class="theme-toggle" data-theme-toggle aria-label="Cambiar tema">◐</button>
   </nav>
 </header>

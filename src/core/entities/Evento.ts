@@ -231,6 +231,11 @@ export class Evento {
     return this.estado === 'publicado' && this.fechaHora.getTime() > Date.now();
   }
 
+  /** La fecha del evento ya quedó atrás — para explicar por qué cerró el registro. */
+  get yaPaso(): boolean {
+    return this.fechaHora.getTime() <= Date.now();
+  }
+
   get sinCupo(): boolean {
     return this.cupo > 0;
   }

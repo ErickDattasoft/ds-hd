@@ -22,6 +22,7 @@ import {
 import type { EntradaListaNegra, EstadoInscripcion, Inscripcion } from '../../core/entities/Inscripcion.js';
 import { Email } from '../../core/entities/value-objects/Email.js';
 import { esCorreoDesechable } from '../../core/entities/value-objects/dominiosDesechables.js';
+import { esTelefonoPlausible } from '../../core/entities/value-objects/Telefono.js';
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '../../core/errors/DomainError.js';
 import type { BitacoraService } from '../shared/BitacoraService.js';
 import type { SessionUser } from '../shared/SessionUser.js';
@@ -86,6 +87,8 @@ export class EventoService {
     private readonly logger: ILogger,
     private readonly bitacora: BitacoraService,
     private readonly baseUrl: string,
+    /** En producción, sin Turnstile configurado el registro público se rechaza. */
+    private readonly exigirCaptcha: boolean = false,
   ) {}
 
   // ── Consulta ─────────────────────────────────────────────────────────────
@@ -271,6 +274,9 @@ export class EventoService {
     const inscritos = await this.inscripciones.listPorEvento(eventoId);
     const inscripcion = inscritos.find((i) => i.id === inscripcionId);
     if (!inscripcion) throw new NotFoundError('Inscripción', inscripcionId);
+    if (!inscripcion.email) {
+      throw new ValidationError('Ese inscrito no dejó correo; la lista negra se indexa por correo.');
+    }
     await this.agregarListaNegra(actor, inscripcion.email, motivo, inscripcion.telefono ?? undefined);
   }
 
@@ -334,11 +340,14 @@ export class EventoService {
     const filas = inscritos.map((i) => ({
       nombre: i.nombre,
       empresa: i.empresa ?? '',
-      correo: i.email,
-      correoEstado: i.correoEstado ?? 'pendiente',
+      correo: i.email ?? '',
+      correoEstado: i.email ? (i.correoEstado ?? 'pendiente') : 'sin correo',
       sospechoso: si(i.correoSospechoso),
-      listaNegra: si(correosNegra.has(i.email) || Boolean(i.telefono && telefonosNegra.has(i.telefono.trim()))),
-      antes: historial[i.email.toLowerCase()] ?? (i.telefono ? historial[i.telefono.trim()] ?? '' : ''),
+      listaNegra: si(
+        Boolean(i.email && correosNegra.has(i.email)) ||
+          Boolean(i.telefono && telefonosNegra.has(i.telefono.trim())),
+      ),
+      antes: (i.email ? historial[i.email.toLowerCase()] : undefined) ?? (i.telefono ? historial[i.telefono.trim()] ?? '' : ''),
       telefono: i.telefono ?? '',
       asistira: i.asistira ?? '',
       asistioReal: si(i.asistioReal),
@@ -530,24 +539,57 @@ export class EventoService {
     if (!evento.abiertoARegistro) {
       throw new ValidationError('El registro para este evento no está disponible');
     }
-    if (!(await this.captcha.verificar(input.captchaToken, input.ip))) {
-      throw new ValidationError('No pudimos verificar que no eres un robot. Recarga e inténtalo de nuevo.');
+    // Falla cerrado, como el CRM anterior: sin verificación anti-bots real no se registra a
+    // nadie. En desarrollo (sin TURNSTILE_SECRET) se deja pasar para poder probar el formulario.
+    if (!this.captcha.activo) {
+      if (this.exigirCaptcha) {
+        this.logger.error('Registro a evento rechazado: Turnstile no está configurado en el servidor');
+        throw new ValidationError(
+          'La verificación anti-bots no está disponible en este momento. Inténtalo más tarde o contáctanos directamente.',
+        );
+      }
+    } else if (!input.captchaToken) {
+      throw new ValidationError('Falta la verificación anti-bots: marca la casilla «No soy un robot» y vuelve a intentar.', {
+        general: 'Falta la verificación anti-bots: marca la casilla «No soy un robot» y vuelve a intentar.',
+        captcha: 'Completa la verificación',
+      });
+    } else if (!(await this.captcha.verificar(input.captchaToken, input.ip))) {
+      throw new ValidationError('No pudimos verificar que eres una persona real. Recarga la página e inténtalo de nuevo.', {
+        general: 'No pudimos verificar que eres una persona real. Recarga la página e inténtalo de nuevo.',
+        captcha: 'La verificación no pasó',
+      });
     }
 
-    const correo = Email.create(input.email);
     const nombre = input.nombre.trim();
     if (nombre.length < 2) throw new ValidationError('Escribe tu nombre', { nombre: 'Requerido' });
 
+    // Correo **o** teléfono, al menos uno — misma regla que el CRM anterior: hay prospectos que
+    // solo dejan WhatsApp, y exigirles correo los perdía.
+    const correoCrudo = input.email?.trim() || '';
     const telefonoRegistro = input.telefono?.trim() || '';
+    if (!correoCrudo && !telefonoRegistro) {
+      throw new ValidationError('Ingresa al menos un correo o un teléfono para poder mandarte el acceso', {
+        general: 'Ingresa al menos un correo o un teléfono: por ahí te mandamos el acceso al evento.',
+        email: 'Escribe tu correo o tu teléfono',
+      });
+    }
+    const correo = correoCrudo ? Email.create(correoCrudo) : null;
+    if (telefonoRegistro && !esTelefonoPlausible(telefonoRegistro)) {
+      throw new ValidationError('Revisa el teléfono', {
+        general: 'El teléfono no parece un número válido. Revísalo, por favor.',
+        telefono: 'No parece un número válido',
+      });
+    }
+
     const bloqueado =
-      (await this.listaNegra.contiene(correo.value)) ||
+      (correo ? await this.listaNegra.contiene(correo.value) : false) ||
       (telefonoRegistro ? await this.listaNegra.contieneTelefono(telefonoRegistro) : false);
     if (bloqueado) {
-      this.logger.info('Registro bloqueado por lista negra', { email: correo.value });
+      this.logger.info('Registro bloqueado por lista negra', { email: correo?.value ?? null });
       throw new ValidationError('No fue posible completar tu registro. Contacta a soporte.');
     }
-    if (await this.inscripciones.findByEmail(evento.id, correo.value)) {
-      throw new ConflictError('Ya estás registrado en este evento con ese correo');
+    if (await this.inscripciones.findByContacto(evento.id, correo?.value ?? null, telefonoRegistro || null)) {
+      throw new ConflictError('Ya estás registrado en este evento');
     }
     if (evento.cupo > 0 && (await this.inscripciones.contar(evento.id)) >= evento.cupo) {
       throw new ValidationError('El evento ya alcanzó su cupo máximo');
@@ -565,15 +607,15 @@ export class EventoService {
       id: this.ids.newId(),
       eventoId: evento.id,
       nombre,
-      email: correo.value,
-      telefono: input.telefono?.trim() || null,
+      email: correo?.value ?? null,
+      telefono: telefonoRegistro || null,
       empresa: input.empresa?.trim() || null,
       estado: 'registrado',
       origen: 'publico',
-      correoEstado: 'pendiente',
+      correoEstado: correo ? 'pendiente' : null,
       recordatoriosEnviados: [],
       ip,
-      correoSospechoso: esCorreoDesechable(correo.value),
+      correoSospechoso: correo ? esCorreoDesechable(correo.value) : false,
       asistira: input.asistira?.trim() || null,
       usaSistema: evento.sistema ? input.usaSistema?.trim() || null : null,
       fuente: input.fuente?.trim() || null,
@@ -584,7 +626,7 @@ export class EventoService {
     };
     await this.inscripciones.create(inscripcion);
     await this.enviarConfirmacion(evento, inscripcion);
-    this.logger.info('Inscripción a evento', { evento: evento.id, email: correo.value });
+    this.logger.info('Inscripción a evento', { evento: evento.id, email: correo?.value ?? null });
     return inscripcion;
   }
 
@@ -636,7 +678,8 @@ export class EventoService {
       if (disparo.getTime() > ahora.getTime()) continue; // aún no toca
       const inscritos = await this.inscripciones.listPorEvento(evento.id);
       for (const ins of inscritos) {
-        if (ins.recordatoriosEnviados.includes('previo') || ins.estado === 'no_asistio') continue;
+        // Sin correo no hay a dónde mandarlo (se registró solo con WhatsApp).
+        if (!ins.email || ins.recordatoriosEnviados.includes('previo') || ins.estado === 'no_asistio') continue;
         await this.email.enviar({
           para: [{ email: ins.email, nombre: ins.nombre }],
           asunto: `Recordatorio: ${evento.titulo}`,
@@ -671,7 +714,7 @@ export class EventoService {
       eventosProcesados++;
       const inscritos = await this.inscripciones.listPorEvento(evento.id);
       for (const ins of inscritos) {
-        if (ins.recordatoriosEnviados.includes('seguimiento') || ins.estado === 'no_asistio') continue;
+        if (!ins.email || ins.recordatoriosEnviados.includes('seguimiento') || ins.estado === 'no_asistio') continue;
         const mensaje = resolverComodinesEvento(evento.mensajeSeguimiento, evento, ins);
         await this.email.enviar({
           para: [{ email: ins.email, nombre: ins.nombre }],
@@ -689,6 +732,8 @@ export class EventoService {
   }
 
   private async enviarConfirmacion(evento: Evento, ins: Inscripcion): Promise<void> {
+    // Quien se registró solo con teléfono no recibe correo: el staff lo contacta por WhatsApp.
+    if (!ins.email) return;
     const mensajePersonalizado = evento.plantilla
       ? `<p style="white-space:pre-wrap">${resolverPlantillaEvento(evento, ins).replace(/\n/g, '<br>')}</p>`
       : '';

@@ -47,6 +47,16 @@ export class InMemoryInscripcionRepository implements IInscripcionRepository {
       this.items.find((i) => i.eventoId === eventoId && i.email === email.trim().toLowerCase()) ?? null
     );
   }
+  async findByContacto(eventoId: string, email: string | null, telefono: string | null): Promise<Inscripcion | null> {
+    const tel = telefono?.trim() || null;
+    return (
+      this.items.find(
+        (i) =>
+          i.eventoId === eventoId &&
+          ((email && i.email === email.trim().toLowerCase()) || (tel && i.telefono === tel)),
+      ) ?? null
+    );
+  }
   async findGlobal(inscripcionId: string): Promise<Inscripcion | null> {
     return this.items.find((i) => i.id === inscripcionId) ?? null;
   }

@@ -306,6 +306,9 @@ export class FakeWebhookPublisher implements IWebhookPublisher {
 
 export class FakeCaptchaVerifier implements ICaptchaVerifier {
   respuesta = true;
+  /** Por defecto "sin captcha configurado", como en desarrollo: los tests que no van sobre el
+   *  captcha no tienen que inventar un token. Los que sí, lo ponen en `true`. */
+  activo = false;
   async verificar(): Promise<boolean> {
     return this.respuesta;
   }

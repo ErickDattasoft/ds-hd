@@ -104,7 +104,9 @@ export class EventoController {
     const inscritosVM = inscritos.map((i) => {
       const tel = (i.telefono ?? '').replace(/[^\d]/g, '');
       const mensaje = resolverPlantillaEvento(evento, i);
-      const enNegra = correosNegra.get(i.email) ?? (i.telefono ? telefonosNegra.get(i.telefono.trim()) : undefined);
+      const enNegra =
+        (i.email ? correosNegra.get(i.email) : undefined) ??
+        (i.telefono ? telefonosNegra.get(i.telefono.trim()) : undefined);
       return {
         ...i,
         waLink: tel ? `https://wa.me/${tel.length === 10 ? '52' : ''}${tel}?text=${encodeURIComponent(mensaje)}` : null,
@@ -113,7 +115,9 @@ export class EventoController {
               .filter(Boolean)
               .join(' ')
           : null,
-        asistioAntes: historialPersonas[i.email.toLowerCase()] ?? (i.telefono ? historialPersonas[i.telefono.trim()] ?? null : null),
+        asistioAntes:
+          (i.email ? historialPersonas[i.email.toLowerCase()] : undefined) ??
+          (i.telefono ? historialPersonas[i.telefono.trim()] ?? null : null),
       };
     });
     res.render('pages/backoffice/eventos/detail', {

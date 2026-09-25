@@ -52,6 +52,18 @@ Y estas acciones:
 La **lista negra** es global a todos los eventos: quien esté ahí, por correo o por teléfono,
 no puede volver a registrarse en ninguno. Se puede agregar a mano o quitar si fue un error.
 
+## Compartir el link de registro
+
+En el detalle del evento, **🔗 Link Registro** copia al portapapeles la URL pública para
+pegarla en redes, WhatsApp o un correo. *Ver página pública* abre esa misma página en otra
+pestaña para revisarla antes de compartirla.
+
+El registro público pide nombre y **al menos un dato de contacto: correo o teléfono**. Quien
+se registre solo con teléfono no recibe confirmación ni recordatorio por correo — aparece en
+Inscritos con el 💬 para contactarlo por WhatsApp. El duplicado se detecta por correo **o**
+por teléfono. El formulario exige la verificación anti-bots de Cloudflare: sin ella no se
+guarda ningún registro.
+
 ## Recordatorios automáticos
 
 Un job programado (`/jobs/recordatorios-eventos`, protegido por `JOBS_SECRET`) envía

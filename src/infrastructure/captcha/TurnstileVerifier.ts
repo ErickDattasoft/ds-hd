@@ -3,6 +3,8 @@ import type { ILogger } from '../../core/ports/services/ILogger.js';
 
 /** Verificador de Cloudflare Turnstile (server-side). */
 export class TurnstileVerifier implements ICaptchaVerifier {
+  readonly activo = true;
+
   constructor(
     private readonly secret: string,
     private readonly logger: ILogger,
@@ -29,6 +31,8 @@ export class TurnstileVerifier implements ICaptchaVerifier {
 
 /** Sin captcha configurado: acepta todo (dev/tests). */
 export class NullCaptchaVerifier implements ICaptchaVerifier {
+  readonly activo = false;
+
   async verificar(): Promise<boolean> {
     return true;
   }
