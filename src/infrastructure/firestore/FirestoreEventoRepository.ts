@@ -215,8 +215,14 @@ export class FirestoreInscripcionRepository implements IInscripcionRepository {
   }
 
   async listAsistenciasReales(): Promise<Inscripcion[]> {
-    const snap = await this.db.collectionGroup('inscripciones').where('asistioReal', '==', true).get();
-    return snap.docs.map((d) => inscripcionToDomain(d.ref.parent.parent?.id ?? '', d.id, d.data()));
+    // Se filtra en memoria en vez de con un `.where('asistioReal','==',true)`: una consulta de
+    // collection-group con filtro exige declarar y desplegar un índice aparte, y sin él revienta.
+    // Sin filtro no hace falta índice (mismo patrón que `findGlobal`), y el universo son las
+    // inscripciones de todos los eventos — cientos de documentos, no millones.
+    const snap = await this.db.collectionGroup('inscripciones').get();
+    return snap.docs
+      .filter((d) => d.data().asistioReal === true)
+      .map((d) => inscripcionToDomain(d.ref.parent.parent?.id ?? '', d.id, d.data()));
   }
 }
 

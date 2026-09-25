@@ -286,8 +286,8 @@ export class EventoService {
    * Sirve para no reinvitar a quien ya fue cuando un webinar se repite.
    */
   async historialAsistencias(eventoIdActual: string): Promise<Record<string, string>> {
-    // El cruce es informativo: si el índice de collection-group todavía no está desplegado en
-    // Firestore, la consulta falla — se degrada a "sin historial" en vez de tumbar el detalle.
+    // El cruce es informativo: si la consulta falla, se degrada a "sin historial" en vez de
+    // tumbar el detalle del evento.
     const [asistencias, eventos] = await Promise.all([
       this.inscripciones.listAsistenciasReales().catch((err: unknown) => {
         this.logger.warn('No se pudo cruzar el historial de asistencias', { err: String(err) });
