@@ -36,7 +36,7 @@ export const INFO_APP = {
   stack: 'Node · Express · TypeScript · Nunjucks · Firestore · Cloudflare Workers · Brevo',
   enlaces: [
     { etiqueta: 'GitHub — ErickDattasoft/ds-hd', url: 'https://github.com/ErickDattasoft/ds-hd', icono: '🐙' },
-    { etiqueta: 'Cloudflare Workers — ds-hd.erick-casas.workers.dev', url: 'https://ds-hd.erick-casas.workers.dev', icono: '☁️' },
+    { etiqueta: 'Cloudflare Workers — ds-hd.dattasoft.workers.dev', url: 'https://ds-hd.dattasoft.workers.dev', icono: '☁️' },
     { etiqueta: 'Firebase Firestore — ds-hd-b4939', url: 'https://console.firebase.google.com/project/ds-hd-b4939/firestore', icono: '🔥' },
     { etiqueta: 'Brevo — envío de correos', url: 'https://app.brevo.com', icono: '✉️' },
   ] satisfies EnlaceApp[],
