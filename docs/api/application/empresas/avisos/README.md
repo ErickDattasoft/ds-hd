@@ -12,6 +12,8 @@
 
 ## Functions
 
+- [claveAviso](functions/claveAviso.md)
+- [clavePendiente](functions/clavePendiente.md)
 - [sistemasPendientes](functions/sistemasPendientes.md)
 - [licenciasPendientes](functions/licenciasPendientes.md)
 - [filtrarPendientes](functions/filtrarPendientes.md)

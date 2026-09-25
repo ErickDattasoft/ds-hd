@@ -6,4 +6,9 @@ export interface IAvisoRepository {
   registrar(avisos: AvisoEnviado[]): Promise<void>;
   /** Los avisos que cumplen el filtro, del más reciente al más antiguo. */
   list(filtro?: FiltroAvisos): Promise<AvisoEnviado[]>;
+  /**
+   * Todos, sin el tope de `list`: para saber qué pendientes ya se avisaron hace falta el
+   * historial completo, o un aviso viejo se volvería a ofrecer como pendiente.
+   */
+  listTodos(): Promise<AvisoEnviado[]>;
 }

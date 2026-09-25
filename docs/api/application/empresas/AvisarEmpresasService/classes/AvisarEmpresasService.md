@@ -97,6 +97,33 @@ Los pendientes de cada empresa, para la pantalla donde se eligen antes de enviar
 
 ***
 
+### sinAvisar()
+
+> **sinAvisar**(`empresas`, `oficialPorSistema`, `hoy`): `Promise`\<`Map`\<`string`, \{ `versiones`: `number`; `licencias`: `number`; \}\>\>
+
+Cuántos pendientes de cada empresa **aún no se han avisado**, por tipo — lo que contaban
+los botones "🔔 Sistemas desactualizados" y "⏰ Licencias por vencer" del CRM viejo.
+
+#### Parameters
+
+##### empresas
+
+[`Empresa`](../../../../core/entities/Empresa/classes/Empresa.md)[]
+
+##### oficialPorSistema
+
+`Record`\<`string`, `string`\>
+
+##### hoy
+
+`Date`
+
+#### Returns
+
+`Promise`\<`Map`\<`string`, \{ `versiones`: `number`; `licencias`: `number`; \}\>\>
+
+***
+
 ### ejecutar()
 
 > **ejecutar**(`input`): `Promise`\<[`ResultadoAviso`](../interfaces/ResultadoAviso.md)[]\>

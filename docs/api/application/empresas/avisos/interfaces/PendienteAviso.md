@@ -47,3 +47,11 @@ Versión oficial vigente (solo sistemas desactualizados).
 > `optional` **fechaVencimiento?**: `string` \| `null`
 
 Fecha de vencimiento `YYYY-MM-DD` (solo licencias).
+
+***
+
+### avisadoEl?
+
+> `optional` **avisadoEl?**: `Date` \| `null`
+
+Cuándo se avisó ya este mismo pendiente (misma versión oficial o misma fecha de vencimiento).

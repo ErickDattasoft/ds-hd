@@ -436,3 +436,70 @@ describe('AvisarEmpresasService — historial de avisos enviados', () => {
     expect((await avisos.list()).map((a) => a.id)).toEqual(['a2', 'a1']);
   });
 });
+
+describe('AvisarEmpresasService — lo ya avisado (paridad con el CRM viejo)', () => {
+  const armar = async () => {
+    const empresas = new InMemoryEmpresaRepository();
+    const contactos = new InMemoryContactoRepository();
+    const versiones = new InMemoryVersionRepository();
+    const avisos = new InMemoryAvisoRepository();
+    const clock = new FixedClock(new Date('2026-09-25T12:00:00Z'));
+    const service = new AvisarEmpresasService(
+      empresas,
+      contactos,
+      versiones,
+      new InMemoryConfiguracionRepository(),
+      new FakeEmailSender(),
+      new FakeIntegracionesGateway(),
+      new BitacoraService(new InMemoryBitacoraRepository(), ids, clock, silentLogger),
+      clock,
+      avisos,
+      ids,
+    );
+    await versiones.save(new VersionSistema({ id: 'v1', sistema: 'Contabilidad', versionActual: '19.1.0' }));
+    await versiones.save(new VersionSistema({ id: 'v2', sistema: 'Nóminas', versionActual: '12.0.0' }));
+    const empresa = new Empresa({
+      id: 'e1',
+      nombre: 'Empresa Uno',
+      sistemasContratados: ['Contabilidad', 'Nóminas'],
+      versionesInstaladas: { Contabilidad: '18.0.0', 'Nóminas': '11.0.0' },
+      vigencias: { Contabilidad: '2026-09-30' },
+    });
+    await empresas.save(empresa);
+    await contactos.save(new Contacto({ id: 'c1', nombre: 'Cliente', empresaId: 'e1', email: 'c1@x.mx' }));
+    return { service, versiones, empresa, clock };
+  };
+  const oficial = { Contabilidad: '19.1.0', 'Nóminas': '12.0.0' };
+
+  it('sinAvisar descuenta lo avisado, por tipo y por sistema', async () => {
+    const { service, empresa, clock } = await armar();
+    expect((await service.sinAvisar([empresa], oficial, clock.now())).get('e1')).toEqual({ versiones: 2, licencias: 1 });
+
+    await service.ejecutar({ actor: actor(), empresaIds: ['e1'], tipo: 'versiones', seleccion: { e1: ['Nóminas'] } });
+
+    // Solo se avisó Nóminas: Contabilidad sigue pendiente, y la licencia no se toca.
+    expect((await service.sinAvisar([empresa], oficial, clock.now())).get('e1')).toEqual({ versiones: 1, licencias: 1 });
+
+    await service.ejecutar({ actor: actor(), empresaIds: ['e1'], tipo: 'licencias' });
+    expect((await service.sinAvisar([empresa], oficial, clock.now())).get('e1')).toEqual({ versiones: 1, licencias: 0 });
+  });
+
+  it('si sale una versión oficial nueva, el sistema vuelve a estar pendiente', async () => {
+    const { service, empresa, clock } = await armar();
+    await service.ejecutar({ actor: actor(), empresaIds: ['e1'], tipo: 'versiones' });
+    expect((await service.sinAvisar([empresa], oficial, clock.now())).get('e1')!.versiones).toBe(0);
+
+    const nuevaOficial = { ...oficial, Contabilidad: '20.0.0' };
+    expect((await service.sinAvisar([empresa], nuevaOficial, clock.now())).get('e1')!.versiones).toBe(1);
+  });
+
+  it('en la pantalla de selección marca lo ya avisado con su fecha', async () => {
+    const { service } = await armar();
+    await service.ejecutar({ actor: actor(), empresaIds: ['e1'], tipo: 'versiones', seleccion: { e1: ['Nóminas'] } });
+
+    const [fila] = await service.pendientes(actor(), ['e1'], 'versiones');
+    const porSistema = Object.fromEntries(fila!.pendientes.map((p) => [p.sistema, p.avisadoEl]));
+    expect(porSistema['Nóminas']).toEqual(new Date('2026-09-25T12:00:00Z'));
+    expect(porSistema['Contabilidad']).toBeNull();
+  });
+});

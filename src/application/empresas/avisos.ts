@@ -14,6 +14,30 @@ export interface PendienteAviso {
   versionOficial?: string | null;
   /** Fecha de vencimiento `YYYY-MM-DD` (solo licencias). */
   fechaVencimiento?: string | null;
+  /** Cuándo se avisó ya este mismo pendiente (misma versión oficial o misma fecha de vencimiento). */
+  avisadoEl?: Date | null;
+}
+
+/**
+ * Clave con la que se reconoce que un pendiente ya se avisó, con la misma regla del CRM viejo:
+ * un sistema cuenta como avisado si hubo aviso para esa empresa y ese sistema con la **misma
+ * versión oficial** (si sale una versión nueva, vuelve a estar pendiente); una licencia, si fue
+ * con la **misma fecha de vencimiento** (si se renovó y volvió a vencer, vuelve a estar pendiente).
+ */
+export function claveAviso(
+  empresaId: string,
+  tipo: 'sistema' | 'licencia',
+  sistema: string,
+  referencia: string | null | undefined,
+): string {
+  return [tipo, empresaId, sistema, referencia ?? ''].join('|');
+}
+
+/** Clave de un pendiente ya calculado (ver {@link claveAviso}). */
+export function clavePendiente(empresaId: string, tipo: 'versiones' | 'licencias', p: PendienteAviso): string {
+  return tipo === 'versiones'
+    ? claveAviso(empresaId, 'sistema', p.sistema, p.versionOficial)
+    : claveAviso(empresaId, 'licencia', p.sistema, p.fechaVencimiento);
 }
 
 /**

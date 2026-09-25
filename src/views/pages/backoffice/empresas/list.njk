@@ -1,7 +1,7 @@
 {% extends "layouts/backoffice.njk" %}
 {% block title %}Empresas{% endblock %}
 {% block content %}
-  {% set qs %}?q={{ q }}&sistema={{ sistema }}{{ '&favoritas=1' if soloFavoritas }}{{ '&pendientes=1' if soloPendientes }}{{ '&archivadas=1' if incluirArchivadas }}{% endset %}
+  {% set qs %}?q={{ q }}&sistema={{ sistema }}{{ '&favoritas=1' if soloFavoritas }}{{ '&pendientes=' + pendientes if pendientes }}{{ '&archivadas=1' if incluirArchivadas }}{% endset %}
   <div class="page-head">
     <h1>Empresas</h1>
     <div class="page-head__actions">
@@ -18,7 +18,12 @@
     </select>
     <label class="field--check"><input type="checkbox" name="favoritas" value="1" {{ 'checked' if soloFavoritas }} /> ⭐ solo favoritas</label>
     <label class="field--check"><input type="checkbox" name="archivadas" value="1" {{ 'checked' if incluirArchivadas }} /> incluir archivadas</label>
-    <label class="field--check"><input type="checkbox" name="pendientes" value="1" {{ 'checked' if soloPendientes }} /> solo con pendientes (licencia o versión)</label>
+    <select name="pendientes" aria-label="Pendientes">
+      <option value="">Con o sin pendientes</option>
+      <option value="1" {{ 'selected' if pendientes == '1' }}>Con pendientes (licencia o versión)</option>
+      <option value="versiones" {{ 'selected' if pendientes == 'versiones' }}>🔔 Sistemas desactualizados sin avisar</option>
+      <option value="licencias" {{ 'selected' if pendientes == 'licencias' }}>⏰ Licencias por vencer sin avisar</option>
+    </select>
     <button class="btn btn--sm" type="submit">Buscar</button>
   </form>
 
@@ -60,8 +65,8 @@
       {# Cuántas hay con algo pendiente, como en el CRM viejo: se ve si vale la pena abrirlos
          sin tener que filtrar primero, y cada uno lleva al listado ya filtrado. #}
       <span class="acciones-lote__conteos">
-        <a href="/app/empresas?pendientes=1" class="badge {{ 'badge--danger' if conLicencias else '' }}">{{ conLicencias }} con licencias por vencer o vencidas</a>
-        <a href="/app/empresas?pendientes=1" class="badge {{ 'badge--warning' if conVersiones else '' }}">{{ conVersiones }} con sistemas desactualizados</a>
+        <a href="/app/empresas?pendientes=licencias" class="badge {{ 'badge--danger' if conLicencias else '' }}" title="Empresas con licencias vencidas o por vencer que aún no se les ha avisado">⏰ {{ conLicencias }} con licencias por vencer sin avisar</a>
+        <a href="/app/empresas?pendientes=versiones" class="badge {{ 'badge--warning' if conVersiones else '' }}" title="Empresas con sistemas desactualizados que aún no se les ha avisado">🔔 {{ conVersiones }} con sistemas desactualizados sin avisar</a>
       </span>
     </form>
   {% elif can('empresas:editar') %}

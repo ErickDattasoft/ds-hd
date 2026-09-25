@@ -5,6 +5,7 @@ import type { IVersionRepository } from '../../core/ports/repositories/IVersionR
 import type { IAvisoRepository } from '../../core/ports/repositories/IAvisoRepository.js';
 import type { IIdGenerator } from '../../core/ports/services/IIdGenerator.js';
 import type { AvisoEnviado } from '../../core/entities/AvisoEnviado.js';
+import type { Empresa } from '../../core/entities/Empresa.js';
 import type { IConfiguracionRepository } from '../../core/ports/repositories/IConfiguracionRepository.js';
 import type { IEmailSender } from '../../core/ports/services/IEmailSender.js';
 import type { IIntegracionesGateway } from '../../core/ports/services/IIntegracionesGateway.js';
@@ -12,6 +13,8 @@ import type { IClock } from '../../core/ports/services/IClock.js';
 import { normalizarTelefonoMx } from '../../core/entities/value-objects/Telefono.js';
 import { ForbiddenError } from '../../core/errors/DomainError.js';
 import {
+  claveAviso,
+  clavePendiente,
   formatearContactoSoporte,
   formatearLicenciasPendientes,
   formatearSistemasPendientes,
@@ -77,15 +80,58 @@ export class AvisarEmpresasService {
       oficial[v.sistema] = v.versionActual;
       cartas[v.sistema] = v.linkCartaTecnica;
     }
+    const avisados = await this.indiceAvisados();
     const out = [];
     for (const empresaId of empresaIds) {
       const empresa = await this.empresas.findById(empresaId);
       if (!empresa) continue;
+      const pendientes =
+        tipo === 'versiones' ? sistemasPendientes(empresa, oficial, cartas) : licenciasPendientes(empresa, hoy);
       out.push({
         empresaId,
         empresaNombre: empresa.nombre,
-        pendientes: tipo === 'versiones' ? sistemasPendientes(empresa, oficial, cartas) : licenciasPendientes(empresa, hoy),
+        // Como en el CRM viejo: lo ya avisado se muestra con su fecha y sale desmarcado.
+        pendientes: pendientes.map((p) => ({ ...p, avisadoEl: avisados.get(clavePendiente(empresaId, tipo, p)) ?? null })),
       });
+    }
+    return out;
+  }
+
+  /**
+   * Cuántos pendientes de cada empresa **aún no se han avisado**, por tipo — lo que contaban
+   * los botones "🔔 Sistemas desactualizados" y "⏰ Licencias por vencer" del CRM viejo.
+   */
+  async sinAvisar(
+    empresas: Empresa[],
+    oficialPorSistema: Record<string, string>,
+    hoy: Date,
+  ): Promise<Map<string, { versiones: number; licencias: number }>> {
+    const avisados = await this.indiceAvisados();
+    const out = new Map<string, { versiones: number; licencias: number }>();
+    for (const e of empresas) {
+      out.set(e.id, {
+        versiones: sistemasPendientes(e, oficialPorSistema).filter(
+          (p) => !avisados.has(clavePendiente(e.id, 'versiones', p)),
+        ).length,
+        licencias: licenciasPendientes(e, hoy).filter((p) => !avisados.has(clavePendiente(e.id, 'licencias', p)))
+          .length,
+      });
+    }
+    return out;
+  }
+
+  /** Clave de cada aviso ya enviado → fecha del más reciente. */
+  private async indiceAvisados(): Promise<Map<string, Date>> {
+    const out = new Map<string, Date>();
+    for (const a of await this.avisos.listTodos()) {
+      const clave = claveAviso(
+        a.empresaId,
+        a.tipo,
+        a.sistema,
+        a.tipo === 'sistema' ? a.versionOficial : a.fechaVencimiento,
+      );
+      const previa = out.get(clave);
+      if (!previa || previa < a.createdAt) out.set(clave, a.createdAt);
     }
     return out;
   }

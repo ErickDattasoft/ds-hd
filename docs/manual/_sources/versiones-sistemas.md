@@ -33,6 +33,19 @@ fecha del último aviso: *"¿ya le avisamos a esta empresa de Nóminas, o solo d
 
 Se filtra por empresa y por rango de fechas, y se exporta a Excel con las mismas columnas.
 
+### Qué cuenta como "ya avisado"
+
+El historial también decide qué sigue pendiente en *Empresas*. Un sistema cuenta como avisado
+si ya se le mandó aviso a esa empresa **con la misma versión oficial**; si sale una versión
+nueva, vuelve a aparecer como pendiente. Una licencia cuenta como avisada si fue **con la misma
+fecha de vencimiento**; si se renueva y vuelve a vencer, vuelve a aparecer.
+
+En *Empresas*, los contadores **🔔 sistemas desactualizados sin avisar** y **⏰ licencias por
+vencer sin avisar** (y las opciones del mismo nombre en el filtro *Pendientes*) muestran solo
+las empresas que tienen algo aún sin avisar. La opción *Con pendientes (licencia o versión)*
+muestra todas, avisadas o no. Al elegir qué avisar, lo ya avisado aparece **desmarcado** y con
+la fecha del aviso; se puede volver a marcar si hace falta reenviarlo.
+
 ## Reporte de desactualizadas
 
 *Versiones → Reporte de desactualizadas* lista las empresas con sistemas por actualizar o

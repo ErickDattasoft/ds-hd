@@ -43,3 +43,16 @@ Los avisos que cumplen el filtro, del más reciente al más antiguo.
 #### Returns
 
 `Promise`\<[`AvisoEnviado`](../../../../entities/AvisoEnviado/interfaces/AvisoEnviado.md)[]\>
+
+***
+
+### listTodos()
+
+> **listTodos**(): `Promise`\<[`AvisoEnviado`](../../../../entities/AvisoEnviado/interfaces/AvisoEnviado.md)[]\>
+
+Todos, sin el tope de `list`: para saber qué pendientes ya se avisaron hace falta el
+historial completo, o un aviso viejo se volvería a ofrecer como pendiente.
+
+#### Returns
+
+`Promise`\<[`AvisoEnviado`](../../../../entities/AvisoEnviado/interfaces/AvisoEnviado.md)[]\>

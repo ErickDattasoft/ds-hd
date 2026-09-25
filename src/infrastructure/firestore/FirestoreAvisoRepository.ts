@@ -68,4 +68,9 @@ export class FirestoreAvisoRepository implements IAvisoRepository {
     const snap = await q.get();
     return snap.docs.map((d) => toDomain(d.id, d.data())).filter((a) => avisoCoincide(a, filtro));
   }
+
+  async listTodos(): Promise<AvisoEnviado[]> {
+    const snap = await this.col.orderBy('createdAt', 'desc').get();
+    return snap.docs.map((d) => toDomain(d.id, d.data()));
+  }
 }

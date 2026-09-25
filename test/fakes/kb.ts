@@ -93,4 +93,7 @@ export class InMemoryAvisoRepository implements IAvisoRepository {
       .filter((a) => avisoCoincide(a, filtro))
       .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
   }
+  async listTodos(): Promise<AvisoEnviado[]> {
+    return this.list();
+  }
 }

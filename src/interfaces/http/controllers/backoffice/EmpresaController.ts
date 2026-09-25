@@ -59,7 +59,11 @@ export class EmpresaController {
   listar = async (req: Request, res: Response): Promise<void> => {
     const texto = str(req.query.q);
     const incluirArchivadas = req.query.archivadas === '1';
-    const soloPendientes = req.query.pendientes === '1';
+    // `1`: cualquier pendiente (licencia o versión). `versiones` / `licencias`: los dos botones
+    // del CRM viejo, que además dejaban fuera lo que ya se había avisado.
+    const pendientes = ['1', 'versiones', 'licencias'].includes(str(req.query.pendientes))
+      ? str(req.query.pendientes)
+      : '';
     const soloFavoritas = req.query.favoritas === '1';
     const sistema = str(req.query.sistema);
     const [empresas, versiones, filtrosGuardados, todosLosContactos] = await Promise.all([
@@ -89,9 +93,11 @@ export class EmpresaController {
       ]),
     ].sort((a, b) => a.localeCompare(b, 'es'));
     const hoy = new Date();
+    const sinAvisar = await this.avisar.sinAvisar(empresas, oficial, hoy);
     let filas = empresas.map((empresa) => {
       const riesgo = empresa.licenciasEnRiesgo(hoy);
       return {
+        sinAvisar: sinAvisar.get(empresa.id) ?? { versiones: 0, licencias: 0 },
         empresa,
         contactoPrincipal: contactoPorEmpresa.get(empresa.id) ?? null,
         vencidas: riesgo.filter((l) => l.estado === 'vencida').length,
@@ -102,9 +108,9 @@ export class EmpresaController {
         detalleLicencias: riesgo.length ? formatearLicenciasPendientes(empresa, hoy) : '',
       };
     });
-    if (soloPendientes) {
-      filas = filas.filter((f) => f.vencidas || f.porVencer || f.desactualizadas);
-    }
+    if (pendientes === '1') filas = filas.filter((f) => f.vencidas || f.porVencer || f.desactualizadas);
+    else if (pendientes === 'versiones') filas = filas.filter((f) => f.sinAvisar.versiones);
+    else if (pendientes === 'licencias') filas = filas.filter((f) => f.sinAvisar.licencias);
     // Las favoritas van arriba, como en el CRM viejo: marcar una empresa es justamente decir
     // "a esta la quiero a la mano". Dentro de cada grupo se mantiene el orden que ya traía el
     // repositorio, para que la lista no cambie de criterio a media tabla.
@@ -115,9 +121,9 @@ export class EmpresaController {
     const conOrden = filas.map((f, orden) => ({ ...f, orden }));
     conOrden.sort((a, b) => Number(b.empresa.favorita) - Number(a.empresa.favorita));
     // Contadores de los botones de aviso, como en el CRM viejo: cuántas empresas tienen algo
-    // pendiente, para saber si vale la pena abrirlos sin tener que filtrar primero.
-    const conLicencias = conOrden.filter((f) => f.vencidas || f.porVencer).length;
-    const conVersiones = conOrden.filter((f) => f.desactualizadas).length;
+    // pendiente que aún no se les ha avisado, para saber si vale la pena abrirlos.
+    const conLicencias = conOrden.filter((f) => f.sinAvisar.licencias).length;
+    const conVersiones = conOrden.filter((f) => f.sinAvisar.versiones).length;
     res.render('pages/backoffice/empresas/list', {
       titulo: 'Empresas',
       filas: conOrden,
@@ -125,7 +131,7 @@ export class EmpresaController {
       conVersiones,
       q: texto,
       incluirArchivadas,
-      soloPendientes,
+      pendientes,
       soloFavoritas,
       sistema,
       sistemasDisponibles,
