@@ -379,7 +379,7 @@ describe('registro público — asistira/usaSistema/fuente/canal WhatsApp', () =
 
     const dup = await anon.post('/eventos/ev1').type('form').send({ _csrf: csrf, nombre: 'Laura', email: 'laura@x.com', asistira: 'Sí' });
     expect(dup.status).toBe(422);
-    expect(dup.text).toContain('reenviármelo');
+    expect(dup.text).toContain('Reenviarme el acceso');
 
     expect(t.emailSender.enviados.filter((c) => c.asunto.includes('Registro confirmado'))).toHaveLength(1);
     const reenviar = await request(t.app)

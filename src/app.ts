@@ -57,6 +57,10 @@ function installViewEngine(app: Express, config: AppConfig, precompiled: boolean
 
   const fmtFecha = new Intl.DateTimeFormat('es-MX', { dateStyle: 'medium' });
   const fmtFechaHora = new Intl.DateTimeFormat('es-MX', { dateStyle: 'medium', timeStyle: 'short' });
+  // Fecha en palabras ("29 de octubre de 2026") para las páginas públicas, donde el mes
+  // abreviado del formato `medium` se lee informal.
+  const fmtFechaLarga = new Intl.DateTimeFormat('es-MX', { dateStyle: 'long' });
+  const fmtHora = new Intl.DateTimeFormat('es-MX', { timeStyle: 'short' });
   const asDate = (v: unknown): Date | null => {
     // Una fecha ISO sin hora ("2026-10-15") se interpreta como mediodía local para que no
     // "retroceda" un día al formatearse en la zona horaria de México.
@@ -71,6 +75,14 @@ function installViewEngine(app: Express, config: AppConfig, precompiled: boolean
   env.addFilter('fechahora', (v: unknown) => {
     const d = asDate(v);
     return d ? fmtFechaHora.format(d) : '—';
+  });
+  env.addFilter('fechalarga', (v: unknown) => {
+    const d = asDate(v);
+    return d ? fmtFechaLarga.format(d) : '—';
+  });
+  env.addFilter('hora', (v: unknown) => {
+    const d = asDate(v);
+    return d ? fmtHora.format(d) : '—';
   });
   env.addFilter('moneda', (v: unknown, moneda = 'MXN') =>
     new Intl.NumberFormat('es-MX', { style: 'currency', currency: String(moneda) }).format(Number(v) || 0),

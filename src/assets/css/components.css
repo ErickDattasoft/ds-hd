@@ -1062,3 +1062,110 @@ fieldset.field {
   border-top: 1px solid var(--color-border, rgba(0,0,0,.12));
   box-shadow: 0 -4px 12px rgba(0,0,0,.08);
 }
+
+/* ── Página pública de registro a un evento ─────────────────────────────────
+   Es una landing que se comparte en redes: sobria, sin adornos, centrada y
+   angosta para que la vista caiga en el formulario. Todo sale de los tokens,
+   así que el tema claro/oscuro funciona sin reglas aparte. */
+.evento-landing { max-width: 44rem; margin-inline: auto; }
+.evento-landing .form { max-width: none; }
+
+.evento-encabezado {
+  padding-block: var(--space-6) var(--space-5);
+  border-bottom: 1px solid var(--color-border);
+  margin-bottom: var(--space-6);
+}
+.evento-encabezado__antetitulo {
+  font-size: var(--text-xs);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-subtle);
+  margin-bottom: var(--space-2);
+}
+.evento-encabezado h1 {
+  font-size: var(--text-2xl);
+  line-height: 1.2;
+  margin: 0;
+}
+.evento-encabezado__descripcion {
+  margin-top: var(--space-4);
+  color: var(--color-text-muted);
+  max-width: 38rem;
+}
+
+/* Datos del evento como lista de definiciones: se lee como una ficha, no como texto suelto. */
+.evento-datos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-5);
+  margin: var(--space-5) 0 0;
+}
+.evento-datos > div { display: flex; flex-direction: column; gap: 2px; }
+.evento-datos dt {
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-subtle);
+}
+.evento-datos dd { margin: 0; font-weight: 600; }
+
+.evento-flayer {
+  display: block;
+  width: 100%;
+  max-height: 20rem;
+  object-fit: cover;
+  border-radius: var(--radius);
+  border: 1px solid var(--color-border);
+  margin-top: var(--space-5);
+}
+
+/* Agrupar el formulario por temas, con un rótulo discreto en vez de títulos grandes. */
+.evento-seccion { border: 0; padding: 0; margin: 0 0 var(--space-6); }
+.evento-seccion:last-of-type { margin-bottom: var(--space-5); }
+.evento-seccion > legend {
+  display: block;
+  width: 100%;
+  padding: 0 0 var(--space-3);
+  margin-bottom: var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+  font-size: var(--text-xs);
+  font-weight: 650;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+/* Dos columnas en pantalla ancha, una sola en móvil — sin media queries. */
+.evento-campos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: var(--space-4);
+}
+.evento-campos--una { grid-template-columns: 1fr; }
+.evento-nota {
+  grid-column: 1 / -1;
+  margin: calc(var(--space-2) * -1) 0 0;
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+.evento-captcha { margin-bottom: var(--space-5); }
+.evento-captcha__ayuda {
+  display: block;
+  margin-top: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+.evento-enviar { width: 100%; justify-content: center; padding-block: 0.7rem; }
+.evento-pie {
+  margin-top: var(--space-5);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-border);
+  font-size: var(--text-sm);
+  color: var(--color-text-subtle);
+  text-align: center;
+}
+
+/* Confirmación / aviso de duplicado: mismo tono sobrio que el resto. */
+.evento-resultado { text-align: center; padding-block: var(--space-8); }
+.evento-resultado h1 { font-size: var(--text-2xl); margin-bottom: var(--space-3); }
+.evento-resultado p { color: var(--color-text-muted); margin-inline: auto; max-width: 32rem; }
