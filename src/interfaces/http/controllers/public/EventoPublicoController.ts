@@ -29,6 +29,7 @@ export class EventoPublicoController {
       titulo: evento.titulo,
       evento,
       turnstileSiteKey: this.turnstileSiteKey,
+      navMinima: true,
       valores: {},
       errores: {},
       registrado: false,
@@ -70,6 +71,7 @@ export class EventoPublicoController {
         titulo: evento.titulo,
         evento,
         turnstileSiteKey: this.turnstileSiteKey,
+        navMinima: true,
         valores: {},
         errores: {},
         registrado: true,
@@ -80,6 +82,7 @@ export class EventoPublicoController {
         titulo: evento?.titulo ?? 'Evento',
         evento,
         turnstileSiteKey: this.turnstileSiteKey,
+        navMinima: true,
         valores: b,
         errores: camposDeError(err),
         registrado: false,
@@ -96,7 +99,8 @@ export class EventoPublicoController {
     if (correo) await this.eventos.reenviarLinkPublico(id, correo).catch(() => {});
     res.json({
       ok: true,
-      mensaje: 'Si el correo está registrado en este evento, te reenviamos el acceso en unos segundos.',
+      mensaje:
+        'Si el correo está registrado en este evento, te reenviamos el acceso en unos segundos.',
     });
   };
 }

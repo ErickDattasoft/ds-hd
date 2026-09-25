@@ -680,3 +680,35 @@ describe('registro público — correo o teléfono, y captcha obligatorio', () =
     expect(t.inscripcionRepo.items).toHaveLength(1);
   });
 });
+
+describe('página pública de un evento — es una landing, no el sitio navegable', () => {
+  it('no ofrece los enlaces públicos (el link se comparte en redes y no debe desviar al prospecto)', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    t.eventoRepo.items.set('ev1', new Evento({
+      id: 'ev1', titulo: 'Webinar', fechaHora: enUnaSemana(), estado: 'publicado',
+    }));
+
+    const pagina = await request(t.app).get('/eventos/ev1');
+    expect(pagina.status).toBe(200);
+    expect(pagina.text).not.toContain('Base de conocimiento');
+    expect(pagina.text).not.toContain('Levantar ticket');
+
+    // Pero el resto del sitio público sí se navega entre sí.
+    const kb = await request(t.app).get('/kb');
+    expect(kb.text).toContain('Levantar ticket');
+  });
+
+  it('"Volver al CRM" solo aparece con sesión, nunca para un visitante', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    t.eventoRepo.items.set('ev1', new Evento({
+      id: 'ev1', titulo: 'Webinar', fechaHora: enUnaSemana(), estado: 'publicado',
+    }));
+
+    const anonimo = await request(t.app).get('/eventos/ev1');
+    expect(anonimo.text).not.toContain('Volver al CRM');
+
+    const { agent } = await login(t.app, ADMIN.email, ADMIN.password);
+    const conSesion = await agent.get('/eventos/ev1');
+    expect(conSesion.text).toContain('Volver al CRM');
+  });
+});

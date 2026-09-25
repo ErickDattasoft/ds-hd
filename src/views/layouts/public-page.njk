@@ -3,9 +3,14 @@
 <header class="pubbar">
   <a class="pubbar__brand" href="/">ds-hd</a>
   <nav aria-label="Secciones públicas">
-    <a href="/kb">Base de conocimiento</a>
-    <a href="/eventos">Eventos</a>
-    <a href="/ticket-publico">Levantar ticket</a>
+    {# `navMinima`: páginas que son una landing, no parte del sitio público navegable — el link
+       de registro a un evento se comparte en redes y no debe mandar al prospecto a otro lado
+       (el CRM anterior servía esa página sin barra alguna). #}
+    {% if not navMinima %}
+      <a href="/kb">Base de conocimiento</a>
+      <a href="/eventos">Eventos</a>
+      <a href="/ticket-publico">Levantar ticket</a>
+    {% endif %}
     {# Solo para quien ya trae sesión: un visitante no debe ver una puerta al CRM. #}
     {% if user %}<a href="{{ '/portal' if user.esCliente else '/app' }}">← Volver al CRM</a>{% endif %}
     <button type="button" class="theme-toggle" data-theme-toggle aria-label="Cambiar tema">◐</button>
