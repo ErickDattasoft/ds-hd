@@ -23,13 +23,22 @@ export interface IInscripcionRepository {
   /** Cuántas inscripciones a este evento vienen de una IP dada (para el límite antiabuso). */
   contarPorIp(eventoId: string, ip: string): Promise<number>;
   save(inscripcion: Inscripcion): Promise<void>;
+  /** Borra una sola inscripción (staff quitando un registro basura de la lista). */
+  eliminar(eventoId: string, inscripcionId: string): Promise<void>;
   /** Borra todas las inscripciones de un evento (al eliminar el evento). */
   eliminarPorEvento(eventoId: string): Promise<void>;
+  /**
+   * Inscripciones con `asistioReal` de TODOS los eventos (collection-group) — para cruzar el
+   * 🔁 "ya asistió antes" de una persona contra otros eventos.
+   */
+  listAsistenciasReales(): Promise<Inscripcion[]>;
 }
 
 /** Persistencia de la lista negra de correos bloqueados para registro a eventos. */
 export interface IListaNegraRepository {
   contiene(email: string): Promise<boolean>;
+  /** Igual que {@link contiene} pero por teléfono — alguien bloqueado que vuelve con otro correo. */
+  contieneTelefono(telefono: string): Promise<boolean>;
   list(): Promise<EntradaListaNegra[]>;
   agregar(entrada: EntradaListaNegra): Promise<void>;
   quitar(email: string): Promise<void>;

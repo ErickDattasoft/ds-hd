@@ -883,6 +883,7 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
           c.empresaRepo,
           c.captchaVerifier,
           c.emailSender,
+          c.excelIO,
           c.idGenerator,
           c.clock,
           c.logger,

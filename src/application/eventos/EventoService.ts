@@ -9,6 +9,7 @@ import type { IIdGenerator } from '../../core/ports/services/IIdGenerator.js';
 import type { ILogger } from '../../core/ports/services/ILogger.js';
 import type { IEmailSender } from '../../core/ports/services/IEmailSender.js';
 import type { ICaptchaVerifier } from '../../core/ports/services/ICaptchaVerifier.js';
+import type { IExcelIO } from '../../core/ports/services/IExcelIO.js';
 import {
   Evento,
   resolverComodinesEvento,
@@ -43,6 +44,16 @@ export interface DatosEvento {
   horasSeguimiento?: number | null;
 }
 
+/** Campos de un inscrito que el staff puede corregir a mano desde el detalle del evento. */
+export interface CambiosInscripcion {
+  nombre?: string;
+  empresa?: string;
+  email?: string;
+  telefono?: string;
+  contactadoWsp?: boolean;
+  asistioReal?: boolean;
+}
+
 /** Datos del formulario público de registro a un evento/webinar. */
 export interface RegistroPublicoInput {
   eventoId: string;
@@ -69,6 +80,7 @@ export class EventoService {
     private readonly empresas: IEmpresaRepository,
     private readonly captcha: ICaptchaVerifier,
     private readonly email: IEmailSender,
+    private readonly excel: IExcelIO,
     private readonly ids: IIdGenerator,
     private readonly clock: IClock,
     private readonly logger: ILogger,
@@ -178,6 +190,167 @@ export class EventoService {
     const inscripcion = inscritos.find((i) => i.id === inscripcionId);
     if (!inscripcion) throw new NotFoundError('Inscripción', inscripcionId);
     await this.enviarConfirmacion(evento, inscripcion);
+  }
+
+  /**
+   * Corrige a mano los datos de un inscrito (el registro público los captura el propio
+   * interesado y a veces vienen con erratas), y las dos marcas de seguimiento del staff:
+   * `contactadoWsp` y `asistioReal`. Solo se tocan los campos presentes en `cambios`.
+   */
+  async actualizarInscripcion(
+    actor: SessionUser,
+    eventoId: string,
+    inscripcionId: string,
+    cambios: CambiosInscripcion,
+  ): Promise<void> {
+    if (!actor.permisos.includes('eventos:gestionar')) throw new ForbiddenError('No puedes gestionar eventos');
+    const inscritos = await this.inscripciones.listPorEvento(eventoId);
+    const inscripcion = inscritos.find((i) => i.id === inscripcionId);
+    if (!inscripcion) throw new NotFoundError('Inscripción', inscripcionId);
+
+    if (cambios.email !== undefined) {
+      const nuevo = Email.create(cambios.email);
+      if (
+        nuevo.value !== inscripcion.email &&
+        inscritos.some((i) => i.id !== inscripcionId && i.email === nuevo.value)
+      ) {
+        throw new ConflictError('Ya hay otro inscrito en este evento con ese correo');
+      }
+      // El correo cambió: el semáforo de entrega del anterior ya no dice nada del nuevo.
+      if (nuevo.value !== inscripcion.email) {
+        inscripcion.correoEstado = 'pendiente';
+        inscripcion.correoSospechoso = esCorreoDesechable(nuevo.value);
+      }
+      inscripcion.email = nuevo.value;
+    }
+    if (cambios.nombre !== undefined) {
+      const nombre = cambios.nombre.trim();
+      if (nombre.length < 2) throw new ValidationError('El nombre no puede quedar vacío', { nombre: 'Requerido' });
+      inscripcion.nombre = nombre;
+    }
+    if (cambios.empresa !== undefined) inscripcion.empresa = cambios.empresa.trim() || null;
+    if (cambios.telefono !== undefined) inscripcion.telefono = cambios.telefono.trim() || null;
+    if (cambios.contactadoWsp !== undefined) inscripcion.contactadoWsp = cambios.contactadoWsp;
+    if (cambios.asistioReal !== undefined) inscripcion.asistioReal = cambios.asistioReal;
+
+    await this.inscripciones.save(inscripcion);
+  }
+
+  /** Marca como ya contactado por WhatsApp — lo usa el botón 💬 al abrir wa.me. */
+  async marcarContactadoWsp(actor: SessionUser, eventoId: string, inscripcionId: string): Promise<void> {
+    await this.actualizarInscripcion(actor, eventoId, inscripcionId, { contactadoWsp: true });
+  }
+
+  async eliminarInscripcion(actor: SessionUser, eventoId: string, inscripcionId: string): Promise<void> {
+    if (!actor.permisos.includes('eventos:gestionar')) throw new ForbiddenError('No puedes gestionar eventos');
+    const inscritos = await this.inscripciones.listPorEvento(eventoId);
+    const inscripcion = inscritos.find((i) => i.id === inscripcionId);
+    if (!inscripcion) throw new NotFoundError('Inscripción', inscripcionId);
+    await this.inscripciones.eliminar(eventoId, inscripcionId);
+    await this.bitacora.registrar({
+      actor,
+      accion: 'eliminar',
+      modulo: 'eventos',
+      entidadTipo: 'Inscripcion',
+      entidadId: inscripcionId,
+      resumen: `Inscrito eliminado: ${inscripcion.nombre} <${inscripcion.email}>`,
+    });
+  }
+
+  /**
+   * Manda a la lista negra a partir de una inscripción — así queda registrado también su
+   * teléfono, no solo el correo, y el 🚫 lo cruza si vuelve a registrarse en otro evento.
+   */
+  async marcarInscritoEnListaNegra(
+    actor: SessionUser,
+    eventoId: string,
+    inscripcionId: string,
+    motivo?: string,
+  ): Promise<void> {
+    if (!actor.permisos.includes('eventos:gestionar')) throw new ForbiddenError('No puedes gestionar eventos');
+    const inscritos = await this.inscripciones.listPorEvento(eventoId);
+    const inscripcion = inscritos.find((i) => i.id === inscripcionId);
+    if (!inscripcion) throw new NotFoundError('Inscripción', inscripcionId);
+    await this.agregarListaNegra(actor, inscripcion.email, motivo, inscripcion.telefono ?? undefined);
+  }
+
+  /**
+   * Por cada persona, si ya asistió de verdad (`asistioReal`) a OTRO evento: el título de ese
+   * evento. Indexado por correo y por teléfono, porque puede volver con uno u otro distinto.
+   * Sirve para no reinvitar a quien ya fue cuando un webinar se repite.
+   */
+  async historialAsistencias(eventoIdActual: string): Promise<Record<string, string>> {
+    // El cruce es informativo: si el índice de collection-group todavía no está desplegado en
+    // Firestore, la consulta falla — se degrada a "sin historial" en vez de tumbar el detalle.
+    const [asistencias, eventos] = await Promise.all([
+      this.inscripciones.listAsistenciasReales().catch((err: unknown) => {
+        this.logger.warn('No se pudo cruzar el historial de asistencias', { err: String(err) });
+        return [];
+      }),
+      this.eventos.list(),
+    ]);
+    const titulos = new Map(eventos.map((e) => [e.id, e.titulo]));
+    const acc: Record<string, string> = {};
+    for (const a of asistencias) {
+      if (a.eventoId === eventoIdActual) continue;
+      const titulo = titulos.get(a.eventoId) ?? 'otro evento';
+      if (a.email) acc[a.email.toLowerCase()] ??= titulo;
+      if (a.telefono) acc[a.telefono.trim()] ??= titulo;
+    }
+    return acc;
+  }
+
+  /** Inscritos del evento en `.xlsx` — mismas columnas que exportaba el CRM anterior. */
+  async exportarInscritosExcel(actor: SessionUser, eventoId: string): Promise<{ buffer: Buffer; nombre: string }> {
+    if (!actor.permisos.includes('eventos:leer')) throw new ForbiddenError('No puedes ver eventos');
+    const [evento, inscritos, listaNegra, historial] = await Promise.all([
+      this.obtener(eventoId),
+      this.inscripciones.listPorEvento(eventoId),
+      this.listaNegra.list(),
+      this.historialAsistencias(eventoId),
+    ]);
+    const correosNegra = new Set(listaNegra.map((e) => e.email));
+    const telefonosNegra = new Set(listaNegra.map((e) => e.telefono).filter((t): t is string => Boolean(t)));
+    const sistema = evento.sistema || 'el sistema';
+
+    const columnas = [
+      { header: 'Nombre', key: 'nombre', width: 26 },
+      { header: 'Empresa', key: 'empresa', width: 26 },
+      { header: 'Correo', key: 'correo', width: 30 },
+      { header: 'Estado del correo', key: 'correoEstado', width: 16 },
+      { header: 'Correo sospechoso (desechable)', key: 'sospechoso', width: 14 },
+      { header: 'Lista negra', key: 'listaNegra', width: 12 },
+      { header: 'Ya asistió antes a otro evento', key: 'antes', width: 28 },
+      { header: 'Teléfono', key: 'telefono', width: 16 },
+      { header: '¿Asistirá?', key: 'asistira', width: 12 },
+      { header: 'Asistió (real)', key: 'asistioReal', width: 12 },
+      { header: 'Cómo se enteró', key: 'fuente', width: 18 },
+      { header: `Usa ${sistema}`, key: 'usaSistema', width: 16 },
+      { header: 'Quiere canal WhatsApp', key: 'canalWsp', width: 18 },
+      { header: 'Contactado por WhatsApp', key: 'contactadoWsp', width: 18 },
+      { header: 'Fecha de registro', key: 'fecha', width: 16 },
+    ];
+    const si = (v: boolean): string => (v ? 'Sí' : 'No');
+    const filas = inscritos.map((i) => ({
+      nombre: i.nombre,
+      empresa: i.empresa ?? '',
+      correo: i.email,
+      correoEstado: i.correoEstado ?? 'pendiente',
+      sospechoso: si(i.correoSospechoso),
+      listaNegra: si(correosNegra.has(i.email) || Boolean(i.telefono && telefonosNegra.has(i.telefono.trim()))),
+      antes: historial[i.email.toLowerCase()] ?? (i.telefono ? historial[i.telefono.trim()] ?? '' : ''),
+      telefono: i.telefono ?? '',
+      asistira: i.asistira ?? '',
+      asistioReal: si(i.asistioReal),
+      fuente: i.fuente ?? '',
+      usaSistema: i.usaSistema ?? '',
+      canalWsp: si(i.deseaCanalWhatsapp),
+      contactadoWsp: i.telefono ? si(i.contactadoWsp) : '',
+      fecha: i.createdAt.toLocaleDateString('es-MX'),
+    }));
+    const buffer = await this.excel.escribir('Inscritos', columnas, filas);
+    const slug = evento.titulo.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || eventoId;
+    return { buffer, nombre: `inscritos-${slug}.xlsx` };
   }
 
   // ── Invitación dirigida a empresas ─────────────────────────────────────
@@ -321,10 +494,21 @@ export class EventoService {
     return this.listaNegra.list();
   }
 
-  async agregarListaNegra(actor: SessionUser, email: string, motivo?: string): Promise<void> {
+  async agregarListaNegra(
+    actor: SessionUser,
+    email: string,
+    motivo?: string,
+    telefono?: string,
+  ): Promise<void> {
     if (!actor.permisos.includes('eventos:gestionar')) throw new ForbiddenError('No puedes gestionar eventos');
     const e = Email.create(email);
-    await this.listaNegra.agregar({ email: e.value, motivo: motivo?.trim() || null, createdAt: this.clock.now() });
+    await this.listaNegra.agregar({
+      email: e.value,
+      telefono: telefono?.trim() || null,
+      motivo: motivo?.trim() || null,
+      marcadoPor: actor.nombre,
+      createdAt: this.clock.now(),
+    });
     await this.bitacora.registrar({
       actor,
       accion: 'agregar',
@@ -354,7 +538,11 @@ export class EventoService {
     const nombre = input.nombre.trim();
     if (nombre.length < 2) throw new ValidationError('Escribe tu nombre', { nombre: 'Requerido' });
 
-    if (await this.listaNegra.contiene(correo.value)) {
+    const telefonoRegistro = input.telefono?.trim() || '';
+    const bloqueado =
+      (await this.listaNegra.contiene(correo.value)) ||
+      (telefonoRegistro ? await this.listaNegra.contieneTelefono(telefonoRegistro) : false);
+    if (bloqueado) {
       this.logger.info('Registro bloqueado por lista negra', { email: correo.value });
       throw new ValidationError('No fue posible completar tu registro. Contacta a soporte.');
     }
@@ -390,6 +578,8 @@ export class EventoService {
       usaSistema: evento.sistema ? input.usaSistema?.trim() || null : null,
       fuente: input.fuente?.trim() || null,
       deseaCanalWhatsapp: Boolean(input.deseaCanalWhatsapp),
+      contactadoWsp: false,
+      asistioReal: false,
       createdAt: this.clock.now(),
     };
     await this.inscripciones.create(inscripcion);

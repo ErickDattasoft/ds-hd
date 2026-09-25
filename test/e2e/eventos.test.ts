@@ -72,7 +72,7 @@ describe('eventos / webinars', () => {
     );
     await t.inscripcionRepo.create({
       id: 'i1', eventoId: 'ev1', nombre: 'A', email: 'a@a.com', telefono: null, empresa: null,
-      estado: 'registrado', origen: 'publico', correoEstado: null, recordatoriosEnviados: [], ip: null, correoSospechoso: false, asistira: null, usaSistema: null, fuente: null, deseaCanalWhatsapp: false, createdAt: new Date(),
+      estado: 'registrado', origen: 'publico', correoEstado: null, recordatoriosEnviados: [], ip: null, correoSospechoso: false, asistira: null, usaSistema: null, fuente: null, deseaCanalWhatsapp: false, contactadoWsp: false, asistioReal: false, createdAt: new Date(),
     });
 
     const sinAuth = await request(t.app).post('/jobs/recordatorios-eventos');
@@ -91,7 +91,7 @@ describe('eventos / webinars', () => {
     t.eventoRepo.items.set('ev1', new Evento({ id: 'ev1', titulo: 'Evento webhook', fechaHora: enUnaSemana(), estado: 'publicado' }));
     await t.inscripcionRepo.create({
       id: 'i1', eventoId: 'ev1', nombre: 'A', email: 'a@a.com', telefono: null, empresa: null,
-      estado: 'registrado', origen: 'publico', correoEstado: 'pendiente', recordatoriosEnviados: [], ip: null, correoSospechoso: false, asistira: null, usaSistema: null, fuente: null, deseaCanalWhatsapp: false, createdAt: new Date(),
+      estado: 'registrado', origen: 'publico', correoEstado: 'pendiente', recordatoriosEnviados: [], ip: null, correoSospechoso: false, asistira: null, usaSistema: null, fuente: null, deseaCanalWhatsapp: false, contactadoWsp: false, asistioReal: false, createdAt: new Date(),
     });
 
     const noAuth = await request(t.app).post('/webhooks/brevo').send({ event: 'delivered', tag: 'insc_i1' });
@@ -181,7 +181,7 @@ describe('eventos / webinars', () => {
     t.eventoRepo.items.set('ev1', new Evento({ id: 'ev1', titulo: 'A borrar', fechaHora: enUnaSemana(), estado: 'publicado' }));
     await t.inscripcionRepo.create({
       id: 'i1', eventoId: 'ev1', nombre: 'A', email: 'a@a.com', telefono: null, empresa: null,
-      estado: 'registrado', origen: 'publico', correoEstado: null, recordatoriosEnviados: [], ip: null, correoSospechoso: false, asistira: null, usaSistema: null, fuente: null, deseaCanalWhatsapp: false, createdAt: new Date(),
+      estado: 'registrado', origen: 'publico', correoEstado: null, recordatoriosEnviados: [], ip: null, correoSospechoso: false, asistira: null, usaSistema: null, fuente: null, deseaCanalWhatsapp: false, contactadoWsp: false, asistioReal: false, createdAt: new Date(),
     });
     const { agent, csrf } = await login(t.app, ADMIN.email, ADMIN.password);
 
@@ -322,14 +322,15 @@ describe('eventos — contacto, plantilla y seguimiento por evento', () => {
     await t.inscripcionRepo.create({
       id: 'i1', eventoId: 'ev1', nombre: 'Laura', email: 'laura@x.com', telefono: '5551234567', empresa: null,
       estado: 'registrado', origen: 'publico', correoEstado: null, recordatoriosEnviados: [], ip: null,
-      correoSospechoso: false, asistira: 'Sí', usaSistema: null, fuente: '💼 LinkedIn', deseaCanalWhatsapp: true, createdAt: new Date(),
+      correoSospechoso: false, asistira: 'Sí', usaSistema: null, fuente: '💼 LinkedIn', deseaCanalWhatsapp: true, contactadoWsp: false, asistioReal: false, createdAt: new Date(),
     });
     const { agent } = await login(t.app, ADMIN.email, ADMIN.password);
     const detalle = await agent.get('/app/eventos/ev1');
     expect(detalle.status).toBe(200);
     expect(detalle.text).toContain('https://wa.me/525551234567');
     expect(detalle.text).toContain(encodeURIComponent('Hola Laura, te esperamos en Webinar.'));
-    expect(detalle.text).toContain('¿Asistirá? Sí');
+    // "¿Asistirá?" es su propia columna (como en el CRM anterior), el valor va en la celda.
+    expect(detalle.text).toContain('<span class="muted" title="Lo que declaró al registrarse">Sí</span>');
     expect(detalle.text).toContain('Se enteró: 💼 LinkedIn');
     expect(detalle.text).toContain('quiere el canal de WhatsApp');
   });
@@ -416,12 +417,12 @@ describe('seguimiento post-evento (job)', () => {
     await t.inscripcionRepo.create({
       id: 'i1', eventoId: 'ev1', nombre: 'Laura', email: 'laura@x.com', telefono: null, empresa: null,
       estado: 'asistio', origen: 'publico', correoEstado: null, recordatoriosEnviados: [], ip: null,
-      correoSospechoso: false, asistira: 'Sí', usaSistema: null, fuente: null, deseaCanalWhatsapp: false, createdAt: new Date(),
+      correoSospechoso: false, asistira: 'Sí', usaSistema: null, fuente: null, deseaCanalWhatsapp: false, contactadoWsp: false, asistioReal: false, createdAt: new Date(),
     });
     await t.inscripcionRepo.create({
       id: 'i2', eventoId: 'ev2', nombre: 'Ana', email: 'ana@x.com', telefono: null, empresa: null,
       estado: 'asistio', origen: 'publico', correoEstado: null, recordatoriosEnviados: [], ip: null,
-      correoSospechoso: false, asistira: 'Sí', usaSistema: null, fuente: null, deseaCanalWhatsapp: false, createdAt: new Date(),
+      correoSospechoso: false, asistira: 'Sí', usaSistema: null, fuente: null, deseaCanalWhatsapp: false, contactadoWsp: false, asistioReal: false, createdAt: new Date(),
     });
 
     const conAuth = await request(t.app).post('/jobs/seguimiento-eventos').set('authorization', 'Bearer dev-jobs-secret');
@@ -447,9 +448,140 @@ describe('seguimiento post-evento (job)', () => {
     await t.inscripcionRepo.create({
       id: 'i1', eventoId: 'ev1', nombre: 'Laura', email: 'laura@x.com', telefono: null, empresa: null,
       estado: 'asistio', origen: 'publico', correoEstado: null, recordatoriosEnviados: [], ip: null,
-      correoSospechoso: false, asistira: 'Sí', usaSistema: null, fuente: null, deseaCanalWhatsapp: false, createdAt: new Date(),
+      correoSospechoso: false, asistira: 'Sí', usaSistema: null, fuente: null, deseaCanalWhatsapp: false, contactadoWsp: false, asistioReal: false, createdAt: new Date(),
     });
     const res = await request(t.app).post('/jobs/seguimiento-eventos').set('authorization', 'Bearer dev-jobs-secret');
     expect(res.body.correos).toBe(0);
+  });
+});
+
+describe('eventos → inscritos: edición, borrado, lista negra y export', () => {
+  const inscrito = (over: Record<string, unknown> = {}) => ({
+    id: 'i1', eventoId: 'ev1', nombre: 'Laura', email: 'laura@x.com', telefono: '5551234567',
+    empresa: 'Empresa X', estado: 'registrado' as const, origen: 'publico' as const,
+    correoEstado: 'entregado' as const, recordatoriosEnviados: [], ip: '1.2.3.4',
+    correoSospechoso: false, asistira: 'Sí', usaSistema: null, fuente: null,
+    deseaCanalWhatsapp: false, contactadoWsp: false, asistioReal: false, createdAt: new Date(),
+    ...over,
+  });
+
+  const conEvento = async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    t.eventoRepo.items.set('ev1', new Evento({
+      id: 'ev1', titulo: 'Webinar', fechaHora: enUnaSemana(), estado: 'publicado', sistema: 'Nóminas',
+    }));
+    return t;
+  };
+
+  it('corrige los datos de un inscrito y guarda las marcas de asistencia real y WhatsApp', async () => {
+    const t = await conEvento();
+    await t.inscripcionRepo.create(inscrito());
+    const { agent, csrf } = await login(t.app, ADMIN.email, ADMIN.password);
+
+    const res = await agent.post('/app/eventos/ev1/inscritos/i1').type('form').send({
+      _csrf: csrf, marcasPresentes: '1', nombre: 'Laura Méndez', empresa: 'Empresa Y',
+      email: 'LAURA@X.COM', telefono: '5559999999', asistioReal: 'on', contactadoWsp: 'on',
+    });
+    expect(res.status).toBe(302);
+
+    const i = t.inscripcionRepo.items[0]!;
+    expect(i.nombre).toBe('Laura Méndez');
+    expect(i.empresa).toBe('Empresa Y');
+    expect(i.telefono).toBe('5559999999');
+    expect(i.asistioReal).toBe(true);
+    expect(i.contactadoWsp).toBe(true);
+    // El correo solo cambió de mayúsculas: se normaliza y el semáforo no se reinicia.
+    expect(i.email).toBe('laura@x.com');
+    expect(i.correoEstado).toBe('entregado');
+  });
+
+  it('al cambiar el correo reinicia el semáforo de entrega y rechaza duplicados del mismo evento', async () => {
+    const t = await conEvento();
+    await t.inscripcionRepo.create(inscrito());
+    await t.inscripcionRepo.create(inscrito({ id: 'i2', email: 'otro@x.com', telefono: null }));
+    const { agent, csrf } = await login(t.app, ADMIN.email, ADMIN.password);
+
+    const dup = await agent.post('/app/eventos/ev1/inscritos/i1').type('form')
+      .send({ _csrf: csrf, email: 'otro@x.com' });
+    expect(dup.headers.location).toContain('error=');
+    expect(t.inscripcionRepo.items[0]!.email).toBe('laura@x.com');
+
+    await agent.post('/app/eventos/ev1/inscritos/i1').type('form')
+      .send({ _csrf: csrf, email: 'nuevo@mailinator.com' });
+    const i = t.inscripcionRepo.items[0]!;
+    expect(i.email).toBe('nuevo@mailinator.com');
+    expect(i.correoEstado).toBe('pendiente');
+    expect(i.correoSospechoso).toBe(true); // dominio desechable conocido → 🚩
+  });
+
+  it('marca contactadoWsp sin recargar y elimina un inscrito', async () => {
+    const t = await conEvento();
+    await t.inscripcionRepo.create(inscrito());
+    const { agent, csrf } = await login(t.app, ADMIN.email, ADMIN.password);
+
+    const marcar = await agent.post('/app/eventos/ev1/inscritos/i1/contactado').set('x-csrf-token', csrf).send();
+    expect(marcar.status).toBe(200);
+    expect(t.inscripcionRepo.items[0]!.contactadoWsp).toBe(true);
+
+    await agent.post('/app/eventos/ev1/inscritos/i1/eliminar').type('form').send({ _csrf: csrf });
+    expect(t.inscripcionRepo.items).toHaveLength(0);
+  });
+
+  it('manda a la lista negra desde la fila guardando teléfono y quién lo marcó, y lo cruza en el detalle', async () => {
+    const t = await conEvento();
+    await t.inscripcionRepo.create(inscrito());
+    const { agent, csrf } = await login(t.app, ADMIN.email, ADMIN.password);
+
+    await agent.post('/app/eventos/ev1/inscritos/i1/lista-negra').type('form')
+      .send({ _csrf: csrf, motivo: 'conducta indebida en cámara' });
+
+    const entrada = [...t.listaNegraRepo.items.values()][0]!;
+    expect(entrada.email).toBe('laura@x.com');
+    expect(entrada.telefono).toBe('5551234567');
+    expect(entrada.motivo).toBe('conducta indebida en cámara');
+    expect(entrada.marcadoPor).toBe('Admin');
+
+    const detalle = await agent.get('/app/eventos/ev1');
+    expect(detalle.text).toContain('conducta indebida en cámara — por Admin');
+  });
+
+  it('el 🔁 cruza a quien ya asistió de verdad a otro evento', async () => {
+    const t = await conEvento();
+    t.eventoRepo.items.set('ev0', new Evento({
+      id: 'ev0', titulo: 'Webinar anterior', fechaHora: new Date(Date.now() - 30 * 86_400_000), estado: 'finalizado',
+    }));
+    await t.inscripcionRepo.create(inscrito({ id: 'i0', eventoId: 'ev0', asistioReal: true }));
+    await t.inscripcionRepo.create(inscrito());
+    const { agent } = await login(t.app, ADMIN.email, ADMIN.password);
+
+    const detalle = await agent.get('/app/eventos/ev1');
+    expect(detalle.text).toContain('Ya asistió a: Webinar anterior');
+  });
+
+  it('exporta los inscritos a .xlsx', async () => {
+    const t = await conEvento();
+    await t.inscripcionRepo.create(inscrito());
+    const { agent } = await login(t.app, ADMIN.email, ADMIN.password);
+
+    const res = await agent.get('/app/eventos/ev1/inscritos.xlsx').responseType('blob');
+    expect(res.status).toBe(200);
+    expect(res.headers['content-disposition']).toContain('inscritos-webinar.xlsx');
+    // Un .xlsx es un zip: empieza con la firma "PK".
+    expect(res.body.subarray(0, 2).toString()).toBe('PK');
+  });
+
+  it('el registro público también bloquea por teléfono en lista negra', async () => {
+    const t = await conEvento();
+    await t.listaNegraRepo.agregar({
+      email: 'viejo@x.com', telefono: '5551234567', motivo: 'spam', marcadoPor: 'Admin', createdAt: new Date(),
+    });
+    const anon = request.agent(t.app);
+    const page = await anon.get('/eventos/ev1');
+    const csrf = cookieValor(page.headers['set-cookie'] as unknown as string[], 'x-csrf-token')!;
+
+    const reg = await anon.post('/eventos/ev1').type('form')
+      .send({ _csrf: csrf, nombre: 'Otro Nombre', email: 'nuevo@x.com', telefono: '5551234567' });
+    expect(reg.status).toBe(422);
+    expect(t.inscripcionRepo.items).toHaveLength(0);
   });
 });

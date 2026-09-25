@@ -87,18 +87,33 @@ export class EventoController {
 
   ver = async (req: Request, res: Response): Promise<void> => {
     const id = str(req.params.id);
-    const [{ evento, inscritos }, listaNegra, empresasCartera, historialEmpresas] = await Promise.all([
-      this.eventos.detalleConInscritos(id),
-      this.eventos.listaNegraTodos(),
-      this.eventos.empresasParaInvitar(),
-      this.eventos.historialEmpresas(id),
-    ]);
+    const [{ evento, inscritos }, listaNegra, empresasCartera, historialEmpresas, historialPersonas] =
+      await Promise.all([
+        this.eventos.detalleConInscritos(id),
+        this.eventos.listaNegraTodos(),
+        this.eventos.empresasParaInvitar(),
+        this.eventos.historialEmpresas(id),
+        this.eventos.historialAsistencias(id),
+      ]);
+    // Cruce en vivo contra la lista negra (no solo lo que se grabó al registrarse) — si a alguien
+    // se le marca DESPUÉS de haberse inscrito, su fila lo refleja de inmediato.
+    const correosNegra = new Map(listaNegra.map((e) => [e.email, e]));
+    const telefonosNegra = new Map(
+      listaNegra.filter((e) => e.telefono).map((e) => [e.telefono!.trim(), e]),
+    );
     const inscritosVM = inscritos.map((i) => {
       const tel = (i.telefono ?? '').replace(/[^\d]/g, '');
       const mensaje = resolverPlantillaEvento(evento, i);
+      const enNegra = correosNegra.get(i.email) ?? (i.telefono ? telefonosNegra.get(i.telefono.trim()) : undefined);
       return {
         ...i,
         waLink: tel ? `https://wa.me/${tel.length === 10 ? '52' : ''}${tel}?text=${encodeURIComponent(mensaje)}` : null,
+        enListaNegra: enNegra
+          ? [enNegra.motivo || 'Marcado como problemático', enNegra.marcadoPor ? `— por ${enNegra.marcadoPor}` : '']
+              .filter(Boolean)
+              .join(' ')
+          : null,
+        asistioAntes: historialPersonas[i.email.toLowerCase()] ?? (i.telefono ? historialPersonas[i.telefono.trim()] ?? null : null),
       };
     });
     res.render('pages/backoffice/eventos/detail', {
@@ -108,6 +123,8 @@ export class EventoController {
       listaNegra,
       empresasCartera,
       historialEmpresas,
+      pendientesWsp: inscritosVM.filter((i) => i.waLink && !i.contactadoWsp).length,
+      errorInscrito: str(req.query.error),
       resumen: evento.resumenInvitaciones,
       RESPUESTAS_INVITACION,
       RESPUESTA_INVITACION_ETIQUETA,
@@ -210,8 +227,58 @@ export class EventoController {
     res.redirect(`/app/eventos/${str(req.params.id)}`);
   };
 
+  /** Edición en línea de un inscrito: solo se mandan los campos que trae el formulario. */
+  inscritoActualizarPost = async (req: Request, res: Response): Promise<void> => {
+    const id = str(req.params.id);
+    const b = req.body ?? {};
+    try {
+      await this.eventos.actualizarInscripcion(req.user!, id, str(req.params.insId), {
+        ...(b.nombre !== undefined ? { nombre: str(b.nombre) } : {}),
+        ...(b.empresa !== undefined ? { empresa: str(b.empresa) } : {}),
+        ...(b.email !== undefined ? { email: str(b.email) } : {}),
+        ...(b.telefono !== undefined ? { telefono: str(b.telefono) } : {}),
+        // Checkboxes: el formulario siempre los manda (campo oculto + checkbox), así que su
+        // ausencia significa "desmarcado", no "no lo toques".
+        ...(b.marcasPresentes ? { contactadoWsp: bool(b.contactadoWsp), asistioReal: bool(b.asistioReal) } : {}),
+      });
+      res.redirect(`/app/eventos/${id}#inscritos`);
+    } catch (err) {
+      const mensaje = err instanceof Error ? err.message : 'No se pudo guardar';
+      res.redirect(`/app/eventos/${id}?error=${encodeURIComponent(mensaje)}#inscritos`);
+    }
+  };
+
+  /** Marca `contactadoWsp` sin recargar — lo llama el botón 💬 al abrir wa.me. */
+  inscritoContactadoPost = async (req: Request, res: Response): Promise<void> => {
+    await this.eventos.marcarContactadoWsp(req.user!, str(req.params.id), str(req.params.insId));
+    res.json({ ok: true });
+  };
+
+  inscritoEliminarPost = async (req: Request, res: Response): Promise<void> => {
+    const id = str(req.params.id);
+    await this.eventos.eliminarInscripcion(req.user!, id, str(req.params.insId));
+    res.redirect(`/app/eventos/${id}#inscritos`);
+  };
+
+  inscritoListaNegraPost = async (req: Request, res: Response): Promise<void> => {
+    const id = str(req.params.id);
+    await this.eventos.marcarInscritoEnListaNegra(req.user!, id, str(req.params.insId), str(req.body?.motivo));
+    res.redirect(`/app/eventos/${id}#inscritos`);
+  };
+
+  exportarInscritosExcel = async (req: Request, res: Response): Promise<void> => {
+    const { buffer, nombre } = await this.eventos.exportarInscritosExcel(req.user!, str(req.params.id));
+    res.setHeader('Content-Disposition', `attachment; filename="${nombre}"`);
+    res.type('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet').send(buffer);
+  };
+
   listaNegraAgregarPost = async (req: Request, res: Response): Promise<void> => {
-    await this.eventos.agregarListaNegra(req.user!, str(req.body?.email), str(req.body?.motivo));
+    await this.eventos.agregarListaNegra(
+      req.user!,
+      str(req.body?.email),
+      str(req.body?.motivo),
+      str(req.body?.telefono),
+    );
     res.redirect(`/app/eventos/${str(req.params.id)}`);
   };
 

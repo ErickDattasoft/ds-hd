@@ -155,47 +155,124 @@
     </tbody>
   </table>
 
-  <h2>Inscritos <span class="muted">(registro público)</span></h2>
+  <h2 id="inscritos">Inscritos <span class="muted">(registro público)</span></h2>
+  {% if errorInscrito %}<p class="alert alert--error">{{ errorInscrito }}</p>{% endif %}
+  <div class="filterbar">
+    <span class="muted">{{ inscritos | length }} persona(s) registrada(s)</span>
+    {% if puedeGestionar %}
+      <button class="btn btn--sm btn--ghost" type="button" data-wsp-masivo
+              data-pendientes="{{ pendientesWsp }}"
+              title="Abre WhatsApp uno por uno para quien tenga teléfono y no esté marcado como contactado">
+        💬 WhatsApp a pendientes ({{ pendientesWsp }})
+      </button>
+    {% endif %}
+    {% if inscritos | length %}
+      <a class="btn btn--sm btn--ghost" href="/app/eventos/{{ evento.id }}/inscritos.xlsx">📥 Exportar Excel</a>
+    {% endif %}
+  </div>
+  <div class="table-wrap">
   <table class="data-table">
-    <thead><tr><th>Nombre</th><th>Correo</th><th>Empresa</th><th>Estado</th><th>Correo</th><th>IP</th><th></th></tr></thead>
+    <thead><tr>
+      <th>Nombre</th><th>Empresa</th>
+      <th title="Ya asistió de verdad a otro evento antes — no tiene mucho caso reinvitarlo si este webinar se repite">🔁 Antes</th>
+      <th>Correo</th>
+      <th title="🟢 entregado · 🟡 pendiente · 🔴 rebotó">📧</th>
+      <th title="Marcado como problemático en algún evento">🚫</th>
+      <th>Teléfono</th><th>¿Asistirá?</th>
+      <th title="Asistencia real confirmada, no solo la intención declarada al registrarse">✅ Asistió</th>
+      <th title="Ya se le mandó el mensaje por WhatsApp">Contactado</th>
+      <th>Estado</th><th></th>
+    </tr></thead>
     <tbody>
       {% for i in inscritos %}
-        <tr>
-          <td>{{ i.nombre }}
-            {% if i.asistira or i.usaSistema or i.fuente or i.deseaCanalWhatsapp %}
-              <div class="muted" style="font-size:.78em">
-                {% if i.asistira %}¿Asistirá? {{ i.asistira }}{% endif %}
-                {% if i.usaSistema %} · ¿Usa {{ evento.sistema }}? {{ i.usaSistema }}{% endif %}
-                {% if i.fuente %} · Se enteró: {{ i.fuente }}{% endif %}
-                {% if i.deseaCanalWhatsapp %} · 💬 quiere el canal de WhatsApp{% endif %}
-              </div>
-            {% endif %}
-          </td>
-          <td>{{ i.email }}{% if i.correoSospechoso %} <span title="Dominio de correo temporal/desechable conocido — probablemente no es un prospecto real">🚩</span>{% endif %}</td>
-          <td>{{ i.empresa or '—' }}</td>
-          <td>{{ i.estado }}</td>
-          <td>{{ i.correoEstado or '—' }}</td>
-          <td class="muted">{{ i.ip or '—' }}</td>
-          <td>
-            {% if can('eventos:gestionar') %}
-            <form method="post" action="/app/eventos/{{ evento.id }}/inscritos/{{ i.id }}/marcar" class="inline">
-              <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
-              <select name="estado">
-                {% for s in ['registrado','confirmado','asistio','no_asistio'] %}<option {{ 'selected' if i.estado == s }}>{{ s }}</option>{% endfor %}
-              </select>
-              <button class="btn btn--sm" type="submit">Guardar</button>
-            </form>
-            <form method="post" action="/app/eventos/{{ evento.id }}/inscritos/{{ i.id }}/reenviar" class="inline">
-              <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
-              <button class="btn btn--sm btn--ghost" type="submit">Reenviar correo</button>
-            </form>
-            {% if i.waLink %}<a class="btn btn--sm btn--ghost" target="_blank" rel="noopener" href="{{ i.waLink }}" title="Manda el mensaje de la plantilla de este evento por WhatsApp">💬 WhatsApp</a>{% endif %}
-            {% endif %}
-          </td>
+        <tr id="inscrito-{{ i.id }}">
+          {% if puedeGestionar %}
+            {# Una sola fila = un solo formulario: los datos editables y las dos marcas se guardan juntos. #}
+            <td colspan="10">
+              <form method="post" action="/app/eventos/{{ evento.id }}/inscritos/{{ i.id }}" class="inline-form">
+                <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+                <input type="hidden" name="marcasPresentes" value="1" />
+                <input name="nombre" value="{{ i.nombre }}" placeholder="Nombre" size="16" autocomplete="off" spellcheck="false" required />
+                <input name="empresa" value="{{ i.empresa or '' }}" placeholder="Empresa" size="14" autocomplete="off" spellcheck="false" />
+                {% if i.asistioAntes %}
+                  <span title="Ya asistió a: {{ i.asistioAntes }}">🔁 {{ i.asistioAntes }}</span>
+                {% else %}<span class="muted">—</span>{% endif %}
+                <input type="email" name="email" value="{{ i.email }}" placeholder="Correo" size="22" autocomplete="off" required />
+                {% if i.correoEstado == 'entregado' %}<span title="Entregado">🟢</span>
+                {% elif i.correoEstado == 'rebotado' %}<span title="Rebotó — probablemente un correo falso o inexistente">🔴</span>
+                {% else %}<span title="Aún sin confirmar entrega (Brevo puede tardar unos minutos)">🟡</span>{% endif %}
+                {% if i.correoSospechoso %}<span title="Dominio de correo temporal/desechable conocido — probablemente no es un prospecto real">🚩</span>{% endif %}
+                <input type="tel" name="telefono" value="{{ i.telefono or '' }}" placeholder="Teléfono" size="12" autocomplete="off" />
+                <span class="muted" title="Lo que declaró al registrarse">{{ i.asistira or '—' }}</span>
+                <label class="field--check" title="Asistencia real confirmada"><input type="checkbox" name="asistioReal" {{ 'checked' if i.asistioReal }} /> ✅</label>
+                <label class="field--check" title="Ya se le mandó el mensaje por WhatsApp"><input type="checkbox" name="contactadoWsp" {{ 'checked' if i.contactadoWsp }} /> 💬</label>
+                <button class="btn btn--sm" type="submit">Guardar</button>
+              </form>
+              {% if i.asistira or i.usaSistema or i.fuente or i.deseaCanalWhatsapp %}
+                <div class="muted" style="font-size:.78em">
+                  {% if i.usaSistema %}¿Usa {{ evento.sistema }}? {{ i.usaSistema }} · {% endif %}
+                  {% if i.fuente %}Se enteró: {{ i.fuente }} · {% endif %}
+                  {% if i.deseaCanalWhatsapp %}💬 quiere el canal de WhatsApp · {% endif %}
+                  IP {{ i.ip or '—' }}
+                </div>
+              {% endif %}
+            </td>
+            <td>
+              <form method="post" action="/app/eventos/{{ evento.id }}/inscritos/{{ i.id }}/marcar" class="inline">
+                <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+                <select name="estado">
+                  {% for e in ['registrado','confirmado','asistio','no_asistio'] %}<option {{ 'selected' if i.estado == e }}>{{ e }}</option>{% endfor %}
+                </select>
+                <button class="btn btn--sm btn--ghost" type="submit">↵</button>
+              </form>
+            </td>
+            <td style="white-space:nowrap">
+              {% if i.waLink %}
+                <a class="btn btn--sm btn--ghost" target="_blank" rel="noopener" href="{{ i.waLink }}"
+                   data-wsp-inscrito data-marcar="/app/eventos/{{ evento.id }}/inscritos/{{ i.id }}/contactado"
+                   title="Manda el mensaje de la plantilla de este evento por WhatsApp">💬</a>
+              {% endif %}
+              <form method="post" action="/app/eventos/{{ evento.id }}/inscritos/{{ i.id }}/reenviar" class="inline">
+                <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+                <button class="btn btn--sm btn--ghost" type="submit" title="Reenviar el correo de confirmación">✉️</button>
+              </form>
+              {% if i.enListaNegra %}
+                <span title="{{ i.enListaNegra }}">🚫</span>
+              {% else %}
+                <form method="post" action="/app/eventos/{{ evento.id }}/inscritos/{{ i.id }}/lista-negra" class="inline"
+                      data-prompt-motivo
+                      data-confirm="¿Marcar a «{{ i.nombre }}» como problemático? Quedará señalado con 🚫 si se vuelve a registrar en cualquier evento futuro.">
+                  <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+                  <input type="hidden" name="motivo" value="" />
+                  <button class="btn btn--sm btn--ghost" type="submit" style="opacity:.45"
+                          title="Marcar como problemático (ej. mala conducta en una videollamada)">🚫</button>
+                </form>
+              {% endif %}
+              <form method="post" action="/app/eventos/{{ evento.id }}/inscritos/{{ i.id }}/eliminar" class="inline"
+                    data-confirm="¿Eliminar el registro de «{{ i.nombre }}»? No se puede deshacer.">
+                <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+                <button class="btn btn--sm btn--danger" type="submit" title="Eliminar este registro">🗑️</button>
+              </form>
+            </td>
+          {% else %}
+            <td>{{ i.nombre }}</td>
+            <td>{{ i.empresa or '—' }}</td>
+            <td>{% if i.asistioAntes %}🔁 {{ i.asistioAntes }}{% else %}—{% endif %}</td>
+            <td>{{ i.email }}{% if i.correoSospechoso %} 🚩{% endif %}</td>
+            <td>{{ i.correoEstado or '—' }}</td>
+            <td>{% if i.enListaNegra %}🚫{% else %}—{% endif %}</td>
+            <td>{{ i.telefono or '—' }}</td>
+            <td>{{ i.asistira or '—' }}</td>
+            <td>{{ 'Sí' if i.asistioReal else '—' }}</td>
+            <td>{{ 'Sí' if i.contactadoWsp else '—' }}</td>
+            <td>{{ i.estado }}</td>
+            <td></td>
+          {% endif %}
         </tr>
-      {% else %}<tr><td colspan="7" class="muted">Sin inscritos.</td></tr>{% endfor %}
+      {% else %}<tr><td colspan="12" class="muted">Sin inscritos.</td></tr>{% endfor %}
     </tbody>
   </table>
+  </div>
 
   {% if can('eventos:gestionar') %}
     <details class="disclosure"{{ ' open' if listaNegra | length }}>
@@ -204,12 +281,14 @@
         <form method="post" action="/app/eventos/{{ evento.id }}/lista-negra" class="filterbar">
           <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
           <input type="email" name="email" autocomplete="email" placeholder="correo@ejemplo.com" required />
+          <input type="tel" name="telefono" placeholder="Teléfono (opcional)" />
           <input name="motivo" placeholder="Motivo (opcional)" />
           <button class="btn btn--sm btn--danger" type="submit">Bloquear</button>
         </form>
         <ul class="kb-list">
           {% for e in listaNegra %}
-            <li>{{ e.email }} <span class="muted">{{ e.motivo }}</span>
+            <li>{{ e.email }}{% if e.telefono %} · {{ e.telefono }}{% endif %}
+              <span class="muted">{{ e.motivo }}{% if e.marcadoPor %} — por {{ e.marcadoPor }}{% endif %}</span>
               <form method="post" action="/app/eventos/{{ evento.id }}/lista-negra/quitar" class="inline">
                 <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
                 <input type="hidden" name="email" value="{{ e.email }}" />

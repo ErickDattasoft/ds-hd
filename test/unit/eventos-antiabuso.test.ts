@@ -12,6 +12,7 @@ import { InMemoryBitacoraRepository, InMemoryEmpresaRepository } from '../fakes/
 import { FakeCaptchaVerifier } from '../fakes/tickets.js';
 import { FakeEmailSender } from '../fakes/FakeEmailSender.js';
 import { FixedClock, silentLogger } from '../fakes/support.js';
+import { FflateExcelIO } from '../../src/infrastructure/excel/FflateExcelIO.js';
 
 let seq = 0;
 const ids = { newId: () => `id-${++seq}`, newToken: () => `tok-${++seq}` };
@@ -47,6 +48,7 @@ describe('EventoService — antiabuso de registro público', () => {
       new InMemoryEmpresaRepository(),
       new FakeCaptchaVerifier(),
       new FakeEmailSender(),
+      new FflateExcelIO(),
       ids,
       new FixedClock(new Date('2026-09-01T09:00:00Z')),
       silentLogger,

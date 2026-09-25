@@ -270,6 +270,11 @@ export function backofficeRoutes(container: Container): Router {
   r.post('/eventos/:id/flayer/eliminar', requirePermission('eventos:gestionar'), (req, res) => eventos().flayerEliminarPost(req, res));
   r.post('/eventos/:id/inscritos/:insId/marcar', requirePermission('eventos:gestionar'), (req, res) => eventos().marcarInscripcionPost(req, res));
   r.post('/eventos/:id/inscritos/:insId/reenviar', requirePermission('eventos:gestionar'), (req, res) => eventos().reenviarPost(req, res));
+  r.post('/eventos/:id/inscritos/:insId', requirePermission('eventos:gestionar'), (req, res) => eventos().inscritoActualizarPost(req, res));
+  r.post('/eventos/:id/inscritos/:insId/contactado', requirePermission('eventos:gestionar'), (req, res) => eventos().inscritoContactadoPost(req, res));
+  r.post('/eventos/:id/inscritos/:insId/eliminar', requirePermission('eventos:gestionar'), (req, res) => eventos().inscritoEliminarPost(req, res));
+  r.post('/eventos/:id/inscritos/:insId/lista-negra', requirePermission('eventos:gestionar'), (req, res) => eventos().inscritoListaNegraPost(req, res));
+  r.get('/eventos/:id/inscritos.xlsx', requirePermission('eventos:leer'), (req, res) => eventos().exportarInscritosExcel(req, res));
   r.post('/eventos/:id/lista-negra', requirePermission('eventos:gestionar'), (req, res) => eventos().listaNegraAgregarPost(req, res));
   r.post('/eventos/:id/lista-negra/quitar', requirePermission('eventos:gestionar'), (req, res) => eventos().listaNegraQuitarPost(req, res));
   r.post('/eventos/:id/empresas', requirePermission('eventos:gestionar'), (req, res) => eventos().empresaAgregarPost(req, res));

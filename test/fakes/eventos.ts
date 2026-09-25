@@ -59,10 +59,17 @@ export class InMemoryInscripcionRepository implements IInscripcionRepository {
   async contarPorIp(eventoId: string, ip: string): Promise<number> {
     return this.items.filter((i) => i.eventoId === eventoId && i.ip === ip).length;
   }
+  async eliminar(eventoId: string, inscripcionId: string): Promise<void> {
+    const idx = this.items.findIndex((i) => i.eventoId === eventoId && i.id === inscripcionId);
+    if (idx >= 0) this.items.splice(idx, 1);
+  }
   async eliminarPorEvento(eventoId: string): Promise<void> {
     for (let i = this.items.length - 1; i >= 0; i--) {
       if (this.items[i]!.eventoId === eventoId) this.items.splice(i, 1);
     }
+  }
+  async listAsistenciasReales(): Promise<Inscripcion[]> {
+    return this.items.filter((i) => i.asistioReal);
   }
 }
 
@@ -70,6 +77,10 @@ export class InMemoryListaNegraRepository implements IListaNegraRepository {
   readonly items = new Map<string, EntradaListaNegra>();
   async contiene(email: string): Promise<boolean> {
     return this.items.has(email.trim().toLowerCase());
+  }
+  async contieneTelefono(telefono: string): Promise<boolean> {
+    const tel = telefono.trim();
+    return Boolean(tel) && [...this.items.values()].some((e) => e.telefono === tel);
   }
   async list(): Promise<EntradaListaNegra[]> {
     return [...this.items.values()];

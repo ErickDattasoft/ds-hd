@@ -121,6 +121,8 @@ const inscripcionToDomain = (eventoId: string, id: string, d: DocumentData): Ins
   usaSistema: d.usaSistema ?? null,
   fuente: d.fuente ?? null,
   deseaCanalWhatsapp: d.deseaCanalWhatsapp === true,
+  contactadoWsp: d.contactadoWsp === true,
+  asistioReal: d.asistioReal === true,
   createdAt: fecha(d.createdAt),
 });
 
@@ -152,6 +154,8 @@ export class FirestoreInscripcionRepository implements IInscripcionRepository {
         usaSistema: i.usaSistema,
         fuente: i.fuente,
         deseaCanalWhatsapp: i.deseaCanalWhatsapp,
+        contactadoWsp: i.contactadoWsp,
+        asistioReal: i.asistioReal,
         createdAt: Timestamp.fromDate(i.createdAt),
       },
       { merge: true },
@@ -189,9 +193,18 @@ export class FirestoreInscripcionRepository implements IInscripcionRepository {
     return agg.data().count;
   }
 
+  async eliminar(eventoId: string, inscripcionId: string): Promise<void> {
+    await this.col(eventoId).doc(inscripcionId).delete();
+  }
+
   async eliminarPorEvento(eventoId: string): Promise<void> {
     const snap = await this.col(eventoId).get();
     await Promise.all(snap.docs.map((d) => d.ref.delete()));
+  }
+
+  async listAsistenciasReales(): Promise<Inscripcion[]> {
+    const snap = await this.db.collectionGroup('inscripciones').where('asistioReal', '==', true).get();
+    return snap.docs.map((d) => inscripcionToDomain(d.ref.parent.parent?.id ?? '', d.id, d.data()));
   }
 }
 
@@ -203,12 +216,21 @@ export class FirestoreListaNegraRepository implements IListaNegraRepository {
     return s.exists;
   }
 
+  async contieneTelefono(telefono: string): Promise<boolean> {
+    const tel = telefono.trim();
+    if (!tel) return false;
+    const q = await this.db.collection('lista_negra_eventos').where('telefono', '==', tel).limit(1).get();
+    return !q.empty;
+  }
+
   async list(): Promise<EntradaListaNegra[]> {
     const snap = await this.db.collection('lista_negra_eventos').get();
     return snap.docs
       .map((d) => ({
         email: String(d.data().email ?? ''),
+        telefono: d.data().telefono ?? null,
         motivo: d.data().motivo ?? null,
+        marcadoPor: d.data().marcadoPor ?? null,
         createdAt: fecha(d.data().createdAt),
       }))
       .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
@@ -217,7 +239,9 @@ export class FirestoreListaNegraRepository implements IListaNegraRepository {
   async agregar(entrada: EntradaListaNegra): Promise<void> {
     await this.db.collection('lista_negra_eventos').doc(hashEmail(entrada.email)).set({
       email: entrada.email.trim().toLowerCase(),
+      telefono: entrada.telefono,
       motivo: entrada.motivo,
+      marcadoPor: entrada.marcadoPor,
       createdAt: Timestamp.fromDate(entrada.createdAt),
     });
   }

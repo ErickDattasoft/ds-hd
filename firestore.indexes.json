@@ -4,61 +4,127 @@
       "collectionGroup": "tickets",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "abierto", "order": "ASCENDING" },
-        { "fieldPath": "prioridad", "order": "ASCENDING" },
-        { "fieldPath": "abiertoEn", "order": "DESCENDING" }
+        {
+          "fieldPath": "abierto",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "prioridad",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "abiertoEn",
+          "order": "DESCENDING"
+        }
       ]
     },
     {
       "collectionGroup": "tickets",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "agenteAsignadoUid", "order": "ASCENDING" },
-        { "fieldPath": "abierto", "order": "ASCENDING" },
-        { "fieldPath": "abiertoEn", "order": "DESCENDING" }
+        {
+          "fieldPath": "agenteAsignadoUid",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "abierto",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "abiertoEn",
+          "order": "DESCENDING"
+        }
       ]
     },
     {
       "collectionGroup": "tickets",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "estado", "order": "ASCENDING" },
-        { "fieldPath": "prioridad", "order": "ASCENDING" },
-        { "fieldPath": "abiertoEn", "order": "DESCENDING" }
+        {
+          "fieldPath": "estado",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "prioridad",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "abiertoEn",
+          "order": "DESCENDING"
+        }
       ]
     },
     {
       "collectionGroup": "tickets",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "empresaId", "order": "ASCENDING" },
-        { "fieldPath": "abiertoEn", "order": "DESCENDING" }
+        {
+          "fieldPath": "empresaId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "abiertoEn",
+          "order": "DESCENDING"
+        }
       ]
     },
     {
       "collectionGroup": "tickets",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "solicitanteUid", "order": "ASCENDING" },
-        { "fieldPath": "abiertoEn", "order": "DESCENDING" }
+        {
+          "fieldPath": "solicitanteUid",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "abiertoEn",
+          "order": "DESCENDING"
+        }
       ]
     },
     {
       "collectionGroup": "tickets",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "grupo", "order": "ASCENDING" },
-        { "fieldPath": "estado", "order": "ASCENDING" }
+        {
+          "fieldPath": "grupo",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "estado",
+          "order": "ASCENDING"
+        }
       ]
     },
     {
       "collectionGroup": "eventos",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "estado", "order": "ASCENDING" },
-        { "fieldPath": "fechaHora", "order": "ASCENDING" }
+        {
+          "fieldPath": "estado",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "fechaHora",
+          "order": "ASCENDING"
+        }
       ]
     }
   ],
-  "fieldOverrides": []
+  "fieldOverrides": [
+    {
+      "collectionGroup": "inscripciones",
+      "fieldPath": "asistioReal",
+      "indexes": [
+        {
+          "order": "ASCENDING",
+          "queryScope": "COLLECTION"
+        },
+        {
+          "order": "ASCENDING",
+          "queryScope": "COLLECTION_GROUP"
+        }
+      ]
+    }
+  ]
 }

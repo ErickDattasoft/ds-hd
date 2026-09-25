@@ -25,12 +25,23 @@ export interface Inscripcion {
   fuente: string | null;
   /** Marcó que quiere unirse al canal de WhatsApp de avisos/novedades. */
   deseaCanalWhatsapp: boolean;
+  /** Ya se le mandó el mensaje de WhatsApp — se marca solo al usar el botón 💬, o a mano. */
+  contactadoWsp: boolean;
+  /**
+   * Asistencia real confirmada, distinta de `asistira` (la intención que declaró al
+   * registrarse) y de `estado`. Es la que alimenta el 🔁 "ya asistió antes" entre eventos.
+   */
+  asistioReal: boolean;
   createdAt: Date;
 }
 
 /** Entrada de la lista negra de eventos (`lista_negra_eventos/{emailHash}`). */
 export interface EntradaListaNegra {
   email: string;
+  /** Teléfono, si se marcó desde una inscripción que lo tenía — también cruza por aquí. */
+  telefono: string | null;
   motivo: string | null;
+  /** Nombre de quien lo marcó, para el tooltip del 🚫. */
+  marcadoPor: string | null;
   createdAt: Date;
 }

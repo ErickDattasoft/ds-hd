@@ -1722,6 +1722,60 @@
     });
   });
 
+  // ── Eventos → Inscritos: motivo del 🚫, WhatsApp uno por uno y masivo ────
+  // El motivo va en un campo oculto porque el CRM anterior lo pedía con un prompt() después
+  // de confirmar; se conserva ese flujo para no cambiarle el hábito a quien ya lo usaba.
+  document.addEventListener('submit', function (e) {
+    if (e.defaultPrevented) return;
+    var form = e.target.closest && e.target.closest('[data-prompt-motivo]');
+    if (!form) return;
+    var motivo = window.prompt('Motivo (opcional) — ej. "conducta indebida en cámara durante el webinar":', '');
+    if (motivo === null) { e.preventDefault(); return; }
+    var campo = form.querySelector('input[name="motivo"]');
+    if (campo) campo.value = motivo;
+  });
+
+  function marcarContactado(url) {
+    return fetch(url, {
+      method: 'POST',
+      headers: { 'x-csrf-token': cookie('x-csrf-token') },
+    }).catch(function () {});
+  }
+
+  // Mandarle WhatsApp a mano cuenta como "ya lo contacté": se marca solo, sin obligar a
+  // también tildar la casilla aparte.
+  document.addEventListener('click', function (e) {
+    var link = e.target.closest && e.target.closest('[data-wsp-inscrito]');
+    if (!link) return;
+    var url = link.getAttribute('data-marcar');
+    if (url) marcarContactado(url);
+  });
+
+  document.addEventListener('click', function (e) {
+    var btn = e.target.closest && e.target.closest('[data-wsp-masivo]');
+    if (!btn) return;
+    var pendientes = [].slice
+      .call(document.querySelectorAll('[data-wsp-inscrito]'))
+      .filter(function (a) {
+        var fila = a.closest('tr');
+        var chk = fila && fila.querySelector('input[name="contactadoWsp"]');
+        return !chk || !chk.checked;
+      });
+    if (!pendientes.length) { toast('✅ No hay pendientes de contactar por WhatsApp'); return; }
+    if (!window.confirm('¿Abrir WhatsApp para ' + pendientes.length + ' persona(s) que aún no están marcadas como contactadas? Se abren una por una — hay que darle Enviar en cada una.')) return;
+    btn.disabled = true;
+    // Espaciadas 500ms para que el navegador no las bloquee como spam de ventanas.
+    pendientes.forEach(function (a, idx) {
+      setTimeout(function () {
+        window.open(a.href, '_blank', 'noopener');
+        var url = a.getAttribute('data-marcar');
+        var ultimo = idx === pendientes.length - 1;
+        var p = url ? marcarContactado(url) : Promise.resolve();
+        if (ultimo) p.then(function () { window.location.reload(); });
+      }, idx * 500);
+    });
+  });
+
   // ── Dashboard: descartar el banner de licencias por vencer (por hoy) ─────
   var ALERTAS_DESCARTADAS_KEY = 'ds_hd_alertas_vencimiento_descartadas';
   function hoyISO() {
