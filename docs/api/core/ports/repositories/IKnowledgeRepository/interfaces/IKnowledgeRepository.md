@@ -74,6 +74,24 @@ Persistencia de la base de conocimiento (`knowledge_base/{id}`).
 
 ***
 
+### guardarVarios()
+
+> **guardarVarios**(`articulos`): `Promise`\<`void`\>
+
+Guarda muchos de golpe, agrupando las llamadas (subida de una carpeta completa).
+
+#### Parameters
+
+##### articulos
+
+[`ArticuloKB`](../../../../entities/ArticuloKB/classes/ArticuloKB.md)[]
+
+#### Returns
+
+`Promise`\<`void`\>
+
+***
+
 ### eliminar()
 
 > **eliminar**(`id`): `Promise`\<`void`\>

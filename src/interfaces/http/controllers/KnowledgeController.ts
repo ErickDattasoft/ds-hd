@@ -1,3 +1,4 @@
+import { DomainError } from '../../../core/errors/DomainError.js';
 import type { Request, Response } from 'express';
 import type { ArchivoLote, KnowledgeService } from '../../../application/knowledge/KnowledgeService.js';
 import type { HistorialBusquedaKBService } from '../../../application/knowledge/HistorialBusquedaKBService.js';
@@ -208,7 +209,11 @@ export class KnowledgeController {
       });
       res.json({ ok: true, creados: creados.length });
     } catch (err) {
-      res.status(422).json({ ok: false, error: camposDeError(err).archivos ?? camposDeError(err).general ?? 'No se pudo importar' });
+      // Pantalla solo de staff: si no es un error de validación se muestra la causa (recortada),
+      // para no quedarse con un «No se pudo completar la acción» sin pista.
+      const campos = camposDeError(err);
+      const detalle = err instanceof DomainError ? null : err instanceof Error ? err.message.slice(0, 200) : null;
+      res.status(422).json({ ok: false, error: campos.archivos ?? (detalle ? `Error al guardar: ${detalle}` : campos.general) ?? 'No se pudo importar' });
     }
   };
 

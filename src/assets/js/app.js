@@ -540,68 +540,103 @@
   });
 
   // ── Base de conocimiento: subida en lote (lee los archivos en el navegador) ──
+  // Una carpeta puede traer cientos de archivos: se mandan en tandas (como la barra de avance
+  // del viejo) porque todo en una sola petición se come el presupuesto por petición del worker.
+  // Solo archivos de texto: una carpeta real también trae imágenes, .exe, etc.
+  var KB_EXT_TEXTO = /\.(md|markdown|txt|ps1|bat|cmd|sql|sh|py|json|ya?ml|ini|reg|log|csv|xml|cfg|conf)$/i;
+  var KB_TANDA_ARCHIVOS = 25;
+  var KB_TANDA_BYTES = 1500000;
+  function kbLeerTexto(file) {
+    return new Promise(function (resolve) {
+      var reader = new FileReader();
+      reader.onload = function () {
+        resolve({ nombre: file.name || 'archivo', contenido: String(reader.result || ''), rutaRelativa: file.webkitRelativePath || file.name || '' });
+      };
+      reader.onerror = function () { resolve(null); };
+      reader.readAsText(file);
+    });
+  }
   document.addEventListener('submit', function (e) {
     var form = e.target.closest('[data-kb-subir]');
     if (!form) return;
     e.preventDefault();
     // Archivos sueltos y/o carpeta completa (la del input con webkitdirectory trae su ruta).
-    var files = [];
+    var todos = [];
     Array.prototype.forEach.call(form.querySelectorAll('input[type="file"]'), function (inp) {
-      if (inp.files) files = files.concat(Array.prototype.slice.call(inp.files));
+      if (inp.files) todos = todos.concat(Array.prototype.slice.call(inp.files));
     });
     var salida = document.getElementById('resultado-kb-subir');
     if (!salida) return;
-    if (!files.length) { salida.innerHTML = '<p class="alert alert--error">Elige archivos o una carpeta.</p>'; return; }
+    var files = todos.filter(function (f) { return KB_EXT_TEXTO.test(f.name || ''); });
+    var ignorados = todos.length - files.length;
+    if (!files.length) {
+      salida.innerHTML = '<p class="alert alert--error">' + (todos.length ? 'Ninguno de los ' + todos.length + ' archivos es de texto (.md, .ps1, .bat, .sql, .txt…).' : 'Elige archivos o una carpeta.') + '</p>';
+      return;
+    }
+    // Tandas por cantidad y por tamaño.
+    var tandas = [[]];
+    var bytes = 0;
+    files.forEach(function (f) {
+      var actual = tandas[tandas.length - 1];
+      if (actual.length && (actual.length >= KB_TANDA_ARCHIVOS || bytes + f.size > KB_TANDA_BYTES)) {
+        tandas.push([]);
+        bytes = 0;
+      }
+      tandas[tandas.length - 1].push(f);
+      bytes += f.size;
+    });
+    var vis = form.querySelector('[name="visibilidad"]');
+    var pub = form.querySelector('[name="publicado"]');
+    var cat = form.querySelector('[name="categoria"]');
+    var act = form.querySelector('[name="actualizar"]');
     var btn = e.submitter || form.querySelector('button[type="submit"]');
     if (btn) { btn.disabled = true; btn.classList.add('is-loading'); }
-    salida.innerHTML = '<p class="muted">Leyendo ' + files.length + ' archivo(s)…</p>';
-    Promise.all(
-      files.map(function (file) {
-        return new Promise(function (resolve) {
-          var reader = new FileReader();
-          reader.onload = function () {
-            resolve({
-              nombre: file.name || 'archivo',
-              contenido: String(reader.result || ''),
-              rutaRelativa: file.webkitRelativePath || file.name || '',
-            });
-          };
-          reader.onerror = function () { resolve(null); };
-          reader.readAsText(file);
-        });
-      }),
-    ).then(function (archivos) {
-      var vis = form.querySelector('[name="visibilidad"]');
-      var pub = form.querySelector('[name="publicado"]');
-      var cat = form.querySelector('[name="categoria"]');
-      var act = form.querySelector('[name="actualizar"]');
-      salida.innerHTML = '<p class="muted">Subiendo…</p>';
-      fetch(form.getAttribute('action'), {
-        method: 'POST',
-        headers: { 'content-type': 'application/json', 'x-csrf-token': cookie('x-csrf-token') },
-        body: JSON.stringify({
-          archivos: archivos.filter(Boolean),
-          visibilidad: vis ? vis.value : 'staff',
-          publicado: pub && pub.checked ? 'on' : '',
-          categoria: cat ? cat.value : '',
-          actualizar: act && act.checked ? 'on' : '',
-        }),
-      })
-        .then(function (r) { return r.json(); })
-        .then(function (data) {
-          if (data.ok) {
-            window.location.href = '/app/kb?aviso=' + encodeURIComponent(data.creados + ' archivo(s) importado(s)');
-          } else {
-            salida.innerHTML = '<p class="alert alert--error">' + data.error + '</p>';
-          }
-        })
-        .catch(function () {
-          salida.innerHTML = '<p class="alert alert--error">No se pudo subir. Revisa tu conexión e inténtalo de nuevo.</p>';
-        })
-        .finally(function () {
-          if (btn) { btn.disabled = false; btn.classList.remove('is-loading'); }
-        });
-    });
+    var hechos = 0;
+    var procesados = 0;
+    function pintar(texto) {
+      var pct = Math.round((hechos / files.length) * 100);
+      salida.innerHTML = '<p class="muted">' + texto + ' — ' + hechos + ' / ' + files.length + (ignorados ? ' (' + ignorados + ' no son de texto y se omiten)' : '') + '</p>' +
+        '<progress max="100" value="' + pct + '" style="width:100%"></progress>';
+    }
+    function fin() { if (btn) { btn.disabled = false; btn.classList.remove('is-loading'); } }
+    var i = 0;
+    function siguiente() {
+      if (i >= tandas.length) {
+        window.location.href = '/app/kb?aviso=' + encodeURIComponent(procesados + ' archivo(s) importado(s) o actualizado(s)' + (ignorados ? '; ' + ignorados + ' omitido(s) por no ser de texto' : ''));
+        return;
+      }
+      var tanda = tandas[i];
+      pintar('Subiendo');
+      Promise.all(tanda.map(kbLeerTexto)).then(function (archivos) {
+        return fetch(form.getAttribute('action'), {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', 'x-csrf-token': cookie('x-csrf-token') },
+          body: JSON.stringify({
+            archivos: archivos.filter(Boolean),
+            visibilidad: vis ? vis.value : 'staff',
+            publicado: pub && pub.checked ? 'on' : '',
+            categoria: cat ? cat.value : '',
+            actualizar: act && act.checked ? 'on' : '',
+          }),
+        }).then(function (r) { return r.json().catch(function () { return { ok: false, error: 'Respuesta inválida del servidor (HTTP ' + r.status + ')' }; }); });
+      }).then(function (data) {
+        // Una tanda sin nada con contenido no es error: se sigue con la siguiente.
+        if (!data.ok && !/contenido para importar/.test(data.error || '')) {
+          salida.innerHTML = '<p class="alert alert--error">Se detuvo en la tanda ' + (i + 1) + ' de ' + tandas.length + ' (' + hechos + ' de ' + files.length + ' ya subidos): ' + (data.error || 'error') +
+            '. Puedes volver a subir la misma carpeta con «actualizar» marcado: lo ya subido no se duplica.</p>';
+          fin();
+          return;
+        }
+        procesados += data.creados || 0;
+        hechos += tanda.length;
+        i += 1;
+        siguiente();
+      }).catch(function () {
+        salida.innerHTML = '<p class="alert alert--error">Se perdió la conexión en la tanda ' + (i + 1) + ' de ' + tandas.length + '. Vuelve a subir con «actualizar» marcado: lo ya subido no se duplica.</p>';
+        fin();
+      });
+    }
+    siguiente();
   });
 
   // ── Configuración → Integraciones: "probar conexión" (webhook n8n / WhatsApp) ──

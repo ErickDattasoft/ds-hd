@@ -75,6 +75,35 @@ export class FirestoreKnowledgeRepository implements IKnowledgeRepository {
     );
   }
 
+  /** Una llamada por cada 400 artículos en vez de una por artículo (una carpeta de cientos de
+   *  archivos se comía el presupuesto de llamadas por petición del worker). */
+  async guardarVarios(articulos: ArticuloKB[]): Promise<void> {
+    for (let i = 0; i < articulos.length; i += 400) {
+      const batch = this.db.batch();
+      for (const a of articulos.slice(i, i + 400)) {
+        batch.set(
+          this.db.collection(COL).doc(a.id),
+          {
+            titulo: a.titulo,
+            slug: a.slug,
+            categoria: a.categoria,
+            cuerpoMarkdown: a.cuerpoMarkdown,
+            tags: a.tags,
+            rutaDestino: a.rutaDestino,
+            publicado: a.publicado,
+            visibilidad: a.visibilidad,
+            autorUid: a.autorUid,
+            autorNombre: a.autorNombre,
+            createdAt: Timestamp.fromDate(a.createdAt),
+            updatedAt: Timestamp.fromDate(a.updatedAt),
+          },
+          { merge: true },
+        );
+      }
+      await batch.commit();
+    }
+  }
+
   async eliminar(id: string): Promise<void> {
     await this.db.collection(COL).doc(id).delete();
   }

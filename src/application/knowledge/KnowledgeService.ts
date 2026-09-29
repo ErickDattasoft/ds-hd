@@ -141,6 +141,7 @@ export class KnowledgeService {
       for (const a of await this.repo.list()) if (a.rutaDestino) porRuta.set(normalizarRuta(a.rutaDestino), a);
     }
     let actualizados = 0;
+    const porGuardar: ArticuloKB[] = [];
     for (const archivo of validos) {
       const nombre = archivo.nombre.trim();
       const titulo = nombre.replace(/\.[^.]+$/, '') || nombre;
@@ -150,7 +151,7 @@ export class KnowledgeService {
         if (existente.cuerpoMarkdown !== archivo.contenido) {
           existente.cuerpoMarkdown = archivo.contenido;
           existente.updatedAt = ahora;
-          await this.repo.save(existente);
+          porGuardar.push(existente);
           actualizados += 1;
         }
         creados.push(existente);
@@ -170,9 +171,10 @@ export class KnowledgeService {
         createdAt: ahora,
         updatedAt: ahora,
       });
-      await this.repo.save(articulo);
+      porGuardar.push(articulo);
       creados.push(articulo);
     }
+    await this.repo.guardarVarios(porGuardar);
     await this.bitacora.registrar({
       actor,
       accion: 'crear',

@@ -18,6 +18,8 @@ export interface IKnowledgeRepository {
   findBySlug(slug: string): Promise<ArticuloKB | null>;
   list(filtro?: ListarKBFiltro): Promise<ArticuloKB[]>;
   save(articulo: ArticuloKB): Promise<void>;
+  /** Guarda muchos de golpe, agrupando las llamadas (subida de una carpeta completa). */
+  guardarVarios(articulos: ArticuloKB[]): Promise<void>;
   eliminar(id: string): Promise<void>;
   /** Borra muchos de golpe, agrupando las llamadas. */
   eliminarVarios(ids: string[]): Promise<void>;

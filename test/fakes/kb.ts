@@ -47,6 +47,11 @@ export class InMemoryKnowledgeRepository implements IKnowledgeRepository {
   async save(a: ArticuloKB): Promise<void> {
     this.items.set(a.id, a);
   }
+  guardados = 0;
+  async guardarVarios(articulos: ArticuloKB[]): Promise<void> {
+    this.guardados += 1;
+    for (const a of articulos) this.items.set(a.id, a);
+  }
   async eliminar(id: string): Promise<void> {
     this.items.delete(id);
   }

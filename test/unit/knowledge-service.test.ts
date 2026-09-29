@@ -78,6 +78,13 @@ describe('KnowledgeService — lote y export', () => {
     expect(todos.find((a) => a.titulo === 'respaldo')!.categoria).toBe('script'); // los scripts siempre son script
   });
 
+  it('crearLote guarda toda la tanda en una sola escritura agrupada', async () => {
+    const archivos = Array.from({ length: 60 }, (_, n) => ({ nombre: `doc-${n}.md`, contenido: `contenido del documento ${n}` }));
+    await service.crearLote(actor(), archivos);
+    expect(repo.guardados).toBe(1);
+    expect(repo.items.size).toBe(60);
+  });
+
   it('crearLote sin permiso de publicar no puede publicar', async () => {
     await expect(
       service.crearLote(actor({ permisos: ['kb:escribir'] }), [{ nombre: 'x.md', contenido: 'contenido largo aquí' }], {
