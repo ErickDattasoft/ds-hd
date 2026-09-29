@@ -8,7 +8,7 @@
 
 > **formatearContactoSoporte**(`contactos`): `string`
 
-Lista de contactos de soporte, `Nombre: teléfono` uno por línea.
+Lista de contactos de soporte, `• Nombre: teléfono` uno por línea.
 
 ## Parameters
 

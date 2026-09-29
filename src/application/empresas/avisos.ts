@@ -54,18 +54,24 @@ export function sistemasPendientes(
     .map((s) => ({
       sistema: s,
       linea:
-        `- ${s}: instalada ${empresa.versionesInstaladas[s] || 'sin dato'}, oficial ${oficialPorSistema[s]}` +
+        `• ${s}: ${empresa.versionesInstaladas[s] || 'sin dato'} → ${oficialPorSistema[s]}` +
         (cartaPorSistema[s] ? ` — Carta técnica: ${cartaPorSistema[s]}` : ''),
       versionInstalada: empresa.versionesInstaladas[s] || null,
       versionOficial: oficialPorSistema[s] ?? null,
     }));
 }
 
+/** `2026-10-05` → `5/10/2026`, como `toLocaleDateString('es-MX')` en el CRM viejo. */
+function fechaCorta(iso: string): string {
+  const [a, m, d] = iso.split('-');
+  return a && m && d ? `${Number(d)}/${Number(m)}/${a}` : iso;
+}
+
 /** Licencias de `empresa` vencidas o por vencer. */
 export function licenciasPendientes(empresa: Empresa, hoy: Date): PendienteAviso[] {
   return empresa.licenciasEnRiesgo(hoy).map((l) => ({
     sistema: l.sistema,
-    linea: `- ${l.sistema}: ${l.estado === 'vencida' ? `vencida hace ${Math.abs(l.dias)} días` : `vence en ${l.dias} días`} (${l.fecha})`,
+    linea: `• ${l.sistema}: ${l.estado === 'vencida' ? `vencida hace ${Math.abs(l.dias)} día(s)` : `vence en ${l.dias} día(s)`} (${fechaCorta(l.fecha)})`,
     fechaVencimiento: l.fecha,
   }));
 }
@@ -94,9 +100,9 @@ export function formatearLicenciasPendientes(empresa: Empresa, hoy: Date, sistem
   return lineas.join('\n') || '(sin licencias pendientes)';
 }
 
-/** Lista de contactos de soporte, `Nombre: teléfono` uno por línea. */
+/** Lista de contactos de soporte, `• Nombre: teléfono` uno por línea. */
 export function formatearContactoSoporte(contactos: ContactoSoporte[]): string {
-  return contactos.map((c) => `${c.nombre}: ${c.telefono}`).join('\n') || '';
+  return contactos.map((c) => `• ${c.nombre}: ${c.telefono}`).join('\n') || '';
 }
 
 /** Sustituye los comodines `[clave]` de una plantilla por su valor. */

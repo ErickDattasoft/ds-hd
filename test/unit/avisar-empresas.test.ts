@@ -108,7 +108,7 @@ describe('AvisarEmpresasService', () => {
     expect(email.enviados[0]!.para).toEqual([{ email: 'cliente@uno.com', nombre: 'Cliente Uno' }]);
     expect(email.enviados[0]!.texto).toContain('Cliente Uno');
     expect(email.enviados[0]!.texto).toContain('Empresa Uno');
-    expect(email.enviados[0]!.texto).toContain('Contabilidad: instalada 18.0.0, oficial 19.1.0');
+    expect(email.enviados[0]!.texto).toContain('Contabilidad: 18.0.0 → 19.1.0');
     const guardada = await empresas.findById('e1');
     expect(guardada?.ultimoAvisoVersionesEn).toEqual(clock.now());
     expect(bitacora.entradas).toHaveLength(1);

@@ -674,6 +674,8 @@ export class EventoService {
     const eventos = await this.eventos.proximos(ahora, new Date(ahora.getTime() + 48 * 3_600_000));
     let correos = 0;
     for (const evento of eventos) {
+      // 0 = recordatorio desactivado para este evento (igual que el CRM viejo).
+      if (evento.horasRecordatorio <= 0) continue;
       const disparo = new Date(evento.fechaHora.getTime() - evento.horasRecordatorio * 3_600_000);
       if (disparo.getTime() > ahora.getTime()) continue; // aún no toca
       const inscritos = await this.inscripciones.listPorEvento(evento.id);
@@ -683,9 +685,9 @@ export class EventoService {
         await this.email.enviar({
           para: [{ email: ins.email, nombre: ins.nombre }],
           asunto: `Recordatorio: ${evento.titulo}`,
-          html: `<p>Hola ${ins.nombre}, te recordamos el evento <strong>${evento.titulo}</strong> el ${evento.fechaHora.toLocaleString('es-MX')}.</p>${
-            evento.urlWebinar ? `<p><a href="${evento.urlWebinar}">Enlace para conectarte</a></p>` : ''
-          }`,
+          // La plantilla del evento (o la de por defecto), como en el CRM viejo: lleva el link de
+          // Zoom/Meet y el contacto de ESTE evento, no un texto genérico.
+          html: `<p style="white-space:pre-wrap">${resolverPlantillaEvento(evento, ins).replace(/\n/g, '<br>')}</p>`,
           tags: ['evento-recordatorio', `evento-${evento.id}`, `insc_${ins.id}`],
         });
         ins.recordatoriosEnviados.push('previo');

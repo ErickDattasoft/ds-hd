@@ -30,7 +30,8 @@ export class EventoController {
     res.render('pages/backoffice/eventos/form', {
       titulo: 'Nuevo evento',
       modo: 'crear',
-      valores: { estado: 'borrador', horasRecordatorio: 24 },
+      // La plantilla arranca con el texto por defecto para editarle el link y el contacto, como en el viejo.
+      valores: { estado: 'borrador', horasRecordatorio: 24, plantilla: PLANTILLA_EVENTO_DEFAULT },
       plantillaPorDefecto: PLANTILLA_EVENTO_DEFAULT,
       errores: {},
     });
@@ -60,7 +61,8 @@ export class EventoController {
           fechaHora: str(b.fechaHora),
           cupo: n(b.cupo),
           urlWebinar: str(b.urlWebinar),
-          horasRecordatorio: n(b.horasRecordatorio) || 24,
+          // Vacío = 24h por defecto; 0 = sin recordatorio para este evento.
+          horasRecordatorio: str(b.horasRecordatorio).trim() ? Math.max(0, Math.trunc(n(b.horasRecordatorio))) : 24,
           limiteRegistrosPorIp: str(b.limiteRegistrosPorIp) ? Math.max(1, n(b.limiteRegistrosPorIp)) : null,
           estado: (str(b.estado) || 'borrador') as EstadoEvento,
           sistema: str(b.sistema),

@@ -24,7 +24,7 @@
           <input name="sistema" value="{{ valores.sistema }}" placeholder="Ej. Contabilidad" />
         </label>
         <label class="field"><span>URL del webinar</span><input name="urlWebinar" value="{{ valores.urlWebinar }}" /></label>
-        <label class="field"><span>Horas antes para recordatorio</span><input type="number" name="horasRecordatorio" value="{{ valores.horasRecordatorio or 24 }}" min="1" /></label>
+        <label class="field"><span>Horas antes para recordatorio <span class="muted">(0 = no mandar recordatorio en este evento)</span></span><input type="number" name="horasRecordatorio" value="{{ valores.horasRecordatorio if valores.horasRecordatorio is defined and valores.horasRecordatorio !== '' else 24 }}" min="0" placeholder="24" /></label>
         <label class="field"><span>Límite de registros por IP <span class="muted">(vacío = 5 por defecto)</span></span>
           <input type="number" name="limiteRegistrosPorIp" value="{{ valores.limiteRegistrosPorIp }}" min="1" placeholder="5" />
         </label>

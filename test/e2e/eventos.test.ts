@@ -86,6 +86,44 @@ describe('eventos / webinars', () => {
     expect(t.emailSender.enviados.some((c) => c.asunto.startsWith('Recordatorio'))).toBe(true);
   });
 
+  it('el recordatorio usa la plantilla del evento, y con 0 horas no se manda', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    const enUnaHora = new Date(Date.now() + 60 * 60 * 1000);
+    t.eventoRepo.items.set(
+      'ev1',
+      new Evento({ id: 'ev1', titulo: 'Con plantilla', fechaHora: enUnaHora, estado: 'publicado', horasRecordatorio: 24, plantilla: 'Hola [nombre], entra a [link]', urlWebinar: 'https://zoom.us/j/1' }),
+    );
+    t.eventoRepo.items.set(
+      'ev2',
+      new Evento({ id: 'ev2', titulo: 'Sin recordatorio', fechaHora: enUnaHora, estado: 'publicado', horasRecordatorio: 0 }),
+    );
+    for (const [id, eventoId] of [['i1', 'ev1'], ['i2', 'ev2']] as const) {
+      await t.inscripcionRepo.create({
+        id, eventoId, nombre: 'Ana', email: `${id}@a.com`, telefono: null, empresa: null,
+        estado: 'registrado', origen: 'publico', correoEstado: null, recordatoriosEnviados: [], ip: null, correoSospechoso: false, asistira: null, usaSistema: null, fuente: null, deseaCanalWhatsapp: false, contactadoWsp: false, asistioReal: false, createdAt: new Date(),
+      });
+    }
+
+    const res = await request(t.app).post('/jobs/recordatorios-eventos').set('authorization', 'Bearer dev-jobs-secret');
+    expect(res.body.correos).toBe(1);
+    const recordatorio = t.emailSender.enviados.find((c) => c.asunto.startsWith('Recordatorio'))!;
+    expect(recordatorio.para[0]!.email).toBe('i1@a.com');
+    expect(recordatorio.html).toContain('Hola Ana, entra a https://zoom.us/j/1');
+  });
+
+  it('el formulario acepta 0 horas de recordatorio y la plantilla nueva arranca con el texto por defecto', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    const admin = await login(t.app, ADMIN.email, ADMIN.password);
+    const form = await admin.agent.get('/app/eventos/nuevo');
+    expect(form.text).toContain('Quedaste registrado en [evento].');
+
+    await admin.agent.post('/app/eventos').type('form').send({
+      _csrf: admin.csrf, titulo: 'Webinar sin recordatorio', fechaHora: '2030-01-10T10:00', horasRecordatorio: '0',
+    });
+    const [creado] = [...t.eventoRepo.items.values()];
+    expect(creado!.horasRecordatorio).toBe(0);
+  });
+
   it('el webhook de Brevo actualiza el correoEstado de la inscripción', async () => {
     const t = makeTestApp({ usuarios: [ADMIN] });
     t.eventoRepo.items.set('ev1', new Evento({ id: 'ev1', titulo: 'Evento webhook', fechaHora: enUnaSemana(), estado: 'publicado' }));
