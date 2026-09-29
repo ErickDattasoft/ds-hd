@@ -9,3 +9,7 @@
 ## Classes
 
 - [ContrasenaService](classes/ContrasenaService.md)
+
+## Variables
+
+- [MIN\_PASSWORD](variables/MIN_PASSWORD.md)

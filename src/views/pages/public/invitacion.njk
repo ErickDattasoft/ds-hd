@@ -11,9 +11,9 @@
     <form method="post" action="/invitacion/{{ token }}" class="form">
       <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
       <label class="field">
-        <span>Contraseña (mínimo 8 caracteres)</span>
+        <span>Contraseña (mínimo 6 caracteres)</span>
         <div style="display:flex;gap:var(--space-2);align-items:center">
-          <input type="password" name="password" required minlength="8" autocomplete="new-password" data-capslock-check style="flex:1" />
+          <input type="password" name="password" required minlength="6" autocomplete="new-password" data-capslock-check style="flex:1" />
           <button type="button" class="btn btn--ghost btn--sm" data-toggle-password aria-label="Mostrar contraseña">👁</button>
         </div>
         <em class="field__error" data-capslock-aviso hidden>⚠️ Mayúsculas activadas (Bloq Mayús)</em>

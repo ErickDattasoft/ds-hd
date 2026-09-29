@@ -1,3 +1,4 @@
+import { MIN_PASSWORD } from './ContrasenaService.js';
 import type { IInvitacionRepository } from '../../core/ports/repositories/IInvitacionRepository.js';
 import type { IUsuarioRepository } from '../../core/ports/repositories/IUsuarioRepository.js';
 import type { IAuthProvider } from '../../core/ports/services/IAuthProvider.js';
@@ -32,9 +33,9 @@ export class AceptarInvitacionService {
       throw new ValidationError('La invitación expiró. Pide una nueva.');
     }
 
-    if (input.password.length < 8) {
-      throw new ValidationError('La contraseña debe tener al menos 8 caracteres', {
-        password: 'Mínimo 8 caracteres',
+    if (input.password.length < MIN_PASSWORD) {
+      throw new ValidationError(`La contraseña debe tener al menos ${MIN_PASSWORD} caracteres`, {
+        password: `Mínimo ${MIN_PASSWORD} caracteres`,
       });
     }
     if (input.password !== input.passwordConfirmacion) {

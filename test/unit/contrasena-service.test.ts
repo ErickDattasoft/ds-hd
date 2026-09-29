@@ -70,3 +70,34 @@ describe('ContrasenaService', () => {
     ).rejects.toThrow(ForbiddenError);
   });
 });
+
+describe('ContrasenaService — paridad con el viejo y errores claros', () => {
+  const nuevo = () => {
+    const auth = new FakeAuthProvider();
+    auth.sembrar('ana@dattasoft.mx', 'Ds2026', 'uid-ana');
+    const repo = new InMemoryUsuarioRepository([new Usuario({ uid: 'uid-ana', email: 'ana@dattasoft.mx', nombre: 'Ana', rol: 'admin' })]);
+    return { auth, service: new ContrasenaService(repo, auth, silentLogger) };
+  };
+  const a = { uid: 'uid-ana', email: 'ana@dattasoft.mx', nombre: 'Ana', permisos: [] } as unknown as SessionUser;
+
+  it('acepta 6 caracteres, como el viejo (la temporal Ds2026 tiene 6)', async () => {
+    const { auth, service } = nuevo();
+    await service.cambiarMia({ actor: a, actual: 'Ds2026', password: 'Rosa26', passwordConfirmacion: 'Rosa26' });
+    await expect(auth.verifyPassword('ana@dattasoft.mx', 'Rosa26')).resolves.toBeTruthy();
+    await expect(service.cambiarMia({ actor: a, actual: 'Rosa26', password: 'abc12', passwordConfirmacion: 'abc12' })).rejects.toThrow(ValidationError);
+  });
+
+  it('si Firebase rechaza la nueva, dice por qué en vez de «No se pudo»', async () => {
+    const { auth, service } = nuevo();
+    auth.setPassword = async () => {
+      throw Object.assign(new Error('AuthRest /accounts:update: 400 PASSWORD_DOES_NOT_MEET_REQUIREMENTS : Missing password requirements: [Password must contain an upper case character]'), {
+        status: 'PASSWORD_DOES_NOT_MEET_REQUIREMENTS',
+      });
+    };
+    const err = await service
+      .cambiarMia({ actor: a, actual: 'Ds2026', password: 'rosa2026', passwordConfirmacion: 'rosa2026' })
+      .catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(ValidationError);
+    expect((err as ValidationError).message).toContain('upper case');
+  });
+});
