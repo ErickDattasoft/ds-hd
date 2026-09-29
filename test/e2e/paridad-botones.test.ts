@@ -65,11 +65,26 @@ describe('contraseñas', () => {
     const t = makeTestApp({ usuarios: [ADMIN, AGENTE] });
     const { agent, csrf } = await login(t.app, ADMIN.email, ADMIN.password);
     const form = await agent.get(`/app/usuarios/${AGENTE.uid}`);
-    expect(form.text).toContain('Restablecer contraseña');
-    const res = await agent.post(`/app/usuarios/${AGENTE.uid}/contrasena`).type('form')
-      .send({ _csrf: csrf, password: 'temporal99', passwordConfirmacion: 'temporal99' });
+    // Un solo botón: la contraseña va dentro del formulario de «Guardar cambios».
+    expect(form.text).toContain('name="passwordNueva"');
+    expect(form.text).not.toContain('Restablecer contraseña</button>');
+
+    // Que no coincida: no se guarda nada y se dice por qué.
+    const mala = await agent.post(`/app/usuarios/${AGENTE.uid}`).type('form')
+      .send({ _csrf: csrf, nombre: AGENTE.nombre, roles: 'agente', activo: 'on', passwordNueva: 'temporal99', passwordNuevaConfirmacion: 'otra9999' });
+    expect(mala.status).toBe(422);
+    expect(mala.text).toContain('No coincide');
+
+    const res = await agent.post(`/app/usuarios/${AGENTE.uid}`).type('form')
+      .send({ _csrf: csrf, nombre: AGENTE.nombre, roles: 'agente', activo: 'on', passwordNueva: 'Tem026', passwordNuevaConfirmacion: 'Tem026' });
     expect(res.status).toBe(302);
-    await expect(t.authProvider.verifyPassword(AGENTE.email, 'temporal99')).resolves.toBeTruthy();
+    expect(String(res.headers.location)).toContain('pass=ok');
+    await expect(t.authProvider.verifyPassword(AGENTE.email, 'Tem026')).resolves.toBeTruthy();
+
+    // La ruta aparte sigue funcionando (por si alguien la tenía guardada).
+    const vieja = await agent.post(`/app/usuarios/${AGENTE.uid}/contrasena`).type('form')
+      .send({ _csrf: csrf, password: 'temporal99', passwordConfirmacion: 'temporal99' });
+    expect(vieja.status).toBe(302);
   });
 
   it('cambio mi contraseña desde Mi perfil; con la actual mala da 422', async () => {

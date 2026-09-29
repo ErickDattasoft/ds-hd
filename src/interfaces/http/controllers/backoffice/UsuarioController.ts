@@ -1,3 +1,4 @@
+import { MIN_PASSWORD } from '../../../../application/usuarios/ContrasenaService.js';
 import type { Request, Response } from 'express';
 import type { IUsuarioRepository } from '../../../../core/ports/repositories/IUsuarioRepository.js';
 import type { CrearUsuarioService } from '../../../../application/usuarios/CrearUsuarioService.js';
@@ -8,7 +9,7 @@ import type { ConfiguracionTicketsService } from '../../../../application/config
 import { catalogoFacturacion } from './TicketController.js';
 import type { InvitarClienteService } from '../../../../application/usuarios/InvitarClienteService.js';
 import type { IEmpresaRepository } from '../../../../core/ports/repositories/IEmpresaRepository.js';
-import { DomainError, NotFoundError } from '../../../../core/errors/DomainError.js';
+import { DomainError, NotFoundError, ValidationError } from '../../../../core/errors/DomainError.js';
 import {
   ROLES_STAFF,
   ROL_ETIQUETA,
@@ -198,7 +199,18 @@ export class UsuarioController {
     const body = req.body ?? {};
     const esCliente = body.esCliente === 'on' || body.esCliente === 'true';
     const roles = esCliente ? ['cliente'] : (aArreglo(body.roles) ?? []);
+    const passwordNueva = String(body.passwordNueva ?? '');
+    const passwordNuevaConfirmacion = String(body.passwordNuevaConfirmacion ?? '');
     try {
+      // Se valida ANTES de guardar lo demás, para no dejar el cambio a medias.
+      if (passwordNueva || passwordNuevaConfirmacion) {
+        if (passwordNueva.length < MIN_PASSWORD) {
+          throw new ValidationError('Contraseña inválida', { passwordNueva: `Mínimo ${MIN_PASSWORD} caracteres` });
+        }
+        if (passwordNueva !== passwordNuevaConfirmacion) {
+          throw new ValidationError('Contraseña inválida', { passwordNuevaConfirmacion: 'No coincide' });
+        }
+      }
       await this.actualizar.ejecutar({
         actor: req.user!,
         uid,
@@ -216,8 +228,11 @@ export class UsuarioController {
           disponibleAsignacion: body.agenteDisponible === 'on' || body.agenteDisponible === 'true',
         },
       });
+      if (passwordNueva) {
+        await this.contrasena.restablecer({ actor: req.user!, uid, password: passwordNueva, passwordConfirmacion: passwordNuevaConfirmacion });
+      }
       invalidarCacheUsuario(uid);
-      res.redirect('/app/usuarios');
+      res.redirect(passwordNueva ? `/app/usuarios/${encodeURIComponent(uid)}?pass=ok#contrasena` : '/app/usuarios');
     } catch (err) {
       const usuario = await this.usuarios.findByUid(uid);
       const errores =
