@@ -81,3 +81,21 @@ Persistencia de cotizaciones (`cotizaciones/{id}`).
 #### Returns
 
 `Promise`\<`Record`\<`string`, `number`\>\>
+
+***
+
+### contarEnEstado()
+
+> **contarEnEstado**(`estado`): `Promise`\<`number`\>
+
+Cuántas hay en un estado, sin traer los documentos (conteo del servidor).
+
+#### Parameters
+
+##### estado
+
+[`EstadoCotizacion`](../../../../entities/Cotizacion/type-aliases/EstadoCotizacion.md)
+
+#### Returns
+
+`Promise`\<`number`\>

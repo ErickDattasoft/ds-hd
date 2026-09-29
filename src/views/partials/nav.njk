@@ -5,7 +5,10 @@
     {{ 'is-active' if currentPath.startsWith(href) }}
   {%- endif -%}
 {% endmacro %}
-<nav class="sidebar" aria-label="Navegación principal" id="menu-lateral">
+{# `preload`: al pasar el mouse por un apartado, la página se empieza a pedir antes del clic
+   (el viejo cambiaba de apartado al instante porque ya tenía todo en memoria). Solo en el menú:
+   aquí no hay «Salir» ni descargas, que no deben dispararse solas. #}
+<nav class="sidebar" aria-label="Navegación principal" id="menu-lateral" preload="mouseover">
   <div class="sidebar__brand">
     <button type="button" class="sidebar__logo-btn" data-logo-agrandar title="Ver logo en grande" aria-label="Ver logo en grande">
       <img data-logo-img src="/logo" alt="" />

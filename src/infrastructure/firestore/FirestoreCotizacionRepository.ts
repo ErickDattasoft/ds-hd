@@ -106,6 +106,11 @@ export class FirestoreCotizacionRepository implements ICotizacionRepository {
     await this.db.collection(COL).doc(id).delete();
   }
 
+  async contarEnEstado(estado: EstadoCotizacion): Promise<number> {
+    const agg = await this.db.collection(COL).where('estado', '==', estado).count().get();
+    return agg.data().count;
+  }
+
   async contarPorEstado(): Promise<Record<string, number>> {
     const snap = await this.db.collection(COL).get();
     const out: Record<string, number> = {};

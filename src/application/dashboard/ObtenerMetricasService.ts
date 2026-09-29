@@ -154,7 +154,10 @@ export class ObtenerMetricasService {
       await Promise.all([
         this.ticketQueries.listar({ ...alcance, soloAbiertos: true }),
         this.ticketQueries.listar({ ...alcance, archivado: false }),
-        this.cotizaciones.contarPorEstado(),
+        // Un conteo del servidor por estado (en paralelo) en vez de descargar todas las cotizaciones.
+        Promise.all(
+          (['borrador', 'enviada', 'aceptada', 'rechazada', 'vencida'] as const).map(async (e) => [e, await this.cotizaciones.contarEnEstado(e)] as const),
+        ).then((pares) => Object.fromEntries(pares) as Record<string, number>),
         this.eventos.proximos(ahora, new Date(ahora.getTime() + 30 * 86_400_000)),
         this.tareas.list({ asignadoAUid: actor.uid, completada: false }),
         actor.permisos.includes('bitacora:leer')

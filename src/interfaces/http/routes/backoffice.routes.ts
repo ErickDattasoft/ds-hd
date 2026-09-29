@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, type Request } from 'express';
 import type { Container } from '../../../config/container.js';
 import { requireAuth, requireStaff, requirePermission } from '../middlewares/authz.js';
 import { uploadSingleFile } from '../middlewares/uploadSingleFile.js';
@@ -6,6 +6,53 @@ import { construirNavSecciones, contadoresNecesarios, conContadores, type Contad
 
 /** Excel `.xlsx` de import (empresas/contactos), en memoria — nunca toca disco. */
 const uploadExcel = uploadSingleFile('archivo', 10 * 1024 * 1024);
+
+/**
+ * Contadores del menú lateral (badges). Corren en CADA página, así que: todos a la vez (antes
+ * iban uno tras otro: ~6 viajes a Firestore antes de empezar la página pedida) y guardados
+ * unos segundos por instancia de la app, para que ir de un apartado a otro no los repita.
+ */
+const CONTADORES_TTL_MS = 20_000;
+const cacheContadores = new WeakMap<object, Map<string, { valor: number; exp: number }>>();
+
+async function contadoresDelMenu(
+  container: Container,
+  claves: string[],
+  user: NonNullable<Request['user']>,
+): Promise<ContadoresNav> {
+  let cache = cacheContadores.get(container);
+  if (!cache) {
+    cache = new Map();
+    cacheContadores.set(container, cache);
+  }
+  const ahora = Date.now();
+  const calcular: Record<string, () => Promise<number>> = {
+    ticketsAbiertos: () => container.resolve('ticketQueries').contar({ soloAbiertos: true, archivado: false }),
+    ticketsTotal: () => container.resolve('ticketQueries').contar({ archivado: false }),
+    // Conteo del servidor: antes se descargaban TODAS las cotizaciones solo para contar borradores.
+    cotizacionesBorrador: () => container.resolve('cotizacionRepo').contarEnEstado('borrador'),
+    empresasTotal: () => container.resolve('empresaRepo').contar(),
+    contactosTotal: () => container.resolve('contactoRepo').contar(),
+    solicitudesAccesoPendientes: async () =>
+      (await container.resolve('solicitudAccesoService').listarPendientes(user)).length,
+  };
+  const contadores: ContadoresNav = {};
+  await Promise.all(
+    claves
+      .filter((k) => calcular[k])
+      .map(async (k) => {
+        const guardado = cache.get(k);
+        if (guardado && guardado.exp > ahora) {
+          (contadores as Record<string, number>)[k] = guardado.valor;
+          return;
+        }
+        const valor = await calcular[k]!().catch(() => guardado?.valor ?? 0);
+        cache.set(k, { valor, exp: ahora + CONTADORES_TTL_MS });
+        (contadores as Record<string, number>)[k] = valor;
+      }),
+  );
+  return contadores;
+}
 
 /** Rutas del back-office (`/app`). Requiere sesión de staff. */
 export function backofficeRoutes(container: Container): Router {
@@ -26,34 +73,16 @@ export function backofficeRoutes(container: Container): Router {
   const leerTickets = requirePermission('tickets:leer');
 
   r.use(requireAuth, requireStaff);
+  // Una página pedida por adelantado (preload del menú al pasar el mouse) se deja reutilizar
+  // unos segundos, para que el clic que sigue no la vuelva a pedir al servidor.
+  r.use((req, res, next) => {
+    if (req.method === 'GET' && req.get('HX-Preloaded') === 'true') res.setHeader('Cache-Control', 'private, max-age=15');
+    next();
+  });
   r.use(async (req, res, next) => {
     const secciones = construirNavSecciones(req.user!);
     const claves = contadoresNecesarios(secciones);
-    const contadores: ContadoresNav = {};
-    if (claves.includes('ticketsAbiertos')) {
-      contadores.ticketsAbiertos = await container
-        .resolve('ticketQueries')
-        .contar({ soloAbiertos: true, archivado: false });
-    }
-    if (claves.includes('ticketsTotal')) {
-      contadores.ticketsTotal = await container.resolve('ticketQueries').contar({ archivado: false });
-    }
-    if (claves.includes('cotizacionesBorrador')) {
-      const porEstado = await container.resolve('cotizacionRepo').contarPorEstado();
-      contadores.cotizacionesBorrador = porEstado.borrador ?? 0;
-    }
-    // Conteos agregados: los resuelve el servidor de Firestore, no traen los documentos.
-    if (claves.includes('empresasTotal')) {
-      contadores.empresasTotal = await container.resolve('empresaRepo').contar();
-    }
-    if (claves.includes('contactosTotal')) {
-      contadores.contactosTotal = await container.resolve('contactoRepo').contar();
-    }
-    if (claves.includes('solicitudesAccesoPendientes')) {
-      contadores.solicitudesAccesoPendientes = (
-        await container.resolve('solicitudAccesoService').listarPendientes(req.user!)
-      ).length;
-    }
+    const contadores = await contadoresDelMenu(container, claves, req.user!);
     res.locals.navSecciones = conContadores(secciones, contadores);
     res.locals.area = 'backoffice';
     next();

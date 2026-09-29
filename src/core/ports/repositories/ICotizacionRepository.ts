@@ -17,4 +17,6 @@ export interface ICotizacionRepository {
   save(cotizacion: Cotizacion): Promise<void>;
   delete(id: string): Promise<void>;
   contarPorEstado(): Promise<Record<string, number>>;
+  /** Cuántas hay en un estado, sin traer los documentos (conteo del servidor). */
+  contarEnEstado(estado: EstadoCotizacion): Promise<number>;
 }

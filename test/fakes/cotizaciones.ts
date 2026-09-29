@@ -24,6 +24,9 @@ export class InMemoryCotizacionRepository implements ICotizacionRepository {
   async delete(id: string): Promise<void> {
     this.items.delete(id);
   }
+  async contarEnEstado(estado: string): Promise<number> {
+    return [...this.items.values()].filter((c) => c.estado === estado).length;
+  }
   async contarPorEstado(): Promise<Record<string, number>> {
     const out: Record<string, number> = {};
     for (const c of this.items.values()) out[c.estado] = (out[c.estado] ?? 0) + 1;
