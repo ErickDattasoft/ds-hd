@@ -233,3 +233,45 @@ describe('cotizaciones', () => {
     expect(ticket!.empresaId).toBe('e1');
   });
 });
+
+describe('cotizaciones — paridad con el viejo', () => {
+  it('empresa nueva al cotizar, RFC a Empresas, fecha de emisión, IVA por línea y «Guardar y generar PDF»', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    const { agent, csrf } = await login(t.app, ADMIN.email, ADMIN.password);
+    const res = await agent.post('/app/cotizaciones').type('form').send({
+      _csrf: csrf, empresaNueva: 'Tacos del Centro', rfc: 'tac010101aaa', fecha: '2026-09-01', vigenciaDias: '15',
+      concepto_descripcion: ['Licencia', 'Viáticos'], concepto_cantidad: ['1', '1'], concepto_precio: ['1000', '500'],
+      concepto_iva: ['1', '0'], accion: 'pdf',
+    });
+    expect(String(res.headers.location)).toMatch(/\/imprimir\?auto=1$/);
+    const [cot] = [...t.cotizacionRepo.items.values()];
+    const emp = t.empresaRepo.items.get(cot!.empresaId)!;
+    expect(emp.nombre).toBe('TACOS DEL CENTRO');
+    expect(emp.rfc).toBe('TAC010101AAA');
+    expect(cot!.fecha.getDate()).toBe(1);
+    expect(cot!.iva).toBe(160);
+  });
+
+  it('la lista cuenta vencidas solas por la vigencia y el correo lleva asunto y mensaje propios', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    t.empresaRepo.items.set('e1', new Empresa({ id: 'e1', nombre: 'ACME' }));
+    const { agent, csrf } = await login(t.app, ADMIN.email, ADMIN.password);
+    await agent.post('/app/cotizaciones').type('form').send({
+      _csrf: csrf, empresaId: 'e1', fecha: '2020-01-01', vigenciaDias: '5',
+      concepto_descripcion: 'Licencia', concepto_cantidad: '1', concepto_precio: '1000',
+    });
+    const lista = await agent.get('/app/cotizaciones?estado=vencida');
+    expect(lista.text).toContain('COT-');
+    expect(lista.text).toContain('texto-peligro');
+    expect(lista.text).toContain('Vencidas');
+
+    const [cot] = [...t.cotizacionRepo.items.values()];
+    await agent.post(`/app/cotizaciones/${cot!.id}/enviar`).type('form').send({
+      _csrf: csrf, para: 'cliente@acme.mx', asunto: 'Tu cotización', mensaje: 'Hola Rosa,\nva la propuesta.',
+    });
+    const correo = t.emailSender.enviados.at(-1)!;
+    expect(correo.asunto).toBe('Tu cotización');
+    expect(correo.html).toContain('Hola Rosa,<br>va la propuesta.');
+    expect(correo.html).not.toContain('/app/cotizaciones/'); // sin enlaces que piden iniciar sesión
+  });
+});

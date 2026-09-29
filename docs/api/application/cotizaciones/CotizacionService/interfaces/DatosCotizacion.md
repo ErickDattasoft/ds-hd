@@ -62,6 +62,14 @@ Datos para crear una cotización (folio y montos se calculan en el servicio).
 
 ***
 
+### fecha?
+
+> `optional` **fecha?**: `Date`
+
+Fecha de emisión; por defecto, hoy.
+
+***
+
 ### ticketId?
 
 > `optional` **ticketId?**: `string`

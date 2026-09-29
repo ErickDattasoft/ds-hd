@@ -1169,3 +1169,6 @@ fieldset.field {
 .evento-resultado { text-align: center; padding-block: var(--space-8); }
 .evento-resultado h1 { font-size: var(--text-2xl); margin-bottom: var(--space-3); }
 .evento-resultado p { color: var(--color-text-muted); margin-inline: auto; max-width: 32rem; }
+
+/* Texto en rojo (p. ej. vigencia vencida de una cotización). */
+.texto-peligro { color: var(--danger); font-weight: 600; }

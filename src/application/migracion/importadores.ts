@@ -1033,15 +1033,8 @@ export function crearImportadores({ dryRun: DRY_RUN, log }: OpcionesImportacion)
           precioUnitario: Number(x.precioUnitario) || 0,
           descuento: Number(x.descuento) || 0,
           importe: 0, // lo recalcula la entidad
+          tieneIva: x.tieneIVA !== false,
         }));
-        const conIva = arr(d.conceptos).filter((x) => x.tieneIVA !== false).length;
-        if (conIva && conIva !== conceptos.length) {
-          log(
-            'cotizaciones',
-            `${folio}: ${conceptos.length - conIva} de ${conceptos.length} renglones venían sin IVA; ` +
-              'ds-hd usa una sola tasa por cotización, quedó con IVA — revísala a mano.',
-          );
-        }
         const creada = fecha(d.fechaCreacion);
         const cotizacion = new Cotizacion({
           id: await idEstable('cot', s(d.id), folio),
@@ -1051,7 +1044,7 @@ export function crearImportadores({ dryRun: DRY_RUN, log }: OpcionesImportacion)
           fecha: creada,
           vigenciaDias: diasEntre(creada, s(d.fechaVigencia)) ?? 15,
           estado: estadoCotizacionDe(d.estado),
-          ivaTasa: conIva ? 0.16 : 0,
+          ivaTasa: 0.16,
           conceptos,
           notas: s(d.notas) || null,
           emisorNombre: s(d.emisorNombre) || null,

@@ -16,12 +16,17 @@
         <p class="muted">🎫 Se ligará al ticket #{{ valores.ticketNumero }}.</p>
       {% endif %}
       <label class="field"><span>Empresa</span>
-        <select name="empresaId" required>
+        <select name="empresaId">
           <option value="">— selecciona —</option>
           {% for e in empresas %}<option value="{{ e.id }}" {{ 'selected' if valores.empresaId == e.id }}>{{ e.nombre }}</option>{% endfor %}
         </select>
         {% if errores.empresaId %}<em class="field__error">{{ errores.empresaId }}</em>{% endif %}
       </label>
+      {% if can('empresas:crear') %}
+        <label class="field"><span>…o escribe una empresa nueva <span class="muted">(se da de alta al guardar)</span></span>
+          <input name="empresaNueva" value="{{ valores.empresaNueva }}" placeholder="Nombre de la empresa" style="text-transform:uppercase" />
+        </label>
+      {% endif %}
     {% else %}
       <p class="muted">{{ cotizacion.folio }} · {{ cotizacion.empresaNombre }}</p>
     {% endif %}
@@ -54,7 +59,7 @@
       <p class="muted">💡 Escribe la descripción — si coincide con el ⚡ catálogo (Configuración → Cotizaciones), el precio se llena solo.</p>
     {% endif %}
     <table class="data-table" data-conceptos-catalogo>
-      <thead><tr><th>Descripción</th><th>Cantidad</th><th>Precio unitario</th><th>Dto. %</th></tr></thead>
+      <thead><tr><th>Descripción</th><th>Cantidad</th><th>Precio unitario</th><th>Dto. %</th><th title="¿Esta línea causa IVA?">IVA</th></tr></thead>
       <tbody>
         {% for c in valores.conceptos %}
           <tr>
@@ -62,6 +67,7 @@
             <td><input name="concepto_cantidad" type="number" step="1" value="{{ c.cantidad }}" /></td>
             <td><input name="concepto_precio" type="number" step="0.01" value="{{ c.precioUnitario }}" /></td>
             <td><input name="concepto_descuento" type="number" min="0" max="100" step="1" value="{{ c.descuento or 0 }}" /></td>
+            <td><select name="concepto_iva"><option value="1">Sí</option><option value="0" {{ 'selected' if c.tieneIva === false }}>No</option></select></td>
           </tr>
         {% endfor %}
         {% for _ in [1,2,3,4,5] %}
@@ -70,17 +76,22 @@
             <td><input name="concepto_cantidad" type="number" step="1" value="1" /></td>
             <td><input name="concepto_precio" type="number" step="0.01" /></td>
             <td><input name="concepto_descuento" type="number" min="0" max="100" step="1" value="0" /></td>
+            <td><select name="concepto_iva"><option value="1">Sí</option><option value="0">No</option></select></td>
           </tr>
         {% endfor %}
       </tbody>
     </table>
+    <p class="cot-totales" data-cot-totales>
+      Subtotal <strong data-cot-subtotal>$0.00</strong> · IVA (16%) <strong data-cot-iva>$0.00</strong> · <span class="stat__num" style="font-size:1.1em">TOTAL <strong data-cot-total>$0.00</strong></span>
+    </p>
 
     <details class="disclosure" open>
       <summary class="disclosure__summary">Condiciones y notas <span class="disclosure__hint">— términos, vigencia</span></summary>
       <div class="disclosure__body form">
-        {% if modo != 'editar' %}
+        <div class="form-grid">
+          <label class="field"><span>Fecha de emisión</span><input type="date" name="fecha" value="{{ valores.fechaIso }}" /></label>
           <label class="field"><span>Vigencia (días)</span><input type="number" name="vigenciaDias" value="{{ valores.vigenciaDias or 15 }}" min="1" /></label>
-        {% endif %}
+        </div>
         <label class="field"><span>Condiciones / términos</span>
           <textarea name="condiciones" rows="4">{{ valores.condiciones }}</textarea>
           <em class="field__hint">Forma de pago, tiempos de entrega, validez… Se muestran en el PDF y el correo.</em>
@@ -90,7 +101,8 @@
     </details>
 
     <div class="page-head__actions">
-      <button class="btn" type="submit">Guardar</button>
+      <button class="btn" type="submit">💾 Guardar</button>
+      <button class="btn btn--secondary" type="submit" name="accion" value="pdf">📄 Guardar y generar PDF</button>
       <a class="btn btn--ghost" href="/app/cotizaciones">Cancelar</a>
     </div>
   </form>

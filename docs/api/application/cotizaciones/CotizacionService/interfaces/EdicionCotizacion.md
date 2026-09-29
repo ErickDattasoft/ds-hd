@@ -20,6 +20,18 @@ Cambios a los datos generales / condiciones de una cotización existente.
 
 ***
 
+### fecha?
+
+> `optional` **fecha?**: `Date`
+
+***
+
+### vigenciaDias?
+
+> `optional` **vigenciaDias?**: `number`
+
+***
+
 ### notas?
 
 > `optional` **notas?**: `string`

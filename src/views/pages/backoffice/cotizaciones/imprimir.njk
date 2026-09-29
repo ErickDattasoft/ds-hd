@@ -67,7 +67,7 @@
     <tbody>
       {% for c in cotizacion.conceptos %}
         <tr>
-          <td>{{ c.descripcion }}</td>
+          <td>{{ c.descripcion }}{% if c.tieneIva === false %} <small>(sin IVA)</small>{% endif %}</td>
           <td class="num">{{ c.cantidad }}</td>
           <td class="num">{{ c.precioUnitario | moneda(cotizacion.moneda) }}</td>
           <td class="num">{{ (c.descuento or 0) + '%' if c.descuento }}</td>

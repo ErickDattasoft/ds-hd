@@ -41,3 +41,11 @@ Descuento de la línea, en porcentaje (0-100).
 > **importe**: `number`
 
 cantidad * precioUnitario * (1 - descuento/100) (se recalcula al guardar).
+
+***
+
+### tieneIva?
+
+> `optional` **tieneIva?**: `boolean`
+
+Si la línea causa IVA (casilla por concepto del CRM viejo). Ausente = sí.

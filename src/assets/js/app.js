@@ -1533,6 +1533,32 @@
     caja.focus();
   });
 
+  // Totales en vivo del formulario de cotización (el IVA solo de las líneas marcadas).
+  function recalcularTotalesCot() {
+    var tabla = document.querySelector('[data-conceptos-catalogo]');
+    var caja = document.querySelector('[data-cot-totales]');
+    if (!tabla || !caja) return;
+    var sub = 0, gravado = 0;
+    Array.prototype.forEach.call(tabla.tBodies[0].rows, function (tr) {
+      var d = tr.querySelector('[name="concepto_descripcion"]');
+      if (!d || !d.value.trim()) return;
+      var cant = parseFloat((tr.querySelector('[name="concepto_cantidad"]') || {}).value) || 1;
+      var precio = parseFloat((tr.querySelector('[name="concepto_precio"]') || {}).value) || 0;
+      var dto = Math.min(100, Math.max(0, parseFloat((tr.querySelector('[name="concepto_descuento"]') || {}).value) || 0));
+      var imp = Math.round(cant * precio * (1 - dto / 100) * 100) / 100;
+      sub += imp;
+      if ((tr.querySelector('[name="concepto_iva"]') || {}).value !== '0') gravado += imp;
+    });
+    var iva = Math.round(gravado * 0.16 * 100) / 100;
+    var fmt = function (n) { return n.toLocaleString('es-MX', { style: 'currency', currency: 'MXN' }); };
+    caja.querySelector('[data-cot-subtotal]').textContent = fmt(sub);
+    caja.querySelector('[data-cot-iva]').textContent = fmt(iva);
+    caja.querySelector('[data-cot-total]').textContent = fmt(sub + iva);
+  }
+  document.addEventListener('input', function (e) { if (e.target.closest && e.target.closest('[data-conceptos-catalogo]')) recalcularTotalesCot(); });
+  document.addEventListener('change', function (e) { if (e.target.closest && e.target.closest('[data-conceptos-catalogo]')) recalcularTotalesCot(); });
+  recalcularTotalesCot();
+
   // Botones de formato (negrita, listas, tamaño) del editor enriquecido de la descripción.
   Array.prototype.forEach.call(document.querySelectorAll('[data-formato-grupo]'), function (g) {
     var caja = document.querySelector(g.getAttribute('data-destino'));

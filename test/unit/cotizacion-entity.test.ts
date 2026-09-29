@@ -48,3 +48,30 @@ describe('Cotizacion — descuento por concepto', () => {
     expect(importeBruto({ cantidad: 4, precioUnitario: 25 })).toBe(100);
   });
 });
+
+describe('Cotizacion — paridad con el viejo', () => {
+  const base = (extra: Partial<ConstructorParameters<typeof Cotizacion>[0]> = {}) =>
+    new Cotizacion({
+      id: 'c1', folio: 'COT-2026-0001', empresaId: 'e1', fecha: new Date(2026, 8, 1, 12), vigenciaDias: 10,
+      conceptos: [
+        { descripcion: 'Licencia', cantidad: 1, precioUnitario: 1000, descuento: 0, importe: 0 },
+        { descripcion: 'Viáticos', cantidad: 1, precioUnitario: 500, descuento: 0, importe: 0, tieneIva: false },
+      ],
+      ...extra,
+    });
+
+  it('el IVA solo se cobra en las líneas marcadas', () => {
+    const c = base();
+    expect(c.subtotal).toBe(1500);
+    expect(c.iva).toBe(160);
+    expect(c.total).toBe(1660);
+  });
+
+  it('borrador o enviada con la vigencia pasada se ve como vencida (sin cambiar el estado guardado)', () => {
+    const c = base({ estado: 'enviada' });
+    expect(c.estadoVisual(new Date(2026, 8, 5))).toBe('enviada');
+    expect(c.estadoVisual(new Date(2026, 8, 20))).toBe('vencida');
+    expect(c.estado).toBe('enviada');
+    expect(base({ estado: 'aceptada' }).estadoVisual(new Date(2026, 8, 20))).toBe('aceptada');
+  });
+});

@@ -212,6 +212,8 @@ Cotización comercial con folio consecutivo, conceptos e importes.
 
 > **get** **iva**(): `number`
 
+Solo sobre las líneas que causan IVA.
+
 ##### Returns
 
 `number`
@@ -241,6 +243,25 @@ Cotización comercial con folio consecutivo, conceptos e importes.
 `Date`
 
 ## Methods
+
+### estadoVisual()
+
+> **estadoVisual**(`hoy`): [`EstadoCotizacion`](../type-aliases/EstadoCotizacion.md)
+
+El estado que se muestra: una cotización en borrador o enviada cuya vigencia ya pasó sale
+como «vencida» sin que nadie la marque (como el CRM viejo). El estado guardado no cambia.
+
+#### Parameters
+
+##### hoy
+
+`Date`
+
+#### Returns
+
+[`EstadoCotizacion`](../type-aliases/EstadoCotizacion.md)
+
+***
 
 ### cambiarEstado()
 
@@ -282,11 +303,35 @@ Cotización comercial con folio consecutivo, conceptos e importes.
 
 ***
 
+### cambiarFechas()
+
+> **cambiarFechas**(`fecha`, `vigenciaDias`, `ahora`): `void`
+
+Fecha de emisión y vigencia editables (en el viejo se capturaban en el formulario).
+
+#### Parameters
+
+##### fecha
+
+`Date` \| `undefined`
+
+##### vigenciaDias
+
+`number` \| `undefined`
+
+##### ahora
+
+`Date`
+
+#### Returns
+
+`void`
+
+***
+
 ### actualizarDatosGenerales()
 
 > **actualizarDatosGenerales**(`datos`, `condiciones`, `ahora`): `void`
-
-Actualiza los datos generales (emisor / receptor) y las condiciones comerciales.
 
 #### Parameters
 

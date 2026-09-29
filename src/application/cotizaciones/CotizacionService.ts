@@ -1,3 +1,4 @@
+import type { Empresa } from '../../core/entities/Empresa.js';
 import type { ICotizacionRepository, ListarCotizacionesFiltro } from '../../core/ports/repositories/ICotizacionRepository.js';
 import type { IContadorRepository } from '../../core/ports/repositories/IContadorRepository.js';
 import type { IEmpresaRepository } from '../../core/ports/repositories/IEmpresaRepository.js';
@@ -30,6 +31,8 @@ export interface DatosCotizacion extends DatosGeneralesCotizacion {
   conceptos: ConceptoCotizacion[];
   origenCalculadora?: boolean;
   parametrosCompac?: Record<string, unknown> | null;
+  /** Fecha de emisión; por defecto, hoy. */
+  fecha?: Date;
   /** Ticket desde el que se cotiza («🧾 Cotizar» en su detalle): queda ligada a él. */
   ticketId?: string;
   ticketNumero?: number;
@@ -38,6 +41,8 @@ export interface DatosCotizacion extends DatosGeneralesCotizacion {
 /** Cambios a los datos generales / condiciones de una cotización existente. */
 export interface EdicionCotizacion extends DatosGeneralesCotizacion {
   conceptos: ConceptoCotizacion[];
+  fecha?: Date;
+  vigenciaDias?: number;
   notas?: string;
   condiciones?: string;
 }
@@ -102,7 +107,7 @@ export class CotizacionService {
       empresaId: datos.empresaId,
       empresaNombre: empresa.nombre,
       contactoId: datos.contactoId ?? null,
-      fecha: ahora,
+      fecha: datos.fecha && !Number.isNaN(datos.fecha.getTime()) ? datos.fecha : ahora,
       vigenciaDias: datos.vigenciaDias ?? 15,
       conceptos: datos.conceptos,
       notas: datos.notas ?? null,
@@ -123,6 +128,7 @@ export class CotizacionService {
       createdAt: ahora,
     });
     await this.repo.save(cotizacion);
+    await this.sincronizarRfcEmpresa(actor, empresa, cotizacion.rfc);
     await this.bitacora.registrar({
       actor,
       accion: 'crear',
@@ -146,7 +152,10 @@ export class CotizacionService {
     cotizacion.reemplazarConceptos(cambios.conceptos, ahora);
     if (cambios.notas !== undefined) cotizacion.notas = cambios.notas.trim() || null;
     cotizacion.actualizarDatosGenerales(cambios, cambios.condiciones, ahora);
+    if (cambios.fecha || cambios.vigenciaDias) cotizacion.cambiarFechas(cambios.fecha, cambios.vigenciaDias, ahora);
     await this.repo.save(cotizacion);
+    const empresa = await this.empresas.findById(cotizacion.empresaId);
+    if (empresa) await this.sincronizarRfcEmpresa(actor, empresa, cotizacion.rfc);
     await this.bitacora.registrar({
       actor,
       accion: 'editar',
@@ -156,6 +165,26 @@ export class CotizacionService {
       resumen: `${cotizacion.folio} actualizada`,
     });
     return cotizacion;
+  }
+
+  /**
+   * El RFC capturado en la cotización pasa a la empresa si es distinto (como el viejo), para no
+   * tener que capturarlo dos veces.
+   */
+  private async sincronizarRfcEmpresa(actor: SessionUser, empresa: Empresa, rfc: string | null): Promise<void> {
+    const nuevo = (rfc ?? '').trim().toUpperCase();
+    if (!nuevo || nuevo === (empresa.rfc ?? '')) return;
+    empresa.rfc = nuevo;
+    empresa.updatedAt = this.clock.now();
+    await this.empresas.save(empresa);
+    await this.bitacora.registrar({
+      actor,
+      accion: 'editar',
+      modulo: 'empresas',
+      entidadTipo: 'Empresa',
+      entidadId: empresa.id,
+      resumen: `RFC de "${empresa.nombre}" actualizado desde cotización`,
+    });
   }
 
   async cambiarEstado(actor: SessionUser, id: string, estado: EstadoCotizacion): Promise<void> {
@@ -188,7 +217,7 @@ export class CotizacionService {
   async enviarPorCorreo(
     actor: SessionUser,
     id: string,
-    opts: { para?: string } = {},
+    opts: { para?: string; asunto?: string; mensaje?: string } = {},
   ): Promise<{ enviadoA: string }> {
     this.assertPuedeEditar(actor);
     const cotizacion = await this.obtener(id);
@@ -215,8 +244,8 @@ export class CotizacionService {
 
     await this.email.enviar({
       para: [{ email: destino, ...(nombreDestino ? { nombre: nombreDestino } : {}) }],
-      asunto: `Cotización ${cotizacion.folio} — ${cotizacion.empresaNombre ?? ''}`.trim(),
-      html: this.htmlCotizacion(cotizacion),
+      asunto: opts.asunto?.trim() || `Cotización ${cotizacion.folio} — ${cotizacion.empresaNombre ?? ''}`.trim(),
+      html: this.htmlCotizacion(cotizacion, opts.mensaje),
       tags: ['cotizacion'],
     });
 
@@ -321,11 +350,11 @@ export class CotizacionService {
     return ticket;
   }
 
-  private htmlCotizacion(c: Cotizacion): string {
+  private htmlCotizacion(c: Cotizacion, mensaje?: string): string {
     const filas = c.conceptos
       .map(
         (x) =>
-          `<tr><td>${escaparHtml(x.descripcion)}</td><td align="right">${x.cantidad}</td>` +
+          `<tr><td>${escaparHtml(x.descripcion)}${x.tieneIva === false ? ' <small>(sin IVA)</small>' : ''}</td><td align="right">${x.cantidad}</td>` +
           `<td align="right">${this.fmt(x.precioUnitario, c.moneda)}</td>` +
           `<td align="right">${x.descuento ? `${x.descuento}%` : ''}</td>` +
           `<td align="right">${this.fmt(x.importe, c.moneda)}</td></tr>`,
@@ -337,8 +366,12 @@ export class CotizacionService {
       .join(' · ');
     const parrafo = (rotulo: string, texto: string): string =>
       `<p><strong>${rotulo}:</strong><br>${escaparHtml(texto).replaceAll('\n', '<br>')}</p>`;
+    // El mensaje lo escribe quien envía (como el modal del viejo); si no hay, una línea genérica.
+    const intro = mensaje?.trim()
+      ? `<p>${escaparHtml(mensaje.trim()).replaceAll('\n', '<br>')}</p>`
+      : `<p>Adjuntamos la cotización <strong>${c.folio}</strong>.</p>`;
     return `
-      <p>Adjuntamos la cotización <strong>${c.folio}</strong>.</p>
+      ${intro}
       <table border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse">
         <thead><tr><th align="left">Concepto</th><th>Cant.</th><th>P. unitario</th><th>Dto.</th><th>Importe</th></tr></thead>
         <tbody>${filas}</tbody>
@@ -351,8 +384,7 @@ export class CotizacionService {
       <p>Vigencia: ${c.vigenciaDias} días.</p>
       ${c.condiciones ? parrafo('Condiciones', c.condiciones) : ''}
       ${c.notas ? parrafo('Notas', c.notas) : ''}
-      ${emisor ? `<p>Atentamente,<br>${emisor}</p>` : ''}
-      <p><a href="${this.baseUrl}/app/cotizaciones/${c.id}/imprimir">Ver / imprimir cotización</a></p>`;
+      ${emisor ? `<p>Atentamente,<br>${emisor}</p>` : ''}`;
   }
 
   private fmt(n: number, moneda: string): string {

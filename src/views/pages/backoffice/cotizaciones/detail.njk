@@ -2,7 +2,7 @@
 {% block title %}{{ cotizacion.folio }}{% endblock %}
 {% block content %}
   <div class="page-head">
-    <h1>{{ cotizacion.folio }} <span class="{{ cotizacion.estado | estadoClase }}">{{ cotizacion.estado }}</span></h1>
+    <h1>{{ cotizacion.folio }} <span class="{{ estadoVisual | estadoClase }}">{{ estadoVisual }}</span></h1>
     <div class="page-head__actions">
       <a class="btn btn--sm btn--ghost" href="/app/cotizaciones/{{ cotizacion.id }}/imprimir?auto=1" target="_blank" rel="noopener">PDF / Imprimir</a>
       {% if can('cotizaciones:editar') and cotizacion.estado != 'aceptada' %}
@@ -48,7 +48,7 @@
     <tbody>
       {% for c in cotizacion.conceptos %}
         <tr>
-          <td>{{ c.descripcion }}</td>
+          <td>{{ c.descripcion }}{% if c.tieneIva === false %} <span class="badge">sin IVA</span>{% endif %}</td>
           <td>{{ c.cantidad }}</td>
           <td>{{ c.precioUnitario | moneda(cotizacion.moneda) }}</td>
           <td>{{ (c.descuento or 0) + '%' if c.descuento }}</td>
@@ -83,11 +83,25 @@
         <button class="btn btn--sm" type="submit">Actualizar</button>
       </form>
 
-      <form method="post" action="/app/cotizaciones/{{ cotizacion.id }}/enviar" class="card form"
+      <form method="post" action="/app/cotizaciones/{{ cotizacion.id }}/enviar" class="card form" id="enviar"
             data-confirm="¿Enviar la cotización por correo?">
         <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
-        <label class="field"><span>Enviar por correo</span>
-          <input type="email" name="para" placeholder="Dejar vacío = contacto de la empresa" />
+        <p><strong>✉️ Enviar por correo</strong></p>
+        <label class="field"><span>Para</span>
+          <input type="email" name="para" value="{{ cotizacion.contactoCorreo or '' }}" placeholder="Dejar vacío = contacto de la empresa" />
+        </label>
+        <label class="field"><span>Asunto</span>
+          <input name="asunto" value="Cotización {{ cotizacion.folio }} — DATTASOFT" />
+        </label>
+        <label class="field"><span>Mensaje <span class="muted">(la cotización completa va debajo)</span></span>
+          <textarea name="mensaje" rows="6">Hola{{ ' ' + cotizacion.contactoNombre if cotizacion.contactoNombre }},
+
+Adjuntamos la cotización {{ cotizacion.folio }} solicitada. Queda vigente hasta el {{ cotizacion.venceEl | fecha }}.
+
+Quedamos atentos a tus comentarios.
+
+Saludos,
+{{ cotizacion.emisorNombre or 'Equipo DATTASOFT' }}</textarea>
         </label>
         <button class="btn btn--sm btn--secondary" type="submit">Enviar</button>
       </form>

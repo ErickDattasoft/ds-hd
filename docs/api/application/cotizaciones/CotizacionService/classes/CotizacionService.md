@@ -215,6 +215,14 @@ si estaba en borrador, la marca como "enviada".
 
 `string`
 
+###### asunto?
+
+`string`
+
+###### mensaje?
+
+`string`
+
 #### Returns
 
 `Promise`\<\{ `enviadoA`: `string`; \}\>

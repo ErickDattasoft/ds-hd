@@ -11,6 +11,8 @@ export interface ConceptoCotizacion {
   descuento: number;
   /** cantidad * precioUnitario * (1 - descuento/100) (se recalcula al guardar). */
   importe: number;
+  /** Si la línea causa IVA (casilla por concepto del CRM viejo). Ausente = sí. */
+  tieneIva?: boolean;
 }
 
 /** `cantidad * precioUnitario` sin descuento — para mostrar el precio tachado cuando hay descuento. */
@@ -24,6 +26,7 @@ function normalizarConcepto(c: {
   cantidad: number;
   precioUnitario: number;
   descuento?: number;
+  tieneIva?: boolean;
 }): ConceptoCotizacion {
   const descuento = Math.min(100, Math.max(0, Number(c.descuento) || 0));
   const bruto = importeBruto(c);
@@ -33,6 +36,7 @@ function normalizarConcepto(c: {
     precioUnitario: c.precioUnitario,
     descuento,
     importe: Math.round(bruto * (1 - descuento / 100) * 100) / 100,
+    tieneIva: c.tieneIva !== false,
   };
 }
 
@@ -149,14 +153,26 @@ export class Cotizacion {
   get subtotal(): number {
     return Math.round(this.conceptos.reduce((s, c) => s + c.importe, 0) * 100) / 100;
   }
+  /** Solo sobre las líneas que causan IVA. */
   get iva(): number {
-    return Math.round(this.subtotal * this.ivaTasa * 100) / 100;
+    const gravado = this.conceptos.filter((c) => c.tieneIva !== false).reduce((s, c) => s + c.importe, 0);
+    return Math.round(gravado * this.ivaTasa * 100) / 100;
   }
   get total(): number {
     return Math.round((this.subtotal + this.iva) * 100) / 100;
   }
   get venceEl(): Date {
     return new Date(this.fecha.getTime() + this.vigenciaDias * 86_400_000);
+  }
+
+  /**
+   * El estado que se muestra: una cotización en borrador o enviada cuya vigencia ya pasó sale
+   * como «vencida» sin que nadie la marque (como el CRM viejo). El estado guardado no cambia.
+   */
+  estadoVisual(hoy: Date): EstadoCotizacion {
+    if (this.estado !== 'borrador' && this.estado !== 'enviada') return this.estado;
+    const inicioHoy = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
+    return this.venceEl < inicioHoy ? 'vencida' : this.estado;
   }
 
   cambiarEstado(nuevo: EstadoCotizacion, ahora: Date): void {
@@ -176,6 +192,13 @@ export class Cotizacion {
   }
 
   /** Actualiza los datos generales (emisor / receptor) y las condiciones comerciales. */
+  /** Fecha de emisión y vigencia editables (en el viejo se capturaban en el formulario). */
+  cambiarFechas(fecha: Date | undefined, vigenciaDias: number | undefined, ahora: Date): void {
+    if (fecha && !Number.isNaN(fecha.getTime())) this.fecha = fecha;
+    if (vigenciaDias && vigenciaDias > 0) this.vigenciaDias = Math.trunc(vigenciaDias);
+    this.updatedAt = ahora;
+  }
+
   actualizarDatosGenerales(
     datos: DatosGeneralesCotizacion,
     condiciones: string | null | undefined,
