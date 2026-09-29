@@ -11,8 +11,12 @@ export interface ContactoProps {
   email?: string | null;
   /** Correo alternativo del contacto. */
   emailAlternativo?: string | null;
+  /** Celular de WhatsApp — el «telefono1» del CRM viejo (así quedó la migración). */
   telefono?: string | null;
-  /** Teléfono alternativo (en pantalla se llama así; el campo conserva su nombre histórico). */
+  /**
+   * Teléfono de OFICINA — el «telefono2» del CRM viejo. El nombre del campo es histórico y engaña:
+   * para WhatsApp se usa `telefono` primero.
+   */
   celular?: string | null;
   /** Si el contacto tiene (o tendrá) acceso al portal de clientes. */
   esPortal?: boolean;

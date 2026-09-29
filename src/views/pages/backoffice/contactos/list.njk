@@ -11,7 +11,7 @@
     </div>
   </div>
   <form method="get" class="filterbar">
-    <input type="search" name="q" value="{{ q }}" placeholder="Buscar por nombre, correo, puesto o empresa…" autocomplete="off" spellcheck="false" />
+    <input type="search" name="q" value="{{ q }}" placeholder="Buscar por nombre, correo, teléfono, puesto o empresa…" autocomplete="off" spellcheck="false" />
     <select name="empresa">
       <option value="">Todas las empresas</option>
       {% for e in empresas %}<option value="{{ e.id }}" {{ 'selected' if empresaId == e.id }}>{{ e.nombre }}</option>{% endfor %}
@@ -19,17 +19,32 @@
     <button class="btn btn--sm" type="submit">Filtrar</button>
   </form>
   <table class="data-table">
-    <thead><tr><th>Nombre</th><th>Empresa</th><th>Puesto</th><th>Correo</th><th>Teléfono</th></tr></thead>
+    <thead><tr><th>Nombre</th><th>Empresa</th><th>Puesto</th><th>✉️ Correo</th><th>📱 Celular</th><th>☎️ Tel. oficina</th><th data-no-ordenar></th></tr></thead>
     <tbody>
       {% for c in contactos %}
         <tr>
-          <td><a href="/app/contactos/{{ c.id }}/editar">{{ c.nombre }}</a></td>
-          <td>{{ nombreEmpresa[c.empresaId] or '(empresa eliminada)' }}</td>
+          <td><a href="/app/contactos/{{ c.id }}/editar">{{ c.nombre }}</a>{% if rolEnEmpresa[c.id] %}<br><span class="muted">{{ rolEnEmpresa[c.id] }}</span>{% endif %}</td>
+          <td>{% if nombreEmpresa[c.empresaId] %}<a href="/app/empresas/{{ c.empresaId }}">{{ nombreEmpresa[c.empresaId] }}</a>{% else %}(empresa eliminada){% endif %}</td>
           <td>{{ c.puesto or '—' }}</td>
           <td>{{ c.email or '—' }}</td>
           <td>{{ c.telefono or '—' }}</td>
+          <td>{{ c.celular or '—' }}</td>
+          <td class="col-acciones">
+            {% set tel = (c.telefono or '') | replace(' ', '') | replace('-', '') | replace('(', '') | replace(')', '') | replace('+', '') %}
+            {% if tel %}<a class="btn btn--ghost btn--sm" target="_blank" rel="noopener" href="https://wa.me/{{ '52' if tel|length == 10 else '' }}{{ tel }}" title="WhatsApp">💬</a>{% endif %}
+            {% if c.email %}<a class="btn btn--ghost btn--sm" href="mailto:{{ c.email }}" title="Escribir correo">📧</a>{% endif %}
+            {% if can('contactos:editar') %}<a class="btn btn--ghost btn--sm" href="/app/contactos/{{ c.id }}/editar" title="Editar">✏️</a>{% endif %}
+            {% if can('contactos:eliminar') %}
+              <form method="post" action="/app/contactos/{{ c.id }}/archivar" class="inline" data-confirm="¿Enviar a {{ c.nombre }} a la papelera? Podrás recuperarlo desde ahí.">
+                <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+                <input type="hidden" name="archivar" value="true" />
+                <input type="hidden" name="volver" value="/app/contactos{{ '?q=' + q if q }}" />
+                <button class="btn btn--ghost btn--sm" type="submit" title="Enviar a la papelera">🗑️</button>
+              </form>
+            {% endif %}
+          </td>
         </tr>
-      {% else %}<tr><td colspan="5" class="muted">📭 Sin contactos que coincidan.{% if can('contactos:crear') %} <a href="/app/contactos/nuevo">Crea uno nuevo</a>.{% endif %}</td></tr>{% endfor %}
+      {% else %}<tr><td colspan="7" class="muted">📭 Sin contactos que coincidan.{% if can('contactos:crear') %} <a href="/app/contactos/nuevo">Crea uno nuevo</a>.{% endif %}</td></tr>{% endfor %}
     </tbody>
   </table>
 {% endblock %}

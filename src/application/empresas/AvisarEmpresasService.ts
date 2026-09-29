@@ -188,11 +188,12 @@ export class AvisarEmpresasService {
       const contactosEmpresa = await this.contactos.list({ empresaId, activo: true });
       const contacto =
         canal === 'whatsapp'
-          ? (contactosEmpresa.find((c) => c.id === empresa.contactoPrincipalId && (c.celular || c.telefono)) ??
-            contactosEmpresa.find((c) => c.celular || c.telefono))
+          ? (contactosEmpresa.find((c) => c.id === empresa.contactoPrincipalId && (c.telefono || c.celular)) ??
+            contactosEmpresa.find((c) => c.telefono || c.celular))
           : (contactosEmpresa.find((c) => c.id === empresa.contactoPrincipalId && c.email) ??
             contactosEmpresa.find((c) => c.email));
-      const telefono = contacto?.celular || contacto?.telefono || '';
+      // `telefono` es el celular de WhatsApp (ver ContactoExcelService); `celular` es el de oficina.
+      const telefono = contacto?.telefono || contacto?.celular || '';
       if (canal === 'whatsapp' ? !telefono : !contacto?.email) {
         resultados.push({
           empresaId,

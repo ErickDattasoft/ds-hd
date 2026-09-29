@@ -102,7 +102,7 @@ export class ReporteVersionesService {
         rfc: empresa.rfc ?? '',
         contacto: contacto?.nombre ?? '',
         correo: contacto?.email ?? empresa.email ?? '',
-        telefono: contacto?.celular ?? contacto?.telefono ?? empresa.telefono ?? '',
+        telefono: contacto?.telefono || contacto?.celular || empresa.telefono || '',
         sistemasDesactualizados,
         licencias,
       });

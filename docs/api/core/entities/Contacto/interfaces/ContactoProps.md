@@ -58,13 +58,16 @@ Correo alternativo del contacto.
 
 > `optional` **telefono?**: `string` \| `null`
 
+Celular de WhatsApp — el «telefono1» del CRM viejo (así quedó la migración).
+
 ***
 
 ### celular?
 
 > `optional` **celular?**: `string` \| `null`
 
-Teléfono alternativo (en pantalla se llama así; el campo conserva su nombre histórico).
+Teléfono de OFICINA — el «telefono2» del CRM viejo. El nombre del campo es histórico y engaña:
+para WhatsApp se usa `telefono` primero.
 
 ***
 

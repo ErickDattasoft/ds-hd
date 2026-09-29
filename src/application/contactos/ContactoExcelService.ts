@@ -12,8 +12,10 @@ export const COLUMNAS_CONTACTOS: ColumnaExcel[] = [
   { header: 'Puesto', key: 'puesto', width: 20 },
   { header: 'Correo', key: 'email', width: 26 },
   { header: 'Correo alternativo', key: 'emailAlternativo', width: 26 },
-  { header: 'Teléfono', key: 'telefono' },
-  { header: 'Teléfono alternativo', key: 'celular' },
+  // `telefono` guarda el celular de WhatsApp (el «telefono1» del CRM viejo) y `celular` el de
+  // oficina («telefono2»): así quedó la migración, y así se rotulan en todas partes.
+  { header: 'Celular (WhatsApp)', key: 'telefono' },
+  { header: 'Tel. oficina', key: 'celular' },
   { header: 'Rol en la empresa', key: 'rol' },
   { header: 'Notas', key: 'notas', width: 30 },
   { header: 'Activo', key: 'activo' },
@@ -102,8 +104,12 @@ export class ContactoExcelService {
         email: correoCelda === undefined ? (existente?.email ?? '') : email,
         emailAlternativo:
           altCelda === undefined && correos.length < 2 ? (existente?.emailAlternativo ?? '') : (alternos[0] ?? ''),
-        telefono: celda(fila, columnas, 'Teléfono', 'Teléfono 1') ?? existente?.telefono ?? '',
-        celular: celda(fila, columnas, 'Teléfono alternativo', 'Teléfono 2', 'Celular') ?? existente?.celular ?? '',
+        telefono:
+          celda(fila, columnas, 'Celular (WhatsApp)', 'Celular', 'Teléfono', 'Teléfono 1') ?? existente?.telefono ?? '',
+        celular:
+          celda(fila, columnas, 'Tel. oficina', 'Teléfono oficina', 'Teléfono alternativo', 'Teléfono 2') ??
+          existente?.celular ??
+          '',
         notas,
       };
       try {

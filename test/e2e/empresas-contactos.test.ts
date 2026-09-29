@@ -372,3 +372,29 @@ describe('formulario de empresa (paridad con el viejo)', () => {
     expect(t.webhookPublisher.eventos).toContain('empresa.creada');
   });
 });
+
+describe('contactos (paridad con el viejo)', () => {
+  it('primer contacto = principal, segundo = alternativo; empresa escrita se reconoce; lista con celular/oficina y acciones', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    t.empresaRepo.items.set('e1', new Empresa({ id: 'e1', nombre: 'ACME' }));
+    const { agent, csrf } = await login(t.app, ADMIN.email, ADMIN.password);
+
+    await agent.post('/app/contactos').type('form').send({ _csrf: csrf, nombre: 'Rosa Luna', empresaId: 'e1', telefono: '9991112233', celular: '9994445566' });
+    // «acme» ya existe: se liga a ella en vez de fallar por duplicada.
+    await agent.post('/app/contactos').type('form').send({ _csrf: csrf, nombre: 'Pedro Sol', empresaNueva: 'acme', email: 'pedro@acme.mx' });
+    await agent.post('/app/contactos').type('form').send({ _csrf: csrf, nombre: 'Tercero', empresaId: 'e1' });
+
+    const contactos = await t.contactoRepo.list({ empresaId: 'e1' });
+    expect(contactos).toHaveLength(3);
+    expect(t.empresaRepo.items.size).toBe(1);
+    const emp = t.empresaRepo.items.get('e1')!;
+    expect(emp.contactoPrincipalId).toBe(contactos.find((c) => c.nombre === 'Rosa Luna')!.id);
+    expect(emp.contactoAlternativoId).toBe(contactos.find((c) => c.nombre === 'Pedro Sol')!.id);
+
+    const lista = await agent.get('/app/contactos');
+    expect(lista.text).toContain('Principal');
+    expect(lista.text).toContain('Tel. oficina');
+    expect(lista.text).toContain('https://wa.me/529991112233'); // WhatsApp al celular, no a la oficina
+    expect(lista.text).toContain('mailto:pedro@acme.mx');
+  });
+});

@@ -36,6 +36,8 @@ export class ContactoController {
             c.nombre.toLowerCase().includes(t) ||
             (c.email ?? '').toLowerCase().includes(t) ||
             (c.puesto ?? '').toLowerCase().includes(t) ||
+            (c.telefono ?? '').includes(t) ||
+            (c.celular ?? '').includes(t) ||
             (nombreEmpresa[c.empresaId] ?? '').toLowerCase().includes(t),
         );
     res.render('pages/backoffice/contactos/list', {
@@ -44,6 +46,13 @@ export class ContactoController {
       empresas,
       enPapelera,
       nombreEmpresa,
+      // Rol en su empresa (Principal / Alternativo), como la etiqueta bajo el nombre en el viejo.
+      rolEnEmpresa: Object.fromEntries(
+        todasLasEmpresas.flatMap((e) => [
+          ...(e.contactoPrincipalId ? [[e.contactoPrincipalId, 'Principal']] : []),
+          ...(e.contactoAlternativoId ? [[e.contactoAlternativoId, 'Alternativo']] : []),
+        ]),
+      ),
       q: texto,
       empresaId,
     });
@@ -65,9 +74,11 @@ export class ContactoController {
     try {
       let empresaId = str(b.empresaId);
       // "Crear empresa" inline: si se escribió un nombre de empresa nueva y no se eligió una existente.
-      if (!empresaId && str(b.empresaNueva).trim()) {
-        const emp = await this.empresas.crear(req.user!, { nombre: str(b.empresaNueva).trim().toUpperCase() });
-        empresaId = emp.id;
+      // Si ya existe una con ese nombre (sin importar mayúsculas), se usa esa en vez de fallar.
+      const nueva = str(b.empresaNueva).trim().toUpperCase();
+      if (!empresaId && nueva) {
+        const existente = (await this.empresas.listar({ texto: nueva })).find((e) => e.nombre.toUpperCase() === nueva);
+        empresaId = existente?.id ?? (await this.empresas.crear(req.user!, { nombre: nueva })).id;
       }
       const c = await this.contactos.crear(req.user!, { ...this.datos(b), empresaId });
       res.redirect(`/app/empresas/${c.empresaId}`);
@@ -116,7 +127,8 @@ export class ContactoController {
 
   archivarPost = async (req: Request, res: Response): Promise<void> => {
     await this.contactos.archivar(req.user!, str(req.params.id), req.body?.archivar !== 'false');
-    res.redirect('/app/contactos');
+    const volver = str(req.body?.volver);
+    res.redirect(volver.startsWith('/app/') ? volver : '/app/contactos');
   };
 
   exportarExcel = async (req: Request, res: Response): Promise<void> => {

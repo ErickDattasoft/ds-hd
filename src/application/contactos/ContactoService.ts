@@ -52,11 +52,27 @@ export class ContactoService {
     }
   }
 
+  /**
+   * Como el CRM viejo: el primer contacto de una empresa queda como su principal y el segundo
+   * como alternativo, sin que haya que ir a editar la empresa. Nunca pisa uno ya elegido.
+   */
+  private async ocuparRolEnEmpresa(contacto: Contacto): Promise<void> {
+    const empresa = await this.empresas.findById(contacto.empresaId);
+    if (!empresa) return;
+    if (!empresa.contactoPrincipalId) empresa.contactoPrincipalId = contacto.id;
+    else if (!empresa.contactoAlternativoId && empresa.contactoPrincipalId !== contacto.id) {
+      empresa.contactoAlternativoId = contacto.id;
+    } else return;
+    empresa.updatedAt = this.clock.now();
+    await this.empresas.save(empresa);
+  }
+
   async crear(actor: SessionUser, datos: DatosContacto): Promise<Contacto> {
     if (!actor.permisos.includes('contactos:crear')) throw new ForbiddenError('No puedes crear contactos');
     await this.assertEmpresaExiste(datos.empresaId);
     const contacto = new Contacto({ id: this.ids.newId(), ...datos, createdAt: this.clock.now() });
     await this.repo.save(contacto);
+    await this.ocuparRolEnEmpresa(contacto);
     await this.bitacora.registrar({
       actor,
       accion: 'crear',
