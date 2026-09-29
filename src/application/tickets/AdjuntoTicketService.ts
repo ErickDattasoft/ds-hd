@@ -8,8 +8,7 @@ import type { AdjuntoTicket, AdjuntoTicketMeta } from '../../core/entities/Adjun
 import {
   MAX_ADJUNTOS_POR_TICKET,
   sanearNombreArchivo,
-  validarAdjunto,
-} from '../../core/entities/AdjuntoTicket.js';
+  validarAdjunto, normalizarTipoAdjunto } from '../../core/entities/AdjuntoTicket.js';
 import { ForbiddenError, NotFoundError, ValidationError } from '../../core/errors/DomainError.js';
 import { registrarEvento } from './efectos.js';
 import type { SessionUser } from '../shared/SessionUser.js';
@@ -37,7 +36,7 @@ export class AdjuntoTicketService {
   async subir(input: SubirAdjuntoInput): Promise<AdjuntoTicketMeta> {
     const ticket = await this.cargarConAcceso(input.actor, input.ticketId, 'escribir');
 
-    const contentType = input.contentType.trim().toLowerCase();
+    const contentType = normalizarTipoAdjunto(input.nombre, input.contentType);
     const base64 = input.base64.replace(/\s/g, '');
     const tamano = Math.floor((base64.length * 3) / 4) - (base64.endsWith('==') ? 2 : base64.endsWith('=') ? 1 : 0);
     validarAdjunto(contentType, tamano);

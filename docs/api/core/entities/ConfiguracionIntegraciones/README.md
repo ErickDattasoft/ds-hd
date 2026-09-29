@@ -25,6 +25,7 @@
 - [ETIQUETAS\_EVENTOS](variables/ETIQUETAS_EVENTOS.md)
 - [WHATSAPP\_CLIENTES\_POR\_DEFECTO](variables/WHATSAPP_CLIENTES_POR_DEFECTO.md)
 - [CONFIG\_INTEGRACIONES\_POR\_DEFECTO](variables/CONFIG_INTEGRACIONES_POR_DEFECTO.md)
+- [NOMBRE\_WHATSAPP\_PRINCIPAL](variables/NOMBRE_WHATSAPP_PRINCIPAL.md)
 
 ## Functions
 
@@ -32,3 +33,4 @@
 - [parsearDestinatariosWhatsApp](functions/parsearDestinatariosWhatsApp.md)
 - [destinatariosWhatsAppATexto](functions/destinatariosWhatsAppATexto.md)
 - [sanearReglas](functions/sanearReglas.md)
+- [equipoWhatsApp](functions/equipoWhatsApp.md)

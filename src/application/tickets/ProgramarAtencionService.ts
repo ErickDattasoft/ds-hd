@@ -41,7 +41,7 @@ export class ProgramarAtencionService {
       return;
     }
 
-    const agenda = parseAgenda(input);
+    const agenda = parseAgenda({ ...input, destinatarios: input.destinatarios });
     ticket.programarAtencion(agenda, ahora);
     await this.tickets.save(ticket);
     await registrarEvento(this.tickets, this.ids, ticket.id, {
@@ -74,6 +74,9 @@ export class ProgramarAtencionService {
         hora: ticket.agenda?.hora ?? null,
         fechaHoraIso: ticket.fechaHoraProgramada?.toISOString() ?? null,
         agenteAsignadoUid: ticket.agenteAsignadoUid,
+        agenteAsignadoNombre: ticket.agenteAsignadoNombre,
+        empresaNombre: ticket.empresaNombre,
+        destinatarioNombres: ticket.agenda?.destinatarios ?? [],
       },
     });
   }

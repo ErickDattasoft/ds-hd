@@ -50,6 +50,8 @@ export interface ProgramarAtencionInput {
   fecha: string;
   hora: string;
   recordatorioWhatsapp: boolean;
+  /** Nombres del equipo que reciben el recordatorio; vacío = todos. */
+  destinatarios?: string[];
 }
 
 /** Datos para transicionar el estado de un ticket, con nota opcional del cambio. */

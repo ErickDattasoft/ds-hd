@@ -116,6 +116,9 @@ export class CrearTicketService {
           hora: ticket.agenda.hora,
           fechaHoraIso: ticket.fechaHoraProgramada?.toISOString() ?? null,
           agenteAsignadoUid: ticket.agenteAsignadoUid,
+          agenteAsignadoNombre: ticket.agenteAsignadoNombre,
+          empresaNombre: ticket.empresaNombre,
+          destinatarioNombres: ticket.agenda.destinatarios ?? [],
         },
       });
     }

@@ -7,8 +7,12 @@
     <div class="page-head__actions">
       {% if permisos.editar and not ticket.eliminadoPorAdmin %}<a class="btn btn--sm" href="/app/tickets/{{ ticket.id }}/editar">✏️ Editar</a>{% endif %}
       <a class="btn btn--sm btn--ghost" href="/app/tickets/{{ ticket.id }}/imprimir?auto=1" target="_blank" rel="noopener">🖨️ Imprimir</a>
-      {% if permisos.cotizar %}
-        <a class="btn btn--sm btn--ghost" href="/app/cotizaciones/nueva?empresa={{ ticket.empresaId or '' }}&conceptos=[{{ '{' }}&quot;descripcion&quot;:&quot;{{ ticket.asunto }}&quot;,&quot;cantidad&quot;:1,&quot;precioUnitario&quot;:0{{ '}' }}]">🧾 Cotizar</a>
+      {% if cotizacionLigada %}
+        <a class="btn btn--sm btn--ghost" href="/app/cotizaciones/{{ cotizacionLigada.id }}" title="Cotización hecha desde este ticket">🧾 Cotización: {{ cotizacionLigada.folio }}</a>
+      {% endif %}
+      {# Como el viejo: ya no se ofrece «Cotizar» si hay una cotización ligada que no fue rechazada. #}
+      {% if permisos.cotizar and (not cotizacionLigada or cotizacionLigada.estado == 'rechazada') %}
+        <a class="btn btn--sm btn--ghost" href="/app/cotizaciones/nueva?empresa={{ ticket.empresaId or '' }}&ticket={{ ticket.id }}&ticketNumero={{ ticket.numero }}&contacto={{ (ticket.contactoNombre or '') | urlencode }}&correo={{ (ticket.contactoCorreo or '') | urlencode }}&conceptos=[{{ '{' }}&quot;descripcion&quot;:&quot;{{ ticket.asunto }}&quot;,&quot;cantidad&quot;:1,&quot;precioUnitario&quot;:0{{ '}' }}]">🧾 Cotizar</a>
       {% endif %}
       {% if permisos.eliminar and not ticket.eliminadoPorAdmin %}<button type="submit" form="archivar-ticket" class="btn btn--sm btn--ghost" title="{{ 'Restaurar ticket' if ticket.archivado else 'Enviar a la papelera' }}">{{ '♻️ Restaurar' if ticket.archivado else '🗑️ Papelera' }}</button>{% endif %}
       <a class="btn btn--sm btn--ghost" href="/app/tickets">← Volver</a>
@@ -124,6 +128,7 @@
       <div class="card">
         <p><strong>Estado:</strong> <span class="{{ ticket.estado | estadoClase }}">{{ ticket.estado }}</span></p>
         <p><strong>Prioridad:</strong> <span class="{{ ticket.prioridad | prioridadClase }}">{{ ticket.prioridad }}</span></p>
+        <p><strong>Tipo:</strong> {{ ticket.tipo or 'General' }}</p>
         <p><strong>SLA:</strong> {{ tk.slaBadge(vm) }}</p>
         {% if ticket.satisfaccion %}
           <p><strong>Satisfacción:</strong> <span title="{{ ticket.satisfaccion.comentario or '' }}">{% for i in range(ticket.satisfaccion.calificacion) %}★{% endfor %}</span> ({{ ticket.satisfaccion.calificacion }}/5)
@@ -234,6 +239,7 @@
               <input type="checkbox" name="agendaRecordatorio" {{ 'checked' if vm.agenda.recordatorioWhatsapp }} />
               <span>Recordatorio WhatsApp 30 min antes (vía n8n)</span>
             </label>
+            {{ tk.destinatariosRecordatorio(equipoRecordatorio, vm.agenda.destinatarios if vm.agenda else []) }}
             <button class="btn btn--sm" type="submit">Guardar</button>
           </form>
           {% if vm.agenda %}

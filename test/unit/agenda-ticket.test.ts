@@ -34,11 +34,17 @@ const actor = (over: Partial<SessionUser> = {}): SessionUser => ({
 });
 
 describe('AgendaTicket (value object)', () => {
+  it('guarda a quién del equipo avisar, solo si pide recordatorio', () => {
+    expect(parseAgenda({ fecha: '2026-10-15', hora: '10:00', recordatorioWhatsapp: true, destinatarios: ['Ana', 'Ana', ' Luis '] }).destinatarios).toEqual(['Ana', 'Luis']);
+    expect(parseAgenda({ fecha: '2026-10-15', hora: '10:00', recordatorioWhatsapp: false, destinatarios: ['Ana'] }).destinatarios).toEqual([]);
+  });
+
   it('valida fecha y hora, con hora por defecto 09:00', () => {
     expect(parseAgenda({ fecha: '2026-10-15', hora: '', recordatorioWhatsapp: true })).toEqual({
       fecha: '2026-10-15',
       hora: '09:00',
       recordatorioWhatsapp: true,
+      destinatarios: [],
     });
     expect(() => parseAgenda({ fecha: '15/10/2026', hora: '10:00', recordatorioWhatsapp: false })).toThrow(ValidationError);
     expect(() => parseAgenda({ fecha: '2026-13-40', hora: '10:00', recordatorioWhatsapp: false })).toThrow(ValidationError);
@@ -49,6 +55,7 @@ describe('AgendaTicket (value object)', () => {
       fecha: '2026-10-15',
       hora: '14:30',
       recordatorioWhatsapp: true,
+      destinatarios: [],
     });
     expect(sanearAgenda(null)).toBeNull();
     expect(sanearAgenda({ hora: '14:30' })).toBeNull();
@@ -102,7 +109,7 @@ describe('agenda del ticket', () => {
       prioridad: 'Media',
       agenda: { fecha: '2026-09-10', hora: '10:00', recordatorioWhatsapp: true },
     });
-    expect(t.agenda).toEqual({ fecha: '2026-09-10', hora: '10:00', recordatorioWhatsapp: true });
+    expect(t.agenda).toEqual({ fecha: '2026-09-10', hora: '10:00', recordatorioWhatsapp: true, destinatarios: [] });
     expect(webhooks.eventos).toEqual(['ticket.creado', 'ticket.programado']);
   });
 

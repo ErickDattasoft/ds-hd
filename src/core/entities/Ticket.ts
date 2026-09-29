@@ -571,3 +571,11 @@ export class Ticket {
     this.satisfaccion = { calificacion: c, comentario: comentario?.trim().slice(0, 1000) || null, at: ahora };
   }
 }
+
+/** Búsqueda libre del listado: asunto, #, empresa, contacto y agente. */
+export function coincideTexto(t: Pick<Ticket, 'asunto' | 'numero' | 'empresaNombre' | 'contactoNombre' | 'agenteAsignadoNombre'>, texto: string): boolean {
+  const q = texto.toLowerCase();
+  return [t.asunto, String(t.numero), t.empresaNombre, t.contactoNombre, t.agenteAsignadoNombre].some((v) =>
+    (v ?? '').toLowerCase().includes(q),
+  );
+}

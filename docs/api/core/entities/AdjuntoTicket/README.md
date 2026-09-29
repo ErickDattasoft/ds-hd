@@ -22,5 +22,7 @@
 
 ## Functions
 
+- [adjuntoSeMuestraEnLinea](functions/adjuntoSeMuestraEnLinea.md)
+- [normalizarTipoAdjunto](functions/normalizarTipoAdjunto.md)
 - [sanearNombreArchivo](functions/sanearNombreArchivo.md)
 - [validarAdjunto](functions/validarAdjunto.md)

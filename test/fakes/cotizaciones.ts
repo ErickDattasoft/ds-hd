@@ -10,6 +10,7 @@ export class InMemoryCotizacionRepository implements ICotizacionRepository {
     let out = [...this.items.values()];
     if (f.empresaId) out = out.filter((c) => c.empresaId === f.empresaId);
     if (f.estado) out = out.filter((c) => c.estado === f.estado);
+    if (f.ticketId) out = out.filter((c) => c.ticketId === f.ticketId);
     if (f.texto) {
       const t = f.texto.toLowerCase();
       out = out.filter((c) => c.folio.toLowerCase().includes(t) || (c.empresaNombre ?? '').toLowerCase().includes(t));

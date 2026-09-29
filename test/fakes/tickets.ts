@@ -1,3 +1,4 @@
+import { coincideTexto } from '../../src/core/entities/Ticket.js';
 import {
   CONFIG_CORREO_ENTRANTE_POR_DEFECTO,
   type ConfiguracionCorreoEntrante,
@@ -122,16 +123,9 @@ export class InMemoryTicketQueries implements ITicketQueries {
     if (f.soloAbiertos && esEstadoFinal(t.estado)) return false;
     if (f.soloProgramados && t.fechaHoraProgramada === null) return false;
     if (f.archivado !== undefined && t.archivado !== f.archivado) return false;
-    if (f.texto) {
-      const q = f.texto.toLowerCase();
-      if (
-        !t.asunto.toLowerCase().includes(q) &&
-        !String(t.numero).includes(q) &&
-        !(t.empresaNombre ?? '').toLowerCase().includes(q)
-      ) {
-        return false;
-      }
-    }
+    if (f.texto && !coincideTexto(t, f.texto)) return false;
+    if (f.tipo && t.tipo !== f.tipo) return false;
+    if (f.facturacion && t.facturacion.estado !== f.facturacion) return false;
     return true;
   }
 

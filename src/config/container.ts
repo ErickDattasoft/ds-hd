@@ -1004,6 +1004,7 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
           c.ticketExcelService,
           c.contadorRepo,
           c.editarTicketService,
+          c.cotizacionRepo,
         ),
     ).singleton(),
     backupService: asFunction(

@@ -15,7 +15,7 @@
   {% else %}<span class="muted">{{ vm.facturacion.etiqueta }}</span>{% endif %}
 {% endmacro %}
 
-{% macro filaTicket(vm, csrfToken, puedeEliminar) %}
+{% macro filaTicket(vm, csrfToken, puedeEliminar, puedeEditar) %}
   <tr>
     <td><a href="/app/tickets/{{ vm.id }}">#{{ vm.numero }}</a></td>
     <td>{{ vm.asunto }}{% if vm.agenda %}<br>{{ agendaBadge(vm) }}{% endif %}</td>
@@ -29,6 +29,7 @@
     <td>{{ slaBadge(vm) }}</td>
     <td class="col-acciones" data-no-ordenar>
       <a class="btn btn--ghost btn--sm" href="/app/tickets/{{ vm.id }}" title="Ver">👁</a>
+      {% if puedeEditar %}<a class="btn btn--ghost btn--sm" href="/app/tickets/{{ vm.id }}/editar" title="Editar">✏️</a>{% endif %}
       {% if puedeEliminar %}
         <form method="post" action="/app/tickets/{{ vm.id }}/archivar" style="display:inline" data-confirm="¿Enviar este ticket a la papelera?">
           <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
@@ -46,7 +47,7 @@
 #}
 {% macro adjuntosTicket(adjuntos, base, csrfToken, puedeEditar) %}
   <div class="card" data-adjuntos data-adjuntos-base="{{ base }}">
-    <p><strong>Adjuntos</strong> <span class="muted">— imágenes y PDF, máx 700 KB c/u</span></p>
+    <p><strong>Adjuntos</strong> <span class="muted">— imágenes, PDF y XML, máx 700 KB c/u</span></p>
     <ul class="adjuntos-lista">
       {% for a in adjuntos %}
         <li>
@@ -72,7 +73,7 @@
     {% if puedeEditar %}
       <label class="field">
         <span>Agregar archivo (o pega una imagen con Ctrl+V)</span>
-        <input type="file" accept="image/png,image/jpeg,image/gif,image/webp,application/pdf" multiple data-adjunto-file />
+        <input type="file" accept="image/png,image/jpeg,image/gif,image/webp,application/pdf,.xml,application/xml,text/xml" multiple data-adjunto-file />
       </label>
       <span class="muted" data-adjunto-resultado></span>
     {% endif %}
@@ -86,6 +87,16 @@
 #}
 {% macro editorToolbar(user, destino, respuestas) %}
   <div class="editor-toolbar">
+    {# Formato (como la barra del viejo). Solo aparece si el destino es el editor enriquecido. #}
+    <span class="editor-toolbar__formato" data-formato-grupo data-destino="{{ destino }}" hidden>
+      <button type="button" class="btn btn--ghost btn--sm" data-formato="bold" title="Negrita (Ctrl+B)"><b>B</b></button>
+      <button type="button" class="btn btn--ghost btn--sm" data-formato="italic" title="Cursiva (Ctrl+I)"><i>I</i></button>
+      <button type="button" class="btn btn--ghost btn--sm" data-formato="underline" title="Subrayado (Ctrl+U)"><u>U</u></button>
+      <button type="button" class="btn btn--ghost btn--sm" data-formato="insertUnorderedList" title="Lista">• Lista</button>
+      <button type="button" class="btn btn--ghost btn--sm" data-formato="insertOrderedList" title="Lista numerada">1. Lista</button>
+      <button type="button" class="btn btn--ghost btn--sm" data-formato="fontSize" data-valor="5" title="Texto grande">A+</button>
+      <button type="button" class="btn btn--ghost btn--sm" data-formato="fontSize" data-valor="2" title="Texto pequeño">A−</button>
+    </span>
     <button type="button" class="btn btn--ghost btn--sm"
       data-insertar="encabezado" data-destino="{{ destino }}" data-texto="{{ user.encabezado or '' }}"
       title="Inserta tu encabezado (configúralo en Mi perfil) o la plantilla por defecto">📋 Encabezado</button>
@@ -102,7 +113,7 @@
   </div>
 {% endmacro %}
 
-{% macro tablaTickets(tickets, csrfToken, puedeEliminar) %}
+{% macro tablaTickets(tickets, csrfToken, puedeEliminar, puedeEditar) %}
   <table class="data-table">
     <thead>
       <tr>
@@ -113,9 +124,27 @@
     {# `preload` = al pasar el mouse sobre una fila se va cargando su detalle, para que
        el click abra al instante. Requiere el `Cache-Control` corto de `detalleView`. #}
     <tbody preload="mouseover">
-      {% for vm in tickets %}{{ filaTicket(vm, csrfToken, puedeEliminar) }}{% else %}
+      {% for vm in tickets %}{{ filaTicket(vm, csrfToken, puedeEliminar, puedeEditar) }}{% else %}
         <tr><td colspan="11" class="muted">📭 No hay tickets que mostrar.</td></tr>
       {% endfor %}
     </tbody>
   </table>
+{% endmacro %}
+
+{#
+  Casillas de a quién del equipo le llega el recordatorio por WhatsApp (como el CRM viejo).
+  `elegidos` = nombres ya marcados. Sin ninguna marcada se avisa a todo el equipo.
+#}
+{% macro destinatariosRecordatorio(equipo, elegidos) %}
+  {% if equipo and equipo.length %}
+    <div class="filterbar" style="margin-left:1.6rem">
+      <span class="muted">Avisar a:</span>
+      {% for n in equipo %}
+        <label class="field--check"><input type="checkbox" name="agendaDestinatarios" value="{{ n }}" {{ 'checked' if elegidos and n in elegidos }} /> <span>{{ n }}</span></label>
+      {% endfor %}
+      <span class="muted">(ninguno marcado = todo el equipo)</span>
+    </div>
+  {% else %}
+    <p class="muted" style="margin-left:1.6rem">Sin números de WhatsApp del equipo — configúralos en Configuración → Integraciones.</p>
+  {% endif %}
 {% endmacro %}

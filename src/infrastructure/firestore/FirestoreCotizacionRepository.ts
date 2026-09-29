@@ -51,6 +51,7 @@ export class FirestoreCotizacionRepository implements ICotizacionRepository {
     let q: Query = this.db.collection(COL);
     if (filtro.empresaId) q = q.where('empresaId', '==', filtro.empresaId);
     if (filtro.estado) q = q.where('estado', '==', filtro.estado);
+    if (filtro.ticketId) q = q.where('ticketId', '==', filtro.ticketId);
     const snap = await q.get();
     let cots = snap.docs.map((d) => toDomain(d.id, d.data()));
     if (filtro.texto) {

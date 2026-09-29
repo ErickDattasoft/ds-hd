@@ -11,7 +11,15 @@ export interface AgendaTicket {
   /** `HH:MM` (24 h). */
   hora: string;
   recordatorioWhatsapp: boolean;
+  /**
+   * A quién del equipo le llega el recordatorio (nombres de Configuración → WhatsApp), como
+   * las casillas por ticket del CRM viejo. Vacío = a todo el equipo.
+   */
+  destinatarios?: string[];
 }
+
+const nombres = (v: unknown): string[] =>
+  [...new Set(([] as unknown[]).concat(v ?? []).map((x) => String(x).trim()).filter(Boolean))];
 
 const RE_FECHA = /^\d{4}-\d{2}-\d{2}$/;
 const RE_HORA = /^\d{2}:\d{2}$/;
@@ -21,6 +29,7 @@ export function parseAgenda(input: {
   fecha: unknown;
   hora: unknown;
   recordatorioWhatsapp: unknown;
+  destinatarios?: unknown;
 }): AgendaTicket {
   const fecha = String(input.fecha ?? '').trim();
   const hora = (String(input.hora ?? '').trim() || '09:00').slice(0, 5);
@@ -33,7 +42,8 @@ export function parseAgenda(input: {
   if (Number.isNaN(fechaHoraAgenda({ fecha, hora, recordatorioWhatsapp: false }).getTime())) {
     throw new ValidationError('Fecha/hora programada inválida', { agendaFecha: 'No es una fecha real' });
   }
-  return { fecha, hora, recordatorioWhatsapp: input.recordatorioWhatsapp === true };
+  const recordatorioWhatsapp = input.recordatorioWhatsapp === true;
+  return { fecha, hora, recordatorioWhatsapp, destinatarios: recordatorioWhatsapp ? nombres(input.destinatarios) : [] };
 }
 
 /** Reconstruye la agenda desde props/Firestore; `null` si el ticket no tiene programación. */
@@ -43,7 +53,7 @@ export function sanearAgenda(v: unknown): AgendaTicket | null {
   const fecha = String(d.fecha ?? '').trim();
   if (!RE_FECHA.test(fecha)) return null;
   const hora = RE_HORA.test(String(d.hora ?? '')) ? String(d.hora) : '09:00';
-  return { fecha, hora, recordatorioWhatsapp: d.recordatorioWhatsapp === true };
+  return { fecha, hora, recordatorioWhatsapp: d.recordatorioWhatsapp === true, destinatarios: nombres(d.destinatarios) };
 }
 
 /** La fecha/hora programada como `Date` (hora local del proceso, igual que el CRM viejo). */

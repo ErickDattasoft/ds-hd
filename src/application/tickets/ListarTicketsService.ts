@@ -1,3 +1,4 @@
+import { equipoWhatsApp } from '../../core/entities/ConfiguracionIntegraciones.js';
 import type { ITicketQueries, FiltroTickets } from '../../core/ports/repositories/ITicketQueries.js';
 import type { IConfiguracionRepository } from '../../core/ports/repositories/IConfiguracionRepository.js';
 import type { Ticket } from '../../core/entities/Ticket.js';
@@ -36,6 +37,17 @@ export class ListarTicketsService {
    * para el resumen de arriba de la lista ("51 total, 2 abiertos, ..."). Respeta el alcance del
    * actor (un agente sin `tickets:leer_todos` solo cuenta los suyos) y excluye la papelera.
    */
+  /** Nombres del equipo que puede recibir el recordatorio por WhatsApp de un ticket programado. */
+  async equipoRecordatorio(): Promise<string[]> {
+    const integ = await this.config.obtenerIntegraciones();
+    return equipoWhatsApp(integ).map((d) => d.nombre);
+  }
+
+  /** Cuántos tickets hay en la papelera (contador del botón 🗑️ del listado). */
+  contarEnPapelera(actor: SessionUser): Promise<number> {
+    return this.queries.contar(this.acotar(actor, { archivado: true }));
+  }
+
   async resumenPorEstado(actor: SessionUser): Promise<{ total: number; porEstado: Record<string, number> }> {
     const base = this.acotar(actor, { archivado: false });
     const config = await this.config.obtenerTickets();

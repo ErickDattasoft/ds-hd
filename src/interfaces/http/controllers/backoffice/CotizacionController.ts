@@ -50,6 +50,11 @@ export class CotizacionController {
       valores: {
         empresaId: str(req.query.empresa),
         conceptos: this.conceptosDesdeQuery(req),
+        // Desde «🧾 Cotizar» de un ticket: queda ligada a él y trae su contacto.
+        ticketId: str(req.query.ticket),
+        ticketNumero: str(req.query.ticketNumero),
+        contactoNombre: str(req.query.contacto),
+        contactoCorreo: str(req.query.correo),
         condiciones: cfg.condicionesPorDefecto,
         emisorNombre: req.user!.nombre,
         emisorCargo: cfg.emisorCargoPorDefecto,
@@ -84,6 +89,7 @@ export class CotizacionController {
         conceptos: this.conceptosDeBody(b),
         origenCalculadora: b.origenCalculadora === 'true',
         ...this.datosGeneralesDeBody(b),
+        ...(str(b.ticketId) ? { ticketId: str(b.ticketId), ticketNumero: num(b.ticketNumero) || undefined } : {}),
       });
       res.redirect(`/app/cotizaciones/${cot.id}`);
     } catch (err) {

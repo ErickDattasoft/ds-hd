@@ -5,11 +5,12 @@ import type {
   FiltroTickets,
   ITicketQueries,
 } from '../../core/ports/repositories/ITicketQueries.js';
-import type { Ticket } from '../../core/entities/Ticket.js';
+import { coincideTexto, type Ticket } from '../../core/entities/Ticket.js';
 import { esEstadoFinal, slugEstado } from '../../core/entities/value-objects/EstadoTicket.js';
 import { TicketMapper } from './mappers/TicketMapper.js';
 
 const COL = 'tickets';
+
 
 /** Implementación Firestore del lado consulta de tickets. */
 export class FirestoreTicketQueries implements ITicketQueries {
@@ -37,15 +38,10 @@ export class FirestoreTicketQueries implements ITicketQueries {
     if (filtro.archivado !== undefined) {
       out = out.filter((x) => x.archivado === filtro.archivado);
     }
-    if (filtro.texto) {
-      const t = filtro.texto.toLowerCase();
-      out = out.filter(
-        (x) =>
-          x.asunto.toLowerCase().includes(t) ||
-          String(x.numero).includes(t) ||
-          (x.empresaNombre ?? '').toLowerCase().includes(t),
-      );
-    }
+    if (filtro.texto) out = out.filter((x) => coincideTexto(x, filtro.texto!));
+    // Tipo y facturación en memoria: evita pedir índices compuestos para cada combinación.
+    if (filtro.tipo) out = out.filter((x) => x.tipo === filtro.tipo);
+    if (filtro.facturacion) out = out.filter((x) => x.facturacion.estado === filtro.facturacion);
     if (filtro.soloProgramados) {
       // Campo nuevo — filtrar en memoria por el mismo motivo que `archivado`.
       return out
@@ -65,13 +61,18 @@ export class FirestoreTicketQueries implements ITicketQueries {
 
   async contar(filtro: FiltroTickets): Promise<number> {
     // Con soloAbiertos ya es una query indexable; texto/archivado se filtran en memoria.
-    if (!filtro.texto && filtro.archivado === undefined && !filtro.soloProgramados) {
+    const enMemoria = filtro.texto || filtro.tipo || filtro.facturacion || filtro.soloProgramados;
+    if (!enMemoria && filtro.archivado === undefined) {
       const agg = await this.aplicar(filtro).count().get();
       return agg.data().count;
     }
     // "Sin la papelera" también se resuelve con conteos del servidor: todos menos los
     // archivados (los documentos viejos no traen el campo, así que no se filtra por `false`).
-    if (!filtro.texto && filtro.archivado === false && !filtro.soloProgramados) {
+    if (!enMemoria && filtro.archivado === true) {
+      const agg = await this.aplicar({ ...filtro, archivado: undefined }).where('archivado', '==', true).count().get();
+      return agg.data().count;
+    }
+    if (!enMemoria && filtro.archivado === false) {
       const base = this.aplicar({ ...filtro, archivado: undefined });
       const [todos, enPapelera] = await Promise.all([
         base.count().get(),

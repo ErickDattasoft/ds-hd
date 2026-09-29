@@ -31,3 +31,12 @@ dispara n8n — ds-hd solo publica el evento con la fecha/hora objetivo).
 ### recordatorioWhatsapp
 
 > **recordatorioWhatsapp**: `boolean`
+
+***
+
+### destinatarios?
+
+> `optional` **destinatarios?**: `string`[]
+
+A quién del equipo le llega el recordatorio (nombres de Configuración → WhatsApp), como
+las casillas por ticket del CRM viejo. Vacío = a todo el equipo.

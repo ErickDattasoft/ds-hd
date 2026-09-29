@@ -180,6 +180,27 @@ describe('N8nWebhookPublisher', () => {
     ]);
   });
 
+  it('el recordatorio de ticket lleva a quién avisar, con la forma del CRM viejo', async () => {
+    repo.integraciones = {
+      ...repo.integraciones,
+      whatsappTelefono: '+5219990000000',
+      whatsappApiKey: 'K0',
+      whatsappOtros: [{ nombre: 'Ana', telefono: '+5219991111111', apiKey: 'K1' }, { nombre: 'Luis', telefono: '+5219992222222', apiKey: 'K2' }],
+    };
+    await publisher.publicar({
+      evento: 'ticket.programado',
+      canal: 'tickets',
+      payload: { numero: 7, asunto: 'Visita', fecha: '2026-10-01', hora: '10:00', empresaNombre: 'ACME', destinatarioNombres: ['Ana'] },
+    });
+    const p = gateway.webhooksLlamados[0]!.payload;
+    expect(p.destinatarios).toEqual([{ nombre: 'Ana', telefono: '+5219991111111', apiKey: 'K1' }]);
+    expect(p.ticket).toMatchObject({ numero: 7, empresa: 'ACME', fechaProgramada: '2026-10-01', horaProgramada: '10:00' });
+
+    // Sin elegidos = todo el equipo (número principal incluido).
+    await publisher.publicar({ evento: 'ticket.programado', canal: 'tickets', payload: { numero: 8, destinatarioNombres: [] } });
+    expect((gateway.webhooksLlamados[1]!.payload.destinatarios as unknown[]).length).toBe(3);
+  });
+
   it('cae al env var si Firestore no tiene URL configurada', async () => {
     await publisher.publicar({ evento: 'ticket.creado', canal: 'tickets', payload: { numero: 1 } });
     expect(gateway.webhooksLlamados[0]!.url).toBe('https://env.example.com/tickets');

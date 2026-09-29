@@ -49,6 +49,8 @@ export interface TicketVM {
     fecha: string;
     hora: string;
     recordatorioWhatsapp: boolean;
+    /** Quién del equipo recibe el recordatorio; vacío = todos. */
+    destinatarios: string[];
     texto: string;
     /** `true` si la fecha ya pasó y el ticket sigue abierto (badge en rojo). */
     vencida: boolean;
@@ -120,6 +122,7 @@ export function ticketVM(t: Ticket, ahora: Date): TicketVM {
           fecha: t.agenda.fecha,
           hora: t.agenda.hora,
           recordatorioWhatsapp: t.agenda.recordatorioWhatsapp,
+          destinatarios: t.agenda.destinatarios ?? [],
           texto: `${t.agenda.fecha} ${t.agenda.hora}`,
           vencida: t.agendaVencida(ahora),
         }

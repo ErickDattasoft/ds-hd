@@ -1,3 +1,4 @@
+import { adjuntoSeMuestraEnLinea } from '../../../../core/entities/AdjuntoTicket.js';
 import type { Request, Response } from 'express';
 import type { CrearTicketPortalService } from '../../../../application/portal/CrearTicketPortalService.js';
 import type { MisTicketsService } from '../../../../application/portal/MisTicketsService.js';
@@ -145,7 +146,8 @@ export class PortalTicketController {
       str(req.params.adjId),
     );
     res.setHeader('Content-Type', contentType);
-    res.setHeader('Content-Disposition', `inline; filename="${nombre.replace(/"/g, '')}"`);
+    const disposicion = adjuntoSeMuestraEnLinea(contentType) ? 'inline' : 'attachment';
+    res.setHeader('Content-Disposition', `${disposicion}; filename="${nombre.replace(/"/g, '')}"`);
     res.setHeader('Cache-Control', 'private, max-age=3600');
     res.send(buffer);
   };

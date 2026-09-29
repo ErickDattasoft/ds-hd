@@ -2,7 +2,37 @@ import type { EventoWebhook, IWebhookPublisher } from '../../core/ports/services
 import type { ILogger } from '../../core/ports/services/ILogger.js';
 import type { IConfiguracionRepository } from '../../core/ports/repositories/IConfiguracionRepository.js';
 import type { IIntegracionesGateway } from '../../core/ports/services/IIntegracionesGateway.js';
-import { esEventoNotificable } from '../../core/entities/ConfiguracionIntegraciones.js';
+import {
+  equipoWhatsApp,
+  esEventoNotificable,
+  type ConfiguracionIntegraciones,
+} from '../../core/entities/ConfiguracionIntegraciones.js';
+
+/**
+ * El recordatorio de ticket programado lleva además, con la misma forma que mandaba el CRM
+ * viejo (`ticket` + `destinatarios` con teléfono y API key), a quién del equipo avisar: n8n
+ * agenda el WhatsApp 30 min antes y necesita saber a quién. Sin elegidos = todo el equipo.
+ */
+function extrasRecordatorio(evento: EventoWebhook, config: ConfiguracionIntegraciones): Record<string, unknown> {
+  if (evento.evento !== 'ticket.programado') return {};
+  const p = evento.payload;
+  const elegidos = Array.isArray(p.destinatarioNombres) ? (p.destinatarioNombres as string[]) : [];
+  const equipo = equipoWhatsApp(config);
+  const destinatarios = elegidos.length ? equipo.filter((d) => elegidos.includes(d.nombre)) : equipo;
+  return {
+    destinatarios,
+    ticket: {
+      id: String(p.numero ?? ''),
+      numero: p.numero,
+      empresa: p.empresaNombre ?? '',
+      asunto: p.asunto,
+      agenteAsignado: p.agenteAsignadoNombre ?? '',
+      fechaProgramada: p.fecha ?? '',
+      horaProgramada: p.hora ?? '',
+      fechaHoraISO: p.fechaHoraIso ?? '',
+    },
+  };
+}
 
 function mensajeWhatsApp(evento: EventoWebhook): string {
   const p = evento.payload;
@@ -59,7 +89,12 @@ export class N8nWebhookPublisher implements IWebhookPublisher {
       if (!url) {
         this.logger.debug('Webhook sin URL configurada, omitido', { canal: evento.canal, evento: evento.evento });
       } else {
-        const r = await this.gateway.postWebhook(url, { evento: evento.evento, ...evento.payload, _ts: Date.now() });
+        const r = await this.gateway.postWebhook(url, {
+          evento: evento.evento,
+          ...evento.payload,
+          ...extrasRecordatorio(evento, config),
+          _ts: Date.now(),
+        });
         if (!r.ok) this.logger.warn('Webhook n8n falló', { evento: evento.evento, detalle: r.detalle });
       }
     }

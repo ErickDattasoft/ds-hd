@@ -39,6 +39,9 @@
       <div class="form-grid">
         <label class="field"><span>CC</span><input name="cc" value="{{ valores.cc }}" data-c-cc placeholder="correo1@x.com, correo2@x.com" /></label>
         <p data-c-sugerir-cc hidden><button type="button" class="btn btn--ghost btn--sm" data-c-agregar-cc></button></p>
+        <label class="field"><span>Agregar a CC otro contacto de la empresa</span>
+          <select data-c-cc-picker disabled><option value="">Elige primero el contacto</option></select>
+        </label>
         <label class="field"><span>CCO</span><input name="cco" value="{{ valores.cco }}" placeholder="correo@x.com" /></label>
       </div>
     </div>
@@ -133,17 +136,18 @@
           <input type="checkbox" name="agendaRecordatorio" {{ 'checked' if valores.agendaRecordatorio == 'on' }} />
           <span>Enviar recordatorio por WhatsApp 30 min antes (vía n8n)</span>
         </label>
+        {{ tk.destinatariosRecordatorio(equipoRecordatorio, valores.agendaDestinatarios) }}
       </div>
     </details>
 
     {% if not editando %}
     <details class="disclosure">
-      <summary class="disclosure__summary">📎 Adjuntos <span class="disclosure__hint">— imágenes y PDF, máx 700 KB c/u</span></summary>
+      <summary class="disclosure__summary">📎 Adjuntos <span class="disclosure__hint">— imágenes, PDF y XML, máx 700 KB c/u</span></summary>
       <div class="disclosure__body" data-adjuntos data-adjuntos-modo="crear">
         <ul class="adjuntos-lista" data-adjuntos-preview><li class="muted">Sin adjuntos.</li></ul>
         <label class="field">
           <span>Agregar archivo (o pega una imagen con Ctrl+V)</span>
-          <input type="file" accept="image/png,image/jpeg,image/gif,image/webp,application/pdf" multiple data-adjunto-file />
+          <input type="file" accept="image/png,image/jpeg,image/gif,image/webp,application/pdf,.xml,application/xml,text/xml" multiple data-adjunto-file />
         </label>
       </div>
     </details>

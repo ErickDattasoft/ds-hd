@@ -30,6 +30,9 @@ export interface DatosCotizacion extends DatosGeneralesCotizacion {
   conceptos: ConceptoCotizacion[];
   origenCalculadora?: boolean;
   parametrosCompac?: Record<string, unknown> | null;
+  /** Ticket desde el que se cotiza («🧾 Cotizar» en su detalle): queda ligada a él. */
+  ticketId?: string;
+  ticketNumero?: number;
 }
 
 /** Cambios a los datos generales / condiciones de una cotización existente. */
@@ -114,6 +117,8 @@ export class CotizacionService {
       contactoTelefono: oNull(datos.contactoTelefono),
       origenCalculadora: datos.origenCalculadora ?? false,
       parametrosCompac: datos.parametrosCompac ?? null,
+      ticketId: datos.ticketId || null,
+      ticketNumero: datos.ticketId ? (datos.ticketNumero ?? null) : null,
       creadoPorUid: actor.uid,
       createdAt: ahora,
     });

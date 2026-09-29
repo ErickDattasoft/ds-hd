@@ -23,3 +23,7 @@
 ## Type Aliases
 
 - [CanalTicket](type-aliases/CanalTicket.md)
+
+## Functions
+
+- [coincideTexto](functions/coincideTexto.md)

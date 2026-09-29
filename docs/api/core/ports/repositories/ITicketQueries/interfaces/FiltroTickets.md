@@ -80,6 +80,22 @@ Excluye estados finales (resuelto/cerrado).
 
 > `optional` **texto?**: `string`
 
+Busca en asunto, #, empresa, contacto y agente (como el buscador del CRM viejo).
+
+***
+
+### tipo?
+
+> `optional` **tipo?**: `string`
+
+***
+
+### facturacion?
+
+> `optional` **facturacion?**: `string`
+
+Estado de facturación (`no_facturado`, `facturado`…).
+
 ***
 
 ### limite?

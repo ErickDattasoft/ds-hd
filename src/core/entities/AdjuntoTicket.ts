@@ -29,7 +29,22 @@ export const TIPOS_ADJUNTO_PERMITIDOS: readonly string[] = [
   'image/gif',
   'image/webp',
   'application/pdf',
+  // XML de facturas (CFDI) — el CRM viejo los aceptaba. Se sirven siempre como descarga.
+  'application/xml',
+  'text/xml',
 ];
+
+/** ¿Se puede mostrar dentro del navegador? Lo demás (XML) se sirve como descarga: un XML abierto en el dominio del CRM podría ejecutar código. */
+export function adjuntoSeMuestraEnLinea(contentType: string): boolean {
+  return contentType.startsWith('image/') || contentType === 'application/pdf';
+}
+
+/** Algunos sistemas no mandan el tipo de un `.xml`: se deduce por la extensión. */
+export function normalizarTipoAdjunto(nombre: string, contentType: string): string {
+  const t = contentType.trim().toLowerCase();
+  if ((!t || t === 'application/octet-stream') && /\.xml$/i.test(nombre.trim())) return 'application/xml';
+  return t;
+}
 
 /**
  * Tope de tamaño por archivo. Un doc de Firestore no puede pasar de 1 MiB y base64 infla ~33 %,
@@ -54,7 +69,7 @@ export function sanearNombreArchivo(nombre: string): string {
 /** Valida tipo y tamaño de un adjunto antes de guardarlo. Lanza `ValidationError` si algo falla. */
 export function validarAdjunto(contentType: string, tamano: number): void {
   if (!TIPOS_ADJUNTO_PERMITIDOS.includes(contentType)) {
-    throw new ValidationError('Tipo de archivo no permitido (solo imágenes y PDF)', {
+    throw new ValidationError('Tipo de archivo no permitido (solo imágenes, PDF y XML)', {
       archivo: 'Tipo no permitido',
     });
   }

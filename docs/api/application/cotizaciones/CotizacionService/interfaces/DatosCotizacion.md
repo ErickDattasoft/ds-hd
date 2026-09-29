@@ -62,6 +62,20 @@ Datos para crear una cotización (folio y montos se calculan en el servicio).
 
 ***
 
+### ticketId?
+
+> `optional` **ticketId?**: `string`
+
+Ticket desde el que se cotiza («🧾 Cotizar» en su detalle): queda ligada a él.
+
+***
+
+### ticketNumero?
+
+> `optional` **ticketNumero?**: `number`
+
+***
+
 ### emisorNombre?
 
 > `optional` **emisorNombre?**: `string` \| `null`

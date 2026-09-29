@@ -39,3 +39,11 @@ Vacío = cancelar la programación.
 ### recordatorioWhatsapp
 
 > **recordatorioWhatsapp**: `boolean`
+
+***
+
+### destinatarios?
+
+> `optional` **destinatarios?**: `string`[]
+
+Nombres del equipo que reciben el recordatorio; vacío = todos.

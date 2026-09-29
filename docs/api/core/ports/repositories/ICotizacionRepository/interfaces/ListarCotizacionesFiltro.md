@@ -16,6 +16,14 @@ Filtros para listar cotizaciones.
 
 ***
 
+### ticketId?
+
+> `optional` **ticketId?**: `string`
+
+Cotizaciones ligadas a un ticket (la hecha con «🧾 Cotizar» desde su detalle).
+
+***
+
 ### estado?
 
 > `optional` **estado?**: [`EstadoCotizacion`](../../../../entities/Cotizacion/type-aliases/EstadoCotizacion.md)

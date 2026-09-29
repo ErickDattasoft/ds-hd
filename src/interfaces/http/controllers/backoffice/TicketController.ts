@@ -1,3 +1,5 @@
+import type { ICotizacionRepository } from '../../../../core/ports/repositories/ICotizacionRepository.js';
+import { adjuntoSeMuestraEnLinea } from '../../../../core/entities/AdjuntoTicket.js';
 import type { Ticket } from '../../../../core/entities/Ticket.js';
 import type { EditarTicketService } from '../../../../application/tickets/EditarTicketService.js';
 import type { IContadorRepository } from '../../../../core/ports/repositories/IContadorRepository.js';
@@ -39,6 +41,9 @@ import { ticketVM } from '../../presenters/TicketPresenter.js';
 import { camposDeError } from '../../support/errores.js';
 import { ValidationError } from '../../../../core/errors/DomainError.js';
 
+/** Valores de casillas con el mismo `name` (llegan como string o como arreglo). */
+const casillas = (v: unknown): string[] =>
+  ([] as unknown[]).concat(v ?? []).map((x) => String(x).trim()).filter(Boolean);
 const str = (v: unknown): string => (typeof v === 'string' ? v : '');
 
 /** Estados de facturación como opciones de `<select>`. */
@@ -71,6 +76,7 @@ export class TicketController {
     private readonly excel: TicketExcelService,
     private readonly contadores: IContadorRepository,
     private readonly editar: EditarTicketService,
+    private readonly cotizacionesRepo?: ICotizacionRepository,
   ) {}
 
   private filtroDeQuery(req: Request): FiltroTickets {
@@ -82,6 +88,8 @@ export class TicketController {
       ...(str(q.agente) ? { agenteAsignadoUid: str(q.agente) } : {}),
       ...(q.sinAsignar === '1' ? { sinAsignar: true } : {}),
       ...(str(q.texto) ? { texto: str(q.texto) } : {}),
+      ...(str(q.tipo) ? { tipo: str(q.tipo) } : {}),
+      ...(str(q.facturacion) ? { facturacion: str(q.facturacion) } : {}),
       // "Incluir cerrados" viene marcado de fábrica: al abrir Tickets se ve el historial
       // completo, que es lo que se quiere al buscar algo. Solo se acota a abiertos cuando se
       // desmarca la casilla a mano, y eso se sabe porque el formulario manda `f=1`.
@@ -93,9 +101,12 @@ export class TicketController {
 
   listarView = async (req: Request, res: Response): Promise<void> => {
     const filtro = this.filtroDeQuery(req);
-    const [{ tickets, total, config }, resumen] = await Promise.all([
+    const puedePapelera = req.user!.permisos.includes('papelera:gestionar');
+    const [{ tickets, total, config }, resumen, agentes, enPapelera] = await Promise.all([
       this.listar.listar(req.user!, filtro),
       this.listar.resumenPorEstado(req.user!),
+      this.usuarios.list({ roles: ROLES_TECNICOS, activo: true }).catch(() => []),
+      puedePapelera ? this.listar.contarEnPapelera(req.user!).catch(() => 0) : 0,
     ]);
     const ahora = this.clock.now();
     res.render('pages/backoffice/tickets/list', {
@@ -104,6 +115,9 @@ export class TicketController {
       total,
       resumen,
       config,
+      agentes,
+      enPapelera,
+      estadosFacturacion: ESTADOS_FACTURACION.map((e) => ({ valor: e, etiqueta: ETIQUETAS_FACTURACION[e] })),
       filtro: req.query,
     });
   };
@@ -172,6 +186,7 @@ export class TicketController {
       // Folio que le tocará si nadie más guarda uno antes; el definitivo se asigna al guardar.
       folioSiguiente: ultimoFolio + 1,
       estadosFacturacion: catalogoFacturacion(),
+      equipoRecordatorio: await this.listar.equipoRecordatorio().catch(() => []),
       agentes: puedeAsignar ? await this.usuarios.list({ roles: ROLES_TECNICOS, activo: true }) : [],
       puedeAsignar,
       puedeNotasInternas: user.permisos.includes('tickets:ver_notas_internas'),
@@ -264,7 +279,12 @@ export class TicketController {
         asignarAlActor: b.asignarAMi === 'on',
         estadoFacturacion: esEstadoFacturacion(b.estadoFacturacion) ? b.estadoFacturacion : undefined,
         agenda: str(b.agendaFecha)
-          ? parseAgenda({ fecha: b.agendaFecha, hora: b.agendaHora, recordatorioWhatsapp: b.agendaRecordatorio === 'on' })
+          ? parseAgenda({
+              fecha: b.agendaFecha,
+              hora: b.agendaHora,
+              recordatorioWhatsapp: b.agendaRecordatorio === 'on',
+              destinatarios: b.agendaDestinatarios,
+            })
           : null,
       });
 
@@ -315,6 +335,7 @@ export class TicketController {
       agendaFecha: t.agenda?.fecha ?? '',
       agendaHora: t.agenda?.hora ?? '',
       agendaRecordatorio: t.agenda?.recordatorioWhatsapp ? 'on' : '',
+      agendaDestinatarios: t.agenda?.destinatarios ?? [],
     };
   }
 
@@ -382,11 +403,17 @@ export class TicketController {
       const fecha = str(b.agendaFecha);
       const hora = str(b.agendaHora);
       const recordatorio = b.agendaRecordatorio === 'on';
+      const destinatarios = recordatorio ? casillas(b.agendaDestinatarios) : [];
+      const mismosDestinatarios =
+        destinatarios.slice().sort().join('|') === (ticket.agenda?.destinatarios ?? []).slice().sort().join('|');
       if (
         fecha &&
-        (fecha !== ticket.agenda?.fecha || hora !== ticket.agenda?.hora || recordatorio !== ticket.agenda?.recordatorioWhatsapp)
+        (fecha !== ticket.agenda?.fecha ||
+          hora !== ticket.agenda?.hora ||
+          recordatorio !== ticket.agenda?.recordatorioWhatsapp ||
+          !mismosDestinatarios)
       ) {
-        await this.programarAtencion.ejecutar({ actor, ticketId: id, fecha, hora, recordatorioWhatsapp: recordatorio });
+        await this.programarAtencion.ejecutar({ actor, ticketId: id, fecha, hora, recordatorioWhatsapp: recordatorio, destinatarios });
       }
       res.redirect(`/app/tickets/${id}`);
     } catch (err) {
@@ -436,6 +463,11 @@ export class TicketController {
         eliminar: req.user!.permisos.includes('tickets:eliminar'),
       },
       agentes,
+      equipoRecordatorio: d.puedeEditar ? await this.listar.equipoRecordatorio().catch(() => []) : [],
+      // La cotización hecha desde este ticket (la más reciente), como el «🧾 Cotización: #…» del viejo.
+      cotizacionLigada: req.user!.permisos.includes('cotizaciones:leer')
+        ? ((await this.cotizacionesRepo?.list({ ticketId: d.ticket.id }).catch(() => [])) ?? [])[0] ?? null
+        : null,
       aviso: str(req.query.aviso),
       avisoDetalle: str(req.query.a),
       errores: {},
@@ -509,7 +541,8 @@ export class TicketController {
       str(req.params.adjId),
     );
     res.setHeader('Content-Type', contentType);
-    res.setHeader('Content-Disposition', `inline; filename="${nombre.replace(/"/g, '')}"`);
+    const disposicion = adjuntoSeMuestraEnLinea(contentType) ? 'inline' : 'attachment';
+    res.setHeader('Content-Disposition', `${disposicion}; filename="${nombre.replace(/"/g, '')}"`);
     res.setHeader('Cache-Control', 'private, max-age=3600');
     res.send(buffer);
   };
@@ -588,6 +621,7 @@ export class TicketController {
       fecha: str(req.body?.agendaFecha),
       hora: str(req.body?.agendaHora),
       recordatorioWhatsapp: req.body?.agendaRecordatorio === 'on' || req.body?.agendaRecordatorio === 'true',
+      destinatarios: casillas(req.body?.agendaDestinatarios),
     });
     res.redirect(`/app/tickets/${str(req.params.id)}`);
   };

@@ -28,7 +28,7 @@ Añade una entrada al registro de actividad del ticket. Helper compartido por lo
 
 #### tipo
 
-`"correo"` \| `"creacion"` \| `"cambio_estado"` \| `"asignacion"` \| `"nota"` \| `"sla_incumplido"` \| `"facturacion"` \| `"agenda"` \| `"encuesta"`
+`"correo"` \| `"facturacion"` \| `"agenda"` \| `"creacion"` \| `"cambio_estado"` \| `"asignacion"` \| `"nota"` \| `"sla_incumplido"` \| `"encuesta"`
 
 #### resumen
 

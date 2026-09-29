@@ -15,7 +15,11 @@ export interface FiltroTickets {
   soloAbiertos?: boolean;
   /** `true` = solo tickets con atención programada (agenda), ordenados por fecha/hora asc. */
   soloProgramados?: boolean;
+  /** Busca en asunto, #, empresa, contacto y agente (como el buscador del CRM viejo). */
   texto?: string;
+  tipo?: string;
+  /** Estado de facturación (`no_facturado`, `facturado`…). */
+  facturacion?: string;
   limite?: number;
   /** `false` (por defecto en las vistas normales) excluye tickets en la papelera. */
   archivado?: boolean;

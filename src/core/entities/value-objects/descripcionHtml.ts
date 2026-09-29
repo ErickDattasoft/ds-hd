@@ -35,7 +35,7 @@ const AUTOCIERRE = new Set(['br', 'img']);
 
 /** Una declaración CSS `propiedad: valor` segura — sin `url()`, `expression()`, ni nada dinámico. */
 const ESTILO_DECLARACION_RE =
-  /^(max-width|max-height|width|height|float|clear|margin|margin-top|margin-bottom|margin-left|margin-right|display|border-radius|text-align)\s*:\s*[a-zA-Z0-9%.\- ]{1,40}$/;
+  /^(max-width|max-height|width|height|float|clear|margin|margin-top|margin-bottom|margin-left|margin-right|display|border-radius|text-align|font-size)\s*:\s*[a-zA-Z0-9%.\- ]{1,40}$/;
 
 /** Quita del valor de `style` cualquier declaración que no esté en la lista blanca. */
 function limpiarEstilo(valor: string): string | null {

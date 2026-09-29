@@ -26,6 +26,10 @@ Valida y normaliza los campos de agenda que llegan de un formulario.
 
 `unknown`
 
+#### destinatarios?
+
+`unknown`
+
 ## Returns
 
 [`AgendaTicket`](../interfaces/AgendaTicket.md)

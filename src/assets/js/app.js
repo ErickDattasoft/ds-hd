@@ -1051,7 +1051,53 @@
     } else if (nombre) {
       nombre.value = busca.value;
     }
+    poblarCcPicker(wrap);
   });
+
+  // Lista de CC: los demás contactos (con correo) de la misma empresa, sin el contacto del
+  // ticket ni los que ya están en CC — igual que el selector del CRM viejo.
+  function poblarCcPicker(wrap) {
+    var sel = wrap && wrap.querySelector('[data-c-cc-picker]');
+    var busca = wrap && wrap.querySelector('[data-buscar-contacto]');
+    var dl = busca && document.getElementById(busca.getAttribute('list'));
+    if (!sel || !dl) return;
+    var empresa = (wrap.querySelector('[data-c-empresa]') || {}).value || '';
+    var correoPrincipal = ((wrap.querySelector('[data-c-correo]') || {}).value || '').toLowerCase();
+    var cc = ((wrap.querySelector('[data-c-cc]') || {}).value || '').toLowerCase().split(/[,;\s]+/).filter(Boolean);
+    if (!empresa.trim()) {
+      sel.innerHTML = '<option value="">Elige primero el contacto</option>';
+      sel.disabled = true;
+      return;
+    }
+    var vistos = {};
+    var opciones = Array.prototype.filter.call(dl.options, function (o) {
+      var mail = (o.getAttribute('data-email') || '').toLowerCase();
+      if (!mail || o.getAttribute('data-empresa') !== empresa || mail === correoPrincipal || cc.indexOf(mail) !== -1 || vistos[mail]) return false;
+      vistos[mail] = true;
+      return true;
+    });
+    sel.innerHTML = '<option value="">' + (opciones.length ? '➕ Agregar contacto a CC…' : 'No hay más contactos con correo') + '</option>' +
+      opciones.map(function (o) {
+        var mail = o.getAttribute('data-email');
+        return '<option value="' + escHtmlTexto(mail).replace(/"/g, '&quot;') + '">' + escHtmlTexto(o.value) + ' — ' + escHtmlTexto(mail) + '</option>';
+      }).join('');
+    sel.disabled = !opciones.length;
+  }
+  document.addEventListener('change', function (e) {
+    var sel = e.target.closest && e.target.closest('[data-c-cc-picker]');
+    if (sel && sel.value) {
+      var wrap = sel.closest('[data-contacto-picker]');
+      var cc = wrap.querySelector('[data-c-cc]');
+      var ya = cc.value.split(/[,;\s]+/).filter(Boolean);
+      ya.push(sel.value);
+      cc.value = ya.join(', ');
+      poblarCcPicker(wrap);
+      return;
+    }
+    var campo = e.target.closest && e.target.closest('[data-c-empresa], [data-c-cc]');
+    if (campo) poblarCcPicker(campo.closest('[data-contacto-picker]'));
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('[data-contacto-picker]'), poblarCcPicker);
 
   // El principal o el alternativo, en copia con un clic (sin repetirlo si ya está).
   document.addEventListener('click', function (e) {
@@ -1485,6 +1531,31 @@
       caja.value = (caja.value ? caja.value.replace(/\s+$/, '') + '\n\n' : '') + texto;
     }
     caja.focus();
+  });
+
+  // Botones de formato (negrita, listas, tamaño) del editor enriquecido de la descripción.
+  Array.prototype.forEach.call(document.querySelectorAll('[data-formato-grupo]'), function (g) {
+    var caja = document.querySelector(g.getAttribute('data-destino'));
+    if (caja && caja.isContentEditable) g.hidden = false;
+  });
+  document.addEventListener('mousedown', function (e) {
+    // mousedown + preventDefault: el editor no pierde la selección al dar clic en el botón.
+    var btn = e.target.closest && e.target.closest('[data-formato]');
+    if (!btn) return;
+    e.preventDefault();
+    var caja = document.querySelector(btn.closest('[data-formato-grupo]').getAttribute('data-destino'));
+    if (!caja) return;
+    if (!caja.contains(document.activeElement) && document.activeElement !== caja) caja.focus();
+    var cmd = btn.getAttribute('data-formato');
+    if (cmd === 'fontSize') {
+      // Con CSS sale <span style="font-size:…">, que el sanitizador sí deja pasar (no <font>).
+      document.execCommand('styleWithCSS', false, true);
+      document.execCommand('fontSize', false, btn.getAttribute('data-valor'));
+      document.execCommand('styleWithCSS', false, false);
+    } else {
+      document.execCommand(cmd, false, null);
+    }
+    caja.dispatchEvent(new Event('input', { bubbles: true }));
   });
 
   // Respuestas guardadas: se agregan al final de la caja, como la firma.

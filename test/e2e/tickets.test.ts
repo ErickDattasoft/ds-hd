@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import request from 'supertest';
 import { makeTestApp, cookieValor } from '../helpers/app.js';
+import { Empresa } from '../../src/core/entities/Empresa.js';
 
 const SUP = { uid: 'u-sup', email: 'sup@dattasoft.mx', password: 'super12345', nombre: 'Sup', rol: 'supervisor' as const };
 const AG = { uid: 'u-ag', email: 'ag@dattasoft.mx', password: 'agente12345', nombre: 'Agente', rol: 'agente' as const };
@@ -339,5 +340,67 @@ describe('editor de descripción con imágenes inline', () => {
     await agent.post(`/app/tickets/${id}/reenviar-correo`).type('form').send({ _csrf: csrf });
     expect(t.emailSender.ultimo?.html).not.toContain('base64');
     expect(t.emailSender.ultimo?.html).toContain('Ve la imagen');
+  });
+});
+
+describe('tickets: paridad con el CRM viejo (lista, formulario y detalle)', () => {
+  it('filtra por tipo, agente y facturación, busca por contacto y enseña editar y papelera', async () => {
+    const t = makeTestApp({ usuarios: [SUP, AG] });
+    const { agent, csrf } = await login(t.app, SUP.email, SUP.password);
+    const alta = (asunto: string, tipo: string, contacto: string, estadoFacturacion: string) =>
+      agent.post('/app/tickets').type('form').send({
+        _csrf: csrf, asunto, descripcion: 'descripción suficiente', tipo, prioridad: 'Media',
+        contactoNombre: contacto, estadoFacturacion,
+      });
+    await alta('Timbrado falla', 'Soporte Técnico', 'Rosa Luna', 'facturado');
+    await alta('Instalar nóminas', 'General', 'Pedro Sol', 'no_facturado');
+
+    const porTipo = await agent.get('/app/tickets?tipo=General');
+    expect(porTipo.text).toContain('Instalar nóminas');
+    expect(porTipo.text).not.toContain('Timbrado falla');
+
+    const porFacturacion = await agent.get('/app/tickets?facturacion=facturado');
+    expect(porFacturacion.text).toContain('Timbrado falla');
+    expect(porFacturacion.text).not.toContain('Instalar nóminas');
+
+    const porContacto = await agent.get('/app/tickets?texto=rosa');
+    expect(porContacto.text).toContain('Timbrado falla');
+    expect(porContacto.text).not.toContain('Instalar nóminas');
+
+    const lista = await agent.get('/app/tickets');
+    expect(lista.text).toContain('name="agente"');
+    expect(lista.text).toMatch(/\/app\/tickets\/[^"]+\/editar/);
+    expect(lista.text).toContain('/app/papelera#tickets');
+  });
+
+  it('acepta XML (se descarga, no se abre) y la cotización hecha desde el ticket queda ligada', async () => {
+    const t = makeTestApp({ usuarios: [SUP] });
+    const { agent, csrf } = await login(t.app, SUP.email, SUP.password);
+    t.empresaRepo.items.set('e1', new Empresa({ id: 'e1', nombre: 'ACME' }));
+    const crear = await agent.post('/app/tickets').type('form').send({
+      _csrf: csrf, asunto: 'Factura rechazada', descripcion: 'el SAT rechaza el CFDI', tipo: 'General', prioridad: 'Media',
+      empresaNombre: 'ACME', contactoNombre: 'Rosa', contactoCorreo: 'rosa@acme.mx',
+    });
+    const id = String(crear.headers.location).split('/').pop()!;
+
+    const xml = Buffer.from('<cfdi:Comprobante/>').toString('base64');
+    const subir = await agent.post(`/app/tickets/${id}/adjuntos`).set('x-csrf-token', csrf)
+      .send({ nombre: 'factura.xml', contentType: '', base64: xml });
+    expect(subir.body.ok).toBe(true);
+    const ver = await agent.get(`/app/tickets/${id}/adjuntos/${subir.body.adjunto.id}`);
+    expect(ver.headers['content-disposition']).toMatch(/^attachment/);
+
+    let det = await agent.get(`/app/tickets/${id}`);
+    expect(det.text).toContain(`ticket=${id}`);
+    const ticket = t.ticketStore.tickets.get(id);
+    await agent.post('/app/cotizaciones').type('form').send({
+      _csrf: csrf, empresaId: 'e1', ticketId: id, ticketNumero: String(ticket!.numero),
+      concepto_descripcion: 'Revisión CFDI', concepto_cantidad: '1', concepto_precio: '500',
+    });
+    const [cot] = [...t.cotizacionRepo.items.values()];
+    expect(cot?.ticketId).toBe(id);
+    det = await agent.get(`/app/tickets/${id}`);
+    expect(det.text).toContain(`🧾 Cotización: ${cot!.folio}`);
+    expect(det.text).not.toContain(`ticket=${id}`); // ya no ofrece «Cotizar» otra vez
   });
 });

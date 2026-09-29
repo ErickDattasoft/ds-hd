@@ -10,6 +10,11 @@
     {% if valores.origenCalculadora %}<input type="hidden" name="origenCalculadora" value="true" />{% endif %}
 
     {% if modo != 'editar' %}
+      {% if valores.ticketId %}
+        <input type="hidden" name="ticketId" value="{{ valores.ticketId }}" />
+        <input type="hidden" name="ticketNumero" value="{{ valores.ticketNumero }}" />
+        <p class="muted">🎫 Se ligará al ticket #{{ valores.ticketNumero }}.</p>
+      {% endif %}
       <label class="field"><span>Empresa</span>
         <select name="empresaId" required>
           <option value="">— selecciona —</option>

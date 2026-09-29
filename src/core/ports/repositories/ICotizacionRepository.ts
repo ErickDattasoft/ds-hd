@@ -3,6 +3,8 @@ import type { Cotizacion, EstadoCotizacion } from '../../entities/Cotizacion.js'
 /** Filtros para listar cotizaciones. */
 export interface ListarCotizacionesFiltro {
   empresaId?: string;
+  /** Cotizaciones ligadas a un ticket (la hecha con «🧾 Cotizar» desde su detalle). */
+  ticketId?: string;
   estado?: EstadoCotizacion;
   texto?: string;
   limite?: number;

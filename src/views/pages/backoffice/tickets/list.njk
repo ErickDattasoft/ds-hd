@@ -9,6 +9,7 @@
       <a class="btn btn--sm {{ 'btn--secondary' if filtro.agenda != '1' }}" href="/app/tickets{{ '' if filtro.agenda == '1' else '?agenda=1' }}">📅 Agenda</a>
       <a class="btn btn--sm btn--secondary" href="/app/tickets/tablero">Tablero</a>
       <a class="btn btn--sm btn--secondary" href="/app/tickets/mis-asignados">Mis asignados</a>
+      {% if can('papelera:gestionar') %}<a class="btn btn--sm btn--ghost" href="/app/papelera#tickets" title="Tickets en la papelera">🗑️ Papelera{% if enPapelera %} <span class="badge">{{ enPapelera }}</span>{% endif %}</a>{% endif %}
     </div>
   </div>
   {% if filtro.agenda == '1' %}<p class="muted">Solo tickets con atención programada, del más próximo al más lejano.</p>{% endif %}
@@ -25,7 +26,7 @@
   <form method="get" class="filterbar">
     <input type="hidden" name="f" value="1" />
     {% if filtro.agenda == '1' %}<input type="hidden" name="agenda" value="1" />{% endif %}
-    <input type="search" name="texto" value="{{ filtro.texto }}" placeholder="Buscar por asunto, # o empresa…" autocomplete="off" spellcheck="false" />
+    <input type="search" name="texto" value="{{ filtro.texto }}" placeholder="Buscar por asunto, #, empresa, contacto o agente…" autocomplete="off" spellcheck="false" />
     <select name="estado">
       <option value="">Todos los estados</option>
       {% for e in config.estados %}<option value="{{ e }}" {{ 'selected' if filtro.estado == e }}>{{ e }}</option>{% endfor %}
@@ -34,11 +35,23 @@
       <option value="">Cualquier prioridad</option>
       {% for p in config.prioridades %}<option value="{{ p }}" {{ 'selected' if filtro.prioridad == p }}>{{ p }}</option>{% endfor %}
     </select>
+    <select name="tipo">
+      <option value="">Cualquier tipo</option>
+      {% for t in config.tipos %}<option value="{{ t }}" {{ 'selected' if filtro.tipo == t }}>{{ t }}</option>{% endfor %}
+    </select>
+    <select name="agente">
+      <option value="">Cualquier agente</option>
+      {% for a in agentes %}<option value="{{ a.uid }}" {{ 'selected' if filtro.agente == a.uid }}>{{ a.nombre }}</option>{% endfor %}
+    </select>
+    <select name="facturacion">
+      <option value="">Cualquier facturación</option>
+      {% for f in estadosFacturacion %}<option value="{{ f.valor }}" {{ 'selected' if filtro.facturacion == f.valor }}>{{ f.etiqueta }}</option>{% endfor %}
+    </select>
     <label class="field--check"><input type="checkbox" name="abiertos" value="0" {{ 'checked' if filtro.abiertos == '0' or filtro.f != '1' }} /> incluir cerrados</label>
     <label class="field--check"><input type="checkbox" data-toggle-columna="SLA" /> mostrar SLA</label>
     <button class="btn btn--sm" type="submit">Filtrar</button>
     <button class="btn btn--sm btn--ghost" type="submit" formaction="/app/tickets/exportar" hx-boost="false">Exportar Excel</button>
   </form>
 
-  {{ tk.tablaTickets(tickets, csrfToken, can('tickets:eliminar')) }}
+  {{ tk.tablaTickets(tickets, csrfToken, can('tickets:eliminar'), can('tickets:editar')) }}
 {% endblock %}

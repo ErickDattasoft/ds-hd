@@ -150,3 +150,16 @@ export function sanearReglas(v: unknown): MatrizReglas {
   }
   return base;
 }
+
+/** Nombre con el que aparece el número principal en la lista de destinatarios. */
+export const NOMBRE_WHATSAPP_PRINCIPAL = 'Número principal';
+
+/** El equipo que recibe WhatsApp (número principal + los demás), para elegir destinatarios. */
+export function equipoWhatsApp(c: Pick<ConfiguracionIntegraciones, 'whatsappTelefono' | 'whatsappApiKey' | 'whatsappOtros'>): DestinatarioWhatsApp[] {
+  return [
+    ...(c.whatsappTelefono && c.whatsappApiKey
+      ? [{ nombre: NOMBRE_WHATSAPP_PRINCIPAL, telefono: c.whatsappTelefono, apiKey: c.whatsappApiKey }]
+      : []),
+    ...(c.whatsappOtros ?? []),
+  ];
+}
