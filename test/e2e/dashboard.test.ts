@@ -74,6 +74,26 @@ describe('dashboard', () => {
     const dash = await agent.get('/app');
     expect(dash.status).toBe(200);
     expect(dash.text).toContain('Empresas');
-    expect(dash.text).toMatch(/stat__num">2<\/span><span class="stat__lbl">Empresas/);
+    expect(dash.text).toMatch(/stat__num">2<\/span><span class="stat__lbl">🏢 Empresas/);
+  });
+
+  it('trae las tarjetas y listas del dashboard del viejo', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    t.empresaRepo.items.set('e1', new Empresa({ id: 'e1', nombre: 'ACME' }));
+    const { agent, csrf } = await login(t.app, ADMIN.email, ADMIN.password);
+    await agent.post('/app/tickets').type('form').send({
+      _csrf: csrf, asunto: 'Timbrado falla', descripcion: 'descripción suficiente', tipo: 'General', prioridad: 'Media',
+    });
+    await agent.post('/app/tareas').type('form').send({ _csrf: csrf, titulo: 'Llamar a ACME', asignadoAUid: ADMIN.uid });
+
+    const dash = await agent.get('/app');
+    expect(dash.text).toContain('🎫 Total tickets');
+    expect(dash.text).toContain('👥 Contactos');
+    expect(dash.text).toContain('/app/empresas?pendientes=versiones');
+    expect(dash.text).toContain('Tickets recientes');
+    expect(dash.text).toContain('Timbrado falla');
+    expect(dash.text).toContain('Licencias por vencer');
+    expect(dash.text).toContain('Tickets abiertos más de 5 días');
+    expect(dash.text).toContain('Llamar a ACME');
   });
 });

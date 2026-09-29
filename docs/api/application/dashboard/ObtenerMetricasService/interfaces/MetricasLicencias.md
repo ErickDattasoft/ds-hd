@@ -46,7 +46,32 @@ Total de licencias por vencer (dentro del umbral de aviso).
 
 > **avisosPendientes**: `number`
 
-Empresas con algo que avisar: licencia en riesgo o versión desactualizada.
+Empresas con versiones desactualizadas que AÚN NO se avisaron (el «🔔 Avisos pendientes» del
+viejo, que abre el mismo filtro que su botón en Empresas).
+
+***
+
+### proximas90
+
+> **proximas90**: `object`[]
+
+Licencias que vencen en los próximos 90 días (lista del dashboard del viejo), máx. 6.
+
+#### empresaId
+
+> **empresaId**: `string`
+
+#### empresa
+
+> **empresa**: `string`
+
+#### sistema
+
+> **sistema**: `string`
+
+#### dias
+
+> **dias**: `number`
 
 ***
 

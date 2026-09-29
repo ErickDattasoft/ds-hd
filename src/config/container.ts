@@ -913,6 +913,8 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
           c.empresaRepo,
           c.versionRepo,
           c.ticketPublicoRepo,
+          c.contactoRepo,
+          c.avisarEmpresasService,
         ),
     ).singleton(),
     agendaService: asFunction(

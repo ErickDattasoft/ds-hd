@@ -13,7 +13,11 @@ export class DashboardController {
 
   ver = async (req: Request, res: Response): Promise<void> => {
     const m = await this.metricas.ejecutar(req.user!);
-    res.render('pages/backoffice/dashboard', { titulo: 'Dashboard', m });
+    res.render('pages/backoffice/dashboard', {
+      titulo: 'Dashboard',
+      m,
+      hoyIso: new Date().toLocaleDateString('en-CA', { timeZone: 'America/Mexico_City' }),
+    });
   };
 
   calendario = async (req: Request, res: Response): Promise<void> => {

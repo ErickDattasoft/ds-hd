@@ -130,8 +130,8 @@ describe('ObtenerMetricasService', () => {
     expect(m.licencias!.vencidas).toBe(1);
     expect(m.licencias!.porVencer).toBe(1);
     expect(m.licencias!.empresasEnRiesgo).toBe(2);
-    // e1 (licencia + versión), e2 (licencia), e3 (versión desactualizada) → 3 avisos
-    expect(m.licencias!.avisosPendientes).toBe(3);
+    // Como el viejo: solo versiones desactualizadas → e1 y e3 (e2 solo tiene licencia).
+    expect(m.licencias!.avisosPendientes).toBe(2);
     expect(m.licencias!.banner.map((b) => b.nombre)).toEqual(['ACME', 'Globex']);
   });
 });

@@ -42,6 +42,62 @@ Snapshot de métricas del dashboard, ya acotado al alcance de permisos del actor
 
 > **porMes**: `object`[]
 
+#### total
+
+> **total**: `number`
+
+Todos los tickets (fuera de la papelera) y su conteo por estado, para las tarjetas.
+
+#### porEstadoTodos
+
+> **porEstadoTodos**: `object`[]
+
+#### recientes
+
+> **recientes**: `object`[]
+
+#### viejos
+
+> **viejos**: `object`[]
+
+Abiertos desde hace 5 días o más, los más viejos primero (máx. 6).
+
+***
+
+### contactosTotal
+
+> **contactosTotal**: `number` \| `null`
+
+Total de contactos activos; `null` si no hay repositorio o permiso.
+
+***
+
+### tareasPendientes
+
+> **tareasPendientes**: `object`[]
+
+Tareas pendientes de todo el equipo, las que vencen primero (máx. 8).
+
+#### id
+
+> **id**: `string`
+
+#### titulo
+
+> **titulo**: `string`
+
+#### empresaId
+
+> **empresaId**: `string` \| `null`
+
+#### vence
+
+> **vence**: `string` \| `null`
+
+#### asignadoANombre
+
+> **asignadoANombre**: `string` \| `null`
+
 ***
 
 ### cotizaciones

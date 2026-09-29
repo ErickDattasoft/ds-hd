@@ -9,6 +9,12 @@ import type { ITicketPublicoRepository } from '../../core/ports/repositories/ITi
 import type { IClock } from '../../core/ports/services/IClock.js';
 import type { SessionUser } from '../shared/SessionUser.js';
 import { estadoActualizacion } from '../../core/entities/value-objects/version.js';
+import { esEstadoFinal } from '../../core/entities/value-objects/EstadoTicket.js';
+import type { IContactoRepository } from '../../core/ports/repositories/IContactoRepository.js';
+import type { AvisarEmpresasService } from '../empresas/AvisarEmpresasService.js';
+
+/** Orden de las tarjetas por estado (como las del CRM viejo); los demás van después. */
+const ORDEN_ESTADOS = ['Abierto', 'En proceso', 'Pendiente', 'Resuelto', 'Cerrado'];
 
 /** Meses hacia atrás (incluido el actual) que cubre la gráfica de tickets por mes. */
 const MESES_GRAFICA = 6;
@@ -23,8 +29,13 @@ export interface MetricasLicencias {
   vencidas: number;
   /** Total de licencias por vencer (dentro del umbral de aviso). */
   porVencer: number;
-  /** Empresas con algo que avisar: licencia en riesgo o versión desactualizada. */
+  /**
+   * Empresas con versiones desactualizadas que AÚN NO se avisaron (el «🔔 Avisos pendientes» del
+   * viejo, que abre el mismo filtro que su botón en Empresas).
+   */
   avisosPendientes: number;
+  /** Licencias que vencen en los próximos 90 días (lista del dashboard del viejo), máx. 6. */
+  proximas90: { empresaId: string; empresa: string; sistema: string; dias: number }[];
   /** Empresas más urgentes para el banner (máx. 5). */
   banner: {
     empresaId: string;
@@ -45,7 +56,17 @@ export interface Metricas {
     porEstado: { etiqueta: string; valor: number }[];
     porPrioridad: { etiqueta: string; valor: number }[];
     porMes: { etiqueta: string; valor: number }[];
+    /** Todos los tickets (fuera de la papelera) y su conteo por estado, para las tarjetas. */
+    total: number;
+    porEstadoTodos: { estado: string; valor: number }[];
+    recientes: { id: string; numero: number; asunto: string; empresa: string | null; prioridad: string; estado: string; abiertoEn: Date }[];
+    /** Abiertos desde hace 5 días o más, los más viejos primero (máx. 6). */
+    viejos: { id: string; numero: number; asunto: string; empresa: string | null; agente: string | null; dias: number }[];
   };
+  /** Total de contactos activos; `null` si no hay repositorio o permiso. */
+  contactosTotal: number | null;
+  /** Tareas pendientes de todo el equipo, las que vencen primero (máx. 8). */
+  tareasPendientes: { id: string; titulo: string; empresaId: string | null; vence: string | null; asignadoANombre: string | null }[];
   cotizaciones: { porEstado: { etiqueta: string; valor: number }[]; totalAbiertas: number };
   misTareasPendientes: number;
   /** Tickets del buzón público a la espera de aceptar/rechazar (`0` si el actor no ve el buzón). */
@@ -114,6 +135,8 @@ export class ObtenerMetricasService {
     private readonly empresas: IEmpresaRepository,
     private readonly versiones: IVersionRepository,
     private readonly ticketsPublicos: ITicketPublicoRepository,
+    private readonly contactos?: IContactoRepository,
+    private readonly avisar?: AvisarEmpresasService,
   ) {}
 
   async ejecutar(actor: SessionUser): Promise<Metricas> {
@@ -126,7 +149,8 @@ export class ObtenerMetricasService {
 
     const puedeVerBuzon = actor.permisos.includes('tickets:crear');
 
-    const [abiertos, todos, contarPorEstado, proximos, misTareas, bita, licencias, publicos] =
+    const puedeVerTareas = actor.permisos.includes('seguimiento:leer');
+    const [abiertos, todos, contarPorEstado, proximos, misTareas, bita, licencias, publicos, contactosTotal, pendientesEquipo] =
       await Promise.all([
         this.ticketQueries.listar({ ...alcance, soloAbiertos: true }),
         this.ticketQueries.listar({ ...alcance, archivado: false }),
@@ -138,7 +162,19 @@ export class ObtenerMetricasService {
           : Promise.resolve([]),
         puedeVerEmpresas ? this.calcularLicencias(ahora) : Promise.resolve(null),
         puedeVerBuzon ? this.ticketsPublicos.listPendientes() : Promise.resolve([]),
+        this.contactos && actor.permisos.includes('contactos:leer')
+          ? this.contactos.contar().catch(() => null)
+          : Promise.resolve(null),
+        puedeVerTareas ? this.tareas.list({ completada: false }) : Promise.resolve([]),
       ]);
+
+    const conteoEstados = new Map<string, number>();
+    for (const t of todos) conteoEstados.set(t.estado, (conteoEstados.get(t.estado) ?? 0) + 1);
+    const rango = (e: string): number => (ORDEN_ESTADOS.includes(e) ? ORDEN_ESTADOS.indexOf(e) : ORDEN_ESTADOS.length);
+    const porEstadoTodos = [...conteoEstados]
+      .map(([estado, valor]) => ({ estado, valor }))
+      .sort((a, b) => rango(a.estado) - rango(b.estado) || a.estado.localeCompare(b.estado, 'es'));
+    const dia = 86_400_000;
 
     const porEstado = new Map<string, number>();
     const porPrioridad = new Map<string, number>();
@@ -159,7 +195,46 @@ export class ObtenerMetricasService {
           todos.map((t) => t.abiertoEn),
           ahora,
         ),
+        total: todos.length,
+        porEstadoTodos,
+        recientes: [...todos]
+          .sort((a, b) => b.abiertoEn.getTime() - a.abiertoEn.getTime())
+          .slice(0, 8)
+          .map((t) => ({
+            id: t.id,
+            numero: t.numero,
+            asunto: t.asunto,
+            empresa: t.empresaNombre,
+            prioridad: t.prioridad,
+            estado: t.estado,
+            abiertoEn: t.abiertoEn,
+          })),
+        viejos: abiertos
+          .filter((t) => !esEstadoFinal(t.estado))
+          .map((t) => ({ t, dias: Math.floor((ahora.getTime() - t.abiertoEn.getTime()) / dia) }))
+          .filter((x) => x.dias >= 5)
+          .sort((a, b) => b.dias - a.dias)
+          .slice(0, 6)
+          .map(({ t, dias }) => ({
+            id: t.id,
+            numero: t.numero,
+            asunto: t.asunto,
+            empresa: t.empresaNombre,
+            agente: t.agenteAsignadoNombre,
+            dias,
+          })),
       },
+      contactosTotal,
+      tareasPendientes: pendientesEquipo
+        .filter((t) => !t.completada)
+        .slice(0, 8)
+        .map((t) => ({
+          id: t.id,
+          titulo: t.titulo,
+          empresaId: t.empresaId,
+          vence: t.vence,
+          asignadoANombre: t.asignadoANombre,
+        })),
       cotizaciones: {
         porEstado: enSegmentos(
           Object.entries(contarPorEstado).map(([etiqueta, valor]) => ({ etiqueta, valor })),
@@ -195,8 +270,10 @@ export class ObtenerMetricasService {
     let vencidas = 0;
     let porVencer = 0;
     let empresasEnRiesgo = 0;
-    let avisosPendientes = 0;
+    let avisosPendientesRespaldo = 0;
     const candidatas: MetricasLicencias['banner'] = [];
+    const proximas90: MetricasLicencias['proximas90'] = [];
+    const hoy0 = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate());
 
     for (const empresa of empresas) {
       const riesgo = empresa.licenciasEnRiesgo(ahora);
@@ -218,8 +295,19 @@ export class ObtenerMetricasService {
           diasMin: riesgo[0]?.dias ?? 0,
         });
       }
-      if (nVencidas || nPorVencer || desactualizadas) avisosPendientes += 1;
+      if (desactualizadas) avisosPendientesRespaldo += 1;
+      for (const s of empresa.sistemasContratados) {
+        const fecha = empresa.vigencias[s];
+        if (!fecha) continue;
+        const dias = Math.ceil((new Date(`${fecha}T00:00:00`).getTime() - hoy0.getTime()) / 86_400_000);
+        if (dias >= 0 && dias <= 90) proximas90.push({ empresaId: empresa.id, empresa: empresa.nombre, sistema: s, dias });
+      }
     }
+    // Sin avisar = misma regla que el botón de Empresas (misma versión oficial ya avisada no cuenta).
+    const avisosPendientes = this.avisar
+      ? [...(await this.avisar.sinAvisar(empresas, oficial, ahora)).values()].filter((x) => x.versiones > 0).length
+      : avisosPendientesRespaldo;
+    proximas90.sort((a, b) => a.dias - b.dias);
 
     candidatas.sort((a, b) => a.diasMin - b.diasMin);
     return {
@@ -228,6 +316,7 @@ export class ObtenerMetricasService {
       vencidas,
       porVencer,
       avisosPendientes,
+      proximas90: proximas90.slice(0, 6),
       banner: candidatas.slice(0, 5),
     };
   }
