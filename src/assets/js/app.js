@@ -544,10 +544,14 @@
     var form = e.target.closest('[data-kb-subir]');
     if (!form) return;
     e.preventDefault();
-    var input = form.querySelector('input[type="file"]');
-    var files = input && input.files ? Array.prototype.slice.call(input.files) : [];
+    // Archivos sueltos y/o carpeta completa (la del input con webkitdirectory trae su ruta).
+    var files = [];
+    Array.prototype.forEach.call(form.querySelectorAll('input[type="file"]'), function (inp) {
+      if (inp.files) files = files.concat(Array.prototype.slice.call(inp.files));
+    });
     var salida = document.getElementById('resultado-kb-subir');
-    if (!files.length || !salida) return;
+    if (!salida) return;
+    if (!files.length) { salida.innerHTML = '<p class="alert alert--error">Elige archivos o una carpeta.</p>'; return; }
     var btn = e.submitter || form.querySelector('button[type="submit"]');
     if (btn) { btn.disabled = true; btn.classList.add('is-loading'); }
     salida.innerHTML = '<p class="muted">Leyendo ' + files.length + ' archivo(s)…</p>';
@@ -569,6 +573,8 @@
     ).then(function (archivos) {
       var vis = form.querySelector('[name="visibilidad"]');
       var pub = form.querySelector('[name="publicado"]');
+      var cat = form.querySelector('[name="categoria"]');
+      var act = form.querySelector('[name="actualizar"]');
       salida.innerHTML = '<p class="muted">Subiendo…</p>';
       fetch(form.getAttribute('action'), {
         method: 'POST',
@@ -577,6 +583,8 @@
           archivos: archivos.filter(Boolean),
           visibilidad: vis ? vis.value : 'staff',
           publicado: pub && pub.checked ? 'on' : '',
+          categoria: cat ? cat.value : '',
+          actualizar: act && act.checked ? 'on' : '',
         }),
       })
         .then(function (r) { return r.json(); })

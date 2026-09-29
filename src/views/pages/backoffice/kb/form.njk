@@ -37,6 +37,14 @@
     <div class="page-head__actions">
       <button class="btn" type="submit">Guardar</button>
       <a class="btn btn--ghost" href="/app/kb">Cancelar</a>
+      {% if modo == 'editar' and articulo and can('kb:publicar') %}
+        <button class="btn btn--danger" type="submit" form="kb-eliminar">🗑️ Eliminar</button>
+      {% endif %}
     </div>
   </form>
+  {% if modo == 'editar' and articulo and can('kb:publicar') %}
+    <form id="kb-eliminar" method="post" action="/app/kb/{{ articulo.id }}/eliminar" hidden data-confirm="¿Eliminar «{{ articulo.titulo }}»? No se puede deshacer.">
+      <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+    </form>
+  {% endif %}
 {% endblock %}

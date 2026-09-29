@@ -13,10 +13,29 @@
 
   <form method="post" action="/app/kb/subir" class="form form--wide" data-kb-subir>
     <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
-    <label class="field"><span>Archivos</span>
-      <input type="file" name="archivos" multiple
-             accept=".md,.markdown,.txt,.ps1,.bat,.cmd,.sql,.sh,.py,.json,.yml,.yaml,.ini,.reg" required />
-      <em class="field__hint">Puedes seleccionar varios a la vez.</em>
+    <div class="form-grid">
+      <label class="field"><span>📄 Archivos sueltos</span>
+        <input type="file" name="archivos" multiple data-kb-archivos
+               accept=".md,.markdown,.txt,.ps1,.bat,.cmd,.sql,.sh,.py,.json,.yml,.yaml,.ini,.reg" />
+        <em class="field__hint">Puedes seleccionar varios a la vez.</em>
+      </label>
+      <label class="field"><span>📂 …o una carpeta completa</span>
+        <input type="file" name="carpeta" multiple webkitdirectory data-kb-archivos />
+        <em class="field__hint">Se sube todo lo que tenga, con su ruta dentro de la carpeta.</em>
+      </label>
+    </div>
+    <label class="field"><span>Guardar como</span>
+      <select name="categoria">
+        <option value="">Adivinar por el archivo</option>
+        <option value="solucion">🛠 Solución / Error</option>
+        <option value="empresa">🏢 Empresa</option>
+        <option value="script">⚡ Script</option>
+      </select>
+      <em class="field__hint">Los .ps1, .bat, .cmd y .sql siempre quedan como ⚡ Script.</em>
+    </label>
+    <label class="field--check">
+      <input type="checkbox" name="actualizar" checked />
+      <span>🔄 Si ya existe uno con la misma ruta, actualizarlo en vez de duplicarlo</span>
     </label>
     <label class="field"><span>Visibilidad</span>
       <select name="visibilidad">

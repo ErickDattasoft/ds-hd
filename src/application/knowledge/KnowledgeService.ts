@@ -113,7 +113,17 @@ export class KnowledgeService {
   async crearLote(
     actor: SessionUser,
     archivos: ArchivoLote[],
-    opts: { visibilidad?: VisibilidadKB; publicado?: boolean } = {},
+    opts: {
+      visibilidad?: VisibilidadKB;
+      publicado?: boolean;
+      /** Categoría para los que no son script (en el viejo se elegía al cargar); vacío = adivinar. */
+      categoria?: string;
+      /**
+       * «🔄 Indexar / Actualizar» del viejo: si ya hay un artículo con la misma ruta, se le
+       * reemplaza el contenido en vez de crear un duplicado.
+       */
+      actualizarExistentes?: boolean;
+    } = {},
   ): Promise<ArticuloKB[]> {
     if (!actor.permisos.includes('kb:escribir')) throw new ForbiddenError('No puedes editar la base de conocimiento');
     const publicado = opts.publicado ?? false;
@@ -125,15 +135,34 @@ export class KnowledgeService {
 
     const ahora = this.clock.now();
     const creados: ArticuloKB[] = [];
+    const normalizarRuta = (r: string): string => r.replace(/\\/g, '/').trim().toLowerCase();
+    const porRuta = new Map<string, ArticuloKB>();
+    if (opts.actualizarExistentes) {
+      for (const a of await this.repo.list()) if (a.rutaDestino) porRuta.set(normalizarRuta(a.rutaDestino), a);
+    }
+    let actualizados = 0;
     for (const archivo of validos) {
       const nombre = archivo.nombre.trim();
       const titulo = nombre.replace(/\.[^.]+$/, '') || nombre;
+      const ruta = (archivo.rutaRelativa || nombre).replace(/\\/g, '/');
+      const existente = porRuta.get(normalizarRuta(ruta));
+      if (existente) {
+        if (existente.cuerpoMarkdown !== archivo.contenido) {
+          existente.cuerpoMarkdown = archivo.contenido;
+          existente.updatedAt = ahora;
+          await this.repo.save(existente);
+          actualizados += 1;
+        }
+        creados.push(existente);
+        continue;
+      }
+      const adivinada = adivinarCategoriaKB(nombre);
       const articulo = new ArticuloKB({
         id: this.ids.newId(),
         titulo: titulo.slice(0, 120),
         cuerpoMarkdown: archivo.contenido,
-        categoria: adivinarCategoriaKB(nombre),
-        rutaDestino: (archivo.rutaRelativa || nombre).replace(/\\/g, '/'),
+        categoria: adivinada === 'script' ? 'script' : opts.categoria?.trim() || adivinada,
+        rutaDestino: ruta,
         publicado,
         visibilidad: opts.visibilidad ?? 'staff',
         autorUid: actor.uid,
@@ -150,7 +179,7 @@ export class KnowledgeService {
       modulo: 'kb',
       entidadTipo: 'ArticuloKB',
       entidadId: 'lote',
-      resumen: `Subida en lote: ${creados.length} archivo(s)`,
+      resumen: `Subida en lote: ${creados.length} archivo(s)${actualizados ? `, ${actualizados} actualizado(s)` : ''}`,
     });
     return creados;
   }

@@ -160,13 +160,23 @@ export class KnowledgeController {
     const categoria = str(req.query.categoria);
     const tag = str(req.query.tag);
     const desde = str(req.query.desde);
-    const orden = str(req.query.orden) || 'recientes';
-    const todos = await this.kb.listarVisibles(ctx);
+    // El buscador del «SOPORTE» del viejo: título o contenido, con «frase exacta» e historial.
+    const texto = str(req.query.q);
+    const fraseExacta = str(req.query.frase) === '1';
+    const orden = str(req.query.orden) || (texto ? '' : 'recientes');
+    const [todos, encontrados] = await Promise.all([
+      this.kb.listarVisibles(ctx),
+      texto ? this.kb.listarVisibles(ctx, { texto, fraseExacta }) : Promise.resolve(null),
+    ]);
+    if (texto.length >= 2 && req.user) await this.historial.registrar(req.user, texto);
     res.render('pages/backoffice/kb/gestion', {
       titulo: 'Gestionar base de conocimiento',
-      articulos: filtrarYOrdenar(todos, { categoria, tag, desde, orden }),
+      articulos: filtrarYOrdenar(encontrados ?? todos, { categoria, tag, desde, orden }),
       categorias: this.categoriasDe(todos),
       tags: tagsDe(todos),
+      historial: req.user ? await this.historial.listar(req.user) : [],
+      q: texto,
+      fraseExacta,
       categoria,
       tag,
       desde,
@@ -193,6 +203,8 @@ export class KnowledgeController {
       const creados = await this.kb.crearLote(req.user!, archivos, {
         visibilidad: (str(b.visibilidad) || 'staff') as VisibilidadKB,
         publicado: b.publicado === 'on' || b.publicado === true,
+        categoria: str(b.categoria),
+        actualizarExistentes: b.actualizar === 'on' || b.actualizar === true,
       });
       res.json({ ok: true, creados: creados.length });
     } catch (err) {

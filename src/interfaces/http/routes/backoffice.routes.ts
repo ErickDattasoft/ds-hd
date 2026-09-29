@@ -247,6 +247,7 @@ export function backofficeRoutes(container: Container): Router {
   r.get('/kb/comparar', requirePermission('kb:leer'), (req, res) => kb().comparar(req, res));
   const pizarra = () => container.resolve('pizarraKBController');
   r.get('/kb/pizarra', requirePermission('kb:leer'), (req, res) => pizarra().ver(req, res));
+  r.post('/kb/historial/limpiar', requirePermission('kb:leer'), (req, res) => kb().historialLimpiarPost(req, res));
   r.post('/kb/pizarra', requirePermission('kb:leer'), (req, res) => pizarra().guardarJson(req, res));
   r.post('/kb', requirePermission('kb:escribir'), (req, res) => kb().guardarPost(req, res));
   r.get('/kb/:id/editar', requirePermission('kb:escribir'), (req, res) => kb().editar(req, res));

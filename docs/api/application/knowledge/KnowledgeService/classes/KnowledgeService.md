@@ -178,6 +178,19 @@ ruta relativa se guarda como `rutaDestino` (para volver a exportarlos a Windows)
 
 `boolean`
 
+###### categoria?
+
+`string`
+
+Categoría para los que no son script (en el viejo se elegía al cargar); vacío = adivinar.
+
+###### actualizarExistentes?
+
+`boolean`
+
+«🔄 Indexar / Actualizar» del viejo: si ya hay un artículo con la misma ruta, se le
+reemplaza el contenido en vez de crear un duplicado.
+
 #### Returns
 
 `Promise`\<[`ArticuloKB`](../../../../core/entities/ArticuloKB/classes/ArticuloKB.md)[]\>

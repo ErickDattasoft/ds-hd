@@ -335,4 +335,22 @@ describe('versiones — historial de avisos enviados', () => {
     const res = await agent.get('/app/versiones/historial');
     expect(res.text).toContain('Sin avisos registrados todavía');
   });
+
+  it('el equipo busca en /app/kb (título o contenido), guarda historial y puede eliminar', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    const admin = await login(t.app, ADMIN.email, ADMIN.password);
+    await admin.agent.post('/app/kb').type('form').send({
+      _csrf: admin.csrf, titulo: 'Error 254 al ejecutar póliza', cuerpoMarkdown: 'Reindexar la base de datos de contabilidad.', visibilidad: 'staff',
+    });
+    await admin.agent.post('/app/kb').type('form').send({
+      _csrf: admin.csrf, titulo: 'Horario de soporte', cuerpoMarkdown: 'Atendemos de 9 a 18h.', visibilidad: 'staff',
+    });
+    const res = await admin.agent.get('/app/kb?q=reindexar');
+    expect(res.text).toContain('Error 254 al ejecutar póliza');
+    expect(res.text).not.toContain('Horario de soporte');
+    expect(res.text).toContain('1 resultado');
+    const otra = await admin.agent.get('/app/kb');
+    expect(otra.text).toContain('Búsquedas recientes');
+    expect(otra.text).toMatch(/\/app\/kb\/[^"]+\/eliminar/);
+  });
 });

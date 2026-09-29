@@ -1,6 +1,7 @@
 {% extends "layouts/backoffice.njk" %}
 {% block title %}Base de conocimiento{% endblock %}
 {% macro qs(cat, ord, des) %}?categoria={{ cat }}&orden={{ ord }}&desde={{ des }}{% endmacro %}
+{% set extra = ('&q=' + (q | urlencode) + ('&frase=1' if fraseExacta else '')) if q else '' %}
 {% block content %}
   <div class="page-head">
     <h1>Base de conocimiento</h1>
@@ -16,12 +17,15 @@
   {% if tags | length %}
     <div class="kb-tags">
       {% for t in tags %}
-        <a class="kb-tag {{ 'is-active' if tag == t.nombre }}" href="?categoria={{ categoria }}&orden={{ orden }}&desde={{ desde }}&tag={{ '' if tag == t.nombre else t.nombre }}">{{ t.nombre }} ({{ t.total }})</a>
+        <a class="kb-tag {{ 'is-active' if tag == t.nombre }}" href="?categoria={{ categoria }}&orden={{ orden }}&desde={{ desde }}{{ extra }}&tag={{ '' if tag == t.nombre else t.nombre }}">{{ t.nombre }} ({{ t.total }})</a>
       {% endfor %}
     </div>
   {% endif %}
 
   <form method="get" class="filterbar">
+    <input type="search" name="q" value="{{ q }}" placeholder="🔍 Buscar por título o contenido…" autocomplete="off" spellcheck="false" style="flex:1;min-width:16rem" />
+    <label class="field field--check"><input type="checkbox" name="frase" value="1" {{ 'checked' if fraseExacta }} /> <span>frase exacta</span></label>
+    {% if tag %}<input type="hidden" name="tag" value="{{ tag }}" />{% endif %}
     <label class="field"><span>Categoría</span>
       <select name="categoria">
         <option value="">todas</option>
@@ -40,6 +44,7 @@
     </label>
     <label class="field"><span>Orden</span>
       <select name="orden">
+        {% if q %}<option value="" {{ 'selected' if not orden }}>relevancia</option>{% endif %}
         <option value="recientes" {{ 'selected' if orden == 'recientes' }}>más recientes</option>
         <option value="az" {{ 'selected' if orden == 'az' }}>A → Z</option>
         <option value="za" {{ 'selected' if orden == 'za' }}>Z → A</option>
@@ -47,6 +52,18 @@
     </label>
     <button class="btn btn--sm" type="submit">Aplicar</button>
   </form>
+
+  {% if historial | length %}
+    <p class="muted">
+      Búsquedas recientes:
+      {% for h in historial %}<a class="kb-tag" href="?q={{ h.texto | urlencode }}">{{ h.texto }}</a>{% endfor %}
+      · <form method="post" action="/app/kb/historial/limpiar" style="display:inline">
+          <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+          <button type="submit" class="btn btn--sm btn--ghost">borrar</button>
+        </form>
+    </p>
+  {% endif %}
+  {% if q %}<p class="muted">{{ articulos | length }} resultado{{ '' if articulos | length == 1 else 's' }} para «{{ q }}».</p>{% endif %}
 
   <table class="data-table">
     <thead><tr><th>Título</th><th>Categoría</th><th>Ruta destino</th><th>Visibilidad</th><th>Estado</th><th>Modificado</th><th></th></tr></thead>
@@ -59,7 +76,15 @@
           <td>{{ a.visibilidad }}</td>
           <td>{{ 'Publicado' if a.publicado else 'Borrador' }}</td>
           <td>{{ a.updatedAt | fecha }}</td>
-          <td><a href="/app/kb/{{ a.id }}/editar">Editar</a></td>
+          <td class="col-acciones">
+            <a class="btn btn--ghost btn--sm" href="/app/kb/{{ a.id }}/editar" title="Editar">✏️</a>
+            {% if can('kb:publicar') %}
+              <form method="post" action="/app/kb/{{ a.id }}/eliminar" class="inline" data-confirm="¿Eliminar «{{ a.titulo }}»? No se puede deshacer.">
+                <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+                <button class="btn btn--ghost btn--sm" type="submit" title="Eliminar">🗑️</button>
+              </form>
+            {% endif %}
+          </td>
         </tr>
       {% else %}<tr><td colspan="7" class="muted">Sin artículos que coincidan.</td></tr>{% endfor %}
     </tbody>

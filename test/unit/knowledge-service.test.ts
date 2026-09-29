@@ -58,6 +58,26 @@ describe('KnowledgeService — lote y export', () => {
     expect(bitacora.entradas).toHaveLength(1);
   });
 
+  it('crearLote con «actualizar»: reemplaza por ruta en vez de duplicar, y respeta la categoría elegida', async () => {
+    await service.crearLote(actor(), [{ nombre: 'error-254.md', contenido: 'versión uno del texto', rutaRelativa: 'soluciones/error-254.md' }], {
+      categoria: 'empresa',
+    });
+    await service.crearLote(
+      actor(),
+      [
+        { nombre: 'error-254.md', contenido: 'versión DOS del texto', rutaRelativa: 'soluciones\\error-254.md' },
+        { nombre: 'respaldo.ps1', contenido: 'Write-Host respaldo completo', rutaRelativa: 'soluciones/respaldo.ps1' },
+      ],
+      { actualizarExistentes: true, categoria: 'empresa' },
+    );
+    const todos = await repo.list();
+    expect(todos).toHaveLength(2);
+    const doc = todos.find((a) => a.titulo === 'error-254')!;
+    expect(doc.cuerpoMarkdown).toBe('versión DOS del texto');
+    expect(doc.categoria).toBe('empresa');
+    expect(todos.find((a) => a.titulo === 'respaldo')!.categoria).toBe('script'); // los scripts siempre son script
+  });
+
   it('crearLote sin permiso de publicar no puede publicar', async () => {
     await expect(
       service.crearLote(actor({ permisos: ['kb:escribir'] }), [{ nombre: 'x.md', contenido: 'contenido largo aquí' }], {
