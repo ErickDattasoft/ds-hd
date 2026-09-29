@@ -122,23 +122,13 @@ Artículo de la base de conocimiento.
 
 > **visiblePara**(`contexto`): `boolean`
 
-¿Un usuario con este rol/área puede ver el artículo?
+¿Lo puede ver alguien con estos roles? (ver [VisibilidadKB](../type-aliases/VisibilidadKB.md))
 
 #### Parameters
 
 ##### contexto
 
-###### esStaff
-
-`boolean`
-
-###### esCliente
-
-`boolean`
-
-###### anonimo
-
-`boolean`
+[`ContextoKB`](../interfaces/ContextoKB.md)
 
 #### Returns
 

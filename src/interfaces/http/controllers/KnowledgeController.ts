@@ -2,7 +2,7 @@ import { DomainError } from '../../../core/errors/DomainError.js';
 import type { Request, Response } from 'express';
 import type { ArchivoLote, KnowledgeService } from '../../../application/knowledge/KnowledgeService.js';
 import type { HistorialBusquedaKBService } from '../../../application/knowledge/HistorialBusquedaKBService.js';
-import type { ArticuloKB, VisibilidadKB } from '../../../core/entities/ArticuloKB.js';
+import { sanearVisibilidadKB, type ArticuloKB } from '../../../core/entities/ArticuloKB.js';
 import { renderMarkdown } from '../view-helpers/markdown.js';
 import { camposDeError } from '../support/errores.js';
 
@@ -14,7 +14,7 @@ const lista = (v: unknown): string[] =>
     .filter(Boolean);
 
 function contexto(req: Request) {
-  return { esStaff: req.user?.esStaff ?? false, esCliente: req.user?.esCliente ?? false, anonimo: !req.user };
+  return { roles: req.user?.roles ?? [] };
 }
 
 /** Traduce `hoy` / `semana` a una fecha de corte (o `null`). */
@@ -157,7 +157,7 @@ export class KnowledgeController {
 
   // ── CRUD (solo staff) ─────────────────────────────────────────────────────
   gestionar = async (req: Request, res: Response): Promise<void> => {
-    const ctx = { esStaff: true, esCliente: false, anonimo: false };
+    const ctx = contexto(req);
     const categoria = str(req.query.categoria);
     const tag = str(req.query.tag);
     const desde = str(req.query.desde);
@@ -202,7 +202,7 @@ export class KnowledgeController {
       : [];
     try {
       const creados = await this.kb.crearLote(req.user!, archivos, {
-        visibilidad: (str(b.visibilidad) || 'staff') as VisibilidadKB,
+        visibilidad: sanearVisibilidadKB(str(b.visibilidad)),
         publicado: b.publicado === 'on' || b.publicado === true,
         categoria: str(b.categoria),
         actualizarExistentes: b.actualizar === 'on' || b.actualizar === true,
@@ -284,7 +284,7 @@ export class KnowledgeController {
           tags: lista(b.tags),
           rutaDestino: str(b.rutaDestino),
           publicado: b.publicado === 'on',
-          visibilidad: (str(b.visibilidad) || 'staff') as VisibilidadKB,
+          visibilidad: sanearVisibilidadKB(str(b.visibilidad)),
         },
         id,
       );

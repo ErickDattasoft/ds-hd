@@ -66,15 +66,14 @@
   {% if q %}<p class="muted">{{ articulos | length }} resultado{{ '' if articulos | length == 1 else 's' }} para «{{ q }}».</p>{% endif %}
 
   <table class="data-table">
-    <thead><tr><th>Título</th><th>Categoría</th><th>Ruta destino</th><th>Visibilidad</th><th>Estado</th><th>Modificado</th><th></th></tr></thead>
+    <thead><tr><th>Título</th><th>Categoría</th><th>Ruta destino</th><th>Visibilidad</th><th>Modificado</th><th></th></tr></thead>
     <tbody>
       {% for a in articulos %}
         <tr>
           <td><a href="/app/kb/{{ a.slug or a.id }}">{{ a.titulo }}</a></td>
           <td>{% if a.esScript %}⚡ {% endif %}{{ a.categoria or '—' }}</td>
           <td>{{ a.rutaDestino or '—' }}</td>
-          <td>{{ a.visibilidad }}</td>
-          <td>{{ 'Publicado' if a.publicado else 'Borrador' }}</td>
+          <td>{{ 'Administrador' if a.visibilidad == 'admin' else 'Soporte' }}</td>
           <td>{{ a.updatedAt | fecha }}</td>
           <td class="col-acciones">
             <a class="btn btn--ghost btn--sm" href="/app/kb/{{ a.id }}/editar" title="Editar">✏️</a>
@@ -86,7 +85,7 @@
             {% endif %}
           </td>
         </tr>
-      {% else %}<tr><td colspan="7" class="muted">Sin artículos que coincidan.</td></tr>{% endfor %}
+      {% else %}<tr><td colspan="6" class="muted">Sin artículos que coincidan.</td></tr>{% endfor %}
     </tbody>
   </table>
 {% endblock %}

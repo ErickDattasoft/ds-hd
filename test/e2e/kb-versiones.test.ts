@@ -84,44 +84,41 @@ describe('versiones de sistemas', () => {
 });
 
 describe('base de conocimiento — visibilidad', () => {
-  it('un borrador solo lo ve el staff; publicado "portal" lo ve el cliente; "publico" lo ve cualquiera', async () => {
-    const t = makeTestApp({ usuarios: [ADMIN, CLI] });
+  it('Soporte lo ven admin y soporte; Administrador solo admin; clientes y público ya no tienen KB', async () => {
+    const SOP = { uid: 'u-sop', email: 'sop@dattasoft.mx', password: 'soporte1234', nombre: 'Sofi', rol: 'soporte' as const };
+    const AGT = { uid: 'u-agt', email: 'agt@dattasoft.mx', password: 'agente1234', nombre: 'Agus', rol: 'agente' as const };
+    const t = makeTestApp({ usuarios: [ADMIN, CLI, SOP, AGT] });
     const admin = await login(t.app, ADMIN.email, ADMIN.password);
-
-    // borrador (staff)
     await admin.agent.post('/app/kb').type('form').send({
-      _csrf: admin.csrf, titulo: 'Guía interna', cuerpoMarkdown: '# Interno\nSolo para el equipo.', visibilidad: 'staff',
+      _csrf: admin.csrf, titulo: 'Como resetear el servicio', cuerpoMarkdown: 'Ve a **Servicios** y reinicia *CONTPAQi*.', visibilidad: 'soporte',
     });
-    // publicado para portal
     await admin.agent.post('/app/kb').type('form').send({
-      _csrf: admin.csrf, titulo: 'Como resetear tu contraseña', cuerpoMarkdown: 'Ve a **Ajustes** y da clic en *Resetear*.', visibilidad: 'portal', publicado: 'on',
-    });
-    // publicado público
-    await admin.agent.post('/app/kb').type('form').send({
-      _csrf: admin.csrf, titulo: 'Horario de soporte', cuerpoMarkdown: 'Atendemos de 9 a 18h.', visibilidad: 'publico', publicado: 'on',
+      _csrf: admin.csrf, titulo: 'Claves del servidor', cuerpoMarkdown: 'Solo para administradores del equipo.', visibilidad: 'admin',
     });
 
-    // Público anónimo: solo el artículo público
+    const adminKb = await admin.agent.get('/app/kb');
+    expect(adminKb.text).toContain('Como resetear el servicio');
+    expect(adminKb.text).toContain('Claves del servidor');
+
+    const sop = await login(t.app, SOP.email, SOP.password);
+    const sopKb = await sop.agent.get('/app/kb');
+    expect(sopKb.text).toContain('Como resetear el servicio');
+    expect(sopKb.text).not.toContain('Claves del servidor');
+    const soporteArt = [...t.knowledgeRepo.items.values()].find((a) => a.visibilidad === 'soporte')!;
+    const art = await sop.agent.get(`/app/kb/${soporteArt.slug}`);
+    expect(art.text).toContain('<strong>Servicios</strong>'); // el markdown se renderiza
+
+    const agt = await login(t.app, AGT.email, AGT.password);
+    const agtKb = await agt.agent.get('/app/kb');
+    expect(agtKb.text).not.toContain('Como resetear el servicio');
+
+    // Clientes y público: sin base de conocimiento.
     const pub = await request(t.app).get('/kb');
-    expect(pub.text).toContain('Horario de soporte');
-    expect(pub.text).not.toContain('Como resetear tu contraseña');
-    expect(pub.text).not.toContain('Guía interna');
-
-    // Cliente en el portal: público + portal, no el borrador
+    expect(pub.status).toBe(302);
     const cli = await login(t.app, CLI.email, CLI.password);
     const portalKb = await cli.agent.get('/portal/kb');
-    expect(portalKb.text).toContain('Como resetear tu contraseña');
-    expect(portalKb.text).toContain('Horario de soporte');
-    expect(portalKb.text).not.toContain('Guía interna');
-
-    // Staff ve todo
-    const staffKb = await admin.agent.get('/app/kb');
-    expect(staffKb.text).toContain('Guía interna');
-
-    // El markdown se renderiza a HTML
-    const [publicoArt] = [...t.knowledgeRepo.items.values()].filter((a) => a.visibilidad === 'portal');
-    const art = await cli.agent.get(`/portal/kb/${publicoArt!.slug}`);
-    expect(art.text).toContain('<strong>Ajustes</strong>');
+    expect(portalKb.status).toBe(302);
+    expect(portalKb.headers.location).toBe('/portal');
   });
 
   it('subida en lote + export JSON/ZIP + filtro por categoría script', async () => {
@@ -171,26 +168,26 @@ describe('base de conocimiento — descubrimiento (tags, ver también, comparar)
     const { agent, csrf } = await login(t.app, ADMIN.email, ADMIN.password);
     await agent.post('/app/kb').type('form').send({
       _csrf: csrf, titulo: 'Reinicio de licencias', cuerpoMarkdown: 'Pasos para reiniciar el servicio de licencias.',
-      tags: 'contpaqi, licencias', visibilidad: 'publico', publicado: 'on',
+      tags: 'contpaqi, licencias', visibilidad: 'soporte',
     });
     await agent.post('/app/kb').type('form').send({
       _csrf: csrf, titulo: 'Backup de licencias', cuerpoMarkdown: 'Cómo respaldar el archivo de licencias.',
-      tags: 'contpaqi', visibilidad: 'publico', publicado: 'on',
+      tags: 'contpaqi', visibilidad: 'soporte',
     });
     await agent.post('/app/kb').type('form').send({
       _csrf: csrf, titulo: 'Nómina quincenal', cuerpoMarkdown: 'Proceso de nómina quincenal.',
-      tags: 'nomina', visibilidad: 'publico', publicado: 'on',
+      tags: 'nomina', visibilidad: 'soporte',
     });
 
-    const lista = await request(t.app).get('/kb');
+    const lista = await agent.get('/app/kb');
     expect(lista.text).toContain('contpaqi (2)');
 
-    const filtrada = await request(t.app).get('/kb?tag=nomina');
+    const filtrada = await agent.get('/app/kb?tag=nomina');
     expect(filtrada.text).toContain('Nómina quincenal');
     expect(filtrada.text).not.toContain('Reinicio de licencias');
 
     const [reinicio] = [...t.knowledgeRepo.items.values()].filter((a) => a.titulo === 'Reinicio de licencias');
-    const detalle = await request(t.app).get(`/kb/${reinicio!.slug}`);
+    const detalle = await agent.get(`/app/kb/${reinicio!.slug}`);
     expect(detalle.text).toContain('Ver también');
     expect(detalle.text).toContain('Backup de licencias');
     expect(detalle.text).not.toContain('Nómina quincenal');
@@ -200,25 +197,25 @@ describe('base de conocimiento — descubrimiento (tags, ver también, comparar)
     const t = makeTestApp({ usuarios: [ADMIN] });
     const { agent, csrf } = await login(t.app, ADMIN.email, ADMIN.password);
     await agent.post('/app/kb').type('form').send({
-      _csrf: csrf, titulo: 'Documento Uno', cuerpoMarkdown: 'Contenido del documento uno.', visibilidad: 'publico', publicado: 'on',
+      _csrf: csrf, titulo: 'Documento Uno', cuerpoMarkdown: 'Contenido del documento uno.', visibilidad: 'soporte',
     });
     await agent.post('/app/kb').type('form').send({
-      _csrf: csrf, titulo: 'Documento Dos', cuerpoMarkdown: 'Contenido del documento dos.', visibilidad: 'publico', publicado: 'on',
+      _csrf: csrf, titulo: 'Documento Dos', cuerpoMarkdown: 'Contenido del documento dos.', visibilidad: 'soporte',
     });
     const [uno, dos] = [...t.knowledgeRepo.items.values()].sort((a, b) => a.titulo.localeCompare(b.titulo));
 
-    const soloA = await request(t.app).get(`/kb/comparar?a=${uno!.slug}`);
+    const soloA = await agent.get(`/app/kb/comparar?a=${uno!.slug}`);
     expect(soloA.text).toContain('Elige el segundo artículo');
     expect(soloA.text).toContain('Documento Dos');
 
-    const ambos = await request(t.app).get(`/kb/comparar?a=${uno!.slug}&b=${dos!.slug}`);
+    const ambos = await agent.get(`/app/kb/comparar?a=${uno!.slug}&b=${dos!.slug}`);
     expect(ambos.text).toContain('Contenido del documento uno.');
     expect(ambos.text).toContain('Contenido del documento dos.');
   });
 });
 
 describe('base de conocimiento — pizarra personal', () => {
-  it('staff y portal tienen cada quien su pizarra, con autoguardado vía POST', async () => {
+  it('el equipo tiene su pizarra con autoguardado; el portal ya no', async () => {
     const t = makeTestApp({ usuarios: [ADMIN, CLI] });
     const admin = await login(t.app, ADMIN.email, ADMIN.password);
 
@@ -235,31 +232,28 @@ describe('base de conocimiento — pizarra personal', () => {
     const releida = await admin.agent.get('/app/kb/pizarra');
     expect(releida.text).toContain('Nota del admin');
 
-    // El cliente del portal no ve la nota del admin (pizarra por usuario).
+    // El portal ya no tiene base de conocimiento (ni pizarra): regresa al inicio del portal.
     const cli = await login(t.app, CLI.email, CLI.password);
-    const portalVacia = await cli.agent.get('/portal/kb/pizarra');
-    expect(portalVacia.text).not.toContain('Nota del admin');
-
-    await cli.agent.post('/portal/kb/pizarra').set('x-csrf-token', cli.csrf).send({ contenido: 'Nota del cliente' });
-    expect((await admin.agent.get('/app/kb/pizarra')).text).toContain('Nota del admin');
-    expect((await admin.agent.get('/app/kb/pizarra')).text).not.toContain('Nota del cliente');
+    const portal = await cli.agent.get('/portal/kb/pizarra');
+    expect(portal.status).toBe(302);
+    expect(portal.headers.location).toBe('/portal');
   });
 });
 
-describe('base de conocimiento — historial de búsquedas (portal)', () => {
-  it('registra búsquedas del cliente, las muestra, y se pueden borrar', async () => {
-    const t = makeTestApp({ usuarios: [CLI] });
-    const { agent, csrf } = await login(t.app, CLI.email, CLI.password);
+describe('base de conocimiento — historial de búsquedas (equipo)', () => {
+  it('registra las búsquedas, las muestra, y se pueden borrar', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    const { agent, csrf } = await login(t.app, ADMIN.email, ADMIN.password);
 
-    await agent.get('/portal/kb?q=licencias');
-    const conHistorial = await agent.get('/portal/kb');
+    await agent.get('/app/kb?q=licencias');
+    const conHistorial = await agent.get('/app/kb');
     expect(conHistorial.text).toContain('Búsquedas recientes');
     expect(conHistorial.text).toContain('licencias');
-    expect(await t.busquedaKBRepo.listar(CLI.uid)).toHaveLength(1);
+    expect(await t.busquedaKBRepo.listar(ADMIN.uid)).toHaveLength(1);
 
-    await agent.post('/portal/kb/historial/limpiar').type('form').send({ _csrf: csrf });
-    expect(await t.busquedaKBRepo.listar(CLI.uid)).toHaveLength(0);
-    expect((await agent.get('/portal/kb')).text).not.toContain('Búsquedas recientes');
+    await agent.post('/app/kb/historial/limpiar').type('form').send({ _csrf: csrf });
+    expect(await t.busquedaKBRepo.listar(ADMIN.uid)).toHaveLength(0);
+    expect((await agent.get('/app/kb')).text).not.toContain('Búsquedas recientes');
   });
 });
 

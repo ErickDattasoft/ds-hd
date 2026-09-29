@@ -732,8 +732,8 @@ describe('página pública de un evento — es una landing, no el sitio navegabl
     expect(pagina.text).not.toContain('Levantar ticket');
 
     // Pero el resto del sitio público sí se navega entre sí.
-    const kb = await request(t.app).get('/kb');
-    expect(kb.text).toContain('Levantar ticket');
+    const lista = await request(t.app).get('/eventos');
+    expect(lista.text).toContain('Levantar ticket');
   });
 
   it('"Volver al CRM" solo aparece con sesión, nunca para un visitante', async () => {

@@ -9,7 +9,6 @@
 3. [Mis tickets (portal de cliente)](#mis-tickets-portal-de-cliente)
 4. [Mi perfil (portal de cliente)](#mi-perfil-portal-de-cliente)
 5. [Eventos y webinars — registro público](#eventos-y-webinars-registro-publico)
-6. [Base de conocimiento](#base-de-conocimiento)
 
 ---
 
@@ -147,30 +146,3 @@ solo con teléfono, el equipo te contacta por WhatsApp.
 
 Si necesitas cancelar tu registro o cambiar tus datos, responde al correo de confirmación
 (o escríbenos por WhatsApp) para que el equipo lo ajuste.
-
----
-
-## Base de conocimiento
-
-Artículos de ayuda escritos en Markdown, con tres niveles de visibilidad por artículo:
-**staff** (solo equipo interno), **portal** (staff + clientes con cuenta) y **público**
-(cualquiera, sin sesión, en `/kb`).
-
-*(captura pendiente: base-conocimiento-staff.png — corre `npm run docs:screenshots` contra la app corriendo y con datos de `npm run seed:demo`)*
-
-## Staff: escribir y publicar artículos
-
-En `/app/kb` ves todos los artículos sin importar su visibilidad. *Nuevo artículo* pide
-título (genera el slug automáticamente), categoría, cuerpo en Markdown, etiquetas y la
-visibilidad. Un artículo no aparece fuera del back-office hasta que lo marcas **publicado**.
-
-## Consultar artículos (staff, portal y público)
-
-*(captura pendiente: base-conocimiento-portal.png — corre `npm run docs:screenshots` contra la app corriendo y con datos de `npm run seed:demo`)*
-
-- Staff los ve en `/app/kb`.
-- Un cliente logueado los ve en `/portal/kb` (solo los de visibilidad *portal* o *público*).
-- Cualquier visitante los ve en `/kb`, sin sesión (solo los de visibilidad *público*).
-
-En los tres casos el artículo se abre por su slug: `/kb/<slug>` (o el equivalente bajo
-`/app` o `/portal`).

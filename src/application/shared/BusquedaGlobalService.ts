@@ -86,7 +86,8 @@ export class BusquedaGlobalService {
         this.kb
           .list({ texto })
           .then((rows) =>
-            rows.slice(0, LIMITE_POR_TIPO).map((a) => ({
+            // Misma regla por rol que la lista de la KB (Administrador / Soporte).
+            rows.filter((a) => a.visiblePara({ roles: user.roles })).slice(0, LIMITE_POR_TIPO).map((a) => ({
               tipo: 'kb' as const,
               etiquetaTipo: 'Base de conocimiento',
               titulo: a.titulo,

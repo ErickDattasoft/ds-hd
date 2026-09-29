@@ -1,7 +1,7 @@
 import { type DocumentData, type Firestore, type Query } from 'firebase-admin/firestore';
 import { Timestamp } from '../../core/entities/value-objects/Timestamp.js';
 import type { IKnowledgeRepository, ListarKBFiltro } from '../../core/ports/repositories/IKnowledgeRepository.js';
-import { ArticuloKB, coincideTexto, type VisibilidadKB } from '../../core/entities/ArticuloKB.js';
+import { ArticuloKB, coincideTexto, sanearVisibilidadKB } from '../../core/entities/ArticuloKB.js';
 
 const COL = 'knowledge_base';
 const fecha = (v: unknown): Date | undefined => (v instanceof Timestamp ? v.toDate() : undefined);
@@ -16,7 +16,7 @@ const toDomain = (id: string, d: DocumentData): ArticuloKB =>
     tags: Array.isArray(d.tags) ? d.tags.map(String) : [],
     rutaDestino: d.rutaDestino ?? null,
     publicado: Boolean(d.publicado),
-    visibilidad: (d.visibilidad ?? 'staff') as VisibilidadKB,
+    visibilidad: sanearVisibilidadKB(d.visibilidad),
     autorUid: d.autorUid ?? null,
     autorNombre: d.autorNombre ?? null,
     createdAt: fecha(d.createdAt) ?? new Date(),

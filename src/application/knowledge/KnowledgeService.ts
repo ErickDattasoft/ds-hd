@@ -2,7 +2,7 @@ import type { IKnowledgeRepository, ListarKBFiltro } from '../../core/ports/repo
 import type { IClock } from '../../core/ports/services/IClock.js';
 import type { IIdGenerator } from '../../core/ports/services/IIdGenerator.js';
 import { zipSync, strToU8 } from 'fflate';
-import { ArticuloKB, adivinarCategoriaKB, slugify, type VisibilidadKB } from '../../core/entities/ArticuloKB.js';
+import { ArticuloKB, adivinarCategoriaKB, slugify, type ContextoKB, type VisibilidadKB } from '../../core/entities/ArticuloKB.js';
 import { ForbiddenError, NotFoundError, ValidationError } from '../../core/errors/DomainError.js';
 import type { BitacoraService } from '../shared/BitacoraService.js';
 import type { SessionUser } from '../shared/SessionUser.js';
@@ -26,7 +26,7 @@ export interface ArchivoLote {
   rutaRelativa?: string;
 }
 
-export type Contexto = { esStaff: boolean; esCliente: boolean; anonimo: boolean };
+export type Contexto = ContextoKB;
 
 /** Base de conocimiento: gestión (staff) y consulta (staff / portal / público). */
 export class KnowledgeService {
@@ -37,9 +37,9 @@ export class KnowledgeService {
     private readonly bitacora: BitacoraService,
   ) {}
 
-  /** Lista visible para un contexto dado (aplica publicado + visibilidad). */
+  /** Lista visible para un contexto dado (por rol; «publicado» ya no cuenta, ver VisibilidadKB). */
   async listarVisibles(ctx: Contexto, filtro: ListarKBFiltro = {}): Promise<ArticuloKB[]> {
-    const todos = await this.repo.list(ctx.esStaff ? filtro : { ...filtro, publicado: true });
+    const todos = await this.repo.list(filtro);
     return todos.filter((a) => a.visiblePara(ctx));
   }
 
@@ -87,7 +87,7 @@ export class KnowledgeService {
       tags: datos.tags ?? [],
       rutaDestino: datos.rutaDestino ?? previo?.rutaDestino ?? null,
       publicado: datos.publicado ?? previo?.publicado ?? false,
-      visibilidad: datos.visibilidad ?? previo?.visibilidad ?? 'staff',
+      visibilidad: datos.visibilidad ?? previo?.visibilidad ?? 'soporte',
       autorUid: previo?.autorUid ?? actor.uid,
       autorNombre: previo?.autorNombre ?? actor.nombre,
       createdAt: previo?.createdAt ?? ahora,
@@ -165,7 +165,7 @@ export class KnowledgeService {
         categoria: adivinada === 'script' ? 'script' : opts.categoria?.trim() || adivinada,
         rutaDestino: ruta,
         publicado,
-        visibilidad: opts.visibilidad ?? 'staff',
+        visibilidad: opts.visibilidad ?? 'soporte',
         autorUid: actor.uid,
         autorNombre: actor.nombre,
         createdAt: ahora,

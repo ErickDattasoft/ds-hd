@@ -42,13 +42,13 @@ Base de conocimiento: gestión (staff) y consulta (staff / portal / público).
 
 > **listarVisibles**(`ctx`, `filtro?`): `Promise`\<[`ArticuloKB`](../../../../core/entities/ArticuloKB/classes/ArticuloKB.md)[]\>
 
-Lista visible para un contexto dado (aplica publicado + visibilidad).
+Lista visible para un contexto dado (por rol; «publicado» ya no cuenta, ver VisibilidadKB).
 
 #### Parameters
 
 ##### ctx
 
-[`Contexto`](../type-aliases/Contexto.md)
+[`ContextoKB`](../../../../core/entities/ArticuloKB/interfaces/ContextoKB.md)
 
 ##### filtro?
 
@@ -68,7 +68,7 @@ Lista visible para un contexto dado (aplica publicado + visibilidad).
 
 ##### ctx
 
-[`Contexto`](../type-aliases/Contexto.md)
+[`ContextoKB`](../../../../core/entities/ArticuloKB/interfaces/ContextoKB.md)
 
 ##### idOSlug
 
@@ -90,7 +90,7 @@ Otros artículos visibles que comparten al menos un tag con `articulo`, más com
 
 ##### ctx
 
-[`Contexto`](../type-aliases/Contexto.md)
+[`ContextoKB`](../../../../core/entities/ArticuloKB/interfaces/ContextoKB.md)
 
 ##### articulo
 
@@ -207,7 +207,7 @@ Los artículos visibles que cumplen el filtro, como `.zip` (un archivo por artí
 
 ##### ctx
 
-[`Contexto`](../type-aliases/Contexto.md)
+[`ContextoKB`](../../../../core/entities/ArticuloKB/interfaces/ContextoKB.md)
 
 ##### filtro?
 

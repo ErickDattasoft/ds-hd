@@ -6,4 +6,8 @@
 
 # Type Alias: VisibilidadKB
 
-> **VisibilidadKB** = `"staff"` \| `"portal"` \| `"publico"`
+> **VisibilidadKB** = `"admin"` \| `"soporte"`
+
+Quién ve un artículo, por ROL (como el panel «👥 Acceso» del viejo, que era solo del equipo):
+`admin` = solo quien tiene el rol Administrador; `soporte` = Administrador o Soporte técnico.
+Clientes y público ya no ven la base de conocimiento.

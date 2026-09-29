@@ -74,7 +74,7 @@ ok('obtenerMetricasService (incluye eventos.proximos con rango de fecha)');
 
 // empresa + kb (más repos)
 const emp = await c.resolve('empresaService').crear(actor, { nombre: `Smoke Corp ${Date.now()}` });
-await c.resolve('knowledgeService').guardar(actor, { titulo: 'Art smoke', cuerpoMarkdown: '# Artículo de prueba\n\nContenido suficiente para pasar la validación.', visibilidad: 'staff' });
+await c.resolve('knowledgeService').guardar(actor, { titulo: 'Art smoke', cuerpoMarkdown: '# Artículo de prueba\n\nContenido suficiente para pasar la validación.', visibilidad: 'soporte' });
 ok(`empresaService.crear (${emp.id}) / knowledgeService.guardar`);
 
 // limpieza

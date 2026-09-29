@@ -250,28 +250,40 @@ del equipo, o escribir otros correos a mano.
 
 ## Base de conocimiento
 
-Artículos de ayuda escritos en Markdown, con tres niveles de visibilidad por artículo:
-**staff** (solo equipo interno), **portal** (staff + clientes con cuenta) y **público**
-(cualquiera, sin sesión, en `/kb`).
+Documentos de soporte del equipo (soluciones, datos de empresas, scripts), escritos en
+Markdown. Es solo del equipo: los clientes del portal y el público ya no la ven.
 
 *(captura pendiente: base-conocimiento-staff.png — corre `npm run docs:screenshots` contra la app corriendo y con datos de `npm run seed:demo`)*
 
-## Staff: escribir y publicar artículos
+## Quién ve cada documento
 
-En `/app/kb` ves todos los artículos sin importar su visibilidad. *Nuevo artículo* pide
-título (genera el slug automáticamente), categoría, cuerpo en Markdown, etiquetas y la
-visibilidad. Un artículo no aparece fuera del back-office hasta que lo marcas **publicado**.
+Cada documento tiene una **visibilidad**:
 
-## Consultar artículos (staff, portal y público)
+| Visibilidad | La ven |
+| --- | --- |
+| **Soporte** | los usuarios con el rol *Administrador* o *Soporte técnico* marcado |
+| **Administrador** | solo los usuarios con el rol *Administrador* |
 
-*(captura pendiente: base-conocimiento-portal.png — corre `npm run docs:screenshots` contra la app corriendo y con datos de `npm run seed:demo`)*
+Los demás roles (Supervisor, Comercial, Agente técnico mixto, Solo lectura) no ven los
+documentos. Si alguien de esos roles necesita verlos, márcale también *Soporte técnico* en
+*Usuarios*.
 
-- Staff los ve en `/app/kb`.
-- Un cliente logueado los ve en `/portal/kb` (solo los de visibilidad *portal* o *público*).
-- Cualquier visitante los ve en `/kb`, sin sesión (solo los de visibilidad *público*).
+## Buscar
 
-En los tres casos el artículo se abre por su slug: `/kb/<slug>` (o el equivalente bajo
-`/app` o `/portal`).
+En `/app/kb`, el buscador encuentra por título o contenido. Con **frase exacta** exige la
+frase completa; sin ella basta con que aparezca cada palabra. Tus búsquedas recientes quedan
+abajo del buscador y se pueden borrar. También filtras por categoría, etiqueta, fecha de
+modificación y orden (A→Z, Z→A, más recientes).
+
+## Escribir y subir documentos
+
+- *Nuevo artículo*: título, contenido en Markdown, categoría, etiquetas y visibilidad.
+- *Subir archivos*: varios archivos sueltos o **una carpeta completa**. Eliges la categoría
+  (los `.ps1`, `.bat`, `.cmd` y `.sql` siempre quedan como Script) y, si marcas
+  **actualizar**, un archivo con la misma ruta reemplaza al que ya existe en vez de
+  duplicarse. Las carpetas grandes se suben en tandas con barra de avance; los archivos que
+  no son de texto (imágenes, ejecutables) se omiten.
+- 🗑️ elimina un documento (desde la lista o al editarlo).
 
 ---
 

@@ -12,6 +12,7 @@
 
 ## Interfaces
 
+- [ContextoKB](interfaces/ContextoKB.md)
 - [ArticuloKBProps](interfaces/ArticuloKBProps.md)
 
 ## Type Aliases
@@ -24,6 +25,7 @@
 
 ## Functions
 
+- [sanearVisibilidadKB](functions/sanearVisibilidadKB.md)
 - [adivinarCategoriaKB](functions/adivinarCategoriaKB.md)
 - [slugify](functions/slugify.md)
 - [coincideTexto](functions/coincideTexto.md)

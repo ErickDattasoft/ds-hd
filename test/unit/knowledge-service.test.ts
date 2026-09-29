@@ -27,7 +27,7 @@ const actor = (over: Partial<SessionUser> = {}): SessionUser => ({
   ...over,
 });
 
-const ctxStaff = { esStaff: true, esCliente: false, anonimo: false };
+const ctxStaff = { roles: ['admin'] };
 
 describe('KnowledgeService — lote y export', () => {
   let repo: InMemoryKnowledgeRepository;
@@ -101,11 +101,11 @@ describe('KnowledgeService — lote y export', () => {
     await repo.save(
       new ArticuloKB({
         id: 'a1', titulo: 'Reinicio', cuerpoMarkdown: 'net stop / net start', categoria: 'script',
-        rutaDestino: 'scripts/reinicio.bat', publicado: true, visibilidad: 'staff',
+        rutaDestino: 'scripts/reinicio.bat', publicado: true, visibilidad: 'soporte',
       }),
     );
     await repo.save(
-      new ArticuloKB({ id: 'a2', titulo: 'Notas varias', cuerpoMarkdown: 'texto de notas largo', visibilidad: 'staff' }),
+      new ArticuloKB({ id: 'a2', titulo: 'Notas varias', cuerpoMarkdown: 'texto de notas largo', visibilidad: 'soporte' }),
     );
     const zip = await service.exportarZip(ctxStaff, { categoria: 'script' });
     const archivos = unzipSync(new Uint8Array(zip));
@@ -114,7 +114,7 @@ describe('KnowledgeService — lote y export', () => {
   });
 
   it('relacionados: artículos visibles que comparten tags, más compartidos primero, excluye el propio', async () => {
-    const base = { publicado: true, visibilidad: 'publico' as const };
+    const base = { publicado: true, visibilidad: 'soporte' as const };
     const a = new ArticuloKB({ id: 'a', titulo: 'Art A', cuerpoMarkdown: 'contenido suficiente', tags: ['contpaqi', 'nomina'], ...base });
     await repo.save(a);
     await repo.save(new ArticuloKB({ id: 'b', titulo: 'Art B', cuerpoMarkdown: 'contenido suficiente', tags: ['contpaqi'], ...base }));
@@ -126,7 +126,7 @@ describe('KnowledgeService — lote y export', () => {
   });
 
   it('relacionados: sin tags no hay nada que relacionar', async () => {
-    const a = new ArticuloKB({ id: 'a', titulo: 'Art A', cuerpoMarkdown: 'contenido suficiente', publicado: true, visibilidad: 'publico' });
+    const a = new ArticuloKB({ id: 'a', titulo: 'Art A', cuerpoMarkdown: 'contenido suficiente', publicado: true, visibilidad: 'soporte' });
     expect(await service.relacionados(ctxStaff, a)).toEqual([]);
   });
 });
@@ -148,18 +148,18 @@ describe('KnowledgeService — búsqueda: tag, frase exacta y cuerpo', () => {
     await repo.save(
       new ArticuloKB({
         id: 'a1', titulo: 'Reinicio de servicio Contpaqi', cuerpoMarkdown: 'Detener y arrancar el servicio de licencias.',
-        tags: ['contpaqi', 'licencias'], publicado: true, visibilidad: 'publico',
+        tags: ['contpaqi', 'licencias'], publicado: true, visibilidad: 'soporte',
       }),
     );
     await repo.save(
       new ArticuloKB({
         id: 'a2', titulo: 'Backup de nómina', cuerpoMarkdown: 'Respaldo manual del módulo de nómina.',
-        tags: ['nomina'], publicado: true, visibilidad: 'publico',
+        tags: ['nomina'], publicado: true, visibilidad: 'soporte',
       }),
     );
   });
 
-  const ctxPublico = { esStaff: false, esCliente: false, anonimo: true };
+  const ctxPublico = { roles: ['soporte'] };
 
   it('filtro por tag exacto', async () => {
     const r = await service.listarVisibles(ctxPublico, { tag: 'nomina' });
@@ -176,5 +176,26 @@ describe('KnowledgeService — búsqueda: tag, frase exacta y cuerpo', () => {
     expect(sinFrase).toHaveLength(0);
     const conFrase = await service.listarVisibles(ctxPublico, { texto: 'arrancar el servicio', fraseExacta: true });
     expect(conFrase.map((a) => a.id)).toEqual(['a1']);
+  });
+});
+
+describe('ArticuloKB — quién lo ve (por rol)', () => {
+  const art = (visibilidad: 'admin' | 'soporte') =>
+    new ArticuloKB({ id: 'x', titulo: 'Artículo', cuerpoMarkdown: 'contenido suficiente', visibilidad });
+  it('Administrador: solo el rol admin; Soporte: admin o soporte; nadie más', () => {
+    expect(art('admin').visiblePara({ roles: ['admin'] })).toBe(true);
+    expect(art('admin').visiblePara({ roles: ['soporte'] })).toBe(false);
+    expect(art('soporte').visiblePara({ roles: ['soporte'] })).toBe(true);
+    expect(art('soporte').visiblePara({ roles: ['admin'] })).toBe(true);
+    for (const rol of ['supervisor', 'agente', 'ventas', 'lectura', 'cliente']) {
+      expect(art('soporte').visiblePara({ roles: [rol] })).toBe(false);
+    }
+    expect(art('soporte').visiblePara({ roles: ['agente', 'soporte'] })).toBe(true);
+  });
+
+  it('los valores viejos (staff / portal / publico) se leen como Soporte', () => {
+    for (const v of ['staff', 'portal', 'publico', undefined]) {
+      expect(new ArticuloKB({ id: 'x', titulo: 'Artículo', cuerpoMarkdown: 'contenido suficiente', visibilidad: v as never }).visibilidad).toBe('soporte');
+    }
   });
 });

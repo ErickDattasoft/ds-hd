@@ -25,12 +25,10 @@
         <label class="field"><span>Etiquetas (separadas por coma)</span><input name="tags" value="{{ valores.tags }}" /></label>
         <label class="field"><span>Visibilidad</span>
           <select name="visibilidad">
-            <option value="staff" {{ 'selected' if valores.visibilidad == 'staff' }}>Solo staff</option>
-            <option value="portal" {{ 'selected' if valores.visibilidad == 'portal' }}>Staff + clientes del portal</option>
-            <option value="publico" {{ 'selected' if valores.visibilidad == 'publico' }}>Público</option>
+            <option value="soporte" {{ 'selected' if valores.visibilidad != 'admin' }}>Soporte (Administrador y Soporte técnico)</option>
+            <option value="admin" {{ 'selected' if valores.visibilidad == 'admin' }}>Administrador (solo administradores)</option>
           </select>
         </label>
-        <label class="field--check"><input type="checkbox" name="publicado" {{ 'checked' if valores.publicado }} /> <span>Publicado</span></label>
       </div>
     </details>
 

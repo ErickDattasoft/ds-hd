@@ -33,16 +33,9 @@ export function portalRoutes(container: Container): Router {
   r.get('/perfil', requirePermission('portal:perfil'), (req, res) => perfil().ver(req, res));
   r.post('/perfil', requirePermission('portal:perfil'), (req, res) => perfil().actualizar_(req, res));
 
-  const kb = () => container.resolve('knowledgeController');
-  r.get('/kb', (req, res) => kb().listar(req, res));
-  r.post('/kb/historial/limpiar', (req, res) => kb().historialLimpiarPost(req, res));
-  r.get('/kb/comparar', (req, res) => kb().comparar(req, res));
-
-  const pizarra = () => container.resolve('pizarraKBController');
-  r.get('/kb/pizarra', (req, res) => pizarra().ver(req, res));
-  r.post('/kb/pizarra', (req, res) => pizarra().guardarJson(req, res));
-
-  r.get('/kb/:idOrSlug', (req, res) => kb().ver(req, res));
+  // La base de conocimiento es solo del equipo (Administrador / Soporte): los clientes ya no la
+  // ven. Los enlaces viejos regresan al inicio del portal.
+  r.all(/^\/kb(\/.*)?$/, (_req, res) => res.redirect('/portal'));
 
   r.get('/manual', (req, res) => container.resolve('manualController').ver(req, res));
 

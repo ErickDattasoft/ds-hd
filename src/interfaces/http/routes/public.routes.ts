@@ -27,10 +27,8 @@ export function publicRoutes(container: Container): Router {
   r.get('/encuesta/:id/:firma', (req, res) => encuesta().ver(req, res));
   r.post('/encuesta/:id/:firma', (req, res) => encuesta().guardarPost(req, res));
 
-  const kb = () => container.resolve('knowledgeController');
-  r.get('/kb', (req, res) => kb().listar(req, res));
-  r.get('/kb/comparar', (req, res) => kb().comparar(req, res));
-  r.get('/kb/:idOrSlug', (req, res) => kb().ver(req, res));
+  // La base de conocimiento ya no es pública (solo el equipo, en /app/kb).
+  r.get(/^\/kb(\/.*)?$/, (_req, res) => res.redirect('/'));
 
   const eventos = () => container.resolve('eventoPublicoController');
   r.get('/eventos', (req, res) => eventos().listar(req, res));

@@ -1,6 +1,21 @@
 import { ValidationError } from '../errors/DomainError.js';
 
-export type VisibilidadKB = 'staff' | 'portal' | 'publico';
+/**
+ * Quién ve un artículo, por ROL (como el panel «👥 Acceso» del viejo, que era solo del equipo):
+ * `admin` = solo quien tiene el rol Administrador; `soporte` = Administrador o Soporte técnico.
+ * Clientes y público ya no ven la base de conocimiento.
+ */
+export type VisibilidadKB = 'admin' | 'soporte';
+
+/** Valores viejos (`staff`, `portal`, `publico`) → `soporte`; se leen así sin reescribir datos. */
+export function sanearVisibilidadKB(v: unknown): VisibilidadKB {
+  return v === 'admin' ? 'admin' : 'soporte';
+}
+
+/** Quién está pidiendo: basta con sus roles. */
+export interface ContextoKB {
+  roles: readonly string[];
+}
 
 /** Props para construir un {@link ArticuloKB}; `slug` se autogenera del título si se omite. */
 export interface ArticuloKBProps {
@@ -76,7 +91,7 @@ export class ArticuloKB {
     this.tags = [...new Set((props.tags ?? []).map((t) => t.trim().toLowerCase()).filter(Boolean))];
     this.rutaDestino = props.rutaDestino?.trim() || null;
     this.publicado = props.publicado ?? false;
-    this.visibilidad = props.visibilidad ?? 'staff';
+    this.visibilidad = sanearVisibilidadKB(props.visibilidad);
     this.autorUid = props.autorUid ?? null;
     this.autorNombre = props.autorNombre ?? null;
     this.createdAt = props.createdAt ?? new Date();
@@ -88,12 +103,11 @@ export class ArticuloKB {
     return this.categoria === 'script';
   }
 
-  /** ¿Un usuario con este rol/área puede ver el artículo? */
-  visiblePara(contexto: { esStaff: boolean; esCliente: boolean; anonimo: boolean }): boolean {
-    if (!this.publicado) return contexto.esStaff;
-    if (this.visibilidad === 'publico') return true;
-    if (this.visibilidad === 'portal') return contexto.esStaff || contexto.esCliente;
-    return contexto.esStaff;
+  /** ¿Lo puede ver alguien con estos roles? (ver {@link VisibilidadKB}) */
+  visiblePara(contexto: ContextoKB): boolean {
+    const esAdmin = contexto.roles.includes('admin');
+    if (this.visibilidad === 'admin') return esAdmin;
+    return esAdmin || contexto.roles.includes('soporte');
   }
 }
 

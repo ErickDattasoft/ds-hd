@@ -6,22 +6,4 @@
 
 # Type Alias: Contexto
 
-> **Contexto** = `object`
-
-## Properties
-
-### esStaff
-
-> **esStaff**: `boolean`
-
-***
-
-### esCliente
-
-> **esCliente**: `boolean`
-
-***
-
-### anonimo
-
-> **anonimo**: `boolean`
+> **Contexto** = [`ContextoKB`](../../../../core/entities/ArticuloKB/interfaces/ContextoKB.md)
