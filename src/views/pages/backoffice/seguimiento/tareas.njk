@@ -60,7 +60,16 @@
             {% elif t.urgencia == 'proxima' %}<span class="badge badge--ok">{{ t.vence }}</span>
             {% else %}{{ t.vence or '—' }}{% endif %}
           </td>
-          <td>{{ 'Hecha' if t.completada else '' }}</td>
+          <td>
+            {{ 'Hecha' if t.completada else '' }}
+            {% if can('seguimiento:gestionar') %}
+              <form method="post" action="/app/tareas/{{ t.id }}/eliminar" class="inline" data-confirm="¿Eliminar la tarea «{{ t.titulo }}»?">
+                <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+                <input type="hidden" name="volverA" value="/app/tareas{{ '' if soloMias else '?todas=1' }}" />
+                <button class="btn btn--ghost btn--sm" type="submit" title="Eliminar tarea">🗑️</button>
+              </form>
+            {% endif %}
+          </td>
         </tr>
       {% else %}<tr><td colspan="6" class="muted">Sin tareas.</td></tr>{% endfor %}
     </tbody>

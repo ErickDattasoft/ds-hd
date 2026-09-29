@@ -42,7 +42,7 @@ describe('empresas y contactos', () => {
     expect(bita).toEqual(expect.arrayContaining(['empresas:crear', 'contactos:crear']));
 
     const verBitacora = await agent.get('/app/bitacora');
-    expect(verBitacora.text).toContain('ACME SA de CV');
+    expect(verBitacora.text).toContain('ACME SA DE CV');
   });
 
   it('captura vigencia y versión instalada por sistema, y las compara con la oficial', async () => {
@@ -99,7 +99,7 @@ describe('empresas y contactos', () => {
     expect(crear.status).toBe(302);
     const empId = String(crear.headers.location).split('/').pop()!;
     const emp = t.empresaRepo.items.get(empId)!;
-    expect(emp.nombre).toBe('Nueva Inline SA');
+    expect(emp.nombre).toBe('NUEVA INLINE SA') // en MAYÚSCULAS, como el CRM viejo;
     const contacto = (await t.contactoRepo.list({ empresaId: empId }))[0]!;
     expect(contacto.rfc).toBe('AAA010101AAA');
 
@@ -350,5 +350,25 @@ describe('empresas y contactos', () => {
 
     const res = await agent.get('/app/contactos?q=Gerente de Compras');
     expect(res.text).toContain('Marta Solís');
+  });
+});
+
+describe('formulario de empresa (paridad con el viejo)', () => {
+  it('ajusta los sistemas al nombre del catálogo, ofrece los botones y avisa a n8n', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    const { agent, csrf } = await login(t.app, ADMIN.email, ADMIN.password);
+    await agent.post('/app/versiones').type('form').send({ _csrf: csrf, sistema: 'NÓMINAS', versionActual: '19.0.0' });
+
+    const form = await agent.get('/app/empresas/nueva');
+    expect(form.text).toContain('data-agregar-sistema="NÓMINAS"');
+
+    const crear = await agent.post('/app/empresas').type('form').send({
+      _csrf: csrf, nombre: 'Tacos del Centro', sistemasContratados: 'nominas', 'version:nominas': '18.0.0',
+    });
+    const emp = t.empresaRepo.items.get(String(crear.headers.location).split('/').pop()!)!;
+    expect(emp.nombre).toBe('TACOS DEL CENTRO');
+    expect(emp.sistemasContratados).toEqual(['NÓMINAS']);
+    expect(emp.versionesInstaladas).toEqual({ 'NÓMINAS': '18.0.0' });
+    expect(t.webhookPublisher.eventos).toContain('empresa.creada');
   });
 });

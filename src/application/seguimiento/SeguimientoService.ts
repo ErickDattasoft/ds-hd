@@ -57,6 +57,23 @@ export class SeguimientoService {
     });
   }
 
+  /** Borra una interacción registrada a mano (las filas de tickets del historial no son interacciones). */
+  async eliminarInteraccion(actor: SessionUser, id: string): Promise<string> {
+    if (!actor.esStaff) throw new ForbiddenError('Solo el staff gestiona interacciones');
+    const interaccion = await this.interacciones.findById(id);
+    if (!interaccion) throw new NotFoundError('Interaccion', id);
+    await this.interacciones.delete(id);
+    await this.bitacora.registrar({
+      actor,
+      accion: 'eliminar',
+      modulo: 'interacciones',
+      entidadTipo: 'Interaccion',
+      entidadId: id,
+      resumen: `${interaccion.tipo} con empresa ${interaccion.empresaId}: ${interaccion.resumen.slice(0, 80)}`,
+    });
+    return interaccion.empresaId;
+  }
+
   // ── Tareas ───────────────────────────────────────────────────────────────
   listarTareas(filtro?: ListarTareasFiltro): Promise<Tarea[]> {
     return this.tareas.list(filtro);
@@ -104,5 +121,20 @@ export class SeguimientoService {
     if (!actor.esStaff) throw new ForbiddenError('Solo el staff gestiona tareas');
     tarea.marcar(completada, this.clock.now());
     await this.tareas.save(tarea);
+  }
+
+  async eliminarTarea(actor: SessionUser, id: string): Promise<void> {
+    if (!actor.esStaff) throw new ForbiddenError('Solo el staff gestiona tareas');
+    const tarea = await this.tareas.findById(id);
+    if (!tarea) throw new NotFoundError('Tarea', id);
+    await this.tareas.delete(id);
+    await this.bitacora.registrar({
+      actor,
+      accion: 'eliminar',
+      modulo: 'tareas',
+      entidadTipo: 'Tarea',
+      entidadId: id,
+      resumen: `Tarea: ${tarea.titulo}`,
+    });
   }
 }

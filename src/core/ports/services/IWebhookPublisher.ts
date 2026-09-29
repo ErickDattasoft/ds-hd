@@ -2,7 +2,7 @@
 export interface EventoWebhook {
   evento: string;
   /** Canal lógico (`tickets`, `cotizaciones`…) que decide a qué webhook va. */
-  canal: 'tickets' | 'cotizaciones';
+  canal: 'tickets' | 'cotizaciones' | 'empresas';
   payload: Record<string, unknown>;
 }
 

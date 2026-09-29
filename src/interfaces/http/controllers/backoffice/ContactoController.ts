@@ -17,11 +17,15 @@ export class ContactoController {
   listar = async (req: Request, res: Response): Promise<void> => {
     const texto = str(req.query.q);
     const empresaId = str(req.query.empresa);
-    const [todos, empresas] = await Promise.all([
+    const [todos, todasLasEmpresas, enPapelera] = await Promise.all([
       this.contactos.listar({ activo: true, ...(empresaId ? { empresaId } : {}) }),
-      this.empresas.listar({ activa: true }),
+      this.empresas.listar(),
+      this.contactos.listar({ activo: false }).then((l) => l.length).catch(() => 0),
     ]);
-    const nombreEmpresa = Object.fromEntries(empresas.map((e) => [e.id, e.nombre]));
+    const empresas = todasLasEmpresas.filter((e) => e.activa);
+    // Nombres de TODAS (también archivadas): si no, un contacto de una empresa en la papelera
+    // mostraba el id interno en vez del nombre.
+    const nombreEmpresa = Object.fromEntries(todasLasEmpresas.map((e) => [e.id, e.nombre]));
     // El texto libre busca en nombre/correo (repo) *y* en el nombre de la empresa — se resuelve
     // aquí porque el repo de contactos no conoce nombres de empresa (no cruza colecciones).
     const t = texto.toLowerCase();
@@ -38,6 +42,7 @@ export class ContactoController {
       titulo: 'Contactos',
       contactos,
       empresas,
+      enPapelera,
       nombreEmpresa,
       q: texto,
       empresaId,
@@ -61,7 +66,7 @@ export class ContactoController {
       let empresaId = str(b.empresaId);
       // "Crear empresa" inline: si se escribió un nombre de empresa nueva y no se eligió una existente.
       if (!empresaId && str(b.empresaNueva).trim()) {
-        const emp = await this.empresas.crear(req.user!, { nombre: str(b.empresaNueva).trim() });
+        const emp = await this.empresas.crear(req.user!, { nombre: str(b.empresaNueva).trim().toUpperCase() });
         empresaId = emp.id;
       }
       const c = await this.contactos.crear(req.user!, { ...this.datos(b), empresaId });

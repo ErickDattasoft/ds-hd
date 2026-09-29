@@ -104,7 +104,7 @@
   {% if can('cotizaciones:leer') %}
     <h2>Cotizaciones ({{ cotizaciones | length }})</h2>
     <table class="data-table">
-      <thead><tr><th>Folio</th><th>Fecha</th><th>Total</th><th>Estado</th></tr></thead>
+      <thead><tr><th>Folio</th><th>Fecha</th><th>Total</th><th>Estado</th><th data-no-ordenar></th></tr></thead>
       <tbody>
         {% for c in cotizaciones %}
           <tr>
@@ -112,9 +112,10 @@
             <td>{{ c.fecha | fecha }}</td>
             <td>{{ c.total | moneda(c.moneda) }}</td>
             <td><span class="{{ c.estado | estadoClase }}">{{ c.estado }}</span></td>
+            <td><a class="btn btn--ghost btn--sm" href="/app/cotizaciones/{{ c.id }}/imprimir?auto=1" target="_blank" rel="noopener" title="Descargar PDF">📄 PDF</a></td>
           </tr>
         {% else %}
-          <tr><td colspan="4" class="muted">Sin cotizaciones.{% if can('cotizaciones:crear') %} <a href="/app/cotizaciones/nueva?empresa={{ empresa.id }}">Crear una</a>.{% endif %}</td></tr>
+          <tr><td colspan="5" class="muted">Sin cotizaciones.{% if can('cotizaciones:crear') %} <a href="/app/cotizaciones/nueva?empresa={{ empresa.id }}">Crear una</a>.{% endif %}</td></tr>
         {% endfor %}
       </tbody>
     </table>
@@ -132,6 +133,7 @@
 
   {% if can('seguimiento:leer') %}
     <h2 id="tareas">Tareas ({{ tareas | length }})</h2>
+    {% if filtroHistorial.desde or filtroHistorial.hasta %}<p class="muted">Solo las que vencen en el rango de fechas del filtro del historial.</p>{% endif %}
     <ul class="timeline">
       {% for t in tareas %}
         <li>
@@ -148,8 +150,16 @@
           {% elif t.urgencia == 'hoy' %}<span class="badge badge--warning">Hoy</span>
           {% elif t.urgencia == 'proxima' %}<span class="badge badge--ok">{{ t.vence }}</span>{% endif %}
           <span class="muted">({{ t.asignadoANombre or t.asignadoAUid }})</span>
+          {% if can('seguimiento:gestionar') %}
+            <form method="post" action="/app/tareas/{{ t.id }}/eliminar" class="inline" data-confirm="¿Eliminar la tarea «{{ t.titulo }}»?">
+              <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+              <input type="hidden" name="volverA" value="/app/empresas/{{ empresa.id }}#tareas" />
+              <button class="btn btn--ghost btn--sm" type="submit" title="Eliminar tarea">🗑️</button>
+            </form>
+          {% endif %}
+          {% if t.descripcion %}<div class="muted">{{ t.descripcion }}</div>{% endif %}
         </li>
-      {% else %}<li class="muted">Sin tareas pendientes para esta empresa.</li>{% endfor %}
+      {% else %}<li class="muted">{{ 'Sin tareas con vencimiento en ese rango de fechas.' if (filtroHistorial.desde or filtroHistorial.hasta) else 'Sin tareas pendientes para esta empresa.' }}</li>{% endfor %}
     </ul>
     {% if can('seguimiento:gestionar') %}
       <details class="disclosure">
@@ -160,9 +170,13 @@
           <input type="hidden" name="volverA" value="/app/empresas/{{ empresa.id }}#tareas" />
           <div class="filterbar">
             <input name="titulo" placeholder="Título de la tarea" required style="flex:1" />
-            <input type="date" name="vence" />
-            <button class="btn btn--sm" type="submit">Crear</button>
+            <input type="date" name="vence" title="Vence" />
+            <select name="asignadoAUid" title="Asignada a">
+              {% for u in staff %}<option value="{{ u.uid }}" {{ 'selected' if u.uid == user.uid }}>{{ u.nombre }}</option>{% endfor %}
+            </select>
           </div>
+          <textarea name="descripcion" rows="2" placeholder="Descripción (opcional)"></textarea>
+          <div><button class="btn btn--sm" type="submit">Crear</button></div>
         </form>
       </details>
     {% endif %}
@@ -192,9 +206,15 @@
           <span class="muted">{{ i.fecha | fecha }}</span> ·
           <span class="timeline__dot timeline__dot--{{ i.tipo }}"></span>
           {% if i.tipo == 'ticket' %}
-            🎫 <a href="/app/tickets/{{ i.ticketId }}">{{ i.texto }}</a>
+            🎫 <a href="/app/tickets/{{ i.ticketId }}">{{ i.texto }}</a>{% if i.usuario %} <span class="muted">({{ i.usuario }})</span>{% endif %}
           {% else %}
-            <strong>{{ i.tipo }}</strong> — {{ i.texto }} <span class="muted">({{ i.usuario }})</span>
+            <strong>{{ i.tipo }}</strong> — <span style="white-space:pre-wrap">{{ i.texto }}</span> <span class="muted">({{ i.usuario }})</span>
+            {% if can('seguimiento:gestionar') and i.interaccionId %}
+              <form method="post" action="/app/interacciones/{{ i.interaccionId }}/eliminar" class="inline" data-confirm="¿Eliminar esta interacción del historial?">
+                <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+                <button class="btn btn--ghost btn--sm" type="submit" title="Eliminar interacción">✕</button>
+              </form>
+            {% endif %}
           {% endif %}
         </li>
       {% else %}
@@ -209,10 +229,10 @@
           <select name="tipo">
             {% for tp in ['llamada','correo','reunion','whatsapp','nota'] %}<option>{{ tp }}</option>{% endfor %}
           </select>
-          <input type="date" name="fecha" />
-          <input name="resumen" placeholder="Resumen de la interacción" required style="flex:1" />
-          <button class="btn btn--sm" type="submit">Registrar</button>
+          <input type="date" name="fecha" value="{{ hoy }}" />
         </div>
+        <textarea name="resumen" rows="3" placeholder="Describe la interacción..." required></textarea>
+        <div><button class="btn btn--sm" type="submit">Registrar</button></div>
       </form>
     {% endif %}
   {% endif %}

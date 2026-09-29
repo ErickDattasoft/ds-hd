@@ -55,3 +55,19 @@ Persistencia de tareas de seguimiento (`tareas/{id}`).
 #### Returns
 
 `Promise`\<`void`\>
+
+***
+
+### delete()
+
+> **delete**(`id`): `Promise`\<`void`\>
+
+#### Parameters
+
+##### id
+
+`string`
+
+#### Returns
+
+`Promise`\<`void`\>

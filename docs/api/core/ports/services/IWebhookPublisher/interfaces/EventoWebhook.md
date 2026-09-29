@@ -18,7 +18,7 @@ Eventos de dominio que se publican a sistemas externos (n8n).
 
 ### canal
 
-> **canal**: `"tickets"` \| `"cotizaciones"`
+> **canal**: `"tickets"` \| `"empresas"` \| `"cotizaciones"`
 
 Canal lógico (`tickets`, `cotizaciones`…) que decide a qué webhook va.
 

@@ -2,7 +2,7 @@
 {% block title %}Papelera{% endblock %}
 
 {% macro seccion(tipo, titulo, filas, cols) %}
-  <section class="card">
+  <section class="card" id="{{ tipo }}">
     <div class="page-head">
       <h2>{{ titulo }} ({{ filas | length }})</h2>
       {% if filas | length %}
@@ -16,14 +16,21 @@
     </div>
 
     {% if filas | length %}
+      {# Botones por fila (↩️ / 🔥, como el viejo): van a este form aparte para no arrastrar las casillas marcadas. #}
+      <form id="uno-{{ tipo }}" method="post" hidden>
+        <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+        <input type="hidden" name="tipo" value="{{ tipo }}" />
+      </form>
       <form method="post" data-confirm="¿Aplicar la acción a los elementos seleccionados?">
         <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
         <input type="hidden" name="tipo" value="{{ tipo }}" />
         <table class="data-table">
           <thead>
             <tr>
-              <th></th>
+              <th data-no-ordenar><input type="checkbox" data-seleccionar-todo title="Seleccionar todos" aria-label="Seleccionar todos" /></th>
               {% for c in cols %}<th>{{ c }}</th>{% endfor %}
+              <th>En la papelera desde</th>
+              <th data-no-ordenar></th>
             </tr>
           </thead>
           <tbody>
@@ -31,6 +38,12 @@
               <tr>
                 <td><input type="checkbox" name="ids" value="{{ f.id }}" /></td>
                 {{ caller(f) }}
+                <td class="muted">{{ f.updatedAt | fecha }}</td>
+                <td>
+                  <button class="btn btn--ghost btn--sm" type="submit" form="uno-{{ tipo }}" formaction="/app/papelera/restaurar" name="ids" value="{{ f.id }}" title="Restaurar">↩️</button>
+                  <button class="btn btn--ghost btn--sm" type="submit" form="uno-{{ tipo }}" formaction="/app/papelera/eliminar" name="ids" value="{{ f.id }}" title="Eliminar definitivamente"
+                          data-confirm="¿Eliminar definitivamente? Esta acción no se puede deshacer.">🔥</button>
+                </td>
               </tr>
             {% endfor %}
           </tbody>
@@ -57,8 +70,8 @@
     <td>{{ e.nombre }}</td><td class="muted">{{ e.rfc or '—' }}</td>
   {% endcall %}
 
-  {% call(c) seccion('contactos', 'Contactos archivados', contactos, ['Nombre', 'Correo']) %}
-    <td>{{ c.nombre }}</td><td class="muted">{{ c.email or '—' }}</td>
+  {% call(c) seccion('contactos', 'Contactos archivados', contactos, ['Nombre', 'Empresa', 'Correo']) %}
+    <td>{{ c.nombre }}</td><td>{{ nombreEmpresa[c.empresaId] or '(empresa eliminada)' }}</td><td class="muted">{{ c.email or '—' }}</td>
   {% endcall %}
 
   {% call(t) seccion('tickets', 'Tickets archivados', tickets, ['#', 'Asunto']) %}

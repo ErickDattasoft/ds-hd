@@ -74,6 +74,11 @@ export class SeguimientoController {
     res.redirect(str(req.body?.volverA) || '/app/tareas');
   };
 
+  eliminarTareaPost = async (req: Request, res: Response): Promise<void> => {
+    await this.seguimiento.eliminarTarea(req.user!, str(req.params.id));
+    res.redirect(str(req.body?.volverA) || '/app/tareas');
+  };
+
   // ── Interacciones (desde el detalle de empresa) ──────────────────────────
   crearInteraccionPost = async (req: Request, res: Response): Promise<void> => {
     const b = req.body ?? {};
@@ -85,6 +90,11 @@ export class SeguimientoController {
       fecha: str(b.fecha),
       resumen: str(b.resumen),
     });
-    res.redirect(`/app/empresas/${str(b.empresaId)}`);
+    res.redirect(`/app/empresas/${str(b.empresaId)}#historial`);
+  };
+
+  eliminarInteraccionPost = async (req: Request, res: Response): Promise<void> => {
+    const empresaId = await this.seguimiento.eliminarInteraccion(req.user!, str(req.params.id));
+    res.redirect(`/app/empresas/${empresaId}#historial`);
   };
 }

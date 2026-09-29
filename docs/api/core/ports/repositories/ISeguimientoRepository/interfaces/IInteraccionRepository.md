@@ -26,6 +26,38 @@ Persistencia del seguimiento comercial: interacciones (`interacciones/{id}`) y t
 
 ***
 
+### findById()
+
+> **findById**(`id`): `Promise`\<[`Interaccion`](../../../../entities/Interaccion/classes/Interaccion.md) \| `null`\>
+
+#### Parameters
+
+##### id
+
+`string`
+
+#### Returns
+
+`Promise`\<[`Interaccion`](../../../../entities/Interaccion/classes/Interaccion.md) \| `null`\>
+
+***
+
+### delete()
+
+> **delete**(`id`): `Promise`\<`void`\>
+
+#### Parameters
+
+##### id
+
+`string`
+
+#### Returns
+
+`Promise`\<`void`\>
+
+***
+
 ### listPorEmpresa()
 
 > **listPorEmpresa**(`empresaId`): `Promise`\<[`Interaccion`](../../../../entities/Interaccion/classes/Interaccion.md)[]\>

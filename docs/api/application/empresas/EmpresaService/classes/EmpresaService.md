@@ -12,7 +12,7 @@ Gestión de empresas (CRUD + archivar).
 
 ### Constructor
 
-> **new EmpresaService**(`repo`, `ids`, `clock`, `bitacora`): `EmpresaService`
+> **new EmpresaService**(`repo`, `ids`, `clock`, `bitacora`, `webhooks?`): `EmpresaService`
 
 #### Parameters
 
@@ -31,6 +31,10 @@ Gestión de empresas (CRUD + archivar).
 ##### bitacora
 
 [`BitacoraService`](../../../shared/BitacoraService/classes/BitacoraService.md)
+
+##### webhooks?
+
+[`IWebhookPublisher`](../../../../core/ports/services/IWebhookPublisher/interfaces/IWebhookPublisher.md)
 
 #### Returns
 
@@ -72,7 +76,10 @@ Gestión de empresas (CRUD + archivar).
 
 ### crear()
 
-> **crear**(`actor`, `datos`): `Promise`\<[`Empresa`](../../../../core/entities/Empresa/classes/Empresa.md)\>
+> **crear**(`actor`, `datos`, `opciones?`): `Promise`\<[`Empresa`](../../../../core/entities/Empresa/classes/Empresa.md)\>
+
+`notificar: false` para altas masivas (importar Excel): el aviso de "empresa nueva" al
+equipo es por cada alta a mano, como en el CRM viejo.
 
 #### Parameters
 
@@ -83,6 +90,12 @@ Gestión de empresas (CRUD + archivar).
 ##### datos
 
 [`DatosEmpresa`](../interfaces/DatosEmpresa.md)
+
+##### opciones?
+
+###### notificar?
+
+`boolean`
 
 #### Returns
 

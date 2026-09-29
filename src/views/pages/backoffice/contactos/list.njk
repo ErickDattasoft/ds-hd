@@ -6,6 +6,7 @@
     <div class="page-head__actions">
       {% if can('contactos:leer') %}<a class="btn btn--ghost btn--sm" href="/app/contactos/exportar{{ '?q=' + q if q }}">Exportar Excel</a>{% endif %}
       {% if can('contactos:crear') %}<a class="btn btn--ghost btn--sm" href="/app/contactos/importar">Importar Excel</a>{% endif %}
+      {% if can('papelera:gestionar') %}<a class="btn btn--ghost btn--sm" href="/app/papelera#contactos" title="Contactos archivados">🗑️ Papelera{% if enPapelera %} <span class="badge">{{ enPapelera }}</span>{% endif %}</a>{% endif %}
       {% if can('contactos:crear') %}<a class="btn btn--sm" href="/app/contactos/nuevo">Nuevo contacto</a>{% endif %}
     </div>
   </div>
@@ -23,7 +24,7 @@
       {% for c in contactos %}
         <tr>
           <td><a href="/app/contactos/{{ c.id }}/editar">{{ c.nombre }}</a></td>
-          <td>{{ nombreEmpresa[c.empresaId] or c.empresaId }}</td>
+          <td>{{ nombreEmpresa[c.empresaId] or '(empresa eliminada)' }}</td>
           <td>{{ c.puesto or '—' }}</td>
           <td>{{ c.email or '—' }}</td>
           <td>{{ c.telefono or '—' }}</td>

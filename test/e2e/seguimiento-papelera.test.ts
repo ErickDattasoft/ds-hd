@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import request from 'supertest';
 import { makeTestApp, cookieValor } from '../helpers/app.js';
 import { Empresa } from '../../src/core/entities/Empresa.js';
+import { Contacto } from '../../src/core/entities/Contacto.js';
 
 const ADMIN = { uid: 'u-a', email: 'admin@dattasoft.mx', password: 'admin12345', nombre: 'Admin', rol: 'admin' as const };
 
@@ -101,5 +102,65 @@ describe('papelera', () => {
       .type('form')
       .send({ _csrf: csrf, tipo: 'empresas', ids: ['e1'] });
     expect(t.empresaRepo.items.has('e1')).toBe(true);
+  });
+});
+
+describe('detalle de empresa (el drawer del CRM viejo)', () => {
+  it('borra interacciones y tareas, asigna la tarea rápida y filtra tareas por vencimiento', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    t.empresaRepo.items.set('e1', new Empresa({ id: 'e1', nombre: 'ACME' }));
+    const { agent, csrf } = await login(t.app, ADMIN.email, ADMIN.password);
+
+    await agent.post('/app/interacciones').type('form').send({
+      _csrf: csrf, empresaId: 'e1', tipo: 'nota', fecha: '2026-09-01', resumen: 'Nota que sobra',
+    });
+    const inter = t.interaccionRepo.items[0]!;
+    let det = await agent.get('/app/empresas/e1');
+    expect(det.text).toContain(`/app/interacciones/${inter.id}/eliminar`);
+    const borrada = await agent.post(`/app/interacciones/${inter.id}/eliminar`).type('form').send({ _csrf: csrf });
+    expect(borrada.headers.location).toBe('/app/empresas/e1#historial');
+    expect(t.interaccionRepo.items).toHaveLength(0);
+
+    await agent.post('/app/tareas').type('form').send({
+      _csrf: csrf, titulo: 'Llamar en octubre', empresaId: 'e1', asignadoAUid: ADMIN.uid, vence: '2026-10-15',
+      descripcion: 'Renovación', volverA: '/app/empresas/e1#tareas',
+    });
+    await agent.post('/app/tareas').type('form').send({
+      _csrf: csrf, titulo: 'Llamar en diciembre', empresaId: 'e1', asignadoAUid: ADMIN.uid, vence: '2026-12-01',
+    });
+    det = await agent.get('/app/empresas/e1');
+    expect(det.text).toContain('name="asignadoAUid"');
+    expect(det.text).toContain('Renovación');
+    const filtrado = await agent.get('/app/empresas/e1?hDesde=2026-10-01&hHasta=2026-10-31');
+    expect(filtrado.text).toContain('Llamar en octubre');
+    expect(filtrado.text).not.toContain('Llamar en diciembre');
+
+    const oct = [...t.tareaRepo.items.values()].find((x) => x.titulo === 'Llamar en octubre')!;
+    await agent.post(`/app/tareas/${oct.id}/eliminar`).type('form').send({ _csrf: csrf, volverA: '/app/empresas/e1#tareas' });
+    expect(t.tareaRepo.items.has(oct.id)).toBe(false);
+  });
+});
+
+describe('papelera de empresas y contactos (paridad con el viejo)', () => {
+  it('muestra fecha, empresa del contacto, botones por fila y el contador en las listas', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    t.empresaRepo.items.set('e1', new Empresa({ id: 'e1', nombre: 'VIEJA SA', activa: false }));
+    await t.contactoRepo.save(new Contacto({ id: 'c1', empresaId: 'e1', nombre: 'Ana Pérez', email: 'ana@x.com' }));
+    const { agent, csrf } = await login(t.app, ADMIN.email, ADMIN.password);
+
+    const pap = await agent.get('/app/papelera');
+    expect(pap.text).toContain('data-seleccionar-todo');
+    expect(pap.text).toContain('form="uno-empresas"');
+    expect(pap.text).toContain('En la papelera desde');
+
+    // El contacto de una empresa archivada muestra su nombre, no el id interno.
+    const contactos = await agent.get('/app/contactos');
+    expect(contactos.text).toContain('VIEJA SA');
+    const empresas = await agent.get('/app/empresas');
+    expect(empresas.text).toMatch(/🗑️ Papelera <span class="badge">1<\/span>/);
+
+    // Botón por fila: solo restaura esa.
+    await agent.post('/app/papelera/restaurar').type('form').send({ _csrf: csrf, tipo: 'empresas', ids: 'e1' });
+    expect(t.empresaRepo.items.get('e1')?.activa).toBe(true);
   });
 });

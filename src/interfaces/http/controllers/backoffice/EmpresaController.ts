@@ -10,6 +10,7 @@ import type { VersionService } from '../../../../application/versiones/VersionSe
 import type { ITicketQueries } from '../../../../core/ports/repositories/ITicketQueries.js';
 import type { Interaccion, TipoInteraccion } from '../../../../core/entities/Interaccion.js';
 import type { Ticket } from '../../../../core/entities/Ticket.js';
+import type { IUsuarioRepository } from '../../../../core/ports/repositories/IUsuarioRepository.js';
 import { estadoActualizacion } from '../../../../core/entities/value-objects/version.js';
 import { formatearLicenciasPendientes } from '../../../../application/empresas/avisos.js';
 import { camposDeError } from '../../support/errores.js';
@@ -20,10 +21,14 @@ interface ItemHistorial {
   fecha: Date;
   texto: string;
   usuario: string | null;
+  /** Solo en interacciones registradas a mano (las que se pueden borrar). */
+  interaccionId?: string;
   ticketId?: string;
   ticketEstado?: string;
 }
 
+/** `YYYY-MM-DD` de hoy en hora de México (valor por defecto de la fecha de una interacción). */
+const hoyIso = (): string => new Date().toLocaleDateString('en-CA', { timeZone: 'America/Mexico_City' });
 const str = (v: unknown): string => (typeof v === 'string' ? v : '');
 const lista = (v: unknown): string[] =>
   str(v)
@@ -54,6 +59,7 @@ export class EmpresaController {
     private readonly excel: EmpresaExcelService,
     private readonly filtrosGuardados: FiltrosGuardadosService,
     private readonly cotizaciones: ICotizacionRepository,
+    private readonly usuarios?: IUsuarioRepository,
   ) {}
 
   listar = async (req: Request, res: Response): Promise<void> => {
@@ -66,7 +72,7 @@ export class EmpresaController {
       : '';
     const soloFavoritas = req.query.favoritas === '1';
     const sistema = str(req.query.sistema);
-    const [empresas, versiones, filtrosGuardados, todosLosContactos] = await Promise.all([
+    const [empresas, versiones, filtrosGuardados, todosLosContactos, enPapelera] = await Promise.all([
       this.empresas.listar({
         ...(texto ? { texto } : {}),
         ...(incluirArchivadas ? {} : { activa: true }),
@@ -76,6 +82,7 @@ export class EmpresaController {
       this.versiones.listar(),
       this.filtrosGuardados.listar(req.user!, 'empresas'),
       this.contactos.listar({ activo: true }),
+      this.empresas.listar({ activa: false }).then((l) => l.length).catch(() => 0),
     ]);
     const oficial = this.mapaOficial(versiones);
     // Contacto principal de cada empresa, para mostrarlo en la lista como en el CRM viejo: el
@@ -136,6 +143,7 @@ export class EmpresaController {
       sistema,
       sistemasDisponibles,
       filtrosGuardados,
+      enPapelera,
       error: str(req.query.error) || null,
     });
   };
@@ -192,14 +200,20 @@ export class EmpresaController {
     });
   };
 
-  nuevo = (_req: Request, res: Response): void => {
-    res.render('pages/backoffice/empresas/form', { titulo: 'Nueva empresa', modo: 'crear', valores: {}, errores: {} });
+  nuevo = async (_req: Request, res: Response): Promise<void> => {
+    res.render('pages/backoffice/empresas/form', {
+      titulo: 'Nueva empresa',
+      modo: 'crear',
+      valores: {},
+      catalogoSistemas: await this.catalogoSistemas(),
+      errores: {},
+    });
   };
 
   crearPost = async (req: Request, res: Response): Promise<void> => {
     const b = req.body ?? {};
     try {
-      const e = await this.empresas.crear(req.user!, this.datos(b));
+      const e = await this.empresas.crear(req.user!, this.datos(b, await this.catalogoSistemas()));
       // Primer contacto opcional en el mismo paso — como el CRM viejo ("Contactos de esta
       // empresa" en su form de alta). Si falla (p. ej. sin permiso contactos:crear), la empresa
       // ya quedó creada; no se revierte por un campo secundario opcional.
@@ -224,6 +238,7 @@ export class EmpresaController {
         titulo: 'Nueva empresa',
         modo: 'crear',
         valores: b,
+        catalogoSistemas: await this.catalogoSistemas(),
         errores: camposDeError(err),
       });
     }
@@ -234,7 +249,7 @@ export class EmpresaController {
     const empresa = await this.empresas.obtener(id);
     const filtroHistorial = { desde: str(req.query.hDesde), hasta: str(req.query.hHasta), tipo: str(req.query.hTipo) };
     const puedeVerCotizaciones = req.user!.permisos.includes('cotizaciones:leer');
-    const [contactos, tickets, todosLosTickets, interacciones, versiones, tareas, cotizaciones] = await Promise.all([
+    const [contactos, tickets, todosLosTickets, interacciones, versiones, tareasPendientes, cotizaciones, usuarios] = await Promise.all([
       this.contactos.listar({ empresaId: id }),
       this.ticketQueries.listar({ empresaId: id, limite: 20, archivado: false }),
       this.ticketQueries.listar({ empresaId: id }),
@@ -242,7 +257,14 @@ export class EmpresaController {
       this.versiones.listar(),
       this.seguimiento.listarTareas({ empresaId: id, completada: false }),
       puedeVerCotizaciones ? this.cotizaciones.list({ empresaId: id }) : Promise.resolve([]),
+      this.usuarios ? this.usuarios.list({ activo: true }) : Promise.resolve([]),
     ]);
+    // El filtro de fechas también acota las tareas por su vencimiento, como en el CRM viejo.
+    const tareas = tareasPendientes.filter(
+      (t) =>
+        (!filtroHistorial.desde || (t.vence && t.vence >= filtroHistorial.desde)) &&
+        (!filtroHistorial.hasta || (t.vence && t.vence <= filtroHistorial.hasta)),
+    );
     const oficial = this.mapaOficial(versiones);
     const hoy = new Date();
     const { historial, resumenTickets } = this.construirHistorial(interacciones, todosLosTickets, filtroHistorial);
@@ -255,6 +277,8 @@ export class EmpresaController {
       resumenTickets,
       filtroHistorial,
       tareas,
+      staff: usuarios.filter((u) => u.esStaff),
+      hoy: hoyIso(),
       cotizaciones,
       sistemas: empresa.sistemasContratados.map((sistema) => ({
         sistema,
@@ -278,12 +302,18 @@ export class EmpresaController {
     filtro: { desde: string; hasta: string; tipo: string },
   ): { historial: ItemHistorial[]; resumenTickets: { estado: string; cantidad: number }[] | null } {
     let items: ItemHistorial[] = [
-      ...interacciones.map((i) => ({ tipo: i.tipo, fecha: i.fecha, texto: i.resumen, usuario: i.creadoPorNombre })),
+      ...interacciones.map((i) => ({
+        tipo: i.tipo,
+        fecha: i.fecha,
+        texto: i.resumen,
+        usuario: i.creadoPorNombre,
+        interaccionId: i.id,
+      })),
       ...tickets.map((t) => ({
         tipo: 'ticket' as const,
         fecha: t.abiertoEn,
         texto: `#${t.numero} ${t.asunto} — Estado: ${t.estado}`,
-        usuario: null,
+        usuario: t.agenteAsignadoNombre,
         ticketId: t.id,
         ticketEstado: t.estado,
       })),
@@ -311,6 +341,7 @@ export class EmpresaController {
       empresa,
       contactos,
       valores: { ...empresa, sistemasContratados: empresa.sistemasContratados.join('\n') },
+      catalogoSistemas: await this.catalogoSistemas(),
       errores: {},
     });
   };
@@ -323,7 +354,7 @@ export class EmpresaController {
       const deLaEmpresa = new Set((await this.contactos.listar({ empresaId: id })).map((c) => c.id));
       const elegido = (v: unknown): string | null => (deLaEmpresa.has(str(v)) ? str(v) : null);
       await this.empresas.actualizar(req.user!, id, {
-        ...this.datos(b),
+        ...this.datos(b, await this.catalogoSistemas()),
         contactoPrincipalId: elegido(b.contactoPrincipalId),
         contactoAlternativoId: elegido(b.contactoAlternativoId),
       });
@@ -337,6 +368,7 @@ export class EmpresaController {
         empresa,
         contactos,
         valores: b,
+        catalogoSistemas: await this.catalogoSistemas(),
         errores: camposDeError(err),
       });
     }
@@ -388,9 +420,26 @@ export class EmpresaController {
     return out;
   }
 
-  private datos(b: Record<string, unknown>) {
+  /** Sistemas con versión oficial registrada — la lista de la que se escogen (en el viejo era fija). */
+  private async catalogoSistemas(): Promise<string[]> {
+    const versiones = await this.versiones.listar().catch(() => []);
+    return [...new Set(versiones.map((v) => v.sistema.trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'es'));
+  }
+
+  /**
+   * Ajusta cada sistema escrito a mano al nombre del catálogo sin importar mayúsculas ni acentos
+   * ("nominas" → "NOMINAS"): si no, no empata con su versión oficial y la empresa nunca sale
+   * como desactualizada. Los que no están en el catálogo se dejan tal cual.
+   */
+  private datos(b: Record<string, unknown>, catalogo: string[] = []) {
+    const clave = (s: string): string => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase();
+    const porClave = new Map(catalogo.map((s) => [clave(s), s]));
+    const canon = (s: string): string => porClave.get(clave(s)) ?? s;
+    const reclave = (m: Record<string, string>): Record<string, string> =>
+      Object.fromEntries(Object.entries(m).map(([k, v]) => [canon(k), v]));
     return {
-      nombre: str(b.nombre),
+      // En MAYÚSCULAS, como el CRM viejo (así viene toda la cartera migrada).
+      nombre: str(b.nombre).toUpperCase(),
       rfc: str(b.rfc),
       razonSocial: str(b.razonSocial),
       direccion: str(b.direccion),
@@ -398,9 +447,9 @@ export class EmpresaController {
       telefonoAlternativo: str(b.telefonoAlternativo),
       email: str(b.email),
       emailAlternativo: str(b.emailAlternativo),
-      sistemasContratados: lista(b.sistemasContratados),
-      vigencias: mapaConPrefijo(b, 'vigencia:'),
-      versionesInstaladas: mapaConPrefijo(b, 'version:'),
+      sistemasContratados: [...new Set(lista(b.sistemasContratados).map(canon))],
+      vigencias: reclave(mapaConPrefijo(b, 'vigencia:')),
+      versionesInstaladas: reclave(mapaConPrefijo(b, 'version:')),
       camposExtra: this.camposExtra(b),
       notas: str(b.notas),
     };

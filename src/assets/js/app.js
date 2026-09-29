@@ -165,11 +165,23 @@
   });
 
   // ── Confirmación en acciones destructivas ───────────────────────────────
+  // El botón que envía puede traer su propio aviso (p. ej. «Eliminar definitivo»), que gana al del form.
   document.addEventListener('submit', function (e) {
-    var msg = e.target.getAttribute && e.target.getAttribute('data-confirm');
+    var sub = e.submitter;
+    var msg = (sub && sub.getAttribute('data-confirm')) || (e.target.getAttribute && e.target.getAttribute('data-confirm'));
     if (msg && !window.confirm(msg)) {
       e.preventDefault();
     }
+  });
+  // «Seleccionar todo» en tablas con casillas `name="ids"` (papelera).
+  document.addEventListener('change', function (e) {
+    var t = e.target.closest && e.target.closest('[data-seleccionar-todo]');
+    if (!t) return;
+    var form = t.closest('form');
+    if (!form) return;
+    Array.prototype.forEach.call(form.querySelectorAll('input[type="checkbox"][name="ids"]'), function (c) {
+      c.checked = t.checked;
+    });
   });
 
   // ── CSRF en peticiones htmx ──────────────────────────────────────────────
@@ -1102,6 +1114,17 @@
   }
   document.addEventListener('input', function (e) {
     if (e.target.closest('[data-sistemas-textarea]')) sincroLicencias();
+  });
+  // Botones del catálogo: agregan el sistema con su nombre exacto (como la lista fija del viejo).
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-agregar-sistema]');
+    if (!b) return;
+    var ta = document.querySelector('[data-sistemas-textarea]');
+    if (!ta) return;
+    var nombre = b.getAttribute('data-agregar-sistema');
+    var actuales = ta.value.split('\n').map(function (x) { return x.trim(); }).filter(Boolean);
+    var ya = actuales.some(function (x) { return x.toLowerCase() === nombre.toLowerCase(); });
+    if (!ya) { actuales.push(nombre); ta.value = actuales.join('\n'); sincroLicencias(); }
   });
   document.addEventListener('click', function (e) {
     if (e.target.closest('[data-agregar-campo-extra]')) {

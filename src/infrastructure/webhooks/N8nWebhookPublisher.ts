@@ -21,6 +21,8 @@ function mensajeWhatsApp(evento: EventoWebhook): string {
       return `📅 Ticket #${p.numero} programado para ${p.fecha ?? ''} ${p.hora ?? ''}`.trim();
     case 'cotizacion.creada':
       return `📄 Nueva cotización ${p.folio ?? ''}`;
+    case 'empresa.creada':
+      return `🏢 Nueva empresa: ${p.nombre ?? ''}${p.registradaPor ? ` (registrada por ${p.registradaPor})` : ''}`;
     default:
       return `Evento ${evento.evento}`;
   }
@@ -37,7 +39,7 @@ export class N8nWebhookPublisher implements IWebhookPublisher {
   constructor(
     private readonly gateway: IIntegracionesGateway,
     private readonly configRepo: IConfiguracionRepository,
-    private readonly envUrls: { tickets: string; cotizaciones: string },
+    private readonly envUrls: Partial<Record<EventoWebhook['canal'], string>>,
     private readonly logger: ILogger,
   ) {}
 
@@ -48,9 +50,12 @@ export class N8nWebhookPublisher implements IWebhookPublisher {
       : { webhook: true, whatsapp: false };
 
     if (regla.webhook) {
-      const url =
-        (evento.canal === 'tickets' ? config.n8nWebhookTickets : config.n8nWebhookCotizaciones) ||
-        this.envUrls[evento.canal];
+      const porCanal = {
+        tickets: config.n8nWebhookTickets,
+        cotizaciones: config.n8nWebhookCotizaciones,
+        empresas: config.n8nWebhookEmpresas,
+      };
+      const url = porCanal[evento.canal] || this.envUrls[evento.canal];
       if (!url) {
         this.logger.debug('Webhook sin URL configurada, omitido', { canal: evento.canal, evento: evento.evento });
       } else {

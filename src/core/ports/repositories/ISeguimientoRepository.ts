@@ -4,6 +4,8 @@ import type { Tarea } from '../../entities/Tarea.js';
 /** Persistencia del seguimiento comercial: interacciones (`interacciones/{id}`) y tareas (`tareas/{id}`). */
 export interface IInteraccionRepository {
   create(interaccion: Interaccion): Promise<void>;
+  findById(id: string): Promise<Interaccion | null>;
+  delete(id: string): Promise<void>;
   listPorEmpresa(empresaId: string): Promise<Interaccion[]>;
   listRecientes(limite: number): Promise<Interaccion[]>;
 }
@@ -20,4 +22,5 @@ export interface ITareaRepository {
   findById(id: string): Promise<Tarea | null>;
   list(filtro?: ListarTareasFiltro): Promise<Tarea[]>;
   save(tarea: Tarea): Promise<void>;
+  delete(id: string): Promise<void>;
 }

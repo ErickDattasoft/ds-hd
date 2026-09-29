@@ -258,7 +258,11 @@ export function backofficeRoutes(container: Container): Router {
   r.get('/tareas', requirePermission('seguimiento:leer'), (req, res) => seguimiento().tareas(req, res));
   r.post('/tareas', requirePermission('seguimiento:gestionar'), (req, res) => seguimiento().crearTareaPost(req, res));
   r.post('/tareas/:id/marcar', requirePermission('seguimiento:gestionar'), (req, res) => seguimiento().marcarTareaPost(req, res));
+  r.post('/tareas/:id/eliminar', requirePermission('seguimiento:gestionar'), (req, res) => seguimiento().eliminarTareaPost(req, res));
   r.post('/interacciones', requirePermission('seguimiento:gestionar'), (req, res) => seguimiento().crearInteraccionPost(req, res));
+  r.post('/interacciones/:id/eliminar', requirePermission('seguimiento:gestionar'), (req, res) =>
+    seguimiento().eliminarInteraccionPost(req, res),
+  );
 
   // ── Eventos ────────────────────────────────────────────────────────────────
   r.get('/eventos', requirePermission('eventos:leer'), (req, res) => eventos().listar(req, res));

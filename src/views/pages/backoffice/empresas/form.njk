@@ -5,7 +5,7 @@
   {% if errores.general %}<p class="alert alert--error">{{ errores.general }}</p>{% endif %}
   <form method="post" action="{{ '/app/empresas' if modo == 'crear' else '/app/empresas/' + empresa.id }}" class="form form--wide">
     <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
-    <label class="field"><span>Nombre</span><input name="nombre" value="{{ valores.nombre }}" required />
+    <label class="field"><span>Nombre</span><input name="nombre" value="{{ valores.nombre }}" required style="text-transform:uppercase" />
       {% if errores.nombre %}<em class="field__error">{{ errores.nombre }}</em>{% endif %}</label>
     <label class="field"><span>Teléfono</span><input type="tel" inputmode="tel" name="telefono" value="{{ valores.telefono }}" /></label>
     <label class="field"><span>Teléfono alternativo</span><input type="tel" inputmode="tel" name="telefonoAlternativo" value="{{ valores.telefonoAlternativo }}" /></label>
@@ -39,6 +39,12 @@
         <label class="field"><span>Sistemas contratados (uno por línea)</span>
           <textarea name="sistemasContratados" rows="4" data-sistemas-textarea>{{ valores.sistemasContratados }}</textarea>
         </label>
+        {% if catalogoSistemas and catalogoSistemas.length %}
+          <div class="filterbar" data-catalogo-sistemas>
+            <span class="muted">Agregar:</span>
+            {% for s in catalogoSistemas %}<button type="button" class="btn btn--ghost btn--sm" data-agregar-sistema="{{ s }}">＋ {{ s }}</button>{% endfor %}
+          </div>
+        {% endif %}
         <label class="field"><span>Notas</span><textarea name="notas" rows="3">{{ valores.notas }}</textarea></label>
       </div>
     </details>

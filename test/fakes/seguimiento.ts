@@ -11,6 +11,13 @@ export class InMemoryInteraccionRepository implements IInteraccionRepository {
   async create(i: Interaccion): Promise<void> {
     this.items.push(i);
   }
+  async findById(id: string): Promise<Interaccion | null> {
+    return this.items.find((i) => i.id === id) ?? null;
+  }
+  async delete(id: string): Promise<void> {
+    const idx = this.items.findIndex((i) => i.id === id);
+    if (idx >= 0) this.items.splice(idx, 1);
+  }
   async listPorEmpresa(empresaId: string): Promise<Interaccion[]> {
     return this.items
       .filter((i) => i.empresaId === empresaId)
@@ -35,5 +42,8 @@ export class InMemoryTareaRepository implements ITareaRepository {
   }
   async save(t: Tarea): Promise<void> {
     this.items.set(t.id, t);
+  }
+  async delete(id: string): Promise<void> {
+    this.items.delete(id);
   }
 }

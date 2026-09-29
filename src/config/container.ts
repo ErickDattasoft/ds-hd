@@ -800,7 +800,7 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
       (c: Cradle) => new BitacoraService(c.bitacoraRepo, c.idGenerator, c.clock, c.logger),
     ).singleton(),
     empresaService: asFunction(
-      (c: Cradle) => new EmpresaService(c.empresaRepo, c.idGenerator, c.clock, c.bitacoraService),
+      (c: Cradle) => new EmpresaService(c.empresaRepo, c.idGenerator, c.clock, c.bitacoraService, c.webhookPublisher),
     ).singleton(),
     avisarEmpresasService: asFunction(
       (c: Cradle) =>
@@ -1064,6 +1064,7 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
           c.empresaExcelService,
           c.filtrosGuardadosService,
           c.cotizacionRepo,
+          c.usuarioRepo,
         ),
     ).singleton(),
     contactoController: asFunction(

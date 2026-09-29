@@ -8,6 +8,7 @@ export const EVENTOS_NOTIFICABLES = [
   'ticket.cerrado_facturado',
   'ticket.programado',
   'cotizacion.creada',
+  'empresa.creada',
 ] as const;
 
 export type EventoNotificable = (typeof EVENTOS_NOTIFICABLES)[number];
@@ -29,6 +30,7 @@ export const ETIQUETAS_EVENTOS: Record<EventoNotificable, string> = {
   'ticket.cerrado_facturado': 'Ticket cerrado Y facturado (una sola vez)',
   'ticket.programado': 'Recordatorio de ticket programado',
   'cotizacion.creada': 'Cotización creada',
+  'empresa.creada': 'Empresa nueva registrada',
 };
 
 /** Qué canales dispara un evento dado. */

@@ -96,6 +96,28 @@ Seguimiento comercial: interacciones (log) y tareas (asignables, con vencimiento
 
 ***
 
+### eliminarInteraccion()
+
+> **eliminarInteraccion**(`actor`, `id`): `Promise`\<`string`\>
+
+Borra una interacción registrada a mano (las filas de tickets del historial no son interacciones).
+
+#### Parameters
+
+##### actor
+
+[`SessionUser`](../../../shared/SessionUser/interfaces/SessionUser.md)
+
+##### id
+
+`string`
+
+#### Returns
+
+`Promise`\<`string`\>
+
+***
+
 ### listarTareas()
 
 > **listarTareas**(`filtro?`): `Promise`\<[`Tarea`](../../../../core/entities/Tarea/classes/Tarea.md)[]\>
@@ -175,6 +197,26 @@ Seguimiento comercial: interacciones (log) y tareas (asignables, con vencimiento
 ##### completada
 
 `boolean`
+
+#### Returns
+
+`Promise`\<`void`\>
+
+***
+
+### eliminarTarea()
+
+> **eliminarTarea**(`actor`, `id`): `Promise`\<`void`\>
+
+#### Parameters
+
+##### actor
+
+[`SessionUser`](../../../shared/SessionUser/interfaces/SessionUser.md)
+
+##### id
+
+`string`
 
 #### Returns
 

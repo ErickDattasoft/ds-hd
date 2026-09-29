@@ -16,14 +16,16 @@ export class PapeleraController {
   ) {}
 
   ver = async (req: Request, res: Response): Promise<void> => {
-    const [empresas, contactos, tickets] = await Promise.all([
-      this.empresas.listar({ activa: false }),
+    const [todasLasEmpresas, contactos, tickets] = await Promise.all([
+      this.empresas.listar(),
       this.contactos.listar({ activo: false }),
       this.ticketQueries.listar({ archivado: true }),
     ]);
+    const empresas = todasLasEmpresas.filter((e) => !e.activa);
     res.render('pages/backoffice/papelera', {
       titulo: 'Papelera',
       empresas,
+      nombreEmpresa: Object.fromEntries(todasLasEmpresas.map((e) => [e.id, e.nombre])),
       contactos,
       tickets,
       aviso: typeof req.query.aviso === 'string' ? req.query.aviso : null,

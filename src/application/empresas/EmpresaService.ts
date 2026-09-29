@@ -5,6 +5,7 @@ import { Empresa } from '../../core/entities/Empresa.js';
 import { ConflictError, ForbiddenError, NotFoundError } from '../../core/errors/DomainError.js';
 import type { BitacoraService } from '../shared/BitacoraService.js';
 import type { SessionUser } from '../shared/SessionUser.js';
+import type { IWebhookPublisher } from '../../core/ports/services/IWebhookPublisher.js';
 
 /** Datos editables de una empresa (alta o edición). */
 export interface DatosEmpresa {
@@ -36,6 +37,7 @@ export class EmpresaService {
     private readonly ids: IIdGenerator,
     private readonly clock: IClock,
     private readonly bitacora: BitacoraService,
+    private readonly webhooks?: IWebhookPublisher,
   ) {}
 
   listar(filtro?: ListarEmpresasFiltro): Promise<Empresa[]> {
@@ -54,7 +56,11 @@ export class EmpresaService {
     }
   }
 
-  async crear(actor: SessionUser, datos: DatosEmpresa): Promise<Empresa> {
+  /**
+   * `notificar: false` para altas masivas (importar Excel): el aviso de "empresa nueva" al
+   * equipo es por cada alta a mano, como en el CRM viejo.
+   */
+  async crear(actor: SessionUser, datos: DatosEmpresa, opciones: { notificar?: boolean } = {}): Promise<Empresa> {
     if (!actor.permisos.includes('empresas:crear')) throw new ForbiddenError('No puedes crear empresas');
     if (await this.repo.existePorNombre(datos.nombre)) {
       throw new ConflictError(`Ya existe una empresa llamada "${datos.nombre}"`);
@@ -74,6 +80,13 @@ export class EmpresaService {
       entidadId: empresa.id,
       resumen: `Empresa creada: ${empresa.nombre}`,
     });
+    if (opciones.notificar !== false) {
+      await this.webhooks?.publicar({
+        evento: 'empresa.creada',
+        canal: 'empresas',
+        payload: { id: empresa.id, nombre: empresa.nombre, rfc: empresa.rfc ?? '', registradaPor: actor.nombre },
+      });
+    }
     return empresa;
   }
 

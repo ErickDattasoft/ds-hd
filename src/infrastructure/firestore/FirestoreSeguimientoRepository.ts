@@ -39,6 +39,15 @@ export class FirestoreInteraccionRepository implements IInteraccionRepository {
     });
   }
 
+  async findById(id: string): Promise<Interaccion | null> {
+    const s = await this.db.collection('interacciones').doc(id).get();
+    return s.exists ? interaccionToDomain(s.id, s.data()!) : null;
+  }
+
+  async delete(id: string): Promise<void> {
+    await this.db.collection('interacciones').doc(id).delete();
+  }
+
   async listPorEmpresa(empresaId: string): Promise<Interaccion[]> {
     const snap = await this.db.collection('interacciones').where('empresaId', '==', empresaId).get();
     return snap.docs
@@ -87,6 +96,10 @@ export class FirestoreTareaRepository implements ITareaRepository {
     return snap.docs
       .map((d) => tareaToDomain(d.id, d.data()))
       .sort((a, b) => (a.vence ?? '9999').localeCompare(b.vence ?? '9999'));
+  }
+
+  async delete(id: string): Promise<void> {
+    await this.db.collection('tareas').doc(id).delete();
   }
 
   async save(t: Tarea): Promise<void> {

@@ -113,7 +113,7 @@ export class EmpresaExcelService {
           await this.empresas.actualizar(actor, existente.id, datos);
           resumen.actualizadas++;
         } else {
-          const creada = await this.empresas.crear(actor, datos);
+          const creada = await this.empresas.crear(actor, datos, { notificar: false });
           porNombre.set(nombre.toLowerCase(), creada);
           resumen.creadas++;
         }
