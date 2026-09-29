@@ -348,3 +348,21 @@ describe('versiones — historial de avisos enviados', () => {
     expect(otra.text).toMatch(/\/app\/kb\/[^"]+\/eliminar/);
   });
 });
+
+describe('base de conocimiento — orden', () => {
+  it('A→Z por defecto (números en orden natural), con botones A→Z / Z→A', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    const { agent, csrf } = await login(t.app, ADMIN.email, ADMIN.password);
+    for (const titulo of ['Error 10 al timbrar', 'banco no concilia', 'Error 2 al abrir', 'Álbum de scripts']) {
+      await agent.post('/app/kb').type('form').send({ _csrf: csrf, titulo, cuerpoMarkdown: 'contenido suficiente aquí', visibilidad: 'soporte' });
+    }
+    const pos = (html: string, t: string) => html.indexOf(t);
+    const az = (await agent.get('/app/kb')).text;
+    expect(az).toContain('>A → Z</a>');
+    const orden = ['Álbum de scripts', 'banco no concilia', 'Error 2 al abrir', 'Error 10 al timbrar'].map((x) => pos(az, x));
+    expect([...orden].sort((a, b) => a - b)).toEqual(orden);
+    const za = (await agent.get('/app/kb?orden=za')).text;
+    expect(pos(za, 'Error 10 al timbrar')).toBeLessThan(pos(za, 'Álbum de scripts'));
+  });
+});
+

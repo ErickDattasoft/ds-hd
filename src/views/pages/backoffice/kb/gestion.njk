@@ -65,6 +65,15 @@
   {% endif %}
   {% if q %}<p class="muted">{{ articulos | length }} resultado{{ '' if articulos | length == 1 else 's' }} para «{{ q }}».</p>{% endif %}
 
+  {# Botones A→Z / Z→A del viejo: conservan búsqueda y filtros. #}
+  {% set filtrosQs = 'categoria=' + (categoria or '') + '&desde=' + (desde or '') + ('&tag=' + tag if tag else '') + extra %}
+  <div class="filterbar" role="group" aria-label="Orden">
+    <span class="muted">Orden:</span>
+    <a class="btn btn--sm {{ '' if orden == 'az' else 'btn--ghost' }}" href="?{{ filtrosQs }}&orden=az" aria-pressed="{{ 'true' if orden == 'az' else 'false' }}">A → Z</a>
+    <a class="btn btn--sm {{ '' if orden == 'za' else 'btn--ghost' }}" href="?{{ filtrosQs }}&orden=za" aria-pressed="{{ 'true' if orden == 'za' else 'false' }}">Z → A</a>
+    <a class="btn btn--sm {{ '' if orden == 'recientes' else 'btn--ghost' }}" href="?{{ filtrosQs }}&orden=recientes" aria-pressed="{{ 'true' if orden == 'recientes' else 'false' }}">Más recientes</a>
+  </div>
+
   <table class="data-table">
     <thead><tr><th>Título</th><th>Categoría</th><th>Ruta destino</th><th>Visibilidad</th><th>Modificado</th><th></th></tr></thead>
     <tbody>

@@ -35,9 +35,12 @@ function filtrarYOrdenar(
   if (opts.tag) out = out.filter((a) => a.tags.includes(opts.tag));
   const corte = corteDesde(opts.desde);
   if (corte) out = out.filter((a) => a.updatedAt >= corte);
-  const porTitulo = (a: ArticuloKB, b: ArticuloKB) => a.titulo.localeCompare(b.titulo, 'es');
+  // `numeric`: «Error 2» antes que «Error 10»; `base`: sin distinguir mayúsculas ni acentos.
+  const porTitulo = (a: ArticuloKB, b: ArticuloKB) =>
+    a.titulo.localeCompare(b.titulo, 'es', { numeric: true, sensitivity: 'base' });
   if (opts.orden === 'az') out = [...out].sort(porTitulo);
   else if (opts.orden === 'za') out = [...out].sort((a, b) => porTitulo(b, a));
+  else if (opts.orden === 'recientes') out = [...out].sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
   return out;
 }
 
@@ -164,7 +167,8 @@ export class KnowledgeController {
     // El buscador del «SOPORTE» del viejo: título o contenido, con «frase exacta» e historial.
     const texto = str(req.query.q);
     const fraseExacta = str(req.query.frase) === '1';
-    const orden = str(req.query.orden) || (texto ? '' : 'recientes');
+    // A→Z por defecto, como el viejo; al buscar, por relevancia (salvo que se elija otro orden).
+    const orden = str(req.query.orden) || (texto ? '' : 'az');
     const [todos, encontrados] = await Promise.all([
       this.kb.listarVisibles(ctx),
       texto ? this.kb.listarVisibles(ctx, { texto, fraseExacta }) : Promise.resolve(null),
