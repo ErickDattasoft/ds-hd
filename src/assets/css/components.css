@@ -902,6 +902,7 @@ fieldset.field {
 .cal-ev--ticket { border-left-color: var(--color-brand); background: color-mix(in srgb, var(--color-brand) 12%, transparent); }
 .cal-ev--evento { border-left-color: var(--warn, #b7791f); background: color-mix(in srgb, var(--warn, #b7791f) 14%, transparent); }
 .cal-ev--tarea { border-left-color: var(--ok, #2f855a); background: color-mix(in srgb, var(--ok, #2f855a) 14%, transparent); }
+.cal-ev--tarea-vencida { border-left-color: var(--danger); background: color-mix(in srgb, var(--danger) 14%, transparent); }
 @media (max-width: 640px) {
   .cal-grid td { height: auto; min-height: 3.5rem; }
   .cal-ev { white-space: normal; }

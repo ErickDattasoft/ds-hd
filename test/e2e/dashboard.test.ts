@@ -96,4 +96,22 @@ describe('dashboard', () => {
     expect(dash.text).toContain('Tickets abiertos más de 5 días');
     expect(dash.text).toContain('Llamar a ACME');
   });
+
+  it('el calendario muestra las tareas de todo el equipo y marca las vencidas', async () => {
+    const OTRO = { uid: 'u-b', email: 'beto@dattasoft.mx', password: 'beto12345', nombre: 'Beto', rol: 'agente' as const };
+    const t = makeTestApp({ usuarios: [ADMIN, OTRO] });
+    const { agent, csrf } = await login(t.app, ADMIN.email, ADMIN.password);
+    const hoy = new Date();
+    const ayer = new Date(hoy.getTime() - 86_400_000);
+    const iso = (d: Date) => d.toLocaleDateString('en-CA');
+    await agent.post('/app/tareas').type('form').send({ _csrf: csrf, titulo: 'Tarea de Beto', asignadoAUid: OTRO.uid, vence: iso(hoy) });
+    await agent.post('/app/tareas').type('form').send({ _csrf: csrf, titulo: 'Tarea atrasada', asignadoAUid: ADMIN.uid, vence: iso(ayer) });
+
+    const mes = `${ayer.getFullYear()}-${ayer.getMonth() + 1}`;
+    const cal = await agent.get(`/app/calendario?mes=${mes}`);
+    expect(cal.text).toContain('Tarea atrasada');
+    expect(cal.text).toContain('cal-ev--tarea-vencida');
+    const calHoy = await agent.get(`/app/calendario?mes=${hoy.getFullYear()}-${hoy.getMonth() + 1}`);
+    expect(calHoy.text).toContain('Tarea de Beto (Beto)');
+  });
 });

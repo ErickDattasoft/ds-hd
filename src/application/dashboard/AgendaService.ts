@@ -6,7 +6,8 @@ import type { SessionUser } from '../shared/SessionUser.js';
 
 /** Un elemento agendado en un día del calendario. */
 export interface ItemAgenda {
-  tipo: 'ticket' | 'evento' | 'tarea';
+  /** `tarea-vencida`: tarea pendiente cuya fecha límite ya pasó (otro color, como el viejo). */
+  tipo: 'ticket' | 'evento' | 'tarea' | 'tarea-vencida';
   id: string;
   titulo: string;
   /** `HH:MM` local, o `null` si es todo el día (tareas). */
@@ -65,13 +66,14 @@ export class AgendaService {
     finGrid.setDate(finGrid.getDate() + 42);
 
     const alcance = actor.permisos.includes('tickets:leer_todos') ? {} : { agenteAsignadoUid: actor.uid };
-    const [ticketsProg, todosEventos, misTareas] = await Promise.all([
+    const [ticketsProg, todosEventos, tareasPendientes] = await Promise.all([
       actor.permisos.includes('tickets:leer')
         ? this.ticketQueries.listar({ ...alcance, soloProgramados: true })
         : Promise.resolve([]),
       actor.permisos.includes('eventos:leer') ? this.eventos.list() : Promise.resolve([]),
       actor.permisos.includes('seguimiento:leer')
-        ? this.tareas.list({ asignadoAUid: actor.uid, completada: false })
+        ? // Las del equipo completo, como el calendario del viejo (no solo las propias).
+          this.tareas.list({ completada: false })
         : Promise.resolve([]),
     ]);
 
@@ -110,14 +112,15 @@ export class AgendaService {
         orden: e.fechaHora.getHours() * 60 + e.fechaHora.getMinutes(),
       });
     }
-    for (const tarea of misTareas) {
-      if (!tarea.vence) continue;
+    const hoy = iso(ahora);
+    for (const tarea of tareasPendientes) {
+      if (!tarea.vence || tarea.completada) continue;
       const d = new Date(`${tarea.vence}T12:00:00`);
       totales.tareas++;
       push(d, {
-        tipo: 'tarea',
+        tipo: tarea.vence < hoy ? 'tarea-vencida' : 'tarea',
         id: tarea.id,
-        titulo: tarea.titulo,
+        titulo: tarea.asignadoANombre ? `${tarea.titulo} (${tarea.asignadoANombre})` : tarea.titulo,
         hora: null,
         href: '/app/tareas',
         orden: 9999,

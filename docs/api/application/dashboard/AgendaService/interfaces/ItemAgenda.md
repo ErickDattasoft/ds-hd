@@ -12,7 +12,9 @@ Un elemento agendado en un día del calendario.
 
 ### tipo
 
-> **tipo**: `"ticket"` \| `"evento"` \| `"tarea"`
+> **tipo**: `"ticket"` \| `"evento"` \| `"tarea"` \| `"tarea-vencida"`
+
+`tarea-vencida`: tarea pendiente cuya fecha límite ya pasó (otro color, como el viejo).
 
 ***
 
