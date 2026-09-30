@@ -83,6 +83,13 @@
     </div>
   </div>
 
+  {% if backupAtrasado %}
+  <div class="alert alert--warn" role="alert">
+    <p>⚠️ {% if backupAtrasado.ultimoBackup %}El último backup fue hace <strong>{{ backupAtrasado.dias }} días</strong>{% else %}Nunca se ha descargado un backup{% endif %}
+    — se recomienda cada semana. <a class="btn btn--secondary btn--sm" href="/app/configuracion/backup">Ir a Backup</a></p>
+  </div>
+  {% endif %}
+
   {% if m %}
 
   {% if m.ticketsPublicosPendientes %}

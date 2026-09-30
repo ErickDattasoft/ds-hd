@@ -12,7 +12,7 @@ Caso de uso: actualizar "solicitado por / canalizado a / notas internas" de un t
 
 ### Constructor
 
-> **new ActualizarGestionTicketService**(`tickets`, `ids`, `clock`, `logger`): `ActualizarGestionTicketService`
+> **new ActualizarGestionTicketService**(`tickets`, `ids`, `clock`, `logger`, `webhooks?`): `ActualizarGestionTicketService`
 
 #### Parameters
 
@@ -31,6 +31,10 @@ Caso de uso: actualizar "solicitado por / canalizado a / notas internas" de un t
 ##### logger
 
 [`ILogger`](../../../../core/ports/services/ILogger/interfaces/ILogger.md)
+
+##### webhooks?
+
+[`IWebhookPublisher`](../../../../core/ports/services/IWebhookPublisher/interfaces/IWebhookPublisher.md)
 
 #### Returns
 

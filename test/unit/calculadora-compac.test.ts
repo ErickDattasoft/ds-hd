@@ -1,43 +1,63 @@
 import { describe, expect, it } from 'vitest';
-import { CalculadoraCompac, CONFIG_CALCULADORA_POR_DEFECTO } from '../../src/core/entities/CalculadoraCompac.js';
+import {
+  CalculadoraCompac,
+  CONFIG_CALCULADORA_POR_DEFECTO,
+  sanearConfigCalculadora,
+} from '../../src/core/entities/CalculadoraCompac.js';
 import { ValidationError } from '../../src/core/errors/DomainError.js';
 
 const cfg = CONFIG_CALCULADORA_POR_DEFECTO;
 
-describe('CalculadoraCompac', () => {
-  it('cobra el sistema más caro como principal y el resto como adicional', () => {
+describe('CalculadoraCompac (paridad con el CRM viejo)', () => {
+  it('cobra por tipo de equipo: 1er sistema + adicional por cada sistema extra, por la cantidad', () => {
     const r = CalculadoraCompac.calcular(
-      [{ tipo: 'Servidor', sistemas: ['CONTABILIDAD', 'BANCOS'] }],
+      [{ tipo: 'Terminal', cantidad: 3, sistemas: ['Contabilidad', 'Bancos', 'Nóminas'], incluyeSql: false }],
       cfg,
     );
-    // Contabilidad (9800 primero) + Bancos (3600 adicional) = 13400
-    expect(r.subtotal).toBe(13400);
-    expect(r.iva).toBe(2144);
-    expect(r.total).toBe(15544);
-    expect(r.conceptos[0]?.descripcion).toContain('principal');
-    expect(r.conceptos[1]?.descripcion).toContain('adicional');
+    // Terminal: 200 + 2 × 100 = 400 por equipo × 3
+    expect(r.grupos[0]?.precioUnitario).toBe(400);
+    expect(r.total).toBe(1200);
+    expect(r.conceptos).toEqual([
+      expect.objectContaining({ descripcion: 'Terminal — Contabilidad, Bancos, Nóminas', cantidad: 3, precioUnitario: 400 }),
+    ]);
   });
 
-  it('SQL se cobra aparte por equipo según el tipo (servidor sí, terminal no)', () => {
-    const servidor = CalculadoraCompac.calcular([{ tipo: 'Servidor', sistemas: ['CONTABILIDAD', 'SQL'] }], cfg);
-    expect(servidor.subtotal).toBe(9800 + 6900);
-
-    const terminal = CalculadoraCompac.calcular([{ tipo: 'Terminal', sistemas: ['CONTABILIDAD', 'SQL'] }], cfg);
-    expect(terminal.subtotal).toBe(9800); // Contabilidad (único → precio principal), SQL terminal = 0
-  });
-
-  it('suma varios equipos', () => {
+  it('SQL va en renglón aparte y solo para Servidor', () => {
     const r = CalculadoraCompac.calcular(
       [
-        { tipo: 'Servidor', sistemas: ['NOMINAS'] },
-        { tipo: 'Terminal', sistemas: ['NOMINAS'] },
+        { tipo: 'Servidor', cantidad: 1, sistemas: ['Componentes', 'Contabilidad'], incluyeSql: true },
+        { tipo: 'Terminal', cantidad: 2, sistemas: ['Contabilidad'], incluyeSql: true },
       ],
       cfg,
     );
-    expect(r.subtotal).toBe(12500 + 12500);
+    expect(r.conceptos.map((c) => [c.descripcion, c.cantidad, c.precioUnitario])).toEqual([
+      ['Servidor — Componentes, Contabilidad', 1, 1200],
+      ['Servidor — SQL', 1, 800],
+      ['Terminal — Contabilidad', 2, 200],
+    ]);
+    expect(r.total).toBe(1200 + 800 + 400);
+    expect([r.servidores, r.terminales, r.conComponentes]).toEqual([1, 2, 1]);
   });
 
-  it('rechaza sin equipos', () => {
+  it('un grupo de solo SQL manda únicamente el renglón de SQL', () => {
+    const r = CalculadoraCompac.calcular([{ tipo: 'Servidor', cantidad: 1, sistemas: [], incluyeSql: true }], cfg);
+    expect(r.conceptos.map((c) => c.descripcion)).toEqual(['Servidor — SQL']);
+  });
+
+  it('rechaza sin grupos válidos o con un tipo que no está en el catálogo', () => {
     expect(() => CalculadoraCompac.calcular([], cfg)).toThrow(ValidationError);
+    expect(() =>
+      CalculadoraCompac.calcular([{ tipo: 'Terminal', cantidad: 0, sistemas: ['Bancos'], incluyeSql: false }], cfg),
+    ).toThrow(ValidationError);
+    expect(() =>
+      CalculadoraCompac.calcular([{ tipo: 'Laptop', cantidad: 1, sistemas: ['Bancos'], incluyeSql: false }], cfg),
+    ).toThrow(ValidationError);
+  });
+
+  it('un documento con el modelo anterior (precio por sistema) cae a los precios del viejo', () => {
+    const c = sanearConfigCalculadora({ sistemas: [{ clave: 'X', precioPrimero: 9800 }], sql: {}, ivaTasa: 0.16 });
+    expect(c).toEqual(CONFIG_CALCULADORA_POR_DEFECTO);
+    // y acepta el formato del viejo ({ nombre }) para los sistemas
+    expect(sanearConfigCalculadora({ catalogoSistemas: [{ nombre: 'Xelcron' }] }).catalogoSistemas).toEqual(['Xelcron']);
   });
 });

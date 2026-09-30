@@ -6,7 +6,7 @@
 
 # Class: ConfiguracionCalculadoraService
 
-Casos de uso: leer y actualizar los precios de la calculadora Compac/CONTPAQi.
+Casos de uso: leer y actualizar catálogos y precios de la calculadora Compac/CONTPAQi.
 
 ## Constructors
 
@@ -44,7 +44,7 @@ Casos de uso: leer y actualizar los precios de la calculadora Compac/CONTPAQi.
 
 > **actualizar**(`input`): `Promise`\<`void`\>
 
-`precios` viene indexado por `clave` de sistema; solo se tocan los precios, no el catálogo.
+Reemplaza los catálogos completos (agregar, quitar, renombrar y reordenar, como el viejo).
 
 #### Parameters
 
@@ -54,25 +54,17 @@ Casos de uso: leer y actualizar los precios de la calculadora Compac/CONTPAQi.
 
 [`SessionUser`](../../../shared/SessionUser/interfaces/SessionUser.md)
 
-###### precios
+###### catalogoSistemas
 
-`Record`\<`string`, \{ `precioPrimero?`: `unknown`; `precioAdicional?`: `unknown`; \}\>
+`string`[]
 
-###### sqlPrecioServidor
+###### catalogoEquipos
 
-`unknown`
+`object`[]
 
-###### sqlPrecioTerminal
-
-`unknown`
-
-###### ivaTasa
+###### precioSQL
 
 `unknown`
-
-###### moneda
-
-`string`
 
 #### Returns
 

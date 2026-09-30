@@ -6,7 +6,7 @@
 
 # Function: esEventoNotificable()
 
-> **esEventoNotificable**(`value`): value is "ticket.creado" \| "ticket.asignado" \| "ticket.resuelto" \| "ticket.cerrado" \| "ticket.facturado" \| "ticket.cerrado\_facturado" \| "ticket.programado" \| "cotizacion.creada" \| "empresa.creada"
+> **esEventoNotificable**(`value`): value is "ticket.creado" \| "ticket.creado\_cliente" \| "ticket.estado\_cambiado" \| "ticket.nota\_interna" \| "ticket.asignado" \| "ticket.resuelto" \| "ticket.cerrado" \| "ticket.facturado" \| "ticket.cerrado\_facturado" \| "ticket.programado" \| "cotizacion.creada" \| "empresa.creada" \| "usuario.creado" \| "backup.no\_realizado"
 
 Type guard: ¿`value` es uno de los eventos de [EVENTOS\_NOTIFICABLES](../variables/EVENTOS_NOTIFICABLES.md)?
 
@@ -18,4 +18,4 @@ Type guard: ¿`value` es uno de los eventos de [EVENTOS\_NOTIFICABLES](../variab
 
 ## Returns
 
-value is "ticket.creado" \| "ticket.asignado" \| "ticket.resuelto" \| "ticket.cerrado" \| "ticket.facturado" \| "ticket.cerrado\_facturado" \| "ticket.programado" \| "cotizacion.creada" \| "empresa.creada"
+value is "ticket.creado" \| "ticket.creado\_cliente" \| "ticket.estado\_cambiado" \| "ticket.nota\_interna" \| "ticket.asignado" \| "ticket.resuelto" \| "ticket.cerrado" \| "ticket.facturado" \| "ticket.cerrado\_facturado" \| "ticket.programado" \| "cotizacion.creada" \| "empresa.creada" \| "usuario.creado" \| "backup.no\_realizado"

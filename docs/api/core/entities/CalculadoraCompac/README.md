@@ -12,15 +12,17 @@
 
 ## Interfaces
 
-- [SistemaCompac](interfaces/SistemaCompac.md)
+- [TipoEquipoCompac](interfaces/TipoEquipoCompac.md)
 - [ConfiguracionCalculadora](interfaces/ConfiguracionCalculadora.md)
-- [EquipoInput](interfaces/EquipoInput.md)
+- [GrupoCompac](interfaces/GrupoCompac.md)
+- [ResultadoGrupoCompac](interfaces/ResultadoGrupoCompac.md)
 - [ResultadoCalculadora](interfaces/ResultadoCalculadora.md)
-
-## Type Aliases
-
-- [TipoEquipo](type-aliases/TipoEquipo.md)
 
 ## Variables
 
+- [EQUIPO\_CON\_SQL](variables/EQUIPO_CON_SQL.md)
 - [CONFIG\_CALCULADORA\_POR\_DEFECTO](variables/CONFIG_CALCULADORA_POR_DEFECTO.md)
+
+## Functions
+
+- [sanearConfigCalculadora](functions/sanearConfigCalculadora.md)

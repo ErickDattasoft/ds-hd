@@ -84,7 +84,8 @@ Estado del envío de correo del servidor, para mostrarlo junto al botón de prue
 
 > `static` **reglasDeForm**(`body`): [`MatrizReglas`](../../../../core/entities/ConfiguracionIntegraciones/type-aliases/MatrizReglas.md)
 
-Convierte los campos `regla_<evento>_webhook`/`regla_<evento>_whatsapp` del form en una matriz.
+Convierte los campos `regla_<evento>_webhook`/`_whatsapp`/`_dest` del form en una matriz.
+`_dest` son los nombres del equipo que reciben ese evento por WhatsApp (ninguno = todos).
 
 #### Parameters
 

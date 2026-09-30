@@ -104,6 +104,7 @@
 - [core/entities/Cotizacion](core/entities/Cotizacion/README.md)
 - [core/entities/Empresa](core/entities/Empresa/README.md)
 - [core/entities/EntradaBitacora](core/entities/EntradaBitacora/README.md)
+- [core/entities/EstadoBackup](core/entities/EstadoBackup/README.md)
 - [core/entities/Evento](core/entities/Evento/README.md)
 - [core/entities/FiltroGuardado](core/entities/FiltroGuardado/README.md)
 - [core/entities/Inscripcion](core/entities/Inscripcion/README.md)

@@ -142,9 +142,10 @@
     <details class="disclosure">
       <summary class="disclosure__summary">🗂️ Matriz de reglas por evento</summary>
       <div class="disclosure__body">
+        <p class="muted">En «¿A quién por WhatsApp?», sin nadie marcado le llega a todo el equipo.</p>
         <table class="data-table">
           <thead>
-            <tr><th>Evento</th><th>Webhook</th><th>WhatsApp</th></tr>
+            <tr><th>Evento</th><th>Webhook</th><th>WhatsApp</th><th>¿A quién por WhatsApp?</th></tr>
           </thead>
           <tbody>
             {% for evento, etiqueta in eventosEtiquetas %}
@@ -152,6 +153,13 @@
                 <td>{{ etiqueta }}</td>
                 <td><input type="checkbox" name="regla_{{ evento }}_webhook" {{ 'checked' if config.reglas[evento].webhook }} /></td>
                 <td><input type="checkbox" name="regla_{{ evento }}_whatsapp" {{ 'checked' if config.reglas[evento].whatsapp }} /></td>
+                <td>
+                  {% for n in equipoNombres %}
+                    <label class="field--check" style="white-space:nowrap"><input type="checkbox" name="regla_{{ evento }}_dest" value="{{ n }}" {{ 'checked' if n in (config.reglas[evento].destinatarios or []) }} /> <span>{{ n }}</span></label>
+                  {% else %}
+                    <span class="muted">Sin equipo de WhatsApp configurado arriba.</span>
+                  {% endfor %}
+                </td>
               </tr>
             {% endfor %}
           </tbody>

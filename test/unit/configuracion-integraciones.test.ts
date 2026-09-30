@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { ConfiguracionIntegracionesService } from '../../src/application/configuracion/ConfiguracionIntegracionesService.js';
+import { sanearReglas } from '../../src/core/entities/ConfiguracionIntegraciones.js';
 import { N8nWebhookPublisher } from '../../src/infrastructure/webhooks/N8nWebhookPublisher.js';
 import { ForbiddenError, ValidationError } from '../../src/core/errors/DomainError.js';
 import type { SessionUser } from '../../src/application/shared/SessionUser.js';
@@ -178,6 +179,32 @@ describe('N8nWebhookPublisher', () => {
     expect(gateway.webhooksLlamados).toEqual([
       { url: 'https://firestore.example.com/hook', payload: expect.objectContaining({ evento: 'ticket.creado', numero: 1 }) },
     ]);
+  });
+
+  it('WhatsApp de un evento va solo a los destinatarios elegidos en su regla (vacío = todos)', async () => {
+    repo.integraciones = {
+      ...repo.integraciones,
+      whatsappHabilitado: true,
+      whatsappTelefono: '+5210000000001',
+      whatsappApiKey: 'k1',
+      whatsappOtros: [{ nombre: 'Gaby', telefono: '+5210000000002', apiKey: 'k2' }],
+      reglas: {
+        ...repo.integraciones.reglas,
+        'ticket.nota_interna': { webhook: false, whatsapp: true, destinatarios: ['Gaby'] },
+        'ticket.estado_cambiado': { webhook: false, whatsapp: true },
+      },
+    };
+    await publisher.publicar({ evento: 'ticket.nota_interna', canal: 'tickets', payload: { numero: 7, nota: 'x' } });
+    expect(gateway.whatsappLlamados.map((w) => w.telefono)).toEqual(['+5210000000002']);
+
+    gateway.whatsappLlamados.length = 0;
+    await publisher.publicar({ evento: 'ticket.estado_cambiado', canal: 'tickets', payload: { numero: 7 } });
+    expect(gateway.whatsappLlamados.map((w) => w.telefono).sort()).toEqual(['+5210000000001', '+5210000000002']);
+  });
+
+  it('una config guardada antes de separar «ticket creado por el cliente» hereda la regla de «ticket creado»', () => {
+    const reglas = sanearReglas({ 'ticket.creado': { webhook: false, whatsapp: true } });
+    expect(reglas['ticket.creado_cliente']).toEqual({ webhook: false, whatsapp: true });
   });
 
   it('el recordatorio de ticket lleva a quién avisar, con la forma del CRM viejo', async () => {

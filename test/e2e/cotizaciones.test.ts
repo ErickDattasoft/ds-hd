@@ -49,12 +49,25 @@ describe('cotizaciones', () => {
 
     const calc = await agent.post('/app/cotizaciones/calcular').type('form').send({
       _csrf: csrf,
-      equipo_0_usar: 'on',
-      equipo_0_tipo: 'Servidor',
-      equipo_0_sistemas: ['CONTABILIDAD', 'BANCOS'],
+      esperadosTerminales: '3',
+      g_0_tipo: 'Servidor',
+      g_0_cantidad: '1',
+      g_0_sistemas: ['Contabilidad', 'Bancos'],
+      g_0_sql: 'on',
+      g_n1_tipo: 'Terminal',
+      g_n1_cantidad: '2',
+      g_n1_sistemas: 'Contabilidad',
     });
     expect(calc.status).toBe(200);
-    expect(calc.text).toMatch(/13[,.]?400/);
+    // Servidor 800 + 400 = 1,200; SQL 800; 2 Terminales × 200 = 400 → 2,400
+    expect(calc.text).toMatch(/2[,.]?400/);
+    expect(calc.text).toContain('Terminales: capturaste 2, esperabas 3');
+
+    // Los renglones llegan al formulario de cotización nueva, listos para editar.
+    const conceptos = /name="conceptos" value="([^"]+)"/.exec(calc.text)![1]!.replace(/&quot;/g, '"');
+    const form = await agent.get('/app/cotizaciones/nueva').query({ conceptos, origen: 'calculadora' });
+    expect(form.text).toContain('Servidor — SQL');
+    expect(form.text).toContain('name="origenCalculadora"');
   });
 
   it('aprobar una cotización requiere permiso cotizaciones:aprobar', async () => {

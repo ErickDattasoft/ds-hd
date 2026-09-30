@@ -1,31 +1,65 @@
 {% extends "layouts/backoffice.njk" %}
 {% block title %}Calculadora Compac{% endblock %}
+{% macro grupo(i, config, g) %}
+  <tr data-grupo-compac>
+    <td>
+      <select name="g_{{ i }}_tipo" data-compac-tipo>
+        {% for e in config.catalogoEquipos %}<option value="{{ e.nombre }}" {{ 'selected' if g and g.tipo == e.nombre }}>{{ e.nombre }}</option>{% endfor %}
+      </select>
+    </td>
+    <td><input type="number" name="g_{{ i }}_cantidad" min="1" step="1" value="{{ g.cantidad if g else 1 }}" style="width:5rem" data-compac-cantidad /></td>
+    <td>
+      <div style="display:flex;flex-wrap:wrap;gap:.25rem 1rem;min-width:22rem">
+        {% for s in config.catalogoSistemas %}
+          <label class="field--check" style="white-space:nowrap"><input type="checkbox" name="g_{{ i }}_sistemas" value="{{ s }}" {{ 'checked' if g and s in g.sistemas }} data-compac-sistema /> <span>{{ s }}</span></label>
+        {% endfor %}
+        {% if not config.catalogoSistemas.length %}<span class="muted">No hay sistemas en el catálogo — agrégalos en Configuración.</span>{% endif %}
+      </div>
+    </td>
+    <td><label class="field--check" data-compac-sql-wrap><input type="checkbox" name="g_{{ i }}_sql" {{ 'checked' if g and g.incluyeSql }} data-compac-sql /> <span>Incluye SQL</span></label></td>
+    <td class="num" data-compac-unitario>—</td>
+    <td class="num" data-compac-subtotal>—</td>
+    <td><button type="button" class="btn btn--ghost btn--sm" data-quitar-fila title="Quitar grupo">🗑️</button></td>
+  </tr>
+{% endmacro %}
 {% block content %}
-  <h1>Calculadora Compac</h1>
-  <p class="muted">Marca los equipos a licenciar y los sistemas de cada uno. En cada equipo, el sistema más caro se cobra completo y los demás como adicional.</p>
-  {% if errores.general %}<p class="alert alert--error">{{ errores.general }}</p>{% endif %}
+  <div class="page-head">
+    <h1>🧮 Calculadora Compac</h1>
+    <div class="page-head__actions">
+      {% if can('configuracion:catalogos') %}<a class="btn btn--ghost btn--sm" href="/app/configuracion/calculadora">⚙️ Editar precios</a>{% endif %}
+    </div>
+  </div>
+  <p class="muted">
+    Arma el licenciamiento por <strong>grupos de equipos iguales</strong> (p. ej. 1 Servidor con sus sistemas, luego
+    3 Terminales con los suyos). Cada equipo cobra el 1er sistema de su tipo más el adicional por cada sistema extra;
+    SQL va en renglón aparte y solo para Servidor. Los precios no incluyen IVA: lo pone la cotización.
+  </p>
+  {% if errores.general or errores.grupos %}<p class="alert alert--error">{{ errores.general or errores.grupos }}</p>{% endif %}
 
-  <form method="post" action="/app/cotizaciones/calcular" class="form form--wide">
+  <form method="post" action="/app/cotizaciones/calcular" class="form form--wide" data-calc-compac
+        data-config="{{ config | dump }}">
     <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
-    {% for i in [0,1,2,3] %}
-      <fieldset class="field">
-        <legend>
-          <label class="field--check"><input type="checkbox" name="equipo_{{ i }}_usar" {{ 'checked' if i == 0 }} /> <span>Equipo {{ i + 1 }}</span></label>
-        </legend>
-        <label class="field"><span>Tipo</span>
-          <select name="equipo_{{ i }}_tipo">
-            <option {{ 'selected' if i == 0 }}>Servidor</option>
-            <option {{ 'selected' if i != 0 }}>Terminal</option>
-          </select>
-        </label>
-        <div class="perm-group">
-          {% for s in config.sistemas %}
-            <label class="field--check"><input type="checkbox" name="equipo_{{ i }}_sistemas" value="{{ s.clave }}" /> <span>{{ s.nombre }}</span></label>
-          {% endfor %}
-          <label class="field--check"><input type="checkbox" name="equipo_{{ i }}_sistemas" value="{{ config.sql.clave }}" /> <span>{{ config.sql.nombre }}</span></label>
-        </div>
-      </fieldset>
-    {% endfor %}
-    <button class="btn" type="submit">Calcular</button>
+    <div class="form-grid">
+      <label class="field"><span>🖥️ Servidores esperados (opcional)</span><input type="number" min="0" name="esperadosServidores" value="{{ esperados.servidores or '' }}" data-compac-esperados-servidores /></label>
+      <label class="field"><span>💻 Terminales esperadas (opcional)</span><input type="number" min="0" name="esperadosTerminales" value="{{ esperados.terminales or '' }}" data-compac-esperados-terminales /></label>
+    </div>
+    <table class="data-table">
+      <thead><tr><th data-no-ordenar>Tipo</th><th data-no-ordenar>Cantidad</th><th data-no-ordenar>Sistemas</th><th data-no-ordenar>SQL</th><th data-no-ordenar>P. unitario</th><th data-no-ordenar>Subtotal</th><th data-no-ordenar></th></tr></thead>
+      <tbody data-filas="tpl-grupo-compac">
+        {% if grupos and grupos.length %}
+          {% for g in grupos %}{{ grupo(loop.index0, config, g) }}{% endfor %}
+        {% else %}
+          {{ grupo(0, config, null) }}
+        {% endif %}
+      </tbody>
+      <tfoot><tr><td colspan="5" style="text-align:right"><strong>Total (sin IVA)</strong></td><td class="num"><strong data-compac-total>—</strong></td><td></td></tr></tfoot>
+    </table>
+    <template id="tpl-grupo-compac">{{ grupo('__i__', config, null) }}</template>
+    <button type="button" class="btn btn--ghost btn--sm" data-agregar-fila-de="tpl-grupo-compac">➕ Agregar grupo</button>
+    <p class="muted" data-compac-conteos></p>
+    <p class="alert alert--warning" data-compac-aviso hidden></p>
+    <div class="page-head__actions">
+      <button class="btn" type="submit">Calcular y enviar a cotización →</button>
+    </div>
   </form>
 {% endblock %}

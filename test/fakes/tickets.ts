@@ -1,3 +1,4 @@
+import { sanearEstadoBackup, type EstadoBackup } from '../../src/core/entities/EstadoBackup.js';
 import { coincideTexto } from '../../src/core/entities/Ticket.js';
 import {
   CONFIG_CORREO_ENTRANTE_POR_DEFECTO,
@@ -250,6 +251,13 @@ export class InMemoryConfiguracionRepository implements IConfiguracionRepository
   }
   async guardarCorreoEntrante(config: ConfiguracionCorreoEntrante): Promise<void> {
     this.correoEntrante = config;
+  }
+  estadoBackup: EstadoBackup = sanearEstadoBackup(null);
+  async obtenerEstadoBackup(): Promise<EstadoBackup> {
+    return this.estadoBackup;
+  }
+  async guardarEstadoBackup(estado: EstadoBackup): Promise<void> {
+    this.estadoBackup = estado;
   }
 }
 

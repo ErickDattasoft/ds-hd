@@ -38,13 +38,13 @@ Caso de uso: calcular el licenciamiento Compac con la configuración vigente.
 
 ### calcular()
 
-> **calcular**(`equipos`): `Promise`\<[`ResultadoCalculadora`](../../../../core/entities/CalculadoraCompac/interfaces/ResultadoCalculadora.md) & `object`\>
+> **calcular**(`grupos`): `Promise`\<[`ResultadoCalculadora`](../../../../core/entities/CalculadoraCompac/interfaces/ResultadoCalculadora.md) & `object`\>
 
 #### Parameters
 
-##### equipos
+##### grupos
 
-[`EquipoInput`](../../../../core/entities/CalculadoraCompac/interfaces/EquipoInput.md)[]
+[`GrupoCompac`](../../../../core/entities/CalculadoraCompac/interfaces/GrupoCompac.md)[]
 
 #### Returns
 

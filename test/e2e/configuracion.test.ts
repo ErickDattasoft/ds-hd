@@ -20,31 +20,29 @@ async function login(app: ReturnType<typeof makeTestApp>['app'], email: string, 
 }
 
 describe('configuración → calculadora', () => {
-  it('edita los precios de un sistema y del complemento SQL', async () => {
+  it('edita catálogo de sistemas, tipos de equipo con sus precios y el precio de SQL', async () => {
     const t = makeTestApp({ usuarios: [ADMIN] });
     const { agent, csrf } = await login(t.app, ADMIN.email, ADMIN.password);
 
     const antes = await agent.get('/app/configuracion/calculadora');
-    expect(antes.text).toContain('Contabilidad');
+    expect(antes.text).toContain('Componentes');
+    expect(antes.text).toContain('Terminal');
 
     const res = await agent.post('/app/configuracion/calculadora').type('form').send({
       _csrf: csrf,
-      precioPrimero_CONTABILIDAD: '11000',
-      precioAdicional_CONTABILIDAD: '5500',
-      sqlPrecioServidor: '7500',
-      sqlPrecioTerminal: '100',
-      ivaTasa: '0.16',
-      moneda: 'MXN',
+      sistema: ['Contabilidad', 'Xelcron', ''],
+      equipoNombre: ['Servidor', 'Terminal', 'Laptop'],
+      equipoPrimer: ['900', '250', '300'],
+      equipoAdicional: ['450', '120', '150'],
+      precioSQL: '1000',
     });
     expect(res.status).toBe(200);
     expect(res.text).toContain('Configuración guardada');
 
     const config = await t.configuracionRepo.obtenerCalculadora();
-    expect(config.sistemas.find((s) => s.clave === 'CONTABILIDAD')).toMatchObject({
-      precioPrimero: 11000,
-      precioAdicional: 5500,
-    });
-    expect(config.sql).toMatchObject({ precioServidor: 7500, precioTerminal: 100 });
+    expect(config.catalogoSistemas).toEqual(['Contabilidad', 'Xelcron']);
+    expect(config.catalogoEquipos[2]).toEqual({ nombre: 'Laptop', precioPrimerSistema: 300, precioAdicional: 150 });
+    expect(config.precioSQL).toBe(1000);
   });
 
   it('un rol sin permiso de configuración no puede entrar', async () => {
@@ -208,5 +206,38 @@ describe('configuración → Excel unificado', () => {
     expect(
       (await agent.post('/app/configuracion/excel').type('form').send({ _csrf: csrf, empresas: 'on' })).status,
     ).toBe(403);
+  });
+});
+
+describe('configuración → backup: último backup y alerta de 7 días', () => {
+  it('sin backup avisa en Backup y Dashboard; al descargar se registra y el aviso desaparece', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    const { agent } = await login(t.app, ADMIN.email, ADMIN.password);
+
+    expect((await agent.get('/app/configuracion/backup')).text).toContain('Nunca se ha descargado un backup');
+    expect((await agent.get('/app')).text).toContain('Nunca se ha descargado un backup');
+
+    expect((await agent.get('/app/configuracion/backup/descargar')).status).toBe(200);
+    expect(t.configuracionRepo.estadoBackup).toMatchObject({ ultimoBackupPor: 'Admin' });
+    expect(t.configuracionRepo.estadoBackup.ultimoBackup).toBeTruthy();
+
+    const pagina = await agent.get('/app/configuracion/backup');
+    expect(pagina.text).toContain('Último backup');
+    expect(pagina.text).not.toContain('se recomienda hacer backup cada semana');
+    expect((await agent.get('/app')).text).not.toContain('Nunca se ha descargado un backup');
+  });
+
+  it('el cron avisa «backup no realizado» una sola vez al día', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    const hace10 = new Date(Date.now() - 10 * 86_400_000).toISOString();
+    t.configuracionRepo.estadoBackup = { ultimoBackup: hace10, ultimoBackupPor: 'Admin', ultimoAvisoNoRealizado: '' };
+    const llamar = () =>
+      request(t.app).post('/jobs/backup-pendiente').set('authorization', 'Bearer dev-jobs-secret');
+
+    expect((await llamar()).body).toMatchObject({ ok: true, avisado: true, dias: 10 });
+    expect((await llamar()).body).toMatchObject({ ok: true, avisado: false });
+    const avisos = t.webhookPublisher.publicados.filter((e) => e.evento === 'backup.no_realizado');
+    expect(avisos).toHaveLength(1);
+    expect(avisos[0]!.payload).toMatchObject({ diasSinBackup: 10 });
   });
 });

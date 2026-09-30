@@ -1,3 +1,4 @@
+import type { BackupService } from '../../../../application/configuracion/BackupService.js';
 import type { Request, Response } from 'express';
 import type { ObtenerMetricasService } from '../../../../application/dashboard/ObtenerMetricasService.js';
 import type { AgendaService } from '../../../../application/dashboard/AgendaService.js';
@@ -9,13 +10,20 @@ export class DashboardController {
   constructor(
     private readonly metricas: ObtenerMetricasService,
     private readonly agenda: AgendaService,
+    private readonly backup?: BackupService,
   ) {}
 
   ver = async (req: Request, res: Response): Promise<void> => {
-    const m = await this.metricas.ejecutar(req.user!);
+    // El aviso de backup atrasado (7+ días) solo a quien puede descargarlo, como el viejo.
+    const verBackup = this.backup && req.user!.permisos.includes('configuracion:integraciones');
+    const [m, backup] = await Promise.all([
+      this.metricas.ejecutar(req.user!),
+      verBackup ? this.backup!.estado().catch(() => null) : Promise.resolve(null),
+    ]);
     res.render('pages/backoffice/dashboard', {
       titulo: 'Dashboard',
       m,
+      backupAtrasado: backup?.atrasado ? backup : null,
       hoyIso: new Date().toLocaleDateString('en-CA', { timeZone: 'America/Mexico_City' }),
     });
   };

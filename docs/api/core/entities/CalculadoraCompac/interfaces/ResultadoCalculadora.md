@@ -6,7 +6,7 @@
 
 # Interface: ResultadoCalculadora
 
-Conceptos e importes calculados, listos para volcarse a una cotización.
+Conceptos listos para la cotización, desglose por grupo y conteos del parque.
 
 ## Properties
 
@@ -16,18 +16,30 @@ Conceptos e importes calculados, listos para volcarse a una cotización.
 
 ***
 
-### subtotal
+### grupos
 
-> **subtotal**: `number`
-
-***
-
-### iva
-
-> **iva**: `number`
+> **grupos**: [`ResultadoGrupoCompac`](ResultadoGrupoCompac.md)[]
 
 ***
 
 ### total
 
 > **total**: `number`
+
+***
+
+### servidores
+
+> **servidores**: `number`
+
+***
+
+### terminales
+
+> **terminales**: `number`
+
+***
+
+### conComponentes
+
+> **conComponentes**: `number`

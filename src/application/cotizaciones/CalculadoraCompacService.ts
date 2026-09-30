@@ -2,7 +2,7 @@ import type { IConfiguracionRepository } from '../../core/ports/repositories/ICo
 import {
   CalculadoraCompac,
   type ConfiguracionCalculadora,
-  type EquipoInput,
+  type GrupoCompac,
   type ResultadoCalculadora,
 } from '../../core/entities/CalculadoraCompac.js';
 
@@ -14,8 +14,8 @@ export class CalculadoraCompacService {
     return this.config.obtenerCalculadora();
   }
 
-  async calcular(equipos: EquipoInput[]): Promise<ResultadoCalculadora & { config: ConfiguracionCalculadora }> {
+  async calcular(grupos: GrupoCompac[]): Promise<ResultadoCalculadora & { config: ConfiguracionCalculadora }> {
     const config = await this.config.obtenerCalculadora();
-    return { ...CalculadoraCompac.calcular(equipos, config), config };
+    return { ...CalculadoraCompac.calcular(grupos, config), config };
   }
 }

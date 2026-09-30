@@ -2,8 +2,9 @@ import type { ITicketRepository } from '../../core/ports/repositories/ITicketRep
 import type { IIdGenerator } from '../../core/ports/services/IIdGenerator.js';
 import type { IClock } from '../../core/ports/services/IClock.js';
 import type { ILogger } from '../../core/ports/services/ILogger.js';
+import type { IWebhookPublisher } from '../../core/ports/services/IWebhookPublisher.js';
 import { ForbiddenError, NotFoundError } from '../../core/errors/DomainError.js';
-import { registrarEvento } from './efectos.js';
+import { publicarNotaInterna, registrarEvento } from './efectos.js';
 import type { SessionUser } from '../shared/SessionUser.js';
 
 /** Datos de gestión interna editables desde el detalle del ticket. */
@@ -23,6 +24,7 @@ export class ActualizarGestionTicketService {
     private readonly ids: IIdGenerator,
     private readonly clock: IClock,
     private readonly logger: ILogger,
+    private readonly webhooks?: IWebhookPublisher,
   ) {}
 
   async ejecutar(input: ActualizarGestionInput): Promise<void> {
@@ -40,6 +42,7 @@ export class ActualizarGestionTicketService {
 
     const puedeNotas = input.actor.permisos.includes('tickets:ver_notas_internas');
     const ahora = this.clock.now();
+    const notasAntes = ticket.notasInternas ?? '';
     ticket.actualizarGestion(
       {
         ...(input.solicitadoPor !== undefined ? { solicitadoPor: input.solicitadoPor } : {}),
@@ -57,6 +60,10 @@ export class ActualizarGestionTicketService {
       actor: input.actor,
       at: ahora,
     });
+    const notasAhora = ticket.notasInternas ?? '';
+    if (notasAhora.trim() && notasAhora !== notasAntes) {
+      await publicarNotaInterna(this.webhooks, ticket, notasAhora, input.actor.nombre);
+    }
     this.logger.info('Gestión de ticket actualizada', {
       numero: ticket.numero,
       por: input.actor.uid,

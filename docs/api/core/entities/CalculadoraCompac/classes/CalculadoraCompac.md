@@ -6,9 +6,9 @@
 
 # Class: CalculadoraCompac
 
-Calculadora de licenciamiento Compac/CONTPAQi. Regla base: en cada equipo, el sistema más
-caro se cobra a "precioPrimero" y los demás a "precioAdicional". SQL es un complemento
-aparte por equipo (según tipo).
+Calculadora de licenciamiento Compac/CONTPAQi, idéntica al CRM viejo: por equipo se cobra
+el precio del 1er sistema de su tipo más el adicional por cada sistema extra; SQL es un
+renglón aparte y solo para Servidor. El IVA lo pone la cotización.
 
 ## Constructors
 
@@ -22,15 +22,35 @@ aparte por equipo (según tipo).
 
 ## Methods
 
-### calcular()
+### calcularGrupo()
 
-> `static` **calcular**(`equipos`, `config`): [`ResultadoCalculadora`](../interfaces/ResultadoCalculadora.md)
+> `static` **calcularGrupo**(`grupo`, `config`): [`ResultadoGrupoCompac`](../interfaces/ResultadoGrupoCompac.md)
 
 #### Parameters
 
-##### equipos
+##### grupo
 
-[`EquipoInput`](../interfaces/EquipoInput.md)[]
+[`GrupoCompac`](../interfaces/GrupoCompac.md)
+
+##### config
+
+[`ConfiguracionCalculadora`](../interfaces/ConfiguracionCalculadora.md)
+
+#### Returns
+
+[`ResultadoGrupoCompac`](../interfaces/ResultadoGrupoCompac.md)
+
+***
+
+### calcular()
+
+> `static` **calcular**(`grupos`, `config`): [`ResultadoCalculadora`](../interfaces/ResultadoCalculadora.md)
+
+#### Parameters
+
+##### grupos
+
+[`GrupoCompac`](../interfaces/GrupoCompac.md)[]
 
 ##### config
 

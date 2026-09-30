@@ -404,3 +404,26 @@ describe('tickets: paridad con el CRM viejo (lista, formulario y detalle)', () =
     expect(det.text).not.toContain(`ticket=${id}`); // ya no ofrece «Cotizar» otra vez
   });
 });
+
+describe('avisos al equipo (paridad con dispararN8n del viejo)', () => {
+  it('cambio de estado y nota interna disparan sus eventos; la nota pública no', async () => {
+    const t = makeTestApp({ usuarios: [SUP] });
+    const { agent, csrf } = await login(t.app, SUP.email, SUP.password);
+    const crear = await agent.post('/app/tickets').type('form').send({
+      _csrf: csrf, asunto: 'Avisos', descripcion: 'Probar avisos al equipo', tipo: 'General', prioridad: 'Media',
+    });
+    const id = String(crear.headers.location).split('/').pop()!;
+
+    await agent.post(`/app/tickets/${id}/estado`).type('form').send({ _csrf: csrf, estado: 'En proceso' });
+    await agent.post(`/app/tickets/${id}/nota`).type('form').send({ _csrf: csrf, cuerpo: 'Revisar licencia', tipo: 'interna' });
+    await agent.post(`/app/tickets/${id}/nota`).type('form').send({ _csrf: csrf, cuerpo: 'Hola cliente', tipo: 'publica' });
+
+    const cambio = t.webhookPublisher.publicados.find((e) => e.evento === 'ticket.estado_cambiado');
+    expect(cambio?.payload).toMatchObject({ estadoNuevo: 'En proceso', por: 'Sup' });
+    const notas = t.webhookPublisher.publicados.filter((e) => e.evento === 'ticket.nota_interna');
+    expect(notas.map((e) => e.payload.nota)).toEqual(['Revisar licencia']);
+    // creado por el equipo → «ticket.creado», no el del cliente
+    expect(t.webhookPublisher.eventos).toContain('ticket.creado');
+    expect(t.webhookPublisher.eventos).not.toContain('ticket.creado_cliente');
+  });
+});

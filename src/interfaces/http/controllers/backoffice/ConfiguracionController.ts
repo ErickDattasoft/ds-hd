@@ -22,6 +22,7 @@ import {
   ETIQUETAS_EVENTOS,
   WHATSAPP_CLIENTES_POR_DEFECTO,
   destinatariosWhatsAppATexto,
+  equipoWhatsApp,
   type ProveedorWhatsAppClientes,
 } from '../../../../core/entities/ConfiguracionIntegraciones.js';
 import { INFO_APP } from '../../../../core/entities/AcercaDe.js';
@@ -141,13 +142,15 @@ export class ConfiguracionController {
   backupView = async (_req: Request, res: Response): Promise<void> => {
     res.render('pages/backoffice/configuracion/backup', {
       titulo: 'Backup',
+      estadoBackup: await this.backup.estado(),
       cuotaAdjuntos: await this.adjuntos.cuotaEspacio(),
       secciones: SECCIONES_IMPORTACION.map((clave) => ({ clave, etiqueta: SECCION_ETIQUETA[clave] })),
     });
   };
 
-  backupDescargar = async (_req: Request, res: Response): Promise<void> => {
+  backupDescargar = async (req: Request, res: Response): Promise<void> => {
     const datos = await this.backup.exportar();
+    await this.backup.registrarDescarga(req.user!);
     const fecha = new Date().toISOString().slice(0, 10);
     res.setHeader('Content-Disposition', `attachment; filename="ds-hd-backup-${fecha}.json"`);
     res.type('application/json').send(JSON.stringify(datos, null, 2));
@@ -320,6 +323,7 @@ export class ConfiguracionController {
       whatsappOtrosTexto: destinatariosWhatsAppATexto(config.whatsappOtros),
       wa: { ...WHATSAPP_CLIENTES_POR_DEFECTO, ...config.whatsappClientes },
       eventosEtiquetas: ETIQUETAS_EVENTOS,
+      equipoNombres: equipoWhatsApp(config).map((d) => d.nombre),
       infoCorreo: this.configIntegraciones.infoCorreo(),
       errores: opts.errores ?? {},
       guardado: opts.guardado ?? false,
@@ -468,25 +472,19 @@ export class ConfiguracionController {
 
   calculadoraPost = async (req: Request, res: Response): Promise<void> => {
     const b = req.body ?? {};
-    const precios: Record<string, { precioPrimero?: unknown; precioAdicional?: unknown }> = {};
-    for (const [k, v] of Object.entries(b)) {
-      if (k.startsWith('precioPrimero_')) {
-        const clave = k.slice('precioPrimero_'.length);
-        precios[clave] = { ...precios[clave], precioPrimero: v };
-      }
-      if (k.startsWith('precioAdicional_')) {
-        const clave = k.slice('precioAdicional_'.length);
-        precios[clave] = { ...precios[clave], precioAdicional: v };
-      }
-    }
+    const lista = (v: unknown): string[] => ([] as unknown[]).concat(v ?? []).map(String);
+    const primer = lista(b.equipoPrimer);
+    const adicional = lista(b.equipoAdicional);
     try {
       await this.configCalculadora.actualizar({
         actor: req.user!,
-        precios,
-        sqlPrecioServidor: b.sqlPrecioServidor,
-        sqlPrecioTerminal: b.sqlPrecioTerminal,
-        ivaTasa: b.ivaTasa,
-        moneda: str(b.moneda),
+        catalogoSistemas: lista(b.sistema),
+        catalogoEquipos: lista(b.equipoNombre).map((nombre, i) => ({
+          nombre,
+          precioPrimerSistema: primer[i],
+          precioAdicional: adicional[i],
+        })),
+        precioSQL: b.precioSQL,
       });
       res.render('pages/backoffice/configuracion/calculadora', {
         titulo: 'Configuración de la calculadora',

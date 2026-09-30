@@ -20,11 +20,15 @@ IVA. Cada cotización tiene una vigencia y un estado (borrador → enviada → a
 
 ![Calculadora Compac](../screenshots/cotizaciones-calculadora.png)
 
-`/app/cotizaciones/calculadora` porta la lógica de licenciamiento CONTPAQi: dado un sistema
-y un número de usuarios/licencias adicionales, calcula el precio aplicando la regla de
-"primer usuario + adicionales" configurada en *Configuración*. El resultado se puede volcar
-directo a una cotización nueva con **Usar en cotización**, sin volver a capturar los montos
-a mano.
+`/app/cotizaciones/calculadora` arma el licenciamiento CONTPAQi por **grupos de equipos
+iguales**: tipo de equipo (Servidor, Terminal…), cantidad, los sistemas que llevan y, en
+Servidor, si incluyen SQL. Cada equipo cobra el precio del *1er sistema* de su tipo más el
+*adicional* por cada sistema extra; SQL va en un renglón aparte. El desglose se calcula en
+vivo, con el conteo de servidores/terminales y un aviso si no coincide con lo que esperabas.
+
+Al terminar, **Enviar a una cotización nueva** abre el formulario con los renglones ya
+capturados (se pueden editar antes de guardar). Los precios se cambian en
+*Configuración → Calculadora* (botón ⚙️ Editar precios).
 
 ## Editar y cambiar estado
 

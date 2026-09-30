@@ -11,6 +11,8 @@ import type { IContadorRepository } from '../../core/ports/repositories/IContado
 import type { IOportunidadRepository } from '../../core/ports/repositories/IOportunidadRepository.js';
 import { Oportunidad, type OportunidadProps } from '../../core/entities/Oportunidad.js';
 import type { IClock } from '../../core/ports/services/IClock.js';
+import type { IWebhookPublisher } from '../../core/ports/services/IWebhookPublisher.js';
+import { backupAtrasado, diasSinBackup, type EstadoBackup } from '../../core/entities/EstadoBackup.js';
 import { Empresa, type EmpresaProps } from '../../core/entities/Empresa.js';
 import { Contacto, type ContactoProps } from '../../core/entities/Contacto.js';
 import { Ticket, type TicketProps } from '../../core/entities/Ticket.js';
@@ -82,7 +84,46 @@ export class BackupService {
     private readonly contador: IContadorRepository,
     private readonly clock: IClock,
     private readonly oportunidades?: IOportunidadRepository,
+    private readonly webhooks?: IWebhookPublisher,
   ) {}
+
+  /** Anota quién y cuándo descargó el backup (para la alerta de 7 días, como el viejo). */
+  async registrarDescarga(actor: SessionUser): Promise<void> {
+    const actual = await this.configuracion.obtenerEstadoBackup();
+    await this.configuracion.guardarEstadoBackup({
+      ...actual,
+      ultimoBackup: this.clock.now().toISOString(),
+      ultimoBackupPor: actor.nombre,
+    });
+  }
+
+  /** Último backup y si ya toca alertar. */
+  async estado(): Promise<EstadoBackup & { dias: number | null; atrasado: boolean }> {
+    const e = await this.configuracion.obtenerEstadoBackup();
+    const ahora = this.clock.now();
+    return { ...e, dias: diasSinBackup(e, ahora), atrasado: backupAtrasado(e, ahora) };
+  }
+
+  /**
+   * Evento `backup.no_realizado` (n8n/WhatsApp) cuando pasan 7 días o más sin backup — a lo
+   * más una vez al día. Lo llama el cron.
+   */
+  async avisarSiAtrasado(): Promise<{ avisado: boolean; dias: number | null }> {
+    const e = await this.estado();
+    const hoy = this.clock.now().toISOString().slice(0, 10);
+    if (!e.atrasado || e.ultimoAvisoNoRealizado === hoy || !this.webhooks) return { avisado: false, dias: e.dias };
+    await this.webhooks.publicar({
+      evento: 'backup.no_realizado',
+      canal: 'tickets',
+      payload: { diasSinBackup: e.dias, ultimoBackup: e.ultimoBackup, ultimoBackupPor: e.ultimoBackupPor },
+    });
+    await this.configuracion.guardarEstadoBackup({
+      ultimoBackup: e.ultimoBackup,
+      ultimoBackupPor: e.ultimoBackupPor,
+      ultimoAvisoNoRealizado: hoy,
+    });
+    return { avisado: true, dias: e.dias };
+  }
 
   /** Vuelca todas las colecciones principales a un solo objeto serializable a JSON. */
   async exportar(): Promise<Record<string, unknown>> {

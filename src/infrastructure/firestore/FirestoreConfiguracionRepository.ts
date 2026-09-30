@@ -1,3 +1,4 @@
+import { sanearEstadoBackup, type EstadoBackup } from '../../core/entities/EstadoBackup.js';
 import {
   sanearConfigCorreoEntrante,
   type ConfiguracionCorreoEntrante,
@@ -9,7 +10,7 @@ import {
   type ConfiguracionTickets,
 } from '../../core/entities/ConfiguracionTickets.js';
 import {
-  CONFIG_CALCULADORA_POR_DEFECTO,
+  sanearConfigCalculadora,
   type ConfiguracionCalculadora,
 } from '../../core/entities/CalculadoraCompac.js';
 import {
@@ -65,18 +66,12 @@ export class FirestoreConfiguracionRepository implements IConfiguracionRepositor
 
   async obtenerCalculadora(): Promise<ConfiguracionCalculadora> {
     const snap = await this.db.collection(COL).doc('calculadora').get();
-    if (!snap.exists) return { ...CONFIG_CALCULADORA_POR_DEFECTO };
-    const d = snap.data()!;
-    return {
-      sistemas: Array.isArray(d.sistemas) && d.sistemas.length ? d.sistemas : CONFIG_CALCULADORA_POR_DEFECTO.sistemas,
-      sql: d.sql ?? CONFIG_CALCULADORA_POR_DEFECTO.sql,
-      ivaTasa: typeof d.ivaTasa === 'number' ? d.ivaTasa : CONFIG_CALCULADORA_POR_DEFECTO.ivaTasa,
-      moneda: String(d.moneda ?? CONFIG_CALCULADORA_POR_DEFECTO.moneda),
-    };
+    return sanearConfigCalculadora(snap.exists ? snap.data() : null);
   }
 
   async guardarCalculadora(config: ConfiguracionCalculadora): Promise<void> {
-    await this.db.collection(COL).doc('calculadora').set(config, { merge: true });
+    // Sin merge: el documento completo se reescribe (y se van los campos del modelo anterior).
+    await this.db.collection(COL).doc('calculadora').set(config);
   }
 
   async obtenerAvisos(): Promise<ConfiguracionAvisos> {
@@ -167,6 +162,15 @@ export class FirestoreConfiguracionRepository implements IConfiguracionRepositor
 
   async guardarResumen(config: ConfiguracionResumen): Promise<void> {
     await this.db.collection(COL).doc('resumen').set(config, { merge: true });
+  }
+
+  async obtenerEstadoBackup(): Promise<EstadoBackup> {
+    const snap = await this.db.collection(COL).doc('backup').get();
+    return sanearEstadoBackup(snap.exists ? snap.data() : null);
+  }
+
+  async guardarEstadoBackup(estado: EstadoBackup): Promise<void> {
+    await this.db.collection(COL).doc('backup').set(estado);
   }
 }
 

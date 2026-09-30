@@ -58,6 +58,13 @@
     <button class="btn" type="submit">Guardar</button>
   </form>
 
+  <div class="card" id="whatsapp-modo">
+    <h2>📱 WhatsApp en esta computadora</h2>
+    <p class="muted">Cómo abrir los botones 💬 de WhatsApp en este navegador — es una preferencia local, cada quien deja la suya.</p>
+    <label class="field--check"><input type="radio" name="whatsappModo" value="web" data-whatsapp-modo /> <span>🌐 Navegador (WhatsApp Web)</span></label>
+    <label class="field--check"><input type="radio" name="whatsappModo" value="app" data-whatsapp-modo /> <span>📲 App instalada</span></label>
+  </div>
+
   <div class="card" id="dos-pasos">
     <h2>🔐 Verificación en dos pasos</h2>
     {% if user.totpActivo %}

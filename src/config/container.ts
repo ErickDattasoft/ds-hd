@@ -603,6 +603,7 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
           c.logger,
           c.config.baseUrl,
           72,
+          c.webhookPublisher,
         ),
     ).singleton(),
     actualizarUsuarioService: asFunction(
@@ -670,11 +671,18 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
     ).singleton(),
     editarTicketService: asFunction(
       (c: Cradle) =>
-        new EditarTicketService(c.ticketRepo, c.configuracionRepo, c.adjuntoTicketRepo, c.idGenerator, c.clock),
+        new EditarTicketService(
+          c.ticketRepo,
+          c.configuracionRepo,
+          c.adjuntoTicketRepo,
+          c.idGenerator,
+          c.clock,
+          c.webhookPublisher,
+        ),
     ).singleton(),
     actualizarGestionTicketService: asFunction(
       (c: Cradle) =>
-        new ActualizarGestionTicketService(c.ticketRepo, c.idGenerator, c.clock, c.logger),
+        new ActualizarGestionTicketService(c.ticketRepo, c.idGenerator, c.clock, c.logger, c.webhookPublisher),
     ).singleton(),
     actualizarEstadoTicketService: asFunction(
       (c: Cradle) =>
@@ -713,6 +721,7 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
           c.clock,
           c.emailSender,
           c.logger,
+          c.webhookPublisher,
         ),
     ).singleton(),
     reenviarCorreoTicketService: asFunction(
@@ -1024,6 +1033,7 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
           c.contadorRepo,
           c.clock,
           c.oportunidadRepo,
+          c.webhookPublisher,
         ),
     ).singleton(),
     configuracionController: asFunction(
@@ -1135,7 +1145,7 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
     ).singleton(),
     eventoController: asFunction((c: Cradle) => new EventoController(c.eventoService)).singleton(),
     dashboardController: asFunction(
-      (c: Cradle) => new DashboardController(c.obtenerMetricasService, c.agendaService),
+      (c: Cradle) => new DashboardController(c.obtenerMetricasService, c.agendaService, c.backupService),
     ).singleton(),
     eventoPublicoController: asFunction(
       (c: Cradle) => new EventoPublicoController(c.eventoService, c.config.turnstile.siteKey),
@@ -1154,6 +1164,7 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
           c.resumenDiarioService,
           c.correoEntranteService,
           c.empresaRepo,
+          c.backupService,
         ),
     ).singleton(),
   });

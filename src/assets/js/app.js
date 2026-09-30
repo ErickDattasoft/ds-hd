@@ -1227,7 +1227,37 @@
       return;
     }
     var q = e.target.closest('[data-quitar-fila]');
-    if (q) { var row = q.closest('tr'); if (row) row.remove(); }
+    if (q) { var row = q.closest('tr'); if (row) row.remove(); return; }
+    // Fila nueva desde un <template id>, dentro del <tbody data-filas="id">.
+    var ag = e.target.closest('[data-agregar-fila-de]');
+    if (ag) {
+      var id = ag.getAttribute('data-agregar-fila-de');
+      var tpl = document.getElementById(id);
+      var destino = document.querySelector('[data-filas="' + id + '"]');
+      if (!tpl || !destino) return;
+      var frag = tpl.content.cloneNode(true);
+      // `__i__` en los name de la plantilla → índice único (grupos de la calculadora).
+      var idx = 'n' + Date.now().toString(36);
+      Array.prototype.forEach.call(frag.querySelectorAll('[name*="__i__"]'), function (el) {
+        el.name = el.name.replace('__i__', idx);
+      });
+      destino.appendChild(frag);
+      var nueva = destino.lastElementChild;
+      var foco = nueva && nueva.querySelector('input');
+      if (foco) foco.focus();
+      destino.dispatchEvent(new Event('input', { bubbles: true }));
+      return;
+    }
+    var mv = e.target.closest('[data-subir-fila], [data-bajar-fila]');
+    if (mv) {
+      var fila = mv.closest('tr');
+      if (!fila) return;
+      if (mv.hasAttribute('data-subir-fila') && fila.previousElementSibling) {
+        fila.parentNode.insertBefore(fila, fila.previousElementSibling);
+      } else if (mv.hasAttribute('data-bajar-fila') && fila.nextElementSibling) {
+        fila.parentNode.insertBefore(fila.nextElementSibling, fila);
+      }
+    }
   });
 
   // ── Cotizaciones: al elegir un concepto del catálogo (datalist), llena el precio ─
@@ -1292,6 +1322,90 @@
         if (btn) { btn.disabled = false; btn.classList.remove('is-loading'); }
       });
   });
+
+  // ── WhatsApp: abrir en WhatsApp Web o en la app instalada (preferencia local, como el viejo) ─
+  function modoWhatsApp() {
+    try { return localStorage.getItem('crm_whatsapp_modo') || 'web'; } catch { return 'web'; }
+  }
+  /** Un enlace wa.me → WhatsApp Web si esa es la preferencia; si no, igual. */
+  function urlWhatsApp(href) {
+    if (modoWhatsApp() !== 'web' || href.indexOf('https://wa.me/') !== 0) return href;
+    var u;
+    try { u = new URL(href); } catch { return href; }
+    var tel = u.pathname.replace(/\D/g, '');
+    if (!tel) return href;
+    var texto = u.searchParams.get('text');
+    return 'https://web.whatsapp.com/send?phone=' + tel + (texto ? '&text=' + encodeURIComponent(texto) : '');
+  }
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest && e.target.closest('a[href^="https://wa.me/"]');
+    if (a) a.href = urlWhatsApp(a.href);
+  }, true);
+  document.addEventListener('change', function (e) {
+    if (!e.target.matches || !e.target.matches('[data-whatsapp-modo]')) return;
+    try { localStorage.setItem('crm_whatsapp_modo', e.target.value); } catch { /* sin almacenamiento */ }
+    toast('📱 WhatsApp se abrirá con: ' + (e.target.value === 'app' ? 'la app instalada' : 'el navegador'));
+  });
+  function iniciarModoWhatsApp() {
+    var modo = modoWhatsApp();
+    Array.prototype.forEach.call(document.querySelectorAll('[data-whatsapp-modo]'), function (r) {
+      r.checked = r.value === modo;
+    });
+  }
+
+  // ── Calculadora Compac: desglose en vivo (mismo cálculo que CalculadoraCompac) ─
+  function recalcularCompac(form) {
+    var cfg;
+    try { cfg = JSON.parse(form.getAttribute('data-config') || '{}'); } catch { return; }
+    var fmt = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' });
+    var total = 0, servidores = 0, terminales = 0, conComponentes = 0;
+    Array.prototype.forEach.call(form.querySelectorAll('[data-grupo-compac]'), function (tr) {
+      var tipo = tr.querySelector('[data-compac-tipo]').value;
+      var cantidad = Math.max(0, Math.floor(Number(tr.querySelector('[data-compac-cantidad]').value) || 0));
+      var sistemas = [].slice.call(tr.querySelectorAll('[data-compac-sistema]:checked')).map(function (c) { return c.value; });
+      var sql = tr.querySelector('[data-compac-sql]');
+      var esServidor = tipo === 'Servidor';
+      sql.disabled = !esServidor;
+      if (!esServidor) sql.checked = false;
+      tr.querySelector('[data-compac-sql-wrap]').style.opacity = esServidor ? '1' : '.4';
+      var eq = (cfg.catalogoEquipos || []).filter(function (e) { return e.nombre === tipo; })[0] || { precioPrimerSistema: 0, precioAdicional: 0 };
+      var porSistemas = sistemas.length ? eq.precioPrimerSistema + (sistemas.length - 1) * eq.precioAdicional : 0;
+      var unitario = porSistemas + (sql.checked ? cfg.precioSQL || 0 : 0);
+      var subtotal = unitario * cantidad;
+      var vale = cantidad > 0 && (sistemas.length || sql.checked);
+      tr.querySelector('[data-compac-unitario]').textContent = vale ? fmt.format(unitario) : '—';
+      tr.querySelector('[data-compac-subtotal]').textContent = vale ? fmt.format(subtotal) : '—';
+      if (!vale) return;
+      total += subtotal;
+      if (tipo === 'Servidor') servidores += cantidad;
+      else if (tipo === 'Terminal') terminales += cantidad;
+      if (sistemas.indexOf('Componentes') >= 0) conComponentes += cantidad;
+    });
+    form.querySelector('[data-compac-total]').textContent = fmt.format(total);
+    form.querySelector('[data-compac-conteos]').textContent =
+      '🖥️ Servidores: ' + servidores + ' · 💻 Terminales: ' + terminales + ' · 🧩 Con Componentes: ' + conComponentes;
+    var espS = Number(form.querySelector('[data-compac-esperados-servidores]').value) || 0;
+    var espT = Number(form.querySelector('[data-compac-esperados-terminales]').value) || 0;
+    var avisos = [];
+    if (espS && espS !== servidores) avisos.push('Servidores: capturaste ' + servidores + ', esperabas ' + espS);
+    if (espT && espT !== terminales) avisos.push('Terminales: capturaste ' + terminales + ', esperabas ' + espT);
+    var aviso = form.querySelector('[data-compac-aviso]');
+    aviso.hidden = !avisos.length;
+    aviso.textContent = avisos.length ? '⚠️ ' + avisos.join(' · ') : '';
+  }
+  ['input', 'change'].forEach(function (tipo) {
+    document.addEventListener(tipo, function (e) {
+      var form = e.target.closest && e.target.closest('[data-calc-compac]');
+      if (form) recalcularCompac(form);
+    });
+  });
+  document.addEventListener('click', function (e) {
+    var form = e.target.closest && e.target.closest('[data-calc-compac]');
+    if (form && e.target.closest('[data-quitar-fila]')) setTimeout(function () { recalcularCompac(form); }, 0);
+  });
+  function iniciarCompac() {
+    Array.prototype.forEach.call(document.querySelectorAll('[data-calc-compac]'), recalcularCompac);
+  }
 
   // ── Configuración → Cotizaciones: catálogo de conceptos ─────────────────
   document.addEventListener('click', function (e) {
@@ -1973,7 +2087,7 @@
     // Espaciadas 500ms para que el navegador no las bloquee como spam de ventanas.
     pendientes.forEach(function (a, idx) {
       setTimeout(function () {
-        window.open(a.href, '_blank', 'noopener');
+        window.open(urlWhatsApp(a.href), '_blank', 'noopener');
         var url = a.getAttribute('data-marcar');
         var ultimo = idx === pendientes.length - 1;
         var p = url ? marcarContactado(url) : Promise.resolve();
@@ -2185,6 +2299,8 @@
     initImprimirAuto();
     initLogoImpresion();
     initCapsLock();
+    iniciarCompac();
+    iniciarModoWhatsApp();
   }
   document.addEventListener('DOMContentLoaded', iniciarPagina);
   window.addEventListener('resize', medirTopbar);

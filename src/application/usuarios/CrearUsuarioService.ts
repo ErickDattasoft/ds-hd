@@ -4,6 +4,7 @@ import type { IAuthProvider } from '../../core/ports/services/IAuthProvider.js';
 import type { IEmailSender } from '../../core/ports/services/IEmailSender.js';
 import type { IIdGenerator } from '../../core/ports/services/IIdGenerator.js';
 import type { IClock } from '../../core/ports/services/IClock.js';
+import type { IWebhookPublisher } from '../../core/ports/services/IWebhookPublisher.js';
 import type { ILogger } from '../../core/ports/services/ILogger.js';
 import { Usuario, type PerfilAgente } from '../../core/entities/Usuario.js';
 import { Email } from '../../core/entities/value-objects/Email.js';
@@ -40,6 +41,7 @@ export class CrearUsuarioService {
     private readonly logger: ILogger,
     private readonly baseUrl: string,
     private readonly invitacionTtlHoras: number,
+    private readonly webhooks?: IWebhookPublisher,
   ) {}
 
   async ejecutar(input: CrearUsuarioInput): Promise<CrearUsuarioResultado> {
@@ -94,6 +96,11 @@ export class CrearUsuarioService {
       });
     }
 
+    await this.webhooks?.publicar({
+      evento: 'usuario.creado',
+      canal: 'tickets',
+      payload: { uid, nombre, email: correo.value, rol: roles.join(', '), creadoPor: input.actor.nombre },
+    });
     this.logger.info('Usuario staff creado', { uid, roles, por: input.actor.uid });
     return { usuario, urlInvitacion };
   }

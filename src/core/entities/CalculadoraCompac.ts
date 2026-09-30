@@ -1,114 +1,186 @@
 import { ValidationError } from '../errors/DomainError.js';
 import type { ConceptoCotizacion } from './Cotizacion.js';
 
-export type TipoEquipo = 'Servidor' | 'Terminal';
-
-/** Catálogo de un sistema Compac/CONTPAQi con su precio como principal o adicional. */
-export interface SistemaCompac {
-  clave: string;
+/** Tipo de equipo con su precio: el 1er sistema de cada equipo y cada sistema adicional. */
+export interface TipoEquipoCompac {
   nombre: string;
-  /** Precio si es el sistema principal (más caro) del equipo. */
-  precioPrimero: number;
-  /** Precio como sistema adicional en el mismo equipo. */
+  precioPrimerSistema: number;
   precioAdicional: number;
 }
 
-/** Catálogo completo de precios que consume {@link CalculadoraCompac}. */
+/**
+ * Catálogos y precios de la calculadora Compac (paridad con `configCompac` del CRM viejo): el
+ * precio depende del TIPO DE EQUIPO y de cuántos sistemas lleva, no de qué sistema es.
+ */
 export interface ConfiguracionCalculadora {
-  sistemas: SistemaCompac[];
-  /**
-   * SQL se cobra como complemento por equipo (no participa en la regla "1º + adicionales").
-   * `precioServidor` aplica a equipos Servidor; `precioTerminal` a Terminales.
-   */
-  sql: { clave: string; nombre: string; precioServidor: number; precioTerminal: number };
-  ivaTasa: number;
-  moneda: string;
+  /** Sistemas que se pueden marcar en un grupo — cada uno es independiente, incluido "Componentes". */
+  catalogoSistemas: string[];
+  catalogoEquipos: TipoEquipoCompac[];
+  /** Precio de SQL por equipo; solo aplica a equipos "Servidor". */
+  precioSQL: number;
 }
+
+/** Tipo de equipo al que se le puede sumar SQL (igual que el viejo, por nombre). */
+export const EQUIPO_CON_SQL = 'Servidor';
 
 export const CONFIG_CALCULADORA_POR_DEFECTO: ConfiguracionCalculadora = {
-  sistemas: [
-    { clave: 'CONTABILIDAD', nombre: 'Contabilidad', precioPrimero: 9800, precioAdicional: 4900 },
-    { clave: 'BANCOS', nombre: 'Bancos', precioPrimero: 7200, precioAdicional: 3600 },
-    { clave: 'NOMINAS', nombre: 'Nóminas', precioPrimero: 12500, precioAdicional: 6250 },
-    { clave: 'COMERCIAL_PREMIUM', nombre: 'Comercial Premium', precioPrimero: 15900, precioAdicional: 7950 },
-    { clave: 'COMERCIAL_PRO', nombre: 'Comercial Pro', precioPrimero: 8900, precioAdicional: 4450 },
-    { clave: 'FACTURA_ELECTRONICA', nombre: 'Factura Electrónica', precioPrimero: 3500, precioAdicional: 1750 },
-    { clave: 'XML_EN_LINEA', nombre: 'XML en línea', precioPrimero: 2900, precioAdicional: 1450 },
+  catalogoSistemas: [
+    'Componentes',
+    'Contabilidad',
+    'Bancos',
+    'Nóminas',
+    'Comercial Premium',
+    'XML en línea',
+    'Factura Electrónica',
+    'Comercial Pro',
+    'Respaldos',
   ],
-  sql: { clave: 'SQL', nombre: 'Motor SQL', precioServidor: 6900, precioTerminal: 0 },
-  ivaTasa: 0.16,
-  moneda: 'MXN',
+  catalogoEquipos: [
+    { nombre: 'Servidor', precioPrimerSistema: 800, precioAdicional: 400 },
+    { nombre: 'Terminal', precioPrimerSistema: 200, precioAdicional: 100 },
+  ],
+  precioSQL: 800,
 };
 
-/** Un equipo (servidor o terminal) con los sistemas que se le licencian. */
-export interface EquipoInput {
-  tipo: TipoEquipo;
-  /** Claves de sistemas seleccionados para este equipo (puede incluir la clave de SQL). */
-  sistemas: string[];
+const precio = (v: unknown, fallback: number): number => {
+  const n = Number(v);
+  return Number.isFinite(n) && n >= 0 ? n : fallback;
+};
+
+/**
+ * Normaliza lo que venga de Firestore o de un respaldo. Un documento con la forma anterior de
+ * ds-hd (`sistemas`/`sql`, precio por sistema) no trae estos campos y cae a los defaults.
+ */
+export function sanearConfigCalculadora(v: unknown): ConfiguracionCalculadora {
+  const d = (v && typeof v === 'object' ? v : {}) as Record<string, unknown>;
+  const def = CONFIG_CALCULADORA_POR_DEFECTO;
+  const sistemas = Array.isArray(d.catalogoSistemas)
+    ? d.catalogoSistemas
+        .map((s) => String(typeof s === 'object' && s ? (s as { nombre?: unknown }).nombre ?? '' : s ?? '').trim())
+        .filter(Boolean)
+    : null;
+  const equipos = Array.isArray(d.catalogoEquipos)
+    ? d.catalogoEquipos
+        .map((e) => {
+          const x = (e ?? {}) as Record<string, unknown>;
+          return {
+            nombre: String(x.nombre ?? '').trim(),
+            precioPrimerSistema: precio(x.precioPrimerSistema, 0),
+            precioAdicional: precio(x.precioAdicional, 0),
+          };
+        })
+        .filter((e) => e.nombre)
+    : null;
+  return {
+    catalogoSistemas: sistemas ?? [...def.catalogoSistemas],
+    catalogoEquipos: equipos ?? def.catalogoEquipos.map((e) => ({ ...e })),
+    precioSQL: precio(d.precioSQL, def.precioSQL),
+  };
 }
 
-/** Conceptos e importes calculados, listos para volcarse a una cotización. */
+/** Un grupo de equipos iguales: N equipos del mismo tipo con los mismos sistemas. */
+export interface GrupoCompac {
+  tipo: string;
+  cantidad: number;
+  sistemas: string[];
+  /** Solo cuenta si `tipo` es Servidor. */
+  incluyeSql: boolean;
+}
+
+/** Precio calculado de un grupo (lo que el viejo mostraba en cada renglón del desglose). */
+export interface ResultadoGrupoCompac {
+  grupo: GrupoCompac;
+  precioSistemasPorUnidad: number;
+  precioSqlPorUnidad: number;
+  precioUnitario: number;
+  subtotal: number;
+}
+
+/** Conceptos listos para la cotización, desglose por grupo y conteos del parque. */
 export interface ResultadoCalculadora {
   conceptos: ConceptoCotizacion[];
-  subtotal: number;
-  iva: number;
+  grupos: ResultadoGrupoCompac[];
   total: number;
+  servidores: number;
+  terminales: number;
+  conComponentes: number;
 }
 
 const r2 = (n: number): number => Math.round(n * 100) / 100;
 
 /**
- * Calculadora de licenciamiento Compac/CONTPAQi. Regla base: en cada equipo, el sistema más
- * caro se cobra a "precioPrimero" y los demás a "precioAdicional". SQL es un complemento
- * aparte por equipo (según tipo).
+ * Calculadora de licenciamiento Compac/CONTPAQi, idéntica al CRM viejo: por equipo se cobra
+ * el precio del 1er sistema de su tipo más el adicional por cada sistema extra; SQL es un
+ * renglón aparte y solo para Servidor. El IVA lo pone la cotización.
  */
 export class CalculadoraCompac {
-  static calcular(equipos: EquipoInput[], config: ConfiguracionCalculadora): ResultadoCalculadora {
-    if (equipos.length === 0) {
-      throw new ValidationError('Agrega al menos un equipo', { equipos: 'Requerido' });
-    }
-    const porClave = new Map(config.sistemas.map((s) => [s.clave, s]));
-    const conceptos: ConceptoCotizacion[] = [];
+  static calcularGrupo(grupo: GrupoCompac, config: ConfiguracionCalculadora): ResultadoGrupoCompac {
+    const equipo = config.catalogoEquipos.find((e) => e.nombre === grupo.tipo);
+    const n = grupo.sistemas.length;
+    const precioSistemasPorUnidad =
+      n > 0 ? (equipo?.precioPrimerSistema ?? 0) + (n - 1) * (equipo?.precioAdicional ?? 0) : 0;
+    const incluyeSql = grupo.tipo === EQUIPO_CON_SQL && grupo.incluyeSql;
+    const precioSqlPorUnidad = incluyeSql ? config.precioSQL : 0;
+    const precioUnitario = precioSistemasPorUnidad + precioSqlPorUnidad;
+    return {
+      grupo: { ...grupo, incluyeSql },
+      precioSistemasPorUnidad,
+      precioSqlPorUnidad,
+      precioUnitario,
+      subtotal: r2(precioUnitario * grupo.cantidad),
+    };
+  }
 
-    equipos.forEach((equipo, i) => {
-      const etiquetaEquipo = `${equipo.tipo} ${i + 1}`;
-      const sistemasClave = equipo.sistemas.filter((c) => c !== config.sql.clave);
-      const sistemas = sistemasClave.map((c) => {
-        const s = porClave.get(c);
-        if (!s) throw new ValidationError(`Sistema desconocido: ${c}`);
-        return s;
+  static calcular(grupos: GrupoCompac[], config: ConfiguracionCalculadora): ResultadoCalculadora {
+    const validos = grupos.filter((g) => g.cantidad > 0 && (g.sistemas.length > 0 || g.incluyeSql));
+    if (validos.length === 0) {
+      throw new ValidationError('Agrega al menos un grupo con cantidad y sistemas o SQL', {
+        grupos: 'Requerido',
       });
+    }
+    for (const g of validos) {
+      if (!config.catalogoEquipos.some((e) => e.nombre === g.tipo)) {
+        throw new ValidationError(`Tipo de equipo desconocido: ${g.tipo}`, { grupos: 'Tipo inválido' });
+      }
+    }
 
+    const resultados = validos.map((g) => CalculadoraCompac.calcularGrupo(g, config));
+    const conceptos: ConceptoCotizacion[] = [];
+    for (const r of resultados) {
+      const { tipo, cantidad, sistemas } = r.grupo;
+      // Grupo de solo SQL: no se manda el renglón de sistemas vacío.
       if (sistemas.length > 0) {
-        const ordenados = [...sistemas].sort((a, b) => b.precioPrimero - a.precioPrimero);
-        ordenados.forEach((s, idx) => {
-          const precio = idx === 0 ? s.precioPrimero : s.precioAdicional;
-          conceptos.push({
-            descripcion: `${s.nombre} — ${etiquetaEquipo}${idx === 0 ? ' (principal)' : ' (adicional)'}`,
-            cantidad: 1,
-            precioUnitario: precio,
-            descuento: 0,
-            importe: precio,
-          });
+        conceptos.push({
+          descripcion: `${tipo} — ${sistemas.join(', ')}`,
+          cantidad,
+          precioUnitario: r.precioSistemasPorUnidad,
+          descuento: 0,
+          importe: r2(cantidad * r.precioSistemasPorUnidad),
+          tieneIva: true,
         });
       }
-
-      if (equipo.sistemas.includes(config.sql.clave)) {
-        const precio = equipo.tipo === 'Servidor' ? config.sql.precioServidor : config.sql.precioTerminal;
-        if (precio > 0) {
-          conceptos.push({
-            descripcion: `${config.sql.nombre} — ${etiquetaEquipo}`,
-            cantidad: 1,
-            precioUnitario: precio,
-            descuento: 0,
-            importe: precio,
-          });
-        }
+      // SQL en renglón aparte, para que el cliente lo vea desglosado en el PDF.
+      if (r.grupo.incluyeSql) {
+        conceptos.push({
+          descripcion: `${tipo} — SQL`,
+          cantidad,
+          precioUnitario: r.precioSqlPorUnidad,
+          descuento: 0,
+          importe: r2(cantidad * r.precioSqlPorUnidad),
+          tieneIva: true,
+        });
       }
-    });
+    }
 
-    const subtotal = r2(conceptos.reduce((s, c) => s + c.importe, 0));
-    const iva = r2(subtotal * config.ivaTasa);
-    return { conceptos, subtotal, iva, total: r2(subtotal + iva) };
+    const cuenta = (pred: (g: GrupoCompac) => boolean): number =>
+      resultados.filter((r) => pred(r.grupo)).reduce((s, r) => s + r.grupo.cantidad, 0);
+    return {
+      conceptos,
+      grupos: resultados,
+      total: r2(resultados.reduce((s, r) => s + r.subtotal, 0)),
+      servidores: cuenta((g) => g.tipo === 'Servidor'),
+      terminales: cuenta((g) => g.tipo === 'Terminal'),
+      conComponentes: cuenta((g) => g.sistemas.includes('Componentes')),
+    };
   }
 }

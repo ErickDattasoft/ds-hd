@@ -6,47 +6,27 @@
 
 # Interface: ConfiguracionCalculadora
 
-Catálogo completo de precios que consume [CalculadoraCompac](../classes/CalculadoraCompac.md).
+Catálogos y precios de la calculadora Compac (paridad con `configCompac` del CRM viejo): el
+precio depende del TIPO DE EQUIPO y de cuántos sistemas lleva, no de qué sistema es.
 
 ## Properties
 
-### sistemas
+### catalogoSistemas
 
-> **sistemas**: [`SistemaCompac`](SistemaCompac.md)[]
+> **catalogoSistemas**: `string`[]
 
-***
-
-### sql
-
-> **sql**: `object`
-
-SQL se cobra como complemento por equipo (no participa en la regla "1º + adicionales").
-`precioServidor` aplica a equipos Servidor; `precioTerminal` a Terminales.
-
-#### clave
-
-> **clave**: `string`
-
-#### nombre
-
-> **nombre**: `string`
-
-#### precioServidor
-
-> **precioServidor**: `number`
-
-#### precioTerminal
-
-> **precioTerminal**: `number`
+Sistemas que se pueden marcar en un grupo — cada uno es independiente, incluido "Componentes".
 
 ***
 
-### ivaTasa
+### catalogoEquipos
 
-> **ivaTasa**: `number`
+> **catalogoEquipos**: [`TipoEquipoCompac`](TipoEquipoCompac.md)[]
 
 ***
 
-### moneda
+### precioSQL
 
-> **moneda**: `string`
+> **precioSQL**: `number`
+
+Precio de SQL por equipo; solo aplica a equipos "Servidor".

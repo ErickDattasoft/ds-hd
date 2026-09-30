@@ -8,6 +8,7 @@ import type { IClock } from '../../../../core/ports/services/IClock.js';
 import type { ILogger } from '../../../../core/ports/services/ILogger.js';
 import type { BitacoraService } from '../../../../application/shared/BitacoraService.js';
 import type { CorreoEntranteService } from '../../../../application/tickets/CorreoEntranteService.js';
+import type { BackupService } from '../../../../application/configuracion/BackupService.js';
 import type { ResumenDiarioService } from '../../../../application/dashboard/ResumenDiarioService.js';
 
 /**
@@ -26,7 +27,14 @@ export class JobsController {
     private readonly resumen: ResumenDiarioService,
     private readonly correoEntrante: CorreoEntranteService,
     private readonly empresas: IEmpresaRepository,
+    private readonly backup?: BackupService,
   ) {}
+
+  /** Aviso «backup no realizado» (n8n/WhatsApp) si pasaron 7+ días; una vez al día. */
+  backupPendiente = async (req: Request, res: Response): Promise<void> => {
+    if (!this.autorizado(req)) return void res.status(401).json({ error: 'no autorizado' });
+    res.json({ ok: true, ...(this.backup ? await this.backup.avisarSiAtrasado() : { avisado: false }) });
+  };
 
   private autorizado(req: Request): boolean {
     const bearer = (req.get('authorization') ?? '').replace(/^Bearer\s+/i, '');

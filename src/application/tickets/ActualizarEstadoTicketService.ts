@@ -9,7 +9,7 @@ import type { IWebhookPublisher } from '../../core/ports/services/IWebhookPublis
 import type { Ticket } from '../../core/entities/Ticket.js';
 import { esFacturacionCompletada } from '../../core/entities/value-objects/EstadoFacturacion.js';
 import { ForbiddenError, NotFoundError } from '../../core/errors/DomainError.js';
-import { registrarEvento } from './efectos.js';
+import { publicarNotaInterna, registrarEvento } from './efectos.js';
 import { avisarSiQuedoCerradoYFacturado } from './cerradoFacturado.js';
 import { historialActividadHtml } from './historialCorreo.js';
 import { destinatariosTicket } from './notificacionTicket.js';
@@ -65,6 +65,20 @@ export class ActualizarEstadoTicketService {
       ahora,
     });
 
+    await this.webhooks.publicar({
+      evento: 'ticket.estado_cambiado',
+      canal: 'tickets',
+      payload: {
+        id: ticket.id,
+        numero: ticket.numero,
+        asunto: ticket.asunto,
+        empresaNombre: ticket.empresaNombre,
+        estadoAnterior: resultado.anterior,
+        estadoNuevo: resultado.nuevo,
+        por: input.actor.nombre,
+      },
+    });
+
     if (input.nota?.trim()) {
       await this.tickets.agregarNota(ticket.id, {
         id: this.ids.newId(),
@@ -74,6 +88,7 @@ export class ActualizarEstadoTicketService {
         autorNombre: input.actor.nombre,
         createdAt: ahora,
       });
+      await publicarNotaInterna(this.webhooks, ticket, input.nota, input.actor.nombre);
     }
 
     if (resultado.quedoResuelto || resultado.quedoCerrado) {

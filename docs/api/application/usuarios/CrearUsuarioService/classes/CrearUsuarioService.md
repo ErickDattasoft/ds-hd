@@ -12,7 +12,7 @@ Caso de uso: un administrador da de alta una cuenta de staff.
 
 ### Constructor
 
-> **new CrearUsuarioService**(`usuarios`, `invitaciones`, `auth`, `email`, `ids`, `clock`, `logger`, `baseUrl`, `invitacionTtlHoras`): `CrearUsuarioService`
+> **new CrearUsuarioService**(`usuarios`, `invitaciones`, `auth`, `email`, `ids`, `clock`, `logger`, `baseUrl`, `invitacionTtlHoras`, `webhooks?`): `CrearUsuarioService`
 
 #### Parameters
 
@@ -51,6 +51,10 @@ Caso de uso: un administrador da de alta una cuenta de staff.
 ##### invitacionTtlHoras
 
 `number`
+
+##### webhooks?
+
+[`IWebhookPublisher`](../../../../core/ports/services/IWebhookPublisher/interfaces/IWebhookPublisher.md)
 
 #### Returns
 

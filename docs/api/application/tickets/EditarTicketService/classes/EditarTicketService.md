@@ -14,7 +14,7 @@ servicios, que el controlador invoca solo si cambiaron.
 
 ### Constructor
 
-> **new EditarTicketService**(`tickets`, `config`, `adjuntos`, `ids`, `clock`): `EditarTicketService`
+> **new EditarTicketService**(`tickets`, `config`, `adjuntos`, `ids`, `clock`, `webhooks?`): `EditarTicketService`
 
 #### Parameters
 
@@ -37,6 +37,10 @@ servicios, que el controlador invoca solo si cambiaron.
 ##### clock
 
 [`IClock`](../../../../core/ports/services/IClock/interfaces/IClock.md)
+
+##### webhooks?
+
+[`IWebhookPublisher`](../../../../core/ports/services/IWebhookPublisher/interfaces/IWebhookPublisher.md)
 
 #### Returns
 

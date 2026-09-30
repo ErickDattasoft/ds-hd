@@ -1,6 +1,9 @@
 /** Eventos de dominio que pueden disparar una notificación externa. */
 export const EVENTOS_NOTIFICABLES = [
   'ticket.creado',
+  'ticket.creado_cliente',
+  'ticket.estado_cambiado',
+  'ticket.nota_interna',
   'ticket.asignado',
   'ticket.resuelto',
   'ticket.cerrado',
@@ -9,6 +12,8 @@ export const EVENTOS_NOTIFICABLES = [
   'ticket.programado',
   'cotizacion.creada',
   'empresa.creada',
+  'usuario.creado',
+  'backup.no_realizado',
 ] as const;
 
 export type EventoNotificable = (typeof EVENTOS_NOTIFICABLES)[number];
@@ -22,7 +27,10 @@ export function esEventoNotificable(value: unknown): value is EventoNotificable 
 
 /** Etiqueta legible por evento, para pintar la matriz de reglas en la UI. */
 export const ETIQUETAS_EVENTOS: Record<EventoNotificable, string> = {
-  'ticket.creado': 'Ticket creado',
+  'ticket.creado': 'Ticket creado por el equipo',
+  'ticket.creado_cliente': 'Ticket creado por el cliente (portal, formulario público o correo)',
+  'ticket.estado_cambiado': 'Cambió el estado de un ticket',
+  'ticket.nota_interna': 'Se agregó una nota interna a un ticket',
   'ticket.asignado': 'Ticket asignado',
   'ticket.resuelto': 'Ticket resuelto',
   'ticket.cerrado': 'Ticket cerrado',
@@ -31,12 +39,16 @@ export const ETIQUETAS_EVENTOS: Record<EventoNotificable, string> = {
   'ticket.programado': 'Recordatorio de ticket programado',
   'cotizacion.creada': 'Cotización creada',
   'empresa.creada': 'Empresa nueva registrada',
+  'usuario.creado': 'Usuario nuevo en el CRM',
+  'backup.no_realizado': 'Backup no realizado (7 días o más sin descargarlo)',
 };
 
 /** Qué canales dispara un evento dado. */
 export interface ReglaEvento {
   webhook: boolean;
   whatsapp: boolean;
+  /** Nombres del equipo de WhatsApp que reciben este evento; vacío o ausente = todos. */
+  destinatarios?: string[];
 }
 
 export type MatrizReglas = Record<EventoNotificable, ReglaEvento>;
@@ -138,12 +150,20 @@ export const CONFIG_INTEGRACIONES_POR_DEFECTO: ConfiguracionIntegraciones = {
 export function sanearReglas(v: unknown): MatrizReglas {
   const base = reglasPorDefecto();
   if (v && typeof v === 'object') {
+    const leidas = v as Record<string, unknown>;
     for (const evento of EVENTOS_NOTIFICABLES) {
-      const r = (v as Record<string, unknown>)[evento];
+      // Antes «ticket.creado» cubría también los del cliente: quien ya lo tenía configurado
+      // sigue recibiendo esos avisos hasta que ajuste la regla nueva.
+      const r = leidas[evento] ?? (evento === 'ticket.creado_cliente' ? leidas['ticket.creado'] : undefined);
       if (r && typeof r === 'object') {
+        const x = r as Record<string, unknown>;
+        const destinatarios = Array.isArray(x.destinatarios)
+          ? x.destinatarios.map(String).filter(Boolean)
+          : [];
         base[evento] = {
-          webhook: Boolean((r as Record<string, unknown>).webhook),
-          whatsapp: Boolean((r as Record<string, unknown>).whatsapp),
+          webhook: Boolean(x.webhook),
+          whatsapp: Boolean(x.whatsapp),
+          ...(destinatarios.length ? { destinatarios } : {}),
         };
       }
     }

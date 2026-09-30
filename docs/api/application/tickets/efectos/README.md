@@ -9,3 +9,4 @@
 ## Functions
 
 - [registrarEvento](functions/registrarEvento.md)
+- [publicarNotaInterna](functions/publicarNotaInterna.md)

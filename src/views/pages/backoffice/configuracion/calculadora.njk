@@ -3,54 +3,79 @@
 {% block title %}Configuración de la calculadora{% endblock %}
 {% block content %}
   <div class="page-head">
-    <h1>Configuración de la calculadora</h1>
+    <h1>🧮 Calculadora Compac</h1>
     <div class="page-head__actions">{{ cfgnav.nav('calculadora') }}</div>
   </div>
   {% if guardado %}<p class="alert alert--ok">Configuración guardada.</p>{% endif %}
   {% if errores.general %}<p class="alert alert--error">{{ errores.general }}</p>{% endif %}
   <p class="muted">
-    Precios que usa la <a href="/app/cotizaciones/calculadora">calculadora Compac/CONTPAQi</a> al
-    armar una cotización. En cada equipo, el sistema más caro se cobra a "1er sistema" y los
-    demás a "adicional".
+    Catálogos y precios que usa la <a href="/app/cotizaciones/calculadora">calculadora de licenciamiento Compac</a>
+    al armar una cotización. Cada equipo cobra el precio del <strong>1er sistema</strong> de su tipo más el
+    <strong>adicional</strong> por cada sistema extra; SQL va en un renglón aparte y solo para Servidor.
   </p>
-
   <form method="post" action="/app/configuracion/calculadora" class="form form--wide">
     <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
 
-    <fieldset class="field">
-      <legend>Sistemas</legend>
-      {% for s in config.sistemas %}
-        <div class="field">
-          <span>{{ s.nombre }}</span>
-          <label class="field">1er sistema
-            <input type="number" min="0" step="0.01" name="precioPrimero_{{ s.clave }}" value="{{ s.precioPrimero }}" />
-          </label>
-          <label class="field">Adicional
-            <input type="number" min="0" step="0.01" name="precioAdicional_{{ s.clave }}" value="{{ s.precioAdicional }}" />
-          </label>
-        </div>
-      {% endfor %}
-    </fieldset>
+    <h2>🧩 Catálogo de sistemas</h2>
+    <p class="muted">Sistemas que se pueden marcar al armar un grupo de equipos — cada uno es independiente, incluyendo «Componentes».</p>
+    <table class="data-table">
+      <thead><tr><th data-no-ordenar>Sistema</th><th data-no-ordenar></th></tr></thead>
+      <tbody data-filas="tpl-sistema-compac">
+        {% for s in config.catalogoSistemas %}
+          <tr>
+            <td><input name="sistema" value="{{ s }}" style="width:100%" /></td>
+            <td class="nowrap">
+              <button type="button" class="btn btn--ghost btn--sm" data-subir-fila title="Subir">↑</button>
+              <button type="button" class="btn btn--ghost btn--sm" data-bajar-fila title="Bajar">↓</button>
+              <button type="button" class="btn btn--ghost btn--sm" data-quitar-fila title="Quitar">✕</button>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <template id="tpl-sistema-compac">
+      <tr>
+        <td><input name="sistema" placeholder="Ej: Xelcron" style="width:100%" /></td>
+        <td class="nowrap">
+          <button type="button" class="btn btn--ghost btn--sm" data-subir-fila title="Subir">↑</button>
+          <button type="button" class="btn btn--ghost btn--sm" data-bajar-fila title="Bajar">↓</button>
+          <button type="button" class="btn btn--ghost btn--sm" data-quitar-fila title="Quitar">✕</button>
+        </td>
+      </tr>
+    </template>
+    <button type="button" class="btn btn--ghost btn--sm" data-agregar-fila-de="tpl-sistema-compac">➕ Agregar sistema</button>
 
-    <fieldset class="field">
-      <legend>{{ config.sql.nombre }}</legend>
-      <em class="field__hint">Complemento aparte por equipo (no participa en la regla "1º + adicionales").</em>
-      <label class="field">Precio por Servidor
-        <input type="number" min="0" step="0.01" name="sqlPrecioServidor" value="{{ config.sql.precioServidor }}" />
-      </label>
-      <label class="field">Precio por Terminal
-        <input type="number" min="0" step="0.01" name="sqlPrecioTerminal" value="{{ config.sql.precioTerminal }}" />
-      </label>
-    </fieldset>
+    <h2>🖥️ Tipos de equipo y precios</h2>
+    {% if errores.catalogoEquipos %}<p class="alert alert--error">{{ errores.catalogoEquipos }}</p>{% endif %}
+    <table class="data-table">
+      <thead><tr><th data-no-ordenar>Tipo de equipo</th><th data-no-ordenar>1er sistema</th><th data-no-ordenar>Adicional</th><th data-no-ordenar></th></tr></thead>
+      <tbody data-filas="tpl-equipo-compac">
+        {% for e in config.catalogoEquipos %}
+          <tr>
+            <td><input name="equipoNombre" value="{{ e.nombre }}" /></td>
+            <td><input name="equipoPrimer" type="number" min="0" step="0.01" value="{{ e.precioPrimerSistema }}" /></td>
+            <td><input name="equipoAdicional" type="number" min="0" step="0.01" value="{{ e.precioAdicional }}" /></td>
+            <td><button type="button" class="btn btn--ghost btn--sm" data-quitar-fila title="Quitar">✕</button></td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <template id="tpl-equipo-compac">
+      <tr>
+        <td><input name="equipoNombre" placeholder="Ej: Laptop" /></td>
+        <td><input name="equipoPrimer" type="number" min="0" step="0.01" value="0" /></td>
+        <td><input name="equipoAdicional" type="number" min="0" step="0.01" value="0" /></td>
+        <td><button type="button" class="btn btn--ghost btn--sm" data-quitar-fila title="Quitar">✕</button></td>
+      </tr>
+    </template>
+    <button type="button" class="btn btn--ghost btn--sm" data-agregar-fila-de="tpl-equipo-compac">➕ Agregar tipo de equipo</button>
 
-    <label class="field"><span>Tasa de IVA</span>
-      <input type="number" min="0" max="1" step="0.01" name="ivaTasa" value="{{ config.ivaTasa }}" />
-      <em class="field__hint">Como fracción, ej. 0.16 = 16%.</em>
+    <label class="field" style="max-width:220px"><span>Precio SQL (solo Servidor)</span>
+      <input type="number" min="0" step="0.01" name="precioSQL" value="{{ config.precioSQL }}" />
     </label>
-    <label class="field"><span>Moneda</span>
-      <input name="moneda" value="{{ config.moneda }}" maxlength="6" />
-    </label>
 
-    <button class="btn" type="submit">Guardar</button>
+    <div class="page-head__actions">
+      <button class="btn" type="submit">💾 Guardar calculadora Compac</button>
+    </div>
   </form>
 {% endblock %}

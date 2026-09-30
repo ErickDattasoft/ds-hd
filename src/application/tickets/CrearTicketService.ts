@@ -98,9 +98,16 @@ export class CrearTicketService {
     });
 
     await this.webhooks.publicar({
-      evento: 'ticket.creado',
+      evento: ticket.canal === 'interno' ? 'ticket.creado' : 'ticket.creado_cliente',
       canal: 'tickets',
-      payload: { id: ticket.id, numero, asunto: ticket.asunto, prioridad, canal: ticket.canal },
+      payload: {
+        id: ticket.id,
+        numero,
+        asunto: ticket.asunto,
+        prioridad,
+        canal: ticket.canal,
+        empresaNombre: ticket.empresaNombre,
+      },
     });
 
     if (ticket.agenda?.recordatorioWhatsapp) {

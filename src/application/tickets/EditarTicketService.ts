@@ -1,13 +1,14 @@
 import type { ITicketRepository } from '../../core/ports/repositories/ITicketRepository.js';
 import type { IConfiguracionRepository } from '../../core/ports/repositories/IConfiguracionRepository.js';
 import type { IAdjuntoTicketRepository } from '../../core/ports/repositories/IAdjuntoTicketRepository.js';
+import type { IWebhookPublisher } from '../../core/ports/services/IWebhookPublisher.js';
 import type { IClock } from '../../core/ports/services/IClock.js';
 import type { IIdGenerator } from '../../core/ports/services/IIdGenerator.js';
 import type { Ticket } from '../../core/entities/Ticket.js';
 import { horasSlaDe } from '../../core/entities/ConfiguracionTickets.js';
 import { parsePrioridad } from '../../core/entities/value-objects/Prioridad.js';
 import { ForbiddenError, NotFoundError, ValidationError } from '../../core/errors/DomainError.js';
-import { registrarEvento } from './efectos.js';
+import { publicarNotaInterna, registrarEvento } from './efectos.js';
 import { desinflarImagenesDescripcion } from './desinflarImagenesDescripcion.js';
 import type { SessionUser } from '../shared/SessionUser.js';
 
@@ -61,6 +62,7 @@ export class EditarTicketService {
     private readonly adjuntos: IAdjuntoTicketRepository,
     private readonly ids: IIdGenerator,
     private readonly clock: IClock,
+    private readonly webhooks?: IWebhookPublisher,
   ) {}
 
   async ejecutar(input: EditarTicketInput): Promise<Ticket> {
@@ -130,6 +132,9 @@ export class EditarTicketService {
       actor: input.actor,
       at: ahora,
     });
+    if (cambios.includes('notasInternas') && despues.notasInternas?.trim()) {
+      await publicarNotaInterna(this.webhooks, ticket, despues.notasInternas, input.actor.nombre);
+    }
     return ticket;
   }
 

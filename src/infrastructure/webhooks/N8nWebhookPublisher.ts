@@ -39,6 +39,12 @@ function mensajeWhatsApp(evento: EventoWebhook): string {
   switch (evento.evento) {
     case 'ticket.creado':
       return `🎫 Nuevo ticket #${p.numero}: ${p.asunto ?? ''}`;
+    case 'ticket.creado_cliente':
+      return `🎫 El cliente${p.empresaNombre ? ` ${p.empresaNombre}` : ''} abrió el ticket #${p.numero}: ${p.asunto ?? ''}`;
+    case 'ticket.estado_cambiado':
+      return `🔄 Ticket #${p.numero}: ${p.estadoAnterior ?? ''} → ${p.estadoNuevo ?? ''}${p.por ? ` (${p.por})` : ''}`;
+    case 'ticket.nota_interna':
+      return `📝 Nota interna en ticket #${p.numero}${p.por ? ` de ${p.por}` : ''}: ${String(p.nota ?? '').slice(0, 300)}`;
     case 'ticket.asignado':
       return `🎫 Ticket #${p.numero} asignado a ${p.agenteNombre ?? ''}`;
     case 'ticket.resuelto':
@@ -53,6 +59,12 @@ function mensajeWhatsApp(evento: EventoWebhook): string {
       return `📄 Nueva cotización ${p.folio ?? ''}`;
     case 'empresa.creada':
       return `🏢 Nueva empresa: ${p.nombre ?? ''}${p.registradaPor ? ` (registrada por ${p.registradaPor})` : ''}`;
+    case 'usuario.creado':
+      return `👤 Usuario nuevo en el CRM: ${p.nombre ?? ''} (${p.rol ?? ''})${p.creadoPor ? `, creado por ${p.creadoPor}` : ''}`;
+    case 'backup.no_realizado':
+      return p.ultimoBackup
+        ? `🛡️ Han pasado ${p.diasSinBackup} días desde el último backup del CRM — descárgalo en Configuración → Backup`
+        : '🛡️ Nunca se ha descargado un backup del CRM — hazlo en Configuración → Backup';
     default:
       return `Evento ${evento.evento}`;
   }
@@ -100,13 +112,9 @@ export class N8nWebhookPublisher implements IWebhookPublisher {
     }
 
     if (regla.whatsapp && config.whatsappHabilitado) {
-      // El número principal + las demás personas del equipo, cada una con su API key.
-      const destinos = [
-        ...(config.whatsappTelefono && config.whatsappApiKey
-          ? [{ telefono: config.whatsappTelefono, apiKey: config.whatsappApiKey }]
-          : []),
-        ...(config.whatsappOtros ?? []),
-      ];
+      // El número principal + las demás personas del equipo (o solo las elegidas para este evento).
+      const elegidos = 'destinatarios' in regla ? regla.destinatarios : undefined;
+      const destinos = equipoWhatsApp(config).filter((d) => !elegidos?.length || elegidos.includes(d.nombre));
       const mensaje = mensajeWhatsApp(evento);
       await Promise.all(
         destinos.map(async (d) => {

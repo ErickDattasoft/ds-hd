@@ -12,7 +12,7 @@ Caso de uso: agregar una nota (pública o interna) a un ticket.
 
 ### Constructor
 
-> **new RegistrarNotaService**(`tickets`, `config`, `usuarios`, `ids`, `clock`, `email`, `logger`): `RegistrarNotaService`
+> **new RegistrarNotaService**(`tickets`, `config`, `usuarios`, `ids`, `clock`, `email`, `logger`, `webhooks?`): `RegistrarNotaService`
 
 #### Parameters
 
@@ -43,6 +43,10 @@ Caso de uso: agregar una nota (pública o interna) a un ticket.
 ##### logger
 
 [`ILogger`](../../../../core/ports/services/ILogger/interfaces/ILogger.md)
+
+##### webhooks?
+
+[`IWebhookPublisher`](../../../../core/ports/services/IWebhookPublisher/interfaces/IWebhookPublisher.md)
 
 #### Returns
 

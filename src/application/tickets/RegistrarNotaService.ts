@@ -5,9 +5,10 @@ import type { IClock } from '../../core/ports/services/IClock.js';
 import type { IIdGenerator } from '../../core/ports/services/IIdGenerator.js';
 import type { ILogger } from '../../core/ports/services/ILogger.js';
 import type { IEmailSender } from '../../core/ports/services/IEmailSender.js';
+import type { IWebhookPublisher } from '../../core/ports/services/IWebhookPublisher.js';
 import type { NotaTicket } from '../../core/entities/NotaTicket.js';
 import { ForbiddenError, NotFoundError, ValidationError } from '../../core/errors/DomainError.js';
-import { registrarEvento } from './efectos.js';
+import { publicarNotaInterna, registrarEvento } from './efectos.js';
 import { historialActividadHtml } from './historialCorreo.js';
 import { destinatariosTicket } from './notificacionTicket.js';
 import type { RegistrarNotaInput } from './dto.js';
@@ -22,6 +23,7 @@ export class RegistrarNotaService {
     private readonly clock: IClock,
     private readonly email: IEmailSender,
     private readonly logger: ILogger,
+    private readonly webhooks?: IWebhookPublisher,
   ) {}
 
   async ejecutar(input: RegistrarNotaInput): Promise<NotaTicket> {
@@ -62,6 +64,8 @@ export class RegistrarNotaService {
       actor: input.actor,
       at: ahora,
     });
+
+    if (nota.tipo === 'interna') await publicarNotaInterna(this.webhooks, ticket, cuerpo, input.actor.nombre);
 
     if (input.actor.esStaff) {
       ticket.registrarPrimeraRespuesta(ahora);

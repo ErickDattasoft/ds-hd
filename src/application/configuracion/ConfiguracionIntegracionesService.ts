@@ -122,13 +122,18 @@ export class ConfiguracionIntegracionesService {
     this.logger.info('Configuración de integraciones actualizada', { por: input.actor.uid });
   }
 
-  /** Convierte los campos `regla_<evento>_webhook`/`regla_<evento>_whatsapp` del form en una matriz. */
+  /**
+   * Convierte los campos `regla_<evento>_webhook`/`_whatsapp`/`_dest` del form en una matriz.
+   * `_dest` son los nombres del equipo que reciben ese evento por WhatsApp (ninguno = todos).
+   */
   static reglasDeForm(body: Record<string, unknown>): MatrizReglas {
     const out = {} as MatrizReglas;
     for (const evento of EVENTOS_NOTIFICABLES) {
+      const destinatarios = ([] as unknown[]).concat(body[`regla_${evento}_dest`] ?? []).map(String).filter(Boolean);
       out[evento] = {
         webhook: Boolean(body[`regla_${evento}_webhook`]),
         whatsapp: Boolean(body[`regla_${evento}_whatsapp`]),
+        ...(destinatarios.length ? { destinatarios } : {}),
       };
     }
     return out;

@@ -241,3 +241,29 @@ Documentos singleton de configuración (`configuracion/{seccion}`).
 #### Returns
 
 `Promise`\<`void`\>
+
+***
+
+### obtenerEstadoBackup()
+
+> **obtenerEstadoBackup**(): `Promise`\<[`EstadoBackup`](../../../../entities/EstadoBackup/interfaces/EstadoBackup.md)\>
+
+#### Returns
+
+`Promise`\<[`EstadoBackup`](../../../../entities/EstadoBackup/interfaces/EstadoBackup.md)\>
+
+***
+
+### guardarEstadoBackup()
+
+> **guardarEstadoBackup**(`estado`): `Promise`\<`void`\>
+
+#### Parameters
+
+##### estado
+
+[`EstadoBackup`](../../../../entities/EstadoBackup/interfaces/EstadoBackup.md)
+
+#### Returns
+
+`Promise`\<`void`\>

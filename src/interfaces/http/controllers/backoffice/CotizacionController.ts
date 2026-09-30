@@ -3,7 +3,7 @@ import type { CotizacionService } from '../../../../application/cotizaciones/Cot
 import type { CalculadoraCompacService } from '../../../../application/cotizaciones/CalculadoraCompacService.js';
 import type { EmpresaService } from '../../../../application/empresas/EmpresaService.js';
 import type { ConceptoCotizacion, EstadoCotizacion } from '../../../../core/entities/Cotizacion.js';
-import type { EquipoInput, TipoEquipo } from '../../../../core/entities/CalculadoraCompac.js';
+import type { GrupoCompac } from '../../../../core/entities/CalculadoraCompac.js';
 import { camposDeError } from '../../support/errores.js';
 
 const str = (v: unknown): string => (typeof v === 'string' ? v : '');
@@ -82,6 +82,7 @@ export class CotizacionController {
         empresaId: str(req.query.empresa),
         fechaIso: hoyIso(),
         conceptos: this.conceptosDesdeQuery(req),
+        origenCalculadora: str(req.query.origen) === 'calculadora',
         // Desde «🧾 Cotizar» de un ticket: queda ligada a él y trae su contacto.
         ticketId: str(req.query.ticket),
         ticketNumero: str(req.query.ticketNumero),
@@ -250,13 +251,22 @@ export class CotizacionController {
 
   calcularPost = async (req: Request, res: Response): Promise<void> => {
     const b = req.body ?? {};
-    const equipos = this.equiposDeBody(b);
+    const grupos = this.gruposDeBody(b);
+    const esperados = { servidores: num(b.esperadosServidores), terminales: num(b.esperadosTerminales) };
     try {
-      const resultado = await this.calculadora.calcular(equipos);
+      const resultado = await this.calculadora.calcular(grupos);
+      const avisos: string[] = [];
+      if (esperados.servidores && esperados.servidores !== resultado.servidores) {
+        avisos.push(`Servidores: capturaste ${resultado.servidores}, esperabas ${esperados.servidores}`);
+      }
+      if (esperados.terminales && esperados.terminales !== resultado.terminales) {
+        avisos.push(`Terminales: capturaste ${resultado.terminales}, esperabas ${esperados.terminales}`);
+      }
       const empresas = await this.empresas.listar({ activa: true });
       res.render('pages/backoffice/cotizaciones/calculadora-resultado', {
         titulo: 'Resultado de la calculadora',
         resultado,
+        avisos,
         empresas,
       });
     } catch (err) {
@@ -264,6 +274,8 @@ export class CotizacionController {
       res.status(422).render('pages/backoffice/cotizaciones/calculadora', {
         titulo: 'Calculadora Compac',
         config,
+        grupos,
+        esperados,
         errores: camposDeError(err),
       });
     }
@@ -303,15 +315,16 @@ export class CotizacionController {
     }
   }
 
-  private equiposDeBody(b: Record<string, unknown>): EquipoInput[] {
-    const equipos: EquipoInput[] = [];
-    for (let i = 0; i < 4; i++) {
-      if (b[`equipo_${i}_usar`] !== 'on') continue;
-      const sistemas = arr(b[`equipo_${i}_sistemas`]);
-      if (sistemas.length === 0) continue;
-      const tipo = str(b[`equipo_${i}_tipo`]) as TipoEquipo;
-      equipos.push({ tipo: tipo === 'Servidor' ? 'Servidor' : 'Terminal', sistemas });
-    }
-    return equipos;
+  /** Grupos `g_{i}_*` en el orden en que llegan (los índices los pone el navegador al agregar filas). */
+  private gruposDeBody(b: Record<string, unknown>): GrupoCompac[] {
+    return Object.keys(b)
+      .map((k) => /^g_(\w+)_tipo$/.exec(k)?.[1])
+      .filter((i): i is string => Boolean(i))
+      .map((i) => ({
+        tipo: str(b[`g_${i}_tipo`]),
+        cantidad: Math.max(0, Math.floor(num(b[`g_${i}_cantidad`]))),
+        sistemas: arr(b[`g_${i}_sistemas`]).filter(Boolean),
+        incluyeSql: b[`g_${i}_sql`] === 'on',
+      }));
   }
 }

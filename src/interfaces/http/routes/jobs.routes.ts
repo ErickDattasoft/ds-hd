@@ -9,6 +9,8 @@ export function jobsRoutes(container: Container): Router {
   r.get('/recordatorios-eventos', (req, res) => jobs().recordatoriosEventos(req, res));
   r.post('/seguimiento-eventos', (req, res) => jobs().seguimientoEventos(req, res));
   r.get('/seguimiento-eventos', (req, res) => jobs().seguimientoEventos(req, res));
+  r.post('/backup-pendiente', (req, res) => jobs().backupPendiente(req, res));
+  r.get('/backup-pendiente', (req, res) => jobs().backupPendiente(req, res));
   r.post('/recalcular-sla', (req, res) => jobs().recalcularSla(req, res));
   r.get('/recalcular-sla', (req, res) => jobs().recalcularSla(req, res));
   r.post('/completar-empresa-tickets', (req, res) => jobs().completarEmpresaTickets(req, res));

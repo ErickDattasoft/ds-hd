@@ -1,37 +1,45 @@
 {% extends "layouts/backoffice.njk" %}
 {% block title %}Resultado{% endblock %}
 {% block content %}
-  <h1>Resultado de la calculadora</h1>
+  <h1>🧮 Resultado de la calculadora</h1>
   <table class="data-table">
-    <thead><tr><th>Concepto</th><th>Precio</th></tr></thead>
+    <thead><tr><th>Tipo</th><th>Cantidad</th><th>Sistemas</th><th>P. unitario</th><th>Subtotal</th></tr></thead>
     <tbody>
-      {% for c in resultado.conceptos %}<tr><td>{{ c.descripcion }}</td><td>{{ c.importe | moneda(resultado.config.moneda) }}</td></tr>{% endfor %}
+      {% for r in resultado.grupos %}
+        <tr>
+          <td>{{ r.grupo.tipo }}</td>
+          <td class="num">{{ r.grupo.cantidad }}</td>
+          <td>{{ (r.grupo.sistemas.concat(['SQL']) if r.grupo.incluyeSql else r.grupo.sistemas) | join(', ') or '—' }}</td>
+          <td class="num">{{ r.precioUnitario | moneda }}</td>
+          <td class="num">{{ r.subtotal | moneda }}</td>
+        </tr>
+      {% endfor %}
     </tbody>
-    <tfoot>
-      <tr><td style="text-align:right"><strong>Subtotal</strong></td><td>{{ resultado.subtotal | moneda(resultado.config.moneda) }}</td></tr>
-      <tr><td style="text-align:right">IVA</td><td>{{ resultado.iva | moneda(resultado.config.moneda) }}</td></tr>
-      <tr><td style="text-align:right"><strong>Total</strong></td><td><strong>{{ resultado.total | moneda(resultado.config.moneda) }}</strong></td></tr>
-    </tfoot>
+    <tfoot><tr><td colspan="4" style="text-align:right"><strong>Total (sin IVA)</strong></td><td class="num"><strong>{{ resultado.total | moneda }}</strong></td></tr></tfoot>
+  </table>
+  <p class="muted">🖥️ Servidores: {{ resultado.servidores }} · 💻 Terminales: {{ resultado.terminales }} · 🧩 Con Componentes: {{ resultado.conComponentes }}</p>
+  {% if avisos.length %}<p class="alert alert--warning">⚠️ {{ avisos | join(' · ') }}</p>{% endif %}
+
+  <h2>Conceptos para la cotización</h2>
+  <table class="data-table">
+    <thead><tr><th>Descripción</th><th>Cantidad</th><th>P. unitario</th><th>Importe</th></tr></thead>
+    <tbody>
+      {% for c in resultado.conceptos %}<tr><td>{{ c.descripcion }}</td><td class="num">{{ c.cantidad }}</td><td class="num">{{ c.precioUnitario | moneda }}</td><td class="num">{{ c.importe | moneda }}</td></tr>{% endfor %}
+    </tbody>
   </table>
 
-  <div class="card">
-    <p><strong>Crear cotización con estos conceptos</strong></p>
-    <form method="post" action="/app/cotizaciones" class="form">
-      <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
-      <input type="hidden" name="origenCalculadora" value="true" />
-      {% for c in resultado.conceptos %}
-        <input type="hidden" name="concepto_descripcion" value="{{ c.descripcion }}" />
-        <input type="hidden" name="concepto_cantidad" value="{{ c.cantidad }}" />
-        <input type="hidden" name="concepto_precio" value="{{ c.precioUnitario }}" />
-      {% endfor %}
-      <label class="field"><span>Empresa</span>
-        <select name="empresaId" required>
-          <option value="">— selecciona —</option>
-          {% for e in empresas %}<option value="{{ e.id }}">{{ e.nombre }}</option>{% endfor %}
-        </select>
-      </label>
-      <button class="btn" type="submit">Crear cotización</button>
-    </form>
-  </div>
-  <p><a href="/app/cotizaciones/calculadora">← Volver a la calculadora</a></p>
+  <form method="get" action="/app/cotizaciones/nueva" class="form">
+    <input type="hidden" name="conceptos" value="{{ resultado.conceptos | dump }}" />
+    <input type="hidden" name="origen" value="calculadora" />
+    <label class="field"><span>Empresa (opcional — también se elige en la cotización)</span>
+      <select name="empresa">
+        <option value="">— selecciona —</option>
+        {% for e in empresas %}<option value="{{ e.id }}">{{ e.nombre }}</option>{% endfor %}
+      </select>
+    </label>
+    <div class="page-head__actions">
+      <button class="btn" type="submit">🧾 Enviar {{ resultado.conceptos.length }} renglón(es) a una cotización nueva</button>
+      <a class="btn btn--ghost" href="/app/cotizaciones/calculadora">← Volver a la calculadora</a>
+    </div>
+  </form>
 {% endblock %}

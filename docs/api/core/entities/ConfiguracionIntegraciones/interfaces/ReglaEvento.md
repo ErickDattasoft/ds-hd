@@ -19,3 +19,11 @@ Qué canales dispara un evento dado.
 ### whatsapp
 
 > **whatsapp**: `boolean`
+
+***
+
+### destinatarios?
+
+> `optional` **destinatarios?**: `string`[]
+
+Nombres del equipo de WhatsApp que reciben este evento; vacío o ausente = todos.

@@ -19,7 +19,7 @@ opción segura.
 
 ### Constructor
 
-> **new BackupService**(`empresas`, `contactos`, `ticketRepo`, `ticketQueries`, `cotizaciones`, `versiones`, `kb`, `usuarios`, `configuracion`, `contador`, `clock`, `oportunidades?`): `BackupService`
+> **new BackupService**(`empresas`, `contactos`, `ticketRepo`, `ticketQueries`, `cotizaciones`, `versiones`, `kb`, `usuarios`, `configuracion`, `contador`, `clock`, `oportunidades?`, `webhooks?`): `BackupService`
 
 #### Parameters
 
@@ -71,11 +71,58 @@ opción segura.
 
 [`IOportunidadRepository`](../../../../core/ports/repositories/IOportunidadRepository/interfaces/IOportunidadRepository.md)
 
+##### webhooks?
+
+[`IWebhookPublisher`](../../../../core/ports/services/IWebhookPublisher/interfaces/IWebhookPublisher.md)
+
 #### Returns
 
 `BackupService`
 
 ## Methods
+
+### registrarDescarga()
+
+> **registrarDescarga**(`actor`): `Promise`\<`void`\>
+
+Anota quién y cuándo descargó el backup (para la alerta de 7 días, como el viejo).
+
+#### Parameters
+
+##### actor
+
+[`SessionUser`](../../../shared/SessionUser/interfaces/SessionUser.md)
+
+#### Returns
+
+`Promise`\<`void`\>
+
+***
+
+### estado()
+
+> **estado**(): `Promise`\<[`EstadoBackup`](../../../../core/entities/EstadoBackup/interfaces/EstadoBackup.md) & `object`\>
+
+Último backup y si ya toca alertar.
+
+#### Returns
+
+`Promise`\<[`EstadoBackup`](../../../../core/entities/EstadoBackup/interfaces/EstadoBackup.md) & `object`\>
+
+***
+
+### avisarSiAtrasado()
+
+> **avisarSiAtrasado**(): `Promise`\<\{ `avisado`: `boolean`; `dias`: `number` \| `null`; \}\>
+
+Evento `backup.no_realizado` (n8n/WhatsApp) cuando pasan 7 días o más sin backup — a lo
+más una vez al día. Lo llama el cron.
+
+#### Returns
+
+`Promise`\<\{ `avisado`: `boolean`; `dias`: `number` \| `null`; \}\>
+
+***
 
 ### exportar()
 

@@ -7,6 +7,7 @@ import type { ConfiguracionCotizaciones } from '../../entities/ConfiguracionCoti
 import type { AcercaDe } from '../../entities/AcercaDe.js';
 import type { ConfiguracionLogo } from '../../entities/ConfiguracionLogo.js';
 import type { ConfiguracionResumen } from '../../entities/ConfiguracionResumen.js';
+import type { EstadoBackup } from '../../entities/EstadoBackup.js';
 
 /** Documentos singleton de configuración (`configuracion/{seccion}`). */
 export interface IConfiguracionRepository {
@@ -28,4 +29,6 @@ export interface IConfiguracionRepository {
   guardarResumen(config: ConfiguracionResumen): Promise<void>;
   obtenerCorreoEntrante(): Promise<ConfiguracionCorreoEntrante>;
   guardarCorreoEntrante(config: ConfiguracionCorreoEntrante): Promise<void>;
+  obtenerEstadoBackup(): Promise<EstadoBackup>;
+  guardarEstadoBackup(estado: EstadoBackup): Promise<void>;
 }

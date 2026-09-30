@@ -11,6 +11,15 @@
     versiones de sistemas, base de conocimiento, usuarios (sin contraseñas — esas viven en
     Firebase Auth, no aquí) y la configuración de tickets/calculadora/avisos/logo/resumen diario.
   </p>
+  {% if estadoBackup.ultimoBackup %}
+    <p class="muted">Último backup: <strong>{{ estadoBackup.ultimoBackup | fechahora }}</strong>{% if estadoBackup.ultimoBackupPor %} — {{ estadoBackup.ultimoBackupPor }}{% endif %}</p>
+  {% endif %}
+  {% if estadoBackup.atrasado %}
+    <p class="alert alert--warning">
+      ⚠️ {% if estadoBackup.ultimoBackup %}Han pasado {{ estadoBackup.dias }} días desde el último backup{% else %}Nunca se ha descargado un backup{% endif %}
+      — se recomienda hacer backup cada semana.
+    </p>
+  {% endif %}
   <a class="btn" href="/app/configuracion/backup/descargar" data-respaldar hx-boost="false">Descargar backup completo (JSON)</a>
 
   {% if cuotaAdjuntos.enRiesgo %}
