@@ -899,10 +899,11 @@
 
     function comprimirImagen(file, maxDim, calidad) {
       return new Promise(function (resolve, reject) {
+        // FileReader (data:) y no createObjectURL: la CSP (`img-src 'self' data: https:`)
+        // bloquea las imágenes `blob:` y la imagen nunca cargaba.
+        var lector = new FileReader();
         var img = new Image();
-        var url = URL.createObjectURL(file);
         img.onload = function () {
-          URL.revokeObjectURL(url);
           var w = img.naturalWidth || 1;
           var h = img.naturalHeight || 1;
           var escala = Math.min(1, maxDim / Math.max(w, h));
@@ -914,8 +915,10 @@
           ctx.drawImage(img, 0, 0, cv.width, cv.height);
           resolve(cv.toDataURL('image/jpeg', calidad));
         };
-        img.onerror = function () { URL.revokeObjectURL(url); reject(new Error('No se pudo leer la imagen')); };
-        img.src = url;
+        img.onerror = function () { reject(new Error('No se pudo leer la imagen')); };
+        lector.onload = function () { img.src = lector.result; };
+        lector.onerror = function () { reject(new Error('No se pudo leer la imagen')); };
+        lector.readAsDataURL(file);
       });
     }
 
@@ -1352,6 +1355,55 @@
       r.checked = r.value === modo;
     });
   }
+
+  // ── Ticket público: hasta 3 imágenes, reducidas a 900 px en el navegador (como el viejo) ─
+  function comprimirParaPublico(file) {
+    return new Promise(function (resolve, reject) {
+      // FileReader (data:) y no createObjectURL: la CSP no permite imágenes `blob:`.
+      var lector = new FileReader();
+      var img = new Image();
+      img.onload = function () {
+        var r = Math.min(1, 900 / Math.max(img.width, img.height));
+        var c = document.createElement('canvas');
+        c.width = Math.round(img.width * r);
+        c.height = Math.round(img.height * r);
+        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+        var q = 0.82, data = c.toDataURL('image/jpeg', q);
+        while (data.length > 270000 && q > 0.3) { q -= 0.12; data = c.toDataURL('image/jpeg', q); }
+        if (data.length > 270000) reject(new Error('grande')); else resolve(data);
+      };
+      img.onerror = function () { reject(new Error('inválida')); };
+      lector.onload = function () { img.src = lector.result; };
+      lector.onerror = function () { reject(new Error('ilegible')); };
+      lector.readAsDataURL(file);
+    });
+  }
+  document.addEventListener('change', function (e) {
+    var input = e.target.closest && e.target.closest('[data-imagenes-publico-input]');
+    if (!input) return;
+    var caja = input.closest('[data-imagenes-publico]');
+    var vista = caja.querySelector('[data-imagenes-publico-vista]');
+    var libres = 3 - vista.querySelectorAll('[data-imagen-publica]').length;
+    var archivos = [].slice.call(input.files || []).filter(function (f) { return /^image\//.test(f.type); });
+    if (archivos.length > libres) toast('Máximo 3 imágenes');
+    archivos.slice(0, Math.max(0, libres)).forEach(function (f) {
+      comprimirParaPublico(f).then(function (data) {
+        var item = document.createElement('span');
+        item.setAttribute('data-imagen-publica', '');
+        item.style.position = 'relative';
+        item.innerHTML = '<img class="adjunto-thumb" alt=""><input type="hidden" name="imagen">' +
+          '<button type="button" class="btn btn--ghost btn--sm" title="Quitar" data-quitar-imagen-publica>✕</button>';
+        item.querySelector('img').src = data;
+        item.querySelector('input').value = data;
+        vista.appendChild(item);
+      }).catch(function () { toast('No se pudo usar la imagen «' + f.name + '»'); });
+    });
+    input.value = '';
+  });
+  document.addEventListener('click', function (e) {
+    var q = e.target.closest && e.target.closest('[data-quitar-imagen-publica]');
+    if (q) q.closest('[data-imagen-publica]').remove();
+  });
 
   // ── Limpieza de adjuntos: «Eliminar» se habilita al descargar el ZIP de la tanda ─
   document.addEventListener('click', function (e) {

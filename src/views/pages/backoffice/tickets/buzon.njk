@@ -7,6 +7,12 @@
       <p><strong>{{ t.asunto }}</strong> — <span class="{{ t.prioridad | prioridadClase }}">{{ t.prioridad }}</span></p>
       <p class="muted">{{ t.nombre }} ({{ t.correo }}){% if t.empresa %} · {{ t.empresa }}{% endif %} · folio {{ t.folio }}</p>
       <p>{{ t.descripcion }}</p>
+      {% if t.imagenes and t.imagenes.length %}
+        <p class="muted">🖼️ {{ t.imagenes.length }} imagen(es) — se agregan como adjuntos al aceptar.</p>
+        <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+          {% for img in t.imagenes %}<a href="{{ img.data }}" target="_blank" rel="noopener"><img src="{{ img.data }}" alt="{{ img.nombre }}" class="adjunto-thumb" /></a>{% endfor %}
+        </div>
+      {% endif %}
       <div class="page-head__actions">
         <form method="post" action="/app/tickets/buzon/{{ t.id }}/aceptar" class="inline">
           <input type="hidden" name="_csrf" value="{{ csrfToken }}" />

@@ -39,6 +39,7 @@ export class TicketPublicoController {
         tipo: str(b.tipo),
         prioridad: str(b.prioridad),
         descripcion: str(b.descripcion),
+        imagenes: ([] as unknown[]).concat(b.imagen ?? []).map(String),
         captchaToken: str(b['cf-turnstile-response']),
         ip: req.ip,
       });

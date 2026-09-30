@@ -782,7 +782,14 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
     ).singleton(),
     gestionTicketPublicoService: asFunction(
       (c: Cradle) =>
-        new GestionTicketPublicoService(c.ticketPublicoRepo, c.crearTicketService, c.logger),
+        new GestionTicketPublicoService(
+          c.ticketPublicoRepo,
+          c.crearTicketService,
+          c.logger,
+          c.adjuntoTicketRepo,
+          c.idGenerator,
+          c.clock,
+        ),
     ).singleton(),
     configuracionTicketsService: asFunction(
       (c: Cradle) => new ConfiguracionTicketsService(c.configuracionRepo, c.logger),

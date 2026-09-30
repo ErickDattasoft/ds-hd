@@ -427,3 +427,45 @@ describe('avisos al equipo (paridad con dispararN8n del viejo)', () => {
     expect(t.webhookPublisher.eventos).not.toContain('ticket.creado_cliente');
   });
 });
+
+describe('ticket público: imágenes y correos (paridad con ticket-publico.astro)', () => {
+  it('hasta 3 imágenes llegan al buzón y al aceptar se vuelven adjuntos; lo que escribe el visitante va escapado', async () => {
+    const t = makeTestApp({ usuarios: [SUP] });
+    const cfg = await t.configuracionRepo.obtenerTickets();
+    await t.configuracionRepo.guardarTickets({ ...cfg, correosNotificacion: ['soporte@dattasoft.mx'] });
+    const anon = request.agent(t.app);
+    const form = await anon.get('/ticket-publico');
+    expect(form.text).toContain('Sistema completamente detenido');
+    expect(form.text).toContain('data-imagenes-publico');
+    const csrf = cookieValor(form.headers['set-cookie'] as unknown as string[], 'x-csrf-token')!;
+    const png = `data:image/png;base64,${Buffer.alloc(40, 3).toString('base64')}`;
+    const envio = await anon.post('/ticket-publico').type('form').send({
+      _csrf: csrf,
+      nombre: '<b>Hacker</b>',
+      correo: 'externa@correo.com',
+      asunto: 'No timbra <script>',
+      descripcion: 'No me deja timbrar el recibo <img src=x onerror=alert(1)>',
+      prioridad: 'Alta',
+      imagen: [png, png, 'data:text/html;base64,PHA+', png, png],
+    });
+    expect(envio.status).toBe(200);
+
+    const [pub] = [...t.ticketPublicoRepo.items.values()];
+    expect(pub!.imagenes).toHaveLength(3); // la HTML se descarta y la 4ª válida sobra
+    expect(pub!.prioridad).toBe('Alta');
+    for (const c of t.emailSender.enviados) {
+      expect(c.html).not.toContain('<script>');
+      expect(c.html).not.toContain('<img src=x');
+      expect(c.html).not.toContain('<b>Hacker</b>');
+    }
+    const aviso = t.emailSender.enviados.find((c) => c.asunto.startsWith('Nuevo ticket del portal'));
+    expect(aviso?.html).toContain('3 imagen(es)');
+
+    const sup = await login(t.app, SUP.email, SUP.password);
+    expect((await sup.agent.get('/app/tickets/buzon')).text).toContain('3 imagen(es)');
+    await sup.agent.post(`/app/tickets/buzon/${pub!.id}/aceptar`).type('form').send({ _csrf: sup.csrf });
+    const [ticket] = [...t.ticketStore.tickets.values()];
+    const adjuntos = await t.adjuntoTicketRepo.listarPorTicket(ticket!.id);
+    expect(adjuntos.map((a) => a.nombre)).toEqual(['imagen-1.png', 'imagen-2.png', 'imagen-3.png']);
+  });
+});

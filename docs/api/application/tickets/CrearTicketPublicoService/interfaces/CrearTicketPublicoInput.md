@@ -64,6 +64,14 @@ Datos del formulario público (sin cuenta) para levantar un ticket.
 
 ***
 
+### imagenes?
+
+> `optional` **imagenes?**: `string`[]
+
+Data URLs de las imágenes (el navegador ya las comprimió).
+
+***
+
 ### captchaToken?
 
 > `optional` **captchaToken?**: `string`

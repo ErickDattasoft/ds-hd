@@ -17,6 +17,7 @@ const toDomain = (id: string, d: DocumentData): TicketPublico => ({
   tipo: d.tipo ?? null,
   prioridad: String(d.prioridad ?? 'Media'),
   descripcion: String(d.descripcion ?? ''),
+  ...(Array.isArray(d.imagenes) && d.imagenes.length ? { imagenes: d.imagenes } : {}),
   estado: (d.estado ?? 'pendiente') as TicketPublico['estado'],
   ticketNumero: d.ticketNumero ?? null,
   createdAt: d.createdAt instanceof Timestamp ? d.createdAt.toDate() : new Date(),

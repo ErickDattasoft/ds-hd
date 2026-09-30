@@ -12,7 +12,7 @@ Casos de uso: aceptar o rechazar un ticket del buzón público.
 
 ### Constructor
 
-> **new GestionTicketPublicoService**(`buzon`, `crearTicket`, `logger`): `GestionTicketPublicoService`
+> **new GestionTicketPublicoService**(`buzon`, `crearTicket`, `logger`, `adjuntos?`, `ids?`, `clock?`): `GestionTicketPublicoService`
 
 #### Parameters
 
@@ -27,6 +27,18 @@ Casos de uso: aceptar o rechazar un ticket del buzón público.
 ##### logger
 
 [`ILogger`](../../../../core/ports/services/ILogger/interfaces/ILogger.md)
+
+##### adjuntos?
+
+[`IAdjuntoTicketRepository`](../../../../core/ports/repositories/IAdjuntoTicketRepository/interfaces/IAdjuntoTicketRepository.md)
+
+##### ids?
+
+[`IIdGenerator`](../../../../core/ports/services/IIdGenerator/interfaces/IIdGenerator.md)
+
+##### clock?
+
+[`IClock`](../../../../core/ports/services/IClock/interfaces/IClock.md)
 
 #### Returns
 

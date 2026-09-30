@@ -3,18 +3,19 @@
 {% block head %}
   {% if turnstileSiteKey %}<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>{% endif %}
 {% endblock %}
+{% set AYUDA_PRIORIDAD = { 'Baja': 'Duda o consulta general', 'Media': 'Puedo trabajar con inconvenientes', 'Alta': 'El sistema falla pero puedo hacer algo', 'Urgente': 'Sistema completamente detenido' } %}
 {% block content %}
   <h1>Levantar un ticket de soporte</h1>
   {% if errores.general %}<p class="alert alert--error">{{ errores.general }}</p>{% endif %}
   <form method="post" action="/ticket-publico" class="form">
     <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
-    <label class="field"><span>Nombre</span><input name="nombre" value="{{ valores.nombre }}" required />
+    <label class="field"><span>Nombre</span><input name="nombre" value="{{ valores.nombre }}" placeholder="Ej: Juan Pérez" required />
       {% if errores.nombre %}<em class="field__error">{{ errores.nombre }}</em>{% endif %}</label>
-    <label class="field"><span>Empresa</span><input name="empresa" value="{{ valores.empresa }}" /></label>
-    <label class="field"><span>Correo</span><input type="email" name="correo" autocomplete="email" value="{{ valores.correo }}" required />
+    <label class="field"><span>Empresa</span><input name="empresa" value="{{ valores.empresa }}" placeholder="Nombre de tu empresa" /></label>
+    <label class="field"><span>Correo</span><input type="email" name="correo" autocomplete="email" value="{{ valores.correo }}" placeholder="correo@empresa.com" required />
       {% if errores.correo %}<em class="field__error">{{ errores.correo }}</em>{% endif %}</label>
-    <label class="field"><span>Teléfono</span><input type="tel" inputmode="tel" name="telefono" value="{{ valores.telefono }}" /></label>
-    <label class="field"><span>Asunto</span><input name="asunto" value="{{ valores.asunto }}" required />
+    <label class="field"><span>Teléfono / WhatsApp</span><input type="tel" inputmode="tel" name="telefono" value="{{ valores.telefono }}" placeholder="Ej: 999 123 4567" /></label>
+    <label class="field"><span>Asunto</span><input name="asunto" value="{{ valores.asunto }}" placeholder="Ej: Error al timbrar facturas" required />
       {% if errores.asunto %}<em class="field__error">{{ errores.asunto }}</em>{% endif %}</label>
     <label class="field"><span>Sistema</span>
       <select name="sistema"><option value="">—</option>{% for s in sistemas %}<option {{ 'selected' if valores.sistema == s }}>{{ s }}</option>{% endfor %}</select>
@@ -23,10 +24,16 @@
       <select name="tipo"><option value="">—</option>{% for t in tipos %}<option {{ 'selected' if valores.tipo == t }}>{{ t }}</option>{% endfor %}</select>
     </label>
     <label class="field"><span>Prioridad</span>
-      <select name="prioridad">{% for p in prioridades %}<option {{ 'selected' if valores.prioridad == p }}>{{ p }}</option>{% endfor %}</select>
+      <select name="prioridad">{% for p in prioridades %}<option value="{{ p }}" {{ 'selected' if valores.prioridad == p or (not valores.prioridad and p == 'Media') }}>{{ p }}{% if AYUDA_PRIORIDAD[p] %} — {{ AYUDA_PRIORIDAD[p] }}{% endif %}</option>{% endfor %}</select>
     </label>
-    <label class="field"><span>Descripción</span><textarea name="descripcion" rows="5" required>{{ valores.descripcion }}</textarea>
+    <label class="field"><span>Descripción</span><textarea name="descripcion" rows="5" required placeholder="Describe con el mayor detalle posible: ¿qué estabas haciendo cuando ocurrió el error?, ¿qué mensaje apareció?, ¿cuándo inició el problema?">{{ valores.descripcion }}</textarea>
       {% if errores.descripcion %}<em class="field__error">{{ errores.descripcion }}</em>{% endif %}</label>
+
+    <div class="field" data-imagenes-publico>
+      <span>Imágenes adjuntas <span class="muted">(opcional, hasta 3 — capturas del error)</span></span>
+      <input type="file" accept="image/*" multiple data-imagenes-publico-input />
+      <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.5rem" data-imagenes-publico-vista></div>
+    </div>
 
     {% if turnstileSiteKey %}<div class="cf-turnstile" data-sitekey="{{ turnstileSiteKey }}"></div>{% endif %}
     <button class="btn" type="submit">Enviar</button>

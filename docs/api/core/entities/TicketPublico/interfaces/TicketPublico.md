@@ -77,6 +77,14 @@ Ticket entrante creado desde el formulario público (sin cuenta). Va a un buzón
 
 ***
 
+### imagenes?
+
+> `optional` **imagenes?**: [`ImagenTicketPublico`](ImagenTicketPublico.md)[]
+
+Hasta [MAX\_IMAGENES\_PUBLICO](../variables/MAX_IMAGENES_PUBLICO.md) imágenes (data URL, ya comprimidas por el navegador).
+
+***
+
 ### estado
 
 > **estado**: `"pendiente"` \| `"aceptado"` \| `"rechazado"`

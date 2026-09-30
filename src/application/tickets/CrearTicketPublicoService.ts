@@ -7,6 +7,8 @@ import type { ILogger } from '../../core/ports/services/ILogger.js';
 import type { TicketPublico } from '../../core/entities/TicketPublico.js';
 import { Email } from '../../core/entities/value-objects/Email.js';
 import { ValidationError } from '../../core/errors/DomainError.js';
+import { imagenesPublicasValidas } from '../../core/entities/TicketPublico.js';
+import { escaparHtml as e } from './historialCorreo.js';
 
 /** Datos del formulario público (sin cuenta) para levantar un ticket. */
 export interface CrearTicketPublicoInput {
@@ -19,6 +21,8 @@ export interface CrearTicketPublicoInput {
   tipo?: string;
   prioridad?: string;
   descripcion: string;
+  /** Data URLs de las imágenes (el navegador ya las comprimió). */
+  imagenes?: string[];
   captchaToken?: string;
   ip?: string;
 }
@@ -49,6 +53,7 @@ export class CrearTicketPublicoService {
       throw new ValidationError('Describe el problema con más detalle', { descripcion: 'Mínimo 10 caracteres' });
     }
 
+    const imagenes = imagenesPublicasValidas(input.imagenes ?? []);
     const cfg = await this.config.obtenerTickets();
     const ahora = this.clock.now();
     const folio = `PUB-${ahora.getTime().toString(36).toUpperCase()}`;
@@ -64,6 +69,7 @@ export class CrearTicketPublicoService {
       tipo: input.tipo && cfg.tipos.includes(input.tipo) ? input.tipo : null,
       prioridad: cfg.prioridades.includes(input.prioridad ?? '') ? input.prioridad! : 'Media',
       descripcion,
+      ...(imagenes.length ? { imagenes } : {}),
     });
 
     // Notificación al staff + confirmación al cliente (best-effort).
@@ -72,14 +78,19 @@ export class CrearTicketPublicoService {
       await this.email.enviar({
         para: staff.map((e) => ({ email: e.value })),
         asunto: `Nuevo ticket del portal: ${asunto}`,
-        html: `<p><strong>${nombre}</strong> (${correo.value}) — ${input.empresa ?? 'sin empresa'}</p><p>${descripcion}</p><p>Folio: ${folio}</p>`,
+        // Todo lo que escribió el visitante va escapado: es texto de alguien sin cuenta.
+        html:
+          `<p><strong>${e(nombre)}</strong> (${e(correo.value)}) — ${e(input.empresa?.trim() || 'sin empresa')}</p>` +
+          `<p><strong>${e(asunto)}</strong></p><p style="white-space:pre-wrap">${e(descripcion)}</p>` +
+          (imagenes.length ? `<p>🖼️ ${imagenes.length} imagen(es) adjunta(s) — se ven en el buzón de tickets públicos.</p>` : '') +
+          `<p>Folio: ${folio}</p>`,
         tags: ['ticket-publico'],
       });
     }
     await this.email.enviar({
       para: [{ email: correo.value, nombre }],
       asunto: `Recibimos tu solicitud (${folio})`,
-      html: `<p>Hola ${nombre}, recibimos tu solicitud "<strong>${asunto}</strong>". Tu folio es <strong>${folio}</strong>. Te contactaremos pronto.</p>`,
+      html: `<p>Hola ${e(nombre)}, recibimos tu solicitud "<strong>${e(asunto)}</strong>". Tu folio es <strong>${folio}</strong>. Te contactaremos pronto.</p>`,
       tags: ['ticket-publico-confirmacion'],
     });
 

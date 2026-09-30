@@ -1,5 +1,8 @@
 import type { ITicketPublicoRepository } from '../../core/ports/repositories/ITicketPublicoRepository.js';
 import type { ILogger } from '../../core/ports/services/ILogger.js';
+import type { IAdjuntoTicketRepository } from '../../core/ports/repositories/IAdjuntoTicketRepository.js';
+import type { IIdGenerator } from '../../core/ports/services/IIdGenerator.js';
+import type { IClock } from '../../core/ports/services/IClock.js';
 import type { Ticket } from '../../core/entities/Ticket.js';
 import { NotFoundError, ValidationError } from '../../core/errors/DomainError.js';
 import type { CrearTicketService } from './CrearTicketService.js';
@@ -12,6 +15,9 @@ export class GestionTicketPublicoService {
     private readonly buzon: ITicketPublicoRepository,
     private readonly crearTicket: CrearTicketService,
     private readonly logger: ILogger,
+    private readonly adjuntos?: IAdjuntoTicketRepository,
+    private readonly ids?: IIdGenerator,
+    private readonly clock?: IClock,
   ) {}
 
   async aceptar(input: { actor: SessionUser; id: string }): Promise<Ticket> {
@@ -41,6 +47,24 @@ export class GestionTicketPublicoService {
       contactoCorreo: entrada.correo,
       origenPublicoId: entrada.id,
     });
+
+    // Las imágenes del formulario público pasan a ser adjuntos del ticket (como en el viejo).
+    if (this.adjuntos && this.ids && this.clock) {
+      for (const img of entrada.imagenes ?? []) {
+        const base64 = img.data.slice(img.data.indexOf(',') + 1);
+        await this.adjuntos.crear({
+          id: this.ids.newId(),
+          ticketId: ticket.id,
+          nombre: img.nombre,
+          contentType: img.contentType,
+          tamano: Math.floor((base64.length * 3) / 4),
+          data: img.data,
+          subidoPorUid: null,
+          subidoPorNombre: entrada.nombre,
+          createdAt: this.clock.now(),
+        });
+      }
+    }
 
     await this.buzon.marcarAceptado(entrada.id, ticket.numero);
     this.logger.info('Ticket público aceptado', { folio: entrada.folio, numero: ticket.numero });
