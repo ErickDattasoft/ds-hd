@@ -1,3 +1,4 @@
+import { textoOHtmlASeguro } from '../../core/entities/value-objects/descripcionHtml.js';
 import type { IUsuarioRepository } from '../../core/ports/repositories/IUsuarioRepository.js';
 import type { IClock } from '../../core/ports/services/IClock.js';
 import { NotFoundError } from '../../core/errors/DomainError.js';
@@ -23,8 +24,9 @@ export class ActualizarMiFirmaService {
     if (!usuario) throw new NotFoundError('Usuario', input.actor.uid);
 
     const ahora = this.clock.now();
-    usuario.fijarFirma(input.firma, ahora);
-    if (input.encabezado !== undefined) usuario.fijarEncabezado(input.encabezado, ahora);
+    // Se guardan como HTML saneado (editor con formato); si llega texto, se conserva con sus saltos.
+    usuario.fijarFirma(textoOHtmlASeguro(input.firma), ahora);
+    if (input.encabezado !== undefined) usuario.fijarEncabezado(textoOHtmlASeguro(input.encabezado), ahora);
     if (input.contactosSoporte !== undefined) {
       usuario.contactosSoporte = input.contactosSoporte
         .split(/\r?\n/)

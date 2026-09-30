@@ -355,3 +355,27 @@ describe('detalle de empresa, carta técnica y contactos de soporte propios', ()
     expect(det.text).toMatch(/COT-\d{4}-0001/);
   });
 });
+
+describe('firma con formato (como el editor del viejo)', () => {
+  it('se guarda saneada y el correo de una nota pública la lleva con formato', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    const { agent, csrf } = await login(t.app, ADMIN.email, ADMIN.password);
+    await agent.post('/app/mi-perfil').type('form').send({
+      _csrf: csrf, firma: '<p class="pf0"><b>Erick</b></p><p>Soporte</p><img src=x onerror=alert(1)>', encabezado: '',
+    });
+    const u = await t.usuarioRepo.findByUid(ADMIN.uid);
+    expect(u!.firma).toMatch(/^<p><b>Erick<\/b><\/p><p>Soporte<\/p>/);
+    expect(u!.firma).not.toContain('onerror');
+    expect((await agent.get('/app/mi-perfil')).text).toContain('<p><b>Erick</b></p>');
+
+    const crear = await agent.post('/app/tickets').type('form').send({
+      _csrf: csrf, asunto: 'Firma', descripcion: 'Probar la firma en correo', tipo: 'General', prioridad: 'Baja',
+      contactoNombre: 'Cli', contactoCorreo: 'cli@x.com',
+    });
+    const id = String(crear.headers.location).split('/').pop()!;
+    t.emailSender.enviados.length = 0;
+    await agent.post(`/app/tickets/${id}/nota`).type('form').send({ _csrf: csrf, cuerpo: 'Listo', tipo: 'publica' });
+    const correo = t.emailSender.enviados.find((c) => c.asunto.includes('Actualización'));
+    expect(correo?.html).toContain('<hr /><p><b>Erick</b></p><p>Soporte</p>');
+  });
+});

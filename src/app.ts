@@ -1,3 +1,4 @@
+import { textoOHtmlASeguro } from './core/entities/value-objects/descripcionHtml.js';
 import { join } from 'node:path';
 import compression from 'compression';
 import cookieParser from 'cookie-parser';
@@ -84,6 +85,7 @@ function installViewEngine(app: Express, config: AppConfig, precompiled: boolean
     const d = asDate(v);
     return d ? fmtHora.format(d) : '—';
   });
+  env.addFilter('textoOHtmlSeguro', (v: unknown) => textoOHtmlASeguro(typeof v === 'string' ? v : ''));
   env.addFilter('moneda', (v: unknown, moneda = 'MXN') =>
     new Intl.NumberFormat('es-MX', { style: 'currency', currency: String(moneda) }).format(Number(v) || 0),
   );

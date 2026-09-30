@@ -1669,6 +1669,19 @@
   function escHtmlTexto(s) {
     return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
+  // Editores con formato fuera del ticket (firma y encabezado en Mi perfil): al enviar, su HTML
+  // pasa al campo oculto `data-rte-destino`.
+  document.addEventListener('submit', function (e) {
+    Array.prototype.forEach.call(e.target.querySelectorAll('[data-rte-destino]'), function (ed) {
+      var campo = e.target.querySelector(ed.getAttribute('data-rte-destino'));
+      if (campo) campo.value = (ed.textContent || '').trim() ? ed.innerHTML : '';
+    });
+  }, true);
+  function htmlATexto(html) {
+    var d = document.createElement('div');
+    d.innerHTML = html.replace(/<br\s*\/?>/gi, '\n').replace(/<\/(p|div|li)>/gi, '\n');
+    return (d.textContent || '').replace(/\n{3,}/g, '\n\n').trim();
+  }
   document.addEventListener('click', function (e) {
     var btn = e.target.closest('[data-insertar]');
     if (!btn) return;
@@ -1684,8 +1697,11 @@
       toast('No tienes una firma configurada — ponla en "Mi perfil"');
       return;
     }
+    // Firma/encabezado guardados con formato (HTML saneado en el servidor, como en el viejo).
+    var esHtml = /<\/?(p|br|div|span|b|strong|i|em|u|ul|ol|li|img|font|a|h[1-6])\b[^>]*>/i.test(texto);
+    if (esHtml && !caja.isContentEditable) texto = htmlATexto(texto);
     if (caja.isContentEditable) {
-      var html = texto.split('\n').map(escHtmlTexto).join('<br>');
+      var html = esHtml ? texto : texto.split('\n').map(escHtmlTexto).join('<br>');
       var actual = caja.innerHTML;
       caja.innerHTML = tipo === 'encabezado'
         ? html + (actual ? '<br><br>' + actual : '')

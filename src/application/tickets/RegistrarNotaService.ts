@@ -1,3 +1,4 @@
+import { textoOHtmlASeguro } from '../../core/entities/value-objects/descripcionHtml.js';
 import type { ITicketRepository } from '../../core/ports/repositories/ITicketRepository.js';
 import type { IConfiguracionRepository } from '../../core/ports/repositories/IConfiguracionRepository.js';
 import type { IUsuarioRepository } from '../../core/ports/repositories/IUsuarioRepository.js';
@@ -83,7 +84,7 @@ export class RegistrarNotaService {
         agente?.email.value ?? input.actor.email,
       );
       if (dest.para.length > 0) {
-        const firma = input.actor.firma ? `<hr />${input.actor.firma}` : '';
+        const firma = input.actor.firma ? `<hr />${textoOHtmlASeguro(input.actor.firma)}` : '';
         const historial = historialActividadHtml(await this.tickets.listarEventos(ticket.id), 'cliente');
         const avisoSinContacto = dest.sinContacto
           ? `<p style="background:#fef3c7;color:#92400e;padding:8px 12px;border-radius:6px">⚠️ El contacto del ticket no tiene correo — esta nota solo llegó al equipo.</p>`

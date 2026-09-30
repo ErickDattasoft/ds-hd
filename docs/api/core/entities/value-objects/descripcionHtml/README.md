@@ -10,3 +10,4 @@
 
 - [sanitizarDescripcionHtml](functions/sanitizarDescripcionHtml.md)
 - [descripcionATextoPlano](functions/descripcionATextoPlano.md)
+- [textoOHtmlASeguro](functions/textoOHtmlASeguro.md)

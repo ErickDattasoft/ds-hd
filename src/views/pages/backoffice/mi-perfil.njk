@@ -1,5 +1,12 @@
 {% extends "layouts/backoffice.njk" %}
 {% block title %}Mi perfil{% endblock %}
+{% macro formato(destino) %}
+  <span class="editor-toolbar__formato" data-formato-grupo data-destino="{{ destino }}">
+    <button type="button" class="btn btn--ghost btn--sm" data-formato="bold" title="Negrita (Ctrl+B)"><b>B</b></button>
+    <button type="button" class="btn btn--ghost btn--sm" data-formato="italic" title="Cursiva (Ctrl+I)"><i>I</i></button>
+    <button type="button" class="btn btn--ghost btn--sm" data-formato="underline" title="Subrayado (Ctrl+U)"><u>U</u></button>
+  </span>
+{% endmacro %}
 {% block content %}
   <h1>Mi perfil</h1>
   {% if guardado %}<p class="alert alert--ok">Guardado.</p>{% endif %}
@@ -7,16 +14,20 @@
     <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
 
     <div class="card">
-      <label class="field"><span>Firma</span>
-        <textarea name="firma" rows="5" placeholder="Ej. Saludos, Erick Casas — Soporte DATTASOFT">{{ firma }}</textarea>
-      </label>
+      <p><strong>🖊️ Firma</strong></p>
+      {{ formato('#mi-firma-editor') }}
+      <div id="mi-firma-editor" class="rte-editor" contenteditable="true" data-rte-destino="#mi-firma"
+           data-placeholder="Ej. Saludos, Erick Casas — Soporte DATTASOFT">{{ firma | textoOHtmlSeguro | safe }}</div>
+      <textarea name="firma" id="mi-firma" hidden>{{ firma }}</textarea>
       <p class="muted">Se agrega al final de tus respuestas públicas en tickets, y con el botón 🖊️ Firma al redactar.</p>
     </div>
 
     <div class="card">
-      <label class="field"><span>Encabezado</span>
-        <textarea name="encabezado" rows="6" placeholder="Vacío = usar la plantilla por defecto (Fecha / Síntoma / Problema / Solución / Tiempo trabajado)">{{ encabezado }}</textarea>
-      </label>
+      <p><strong>📋 Encabezado</strong></p>
+      {{ formato('#mi-encabezado-editor') }}
+      <div id="mi-encabezado-editor" class="rte-editor" contenteditable="true" data-rte-destino="#mi-encabezado"
+           data-placeholder="Vacío = usar la plantilla por defecto (Fecha / Síntoma / Problema / Solución / Tiempo trabajado)">{{ encabezado | textoOHtmlSeguro | safe }}</div>
+      <textarea name="encabezado" id="mi-encabezado" hidden>{{ encabezado }}</textarea>
       <p class="muted">Se inserta con el botón 📋 Encabezado al redactar un ticket. Usa <code>[fecha]</code> y se reemplaza por la fecha de hoy.</p>
     </div>
 

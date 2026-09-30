@@ -175,3 +175,16 @@ export function descripcionATextoPlano(html: string): string {
   const sinTags = html.replace(/<[^>]*>/g, ' ');
   return decodificarEntidadesBasicas(sinTags).replace(/\s+/g, ' ').trim();
 }
+
+const TIENE_ETIQUETAS_RE = /<\/?(p|br|div|span|b|strong|i|em|u|ul|ol|li|img|font|a|h[1-6])\b[^>]*>/i;
+
+/**
+ * Firma/encabezado del usuario como HTML seguro. Se guardan como HTML (editor con formato,
+ * como en el CRM viejo); una firma antigua de solo texto conserva sus saltos de línea.
+ */
+export function textoOHtmlASeguro(valor: string | null | undefined): string {
+  const v = (valor ?? '').trim();
+  if (!v) return '';
+  if (TIENE_ETIQUETAS_RE.test(v)) return sanitizarDescripcionHtml(v);
+  return escaparTexto(v).replace(/\r?\n/g, '<br>');
+}
