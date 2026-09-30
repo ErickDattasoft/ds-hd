@@ -8,36 +8,45 @@ on:
 jobs:
   jobs:
     runs-on: ubuntu-latest
+    # Cada paso lleva `if: !cancelled()`: si uno falla, los demás igual corren (antes un fallo
+    # en el primero dejaba sin SLA, resumen diario, correo entrante, etc.).
     steps:
       - name: Recordatorios de eventos
         run: |
           curl -fsS -X POST "${{ secrets.APP_BASE_URL }}/jobs/recordatorios-eventos" \
             -H "Authorization: Bearer ${{ secrets.JOBS_SECRET }}"
       - name: Seguimiento de eventos (solo si el evento tiene mensaje configurado)
+        if: ${{ !cancelled() }}
         run: |
           curl -fsS -X POST "${{ secrets.APP_BASE_URL }}/jobs/seguimiento-eventos" \
             -H "Authorization: Bearer ${{ secrets.JOBS_SECRET }}"
       - name: Recalcular SLA de tickets
+        if: ${{ !cancelled() }}
         run: |
           curl -fsS -X POST "${{ secrets.APP_BASE_URL }}/jobs/recalcular-sla" \
             -H "Authorization: Bearer ${{ secrets.JOBS_SECRET }}"
       - name: Completar la empresa en tickets del portal (no hace nada si ya están)
+        if: ${{ !cancelled() }}
         run: |
           curl -fsS -X POST "${{ secrets.APP_BASE_URL }}/jobs/completar-empresa-tickets" \
             -H "Authorization: Bearer ${{ secrets.JOBS_SECRET }}"
       - name: Retención de bitácora (60 días)
+        if: ${{ !cancelled() }}
         run: |
           curl -fsS -X POST "${{ secrets.APP_BASE_URL }}/jobs/purgar-bitacora" \
             -H "Authorization: Bearer ${{ secrets.JOBS_SECRET }}"
       - name: Respuestas de clientes por correo (Zoho) → notas del ticket
+        if: ${{ !cancelled() }}
         run: |
           curl -fsS -X POST "${{ secrets.APP_BASE_URL }}/jobs/revisar-correo" \
             -H "Authorization: Bearer ${{ secrets.JOBS_SECRET }}"
       - name: Aviso de backup no realizado (7+ días; una vez al día)
+        if: ${{ !cancelled() }}
         run: |
           curl -fsS -X POST "${{ secrets.APP_BASE_URL }}/jobs/backup-pendiente" \
             -H "Authorization: Bearer ${{ secrets.JOBS_SECRET }}"
       - name: Resumen diario (solo envía si está habilitado y es la hora configurada)
+        if: ${{ !cancelled() }}
         run: |
           curl -fsS -X POST "${{ secrets.APP_BASE_URL }}/jobs/resumen-diario" \
             -H "Authorization: Bearer ${{ secrets.JOBS_SECRET }}"
