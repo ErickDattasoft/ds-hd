@@ -146,6 +146,8 @@ export async function importarAdjuntos(c: Container, datos: Dato): Promise<numbe
             subidoPorUid: null,
             subidoPorNombre: 'Migración CRM viejo',
             createdAt: fecha(d?.fecha),
+            // 📌 del viejo (vive en la referencia del ticket, no en el doc del adjunto).
+            ...(ref.permanente ? { permanente: true } : {}),
           });
         }
         ok++;

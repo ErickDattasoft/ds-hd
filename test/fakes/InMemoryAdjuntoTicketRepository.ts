@@ -39,4 +39,16 @@ export class InMemoryAdjuntoTicketRepository implements IAdjuntoTicketRepository
   async sumarBytesTotal(): Promise<number> {
     return [...this.docs.values()].reduce((total, a) => total + a.tamano, 0);
   }
+
+  async listarTodosMeta(): Promise<AdjuntoTicketMeta[]> {
+    return [...this.docs.values()].map(({ data: _d, ...meta }) => {
+      void _d;
+      return meta;
+    });
+  }
+
+  async marcarPermanente(id: string, permanente: boolean): Promise<void> {
+    const a = this.docs.get(id);
+    if (a) this.docs.set(id, { ...a, permanente });
+  }
 }

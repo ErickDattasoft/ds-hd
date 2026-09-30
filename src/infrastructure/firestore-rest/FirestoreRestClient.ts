@@ -48,6 +48,8 @@ interface QueryState {
   wheres: WhereClause[];
   orders: OrderClause[];
   limit?: number;
+  /** Proyección: solo estos campos (como `Query.select` del Admin SDK). */
+  select?: string[];
 }
 
 /** `snap.data()` ya viene deserializado a objetos JS planos (+ `Timestamp` propio). */
@@ -132,6 +134,9 @@ export class RestQuery {
   }
   limit(n: number): RestQuery {
     return this.con({ limit: n });
+  }
+  select(...campos: string[]): RestQuery {
+    return this.con({ select: campos });
   }
   count(): { get(): Promise<{ data(): { count: number } }> } {
     return {
@@ -336,6 +341,7 @@ export class FirestoreRestClient {
       }));
     }
     if (state.limit !== undefined) sq.limit = state.limit;
+    if (state.select) sq.select = { fields: state.select.map((fieldPath) => ({ fieldPath })) };
     return sq;
   }
 
@@ -377,7 +383,7 @@ export class FirestoreRestClient {
   async _runCount(state: QueryState): Promise<number> {
     const res = await this.call(`${this.parentUrl(state)}:runAggregationQuery`, {
       structuredAggregationQuery: {
-        structuredQuery: this.structuredQuery({ ...state, limit: undefined }),
+        structuredQuery: this.structuredQuery({ ...state, limit: undefined, select: undefined }),
         aggregations: [{ alias: 'c', count: {} }],
       },
     });

@@ -168,6 +168,9 @@ export function backofficeRoutes(container: Container): Router {
     tickets().adjuntoSubirPost(req, res),
   );
   r.get('/tickets/:id/adjuntos/:adjId', leerTickets, (req, res) => tickets().adjuntoVerGet(req, res));
+  r.post('/tickets/:id/adjuntos/:adjId/permanente', requirePermission('tickets:editar'), (req, res) =>
+    tickets().adjuntoPermanentePost(req, res),
+  );
   r.post('/tickets/:id/adjuntos/:adjId/eliminar', requirePermission('tickets:editar'), (req, res) =>
     tickets().adjuntoEliminarPost(req, res),
   );
@@ -411,6 +414,15 @@ export function backofficeRoutes(container: Container): Router {
   );
   r.get('/configuracion/backup/imagenes.zip', requirePermission('configuracion:integraciones'), (req, res) =>
     configuracion().backupImagenesZip(req, res),
+  );
+  r.get('/configuracion/backup/limpieza', requirePermission('configuracion:integraciones'), (req, res) =>
+    configuracion().limpiezaView(req, res),
+  );
+  r.get('/configuracion/backup/limpieza.zip', requirePermission('configuracion:integraciones'), (req, res) =>
+    configuracion().limpiezaZip(req, res),
+  );
+  r.post('/configuracion/backup/limpieza/eliminar', requirePermission('configuracion:integraciones'), (req, res) =>
+    configuracion().limpiezaEliminarPost(req, res),
   );
   r.post('/configuracion/backup/restaurar', requirePermission('configuracion:integraciones'), (req, res) =>
     configuracion().backupRestaurarPost(req, res),

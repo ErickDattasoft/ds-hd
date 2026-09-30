@@ -17,6 +17,8 @@ export interface AdjuntoTicket {
   subidoPorUid: string | null;
   subidoPorNombre: string | null;
   createdAt: Date;
+  /** 📌 Marcado para conservarlo: no se puede quitar ni lo toca la limpieza de adjuntos. */
+  permanente?: boolean;
 }
 
 /** Metadatos de un adjunto sin el contenido — para listar en el detalle sin traer los bytes. */

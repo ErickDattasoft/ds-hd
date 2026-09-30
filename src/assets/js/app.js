@@ -1353,6 +1353,14 @@
     });
   }
 
+  // ── Limpieza de adjuntos: «Eliminar» se habilita al descargar el ZIP de la tanda ─
+  document.addEventListener('click', function (e) {
+    var zip = e.target.closest && e.target.closest('[data-limpieza-zip]');
+    if (!zip) return;
+    var btn = document.querySelector('[data-limpieza-eliminar]');
+    if (btn) setTimeout(function () { btn.disabled = false; }, 1500);
+  });
+
   // ── Calculadora Compac: desglose en vivo (mismo cálculo que CalculadoraCompac) ─
   function recalcularCompac(form) {
     var cfg;

@@ -109,10 +109,29 @@ export class AdjuntoTicketService {
     const ticket = await this.cargarConAcceso(actor, ticketId, 'escribir');
     const adj = await this.adjuntos.obtener(adjuntoId);
     if (!adj || adj.ticketId !== ticketId) throw new NotFoundError('Adjunto', adjuntoId);
+    if (adj.permanente) {
+      throw new ValidationError('Desmarca 📌 permanente antes de poder eliminarlo', { adjunto: 'Permanente' });
+    }
     await this.adjuntos.eliminar(adjuntoId);
     await registrarEvento(this.tickets, this.ids, ticket.id, {
       tipo: 'nota',
       resumen: `Quitó el adjunto "${adj.nombre}"`,
+      actor,
+      at: this.clock.now(),
+    });
+  }
+
+  /** 📌 Marca o desmarca un adjunto como permanente (solo staff, como en el viejo). */
+  async marcarPermanente(actor: SessionUser, ticketId: string, adjuntoId: string, permanente: boolean): Promise<void> {
+    if (!actor.esStaff) throw new ForbiddenError('Solo el equipo puede marcar adjuntos permanentes');
+    const ticket = await this.cargarConAcceso(actor, ticketId, 'escribir');
+    const adj = await this.adjuntos.obtener(adjuntoId);
+    if (!adj || adj.ticketId !== ticketId) throw new NotFoundError('Adjunto', adjuntoId);
+    if (Boolean(adj.permanente) === permanente) return;
+    await this.adjuntos.marcarPermanente(adjuntoId, permanente);
+    await registrarEvento(this.tickets, this.ids, ticket.id, {
+      tipo: 'nota',
+      resumen: `${permanente ? 'Marcó' : 'Desmarcó'} como permanente el adjunto "${adj.nombre}"`,
       actor,
       at: this.clock.now(),
     });

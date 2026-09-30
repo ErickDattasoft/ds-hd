@@ -125,6 +125,12 @@ la asignación); **Cambiar estado** avanza el ciclo de vida; **Agregar nota** de
 del trabajo — marca la nota como **pública** (la ve el cliente en su portal) o **interna**
 (solo staff). Al cerrar puedes marcarlo para **facturar**.
 
+## Adjuntos
+
+En el detalle del ticket se suben imágenes, PDF y XML (o se pega una imagen con Ctrl+V). El
+botón 📍/📌 marca un adjunto como **permanente**: mientras lo esté no se puede quitar y el
+mantenimiento de adjuntos de *Configuración → Backup* no lo toca.
+
 ## Panel de carga de agentes
 
 Muestra, por agente, cuántos tickets abiertos tiene contra su capacidad máxima configurada
@@ -502,6 +508,10 @@ cotización creada, empresa nueva, usuario nuevo y backup no realizado.
   superior. La página muestra la fecha del último backup y quién lo hizo.
 - Si pasan **7 días o más** sin backup (o nunca se ha hecho), aparece un aviso aquí y en el
   Dashboard, y el cron manda el evento *backup no realizado* una vez al día.
+- **🧹 Mantenimiento de adjuntos**: busca los adjuntos de tickets *Cerrados* hace más de N
+  días que no estén marcados 📌 permanentes; los descargas en un ZIP (nombrados
+  `ticket_empresa_fecha_nombre`) y, ya guardado, los eliminas de Firestore para liberar la
+  cuota. Va por tandas de hasta 25 archivos. Nunca toca las imágenes pegadas en la descripción.
 - Restaurar un backup de ds-hd, importar el respaldo del CRM viejo y crear puntos de
   restauración en GitHub.
 

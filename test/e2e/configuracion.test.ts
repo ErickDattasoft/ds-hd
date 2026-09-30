@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import request from 'supertest';
 import { makeTestApp, cookieValor } from '../helpers/app.js';
 import { Empresa } from '../../src/core/entities/Empresa.js';
+import { unzipSync } from 'fflate';
 import { ExceljsExcelIO } from '../../src/infrastructure/excel/ExceljsExcelIO.js';
 
 const ADMIN = { uid: 'u-a', email: 'admin@dattasoft.mx', password: 'admin12345', nombre: 'Admin', rol: 'admin' as const };
@@ -239,5 +240,73 @@ describe('configuración → backup: último backup y alerta de 7 días', () => 
     const avisos = t.webhookPublisher.publicados.filter((e) => e.evento === 'backup.no_realizado');
     expect(avisos).toHaveLength(1);
     expect(avisos[0]!.payload).toMatchObject({ diasSinBackup: 10 });
+  });
+});
+
+describe('configuración → mantenimiento de adjuntos (paridad con «Archivar y eliminar» del viejo)', () => {
+  it('📌 protege un adjunto; la limpieza archiva en ZIP y elimina solo los no permanentes de tickets cerrados', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    const { agent, csrf } = await login(t.app, ADMIN.email, ADMIN.password);
+    const crear = await agent.post('/app/tickets').type('form').send({
+      _csrf: csrf, asunto: 'Con adjuntos', descripcion: 'descripción larga', tipo: 'General', prioridad: 'Baja',
+    });
+    const id = String(crear.headers.location).split('/').pop()!;
+    const subir = async (nombre: string) =>
+      (await agent.post(`/app/tickets/${id}/adjuntos`).set('x-csrf-token', csrf)
+        .send({ nombre, contentType: 'image/png', base64: Buffer.alloc(30, 5).toString('base64') })).body.adjunto.id as string;
+    const fijo = await subir('contrato.png');
+    const suelto = await subir('captura.png');
+
+    // 📌 permanente: no se puede quitar
+    await agent.post(`/app/tickets/${id}/adjuntos/${fijo}/permanente`).type('form').send({ _csrf: csrf, permanente: '1' });
+    expect((await t.adjuntoTicketRepo.obtener(fijo))!.permanente).toBe(true);
+    expect((await agent.get(`/app/tickets/${id}`)).text).toContain('📌');
+    const quitar = await agent.post(`/app/tickets/${id}/adjuntos/${fijo}/eliminar`).type('form').send({ _csrf: csrf });
+    expect(quitar.status).toBe(422);
+
+    // Abierto → no es candidato
+    expect((await agent.get('/app/configuracion/backup/limpieza?dias=0')).text).toContain('No hay adjuntos no permanentes');
+
+    await agent.post(`/app/tickets/${id}/estado`).type('form').send({ _csrf: csrf, estado: 'Cerrado' });
+    const pagina = await agent.get('/app/configuracion/backup/limpieza?dias=0');
+    expect(pagina.text).toContain('captura.png');
+    expect(pagina.text).not.toContain('contrato.png');
+    // cerrado hoy → con 30 días aún no toca
+    expect((await agent.get('/app/configuracion/backup/limpieza?dias=30')).text).toContain('No hay adjuntos no permanentes');
+
+    const zip = await agent
+      .get(`/app/configuracion/backup/limpieza.zip?dias=0&ids=${suelto},${fijo}`)
+      .buffer(true)
+      .parse((res, cb) => {
+        const partes: Buffer[] = [];
+        res.on('data', (c: Buffer) => partes.push(c));
+        res.on('end', () => cb(null, Buffer.concat(partes)));
+      });
+    const nombres = Object.keys(unzipSync(new Uint8Array(zip.body as Buffer)));
+    expect(nombres).toHaveLength(1); // el 📌 no entra aunque se pida
+    expect(nombres[0]).toMatch(/^\d+_sin-empresa_\d{4}-\d{2}-\d{2}_captura\.png$/);
+
+    // sin confirmar no borra; confirmado borra solo el no permanente
+    await agent.post('/app/configuracion/backup/limpieza/eliminar').type('form').send({ _csrf: csrf, dias: '0', ids: [suelto, fijo] });
+    expect(await t.adjuntoTicketRepo.listarPorTicket(id)).toHaveLength(2);
+    const borrar = await agent.post('/app/configuracion/backup/limpieza/eliminar').type('form')
+      .send({ _csrf: csrf, dias: '0', ids: [suelto, fijo], confirmo: 'on' });
+    expect(borrar.headers.location).toContain('eliminados=1');
+    expect((await t.adjuntoTicketRepo.listarPorTicket(id)).map((a) => a.id)).toEqual([fijo]);
+  });
+
+  it('no toca las imágenes pegadas en la descripción del ticket', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    const { agent, csrf } = await login(t.app, ADMIN.email, ADMIN.password);
+    const crear = await agent.post('/app/tickets').type('form').send({
+      _csrf: csrf, asunto: 'Imagen en texto', descripcion: 'descripción larga', tipo: 'General', prioridad: 'Baja',
+    });
+    const id = String(crear.headers.location).split('/').pop()!;
+    const adj = (await agent.post(`/app/tickets/${id}/adjuntos`).set('x-csrf-token', csrf)
+      .send({ nombre: 'pegada.png', contentType: 'image/png', base64: Buffer.alloc(30, 5).toString('base64') })).body.adjunto.id as string;
+    await agent.post(`/app/tickets/${id}/estado`).type('form').send({ _csrf: csrf, estado: 'Cerrado' });
+    const ticket = t.ticketStore.tickets.get(id)!;
+    ticket.descripcion = `<p>ver</p><img data-adj-id="${adj}">`;
+    expect((await agent.get('/app/configuracion/backup/limpieza?dias=0')).text).toContain('No hay adjuntos no permanentes');
   });
 });

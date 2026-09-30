@@ -547,6 +547,16 @@ export class TicketController {
     res.send(buffer);
   };
 
+  adjuntoPermanentePost = async (req: Request, res: Response): Promise<void> => {
+    await this.adjuntos.marcarPermanente(
+      req.user!,
+      str(req.params.id),
+      str(req.params.adjId),
+      str(req.body?.permanente) === '1',
+    );
+    res.redirect(`/app/tickets/${str(req.params.id)}`);
+  };
+
   adjuntoEliminarPost = async (req: Request, res: Response): Promise<void> => {
     await this.adjuntos.eliminar(req.user!, str(req.params.id), str(req.params.adjId));
     res.redirect(`/app/tickets/${str(req.params.id)}`);

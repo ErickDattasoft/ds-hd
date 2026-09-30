@@ -1,0 +1,64 @@
+{% extends "layouts/backoffice.njk" %}
+{% import "components/configuracion.njk" as cfgnav %}
+{% block title %}Mantenimiento de adjuntos{% endblock %}
+{% block content %}
+  <div class="page-head">
+    <h1>🧹 Mantenimiento de adjuntos</h1>
+    <div class="page-head__actions">{{ cfgnav.nav('limpieza') }}</div>
+  </div>
+  <p class="muted">
+    Archiva en tu computadora los adjuntos de tickets <strong>Cerrados</strong> hace más de N días
+    (nombrados <code>ticket_empresa_fecha_nombre</code>) y después los elimina de Firestore para
+    liberar espacio. Nunca toca los marcados 📌 permanentes (en el detalle del ticket) ni las
+    imágenes pegadas en la descripción. Se hace por tandas de hasta 25 archivos.
+  </p>
+  {% if eliminados !== null %}
+    <p class="alert alert--ok">🗄️ {{ eliminados }} adjunto(s) eliminado(s) de Firestore.</p>
+  {% endif %}
+
+  <form method="get" action="/app/configuracion/backup/limpieza" class="form">
+    <label class="field" style="max-width:260px"><span>Cerrados hace más de (días)</span>
+      <input type="number" name="dias" min="0" value="{{ r.dias }}" />
+    </label>
+    <button class="btn btn--secondary btn--sm" type="submit">🔍 Buscar</button>
+  </form>
+
+  {% if not r.total %}
+    <p class="alert alert--ok">✅ No hay adjuntos no permanentes en tickets cerrados hace {{ r.dias }}+ días.</p>
+  {% else %}
+    <p>
+      Hay <strong>{{ r.total }}</strong> adjunto(s) — ~{{ (r.bytesTotal / 1048576) | round(1) }} MB.
+      {% if r.total > r.tanda.length %}Esta tanda: <strong>{{ r.tanda.length }}</strong> (~{{ (r.bytesTanda / 1048576) | round(1) }} MB).{% endif %}
+    </p>
+    <table class="data-table">
+      <thead><tr><th>Ticket</th><th>Empresa</th><th>Cerrado</th><th>Archivo</th><th>Tamaño</th></tr></thead>
+      <tbody>
+        {% for c in r.tanda %}
+          <tr>
+            <td><a href="/app/tickets/{{ c.ticketId }}">#{{ c.ticketNumero }}</a></td>
+            <td>{{ c.empresaNombre or '—' }}</td>
+            <td>{{ c.cerradoEn | fecha }}</td>
+            <td>{{ c.nombreArchivo }}</td>
+            <td class="num">{{ (c.tamano / 1024) | round }} KB</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    {% set ids = [] %}{% for c in r.tanda %}{% set _ = ids.push(c.id) %}{% endfor %}
+    <p><strong>1.</strong> Descarga el ZIP y guárdalo (Drive, OneDrive o USB):</p>
+    <a class="btn" hx-boost="false" data-limpieza-zip
+       href="/app/configuracion/backup/limpieza.zip?dias={{ r.dias }}&ids={{ ids | join(',') | urlencode }}">📦 Descargar ZIP de esta tanda</a>
+
+    <form method="post" action="/app/configuracion/backup/limpieza/eliminar" class="form" style="margin-top:1rem"
+          data-confirm="¿Eliminar de Firestore estos {{ r.tanda.length }} adjunto(s)? Solo hazlo si ya guardaste el ZIP. No se puede deshacer.">
+      <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+      <input type="hidden" name="dias" value="{{ r.dias }}" />
+      {% for c in r.tanda %}<input type="hidden" name="ids" value="{{ c.id }}" />{% endfor %}
+      <p><strong>2.</strong> Cuando el ZIP esté guardado, elimínalos:</p>
+      <label class="field--check"><input type="checkbox" name="confirmo" required /> <span>Ya descargué y guardé el ZIP de esta tanda</span></label>
+      <button class="btn btn--danger" type="submit" data-limpieza-eliminar disabled>🗄️ Eliminar {{ r.tanda.length }} adjunto(s) de Firestore</button>
+      <span class="muted">Se habilita después de descargar el ZIP.</span>
+    </form>
+  {% endif %}
+{% endblock %}

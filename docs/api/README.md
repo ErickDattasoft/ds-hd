@@ -19,6 +19,7 @@
 - [application/configuracion/ConfiguracionLogoService](application/configuracion/ConfiguracionLogoService/README.md)
 - [application/configuracion/ConfiguracionTicketsService](application/configuracion/ConfiguracionTicketsService/README.md)
 - [application/configuracion/ImagenesRespaldoService](application/configuracion/ImagenesRespaldoService/README.md)
+- [application/configuracion/LimpiezaAdjuntosService](application/configuracion/LimpiezaAdjuntosService/README.md)
 - [application/contactos/ContactoExcelService](application/contactos/ContactoExcelService/README.md)
 - [application/contactos/ContactoService](application/contactos/ContactoService/README.md)
 - [application/cotizaciones/CalculadoraCompacService](application/cotizaciones/CalculadoraCompacService/README.md)

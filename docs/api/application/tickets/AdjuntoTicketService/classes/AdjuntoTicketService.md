@@ -128,6 +128,36 @@ Devuelve el contenido de un adjunto para servirlo como descarga / imagen.
 
 ***
 
+### marcarPermanente()
+
+> **marcarPermanente**(`actor`, `ticketId`, `adjuntoId`, `permanente`): `Promise`\<`void`\>
+
+📌 Marca o desmarca un adjunto como permanente (solo staff, como en el viejo).
+
+#### Parameters
+
+##### actor
+
+[`SessionUser`](../../../shared/SessionUser/interfaces/SessionUser.md)
+
+##### ticketId
+
+`string`
+
+##### adjuntoId
+
+`string`
+
+##### permanente
+
+`boolean`
+
+#### Returns
+
+`Promise`\<`void`\>
+
+***
+
 ### cuotaEspacio()
 
 > **cuotaEspacio**(): `Promise`\<\{ `bytesEstimados`: `number`; `porcentaje`: `number`; `enRiesgo`: `boolean`; \}\>

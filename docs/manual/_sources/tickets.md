@@ -49,6 +49,12 @@ la asignación); **Cambiar estado** avanza el ciclo de vida; **Agregar nota** de
 del trabajo — marca la nota como **pública** (la ve el cliente en su portal) o **interna**
 (solo staff). Al cerrar puedes marcarlo para **facturar**.
 
+## Adjuntos
+
+En el detalle del ticket se suben imágenes, PDF y XML (o se pega una imagen con Ctrl+V). El
+botón 📍/📌 marca un adjunto como **permanente**: mientras lo esté no se puede quitar y el
+mantenimiento de adjuntos de *Configuración → Backup* no lo toca.
+
 ## Panel de carga de agentes
 
 Muestra, por agente, cuántos tickets abiertos tiene contra su capacidad máxima configurada

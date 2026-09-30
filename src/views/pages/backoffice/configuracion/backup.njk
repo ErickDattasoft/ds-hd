@@ -31,6 +31,18 @@
     </p>
   {% endif %}
 
+  <h2>🧹 Mantenimiento de adjuntos</h2>
+  <p class="muted">
+    Archiva en un ZIP y elimina de Firestore los adjuntos de tickets cerrados hace más de N días
+    que no estén marcados 📌 permanentes — para liberar la cuota gratis.
+  </p>
+  <form method="get" action="/app/configuracion/backup/limpieza" class="form">
+    <label class="field" style="max-width:260px"><span>Cerrados hace más de (días)</span>
+      <input type="number" name="dias" min="0" value="30" />
+    </label>
+    <button class="btn btn--secondary btn--sm" type="submit">🗄️ Buscar adjuntos a archivar</button>
+  </form>
+
   <h2>🔖 Puntos de restauración (GitHub)</h2>
   <p class="muted">
     Crea una etiqueta (tag) en GitHub sobre el último commit de <code>main</code> para marcar

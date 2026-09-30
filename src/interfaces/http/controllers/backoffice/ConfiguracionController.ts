@@ -1,3 +1,4 @@
+import type { LimpiezaAdjuntosService } from '../../../../application/configuracion/LimpiezaAdjuntosService.js';
 import type { ImagenesRespaldoService } from '../../../../application/configuracion/ImagenesRespaldoService.js';
 import type { Request, Response } from 'express';
 import type { ConfiguracionTicketsService } from '../../../../application/configuracion/ConfiguracionTicketsService.js';
@@ -48,7 +49,40 @@ export class ConfiguracionController {
     private readonly excelUnificado: ExcelUnificadoService,
     private readonly correoEntrante: CorreoEntranteService,
     private readonly imagenesRespaldo: ImagenesRespaldoService,
+    private readonly limpiezaAdjuntos: LimpiezaAdjuntosService,
   ) {}
+
+  // ── Mantenimiento de adjuntos (archivar y eliminar los de tickets cerrados) ──
+  private diasLimpieza(v: unknown): number {
+    const n = Math.floor(Number(v));
+    return Number.isFinite(n) && n >= 0 ? n : 30;
+  }
+
+  limpiezaView = async (req: Request, res: Response): Promise<void> => {
+    const dias = this.diasLimpieza(req.query.dias);
+    res.render('pages/backoffice/configuracion/limpieza-adjuntos', {
+      titulo: 'Mantenimiento de adjuntos',
+      r: await this.limpiezaAdjuntos.buscar(req.user!, dias),
+      eliminados: req.query.eliminados !== undefined ? Number(req.query.eliminados) || 0 : null,
+    });
+  };
+
+  limpiezaZip = async (req: Request, res: Response): Promise<void> => {
+    const dias = this.diasLimpieza(req.query.dias);
+    const ids = str(req.query.ids).split(',').filter(Boolean);
+    const zip = await this.limpiezaAdjuntos.zip(req.user!, dias, ids);
+    const fecha = new Date().toISOString().slice(0, 10);
+    res.setHeader('Content-Disposition', `attachment; filename="adjuntos-archivados-${fecha}.zip"`);
+    res.type('application/zip').send(zip);
+  };
+
+  limpiezaEliminarPost = async (req: Request, res: Response): Promise<void> => {
+    const b = req.body ?? {};
+    const dias = this.diasLimpieza(b.dias);
+    const ids = ([] as unknown[]).concat(b.ids ?? []).map(String);
+    const n = b.confirmo === 'on' ? await this.limpiezaAdjuntos.eliminar(req.user!, dias, ids) : 0;
+    res.redirect(`/app/configuracion/backup/limpieza?dias=${dias}&eliminados=${n}`);
+  };
 
   cotizacionesView = async (_req: Request, res: Response): Promise<void> => {
     res.render('pages/backoffice/configuracion/cotizaciones', {

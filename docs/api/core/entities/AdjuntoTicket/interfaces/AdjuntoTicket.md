@@ -67,3 +67,11 @@ Tamaño del archivo original en bytes (antes de base64).
 ### createdAt
 
 > **createdAt**: `Date`
+
+***
+
+### permanente?
+
+> `optional` **permanente?**: `boolean`
+
+📌 Marcado para conservarlo: no se puede quitar ni lo toca la limpieza de adjuntos.

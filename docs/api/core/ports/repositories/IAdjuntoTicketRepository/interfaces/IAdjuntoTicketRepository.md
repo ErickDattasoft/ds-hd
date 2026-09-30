@@ -122,3 +122,37 @@ Todas las imágenes de todos los tickets, con su contenido (para guardarlas con 
 #### Returns
 
 `Promise`\<[`AdjuntoTicket`](../../../../entities/AdjuntoTicket/interfaces/AdjuntoTicket.md)[]\>
+
+***
+
+### listarTodosMeta()
+
+> **listarTodosMeta**(): `Promise`\<[`AdjuntoTicketMeta`](../../../../entities/AdjuntoTicket/type-aliases/AdjuntoTicketMeta.md)[]\>
+
+Metadatos de TODOS los adjuntos, sin contenido (para la limpieza de adjuntos viejos).
+
+#### Returns
+
+`Promise`\<[`AdjuntoTicketMeta`](../../../../entities/AdjuntoTicket/type-aliases/AdjuntoTicketMeta.md)[]\>
+
+***
+
+### marcarPermanente()
+
+> **marcarPermanente**(`id`, `permanente`): `Promise`\<`void`\>
+
+Marca o desmarca un adjunto como 📌 permanente.
+
+#### Parameters
+
+##### id
+
+`string`
+
+##### permanente
+
+`boolean`
+
+#### Returns
+
+`Promise`\<`void`\>

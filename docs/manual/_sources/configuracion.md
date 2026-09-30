@@ -41,6 +41,10 @@ cotización creada, empresa nueva, usuario nuevo y backup no realizado.
   superior. La página muestra la fecha del último backup y quién lo hizo.
 - Si pasan **7 días o más** sin backup (o nunca se ha hecho), aparece un aviso aquí y en el
   Dashboard, y el cron manda el evento *backup no realizado* una vez al día.
+- **🧹 Mantenimiento de adjuntos**: busca los adjuntos de tickets *Cerrados* hace más de N
+  días que no estén marcados 📌 permanentes; los descargas en un ZIP (nombrados
+  `ticket_empresa_fecha_nombre`) y, ya guardado, los eliminas de Firestore para liberar la
+  cuota. Va por tandas de hasta 25 archivos. Nunca toca las imágenes pegadas en la descripción.
 - Restaurar un backup de ds-hd, importar el respaldo del CRM viejo y crear puntos de
   restauración en GitHub.
 

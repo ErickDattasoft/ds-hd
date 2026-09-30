@@ -14,7 +14,11 @@ interface Doc {
   subidoPorUid?: string | null;
   subidoPorNombre?: string | null;
   createdAt?: Timestamp;
+  permanente?: boolean;
 }
+
+/** Todos los campos menos `data` — para listar sin bajar el contenido. */
+const CAMPOS_META = ['ticketId', 'nombre', 'contentType', 'tamano', 'subidoPorUid', 'subidoPorNombre', 'createdAt', 'permanente'];
 
 const meta = (id: string, d: Doc): AdjuntoTicketMeta => ({
   id,
@@ -25,6 +29,7 @@ const meta = (id: string, d: Doc): AdjuntoTicketMeta => ({
   subidoPorUid: d.subidoPorUid ?? null,
   subidoPorNombre: d.subidoPorNombre ?? null,
   createdAt: d.createdAt instanceof Timestamp ? d.createdAt.toDate() : new Date(0),
+  ...(d.permanente ? { permanente: true } : {}),
 });
 
 /** Firestore (Admin y REST): solo `where` por igualdad + orden en memoria, sin índice compuesto. */
@@ -44,6 +49,7 @@ export class FirestoreAdjuntoTicketRepository implements IAdjuntoTicketRepositor
         subidoPorUid: a.subidoPorUid,
         subidoPorNombre: a.subidoPorNombre,
         createdAt: Timestamp.fromDate(a.createdAt),
+        ...(a.permanente ? { permanente: true } : {}),
       });
   }
 
@@ -71,7 +77,7 @@ export class FirestoreAdjuntoTicketRepository implements IAdjuntoTicketRepositor
   }
 
   async sumarBytesTotal(): Promise<number> {
-    const snap = await this.db.collection(COL).get();
+    const snap = await this.db.collection(COL).select('tamano').get();
     return snap.docs.reduce((total, d) => total + Number((d.data() as Doc).tamano ?? 0), 0);
   }
 
@@ -80,5 +86,14 @@ export class FirestoreAdjuntoTicketRepository implements IAdjuntoTicketRepositor
     return snap.docs
       .map((d) => ({ ...meta(d.id, d.data() as Doc), data: String((d.data() as Doc).data ?? '') }))
       .filter((a) => a.contentType.startsWith('image/') && a.data.startsWith('data:'));
+  }
+
+  async listarTodosMeta(): Promise<AdjuntoTicketMeta[]> {
+    const snap = await this.db.collection(COL).select(...CAMPOS_META).get();
+    return snap.docs.map((d) => meta(d.id, d.data() as Doc));
+  }
+
+  async marcarPermanente(id: string, permanente: boolean): Promise<void> {
+    await this.db.collection(COL).doc(id).update({ permanente });
   }
 }

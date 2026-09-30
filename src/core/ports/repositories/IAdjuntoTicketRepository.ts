@@ -17,4 +17,8 @@ export interface IAdjuntoTicketRepository {
   sumarBytesTotal(): Promise<number>;
   /** Todas las imágenes de todos los tickets, con su contenido (para guardarlas con el respaldo). */
   listarImagenes(): Promise<AdjuntoTicket[]>;
+  /** Metadatos de TODOS los adjuntos, sin contenido (para la limpieza de adjuntos viejos). */
+  listarTodosMeta(): Promise<AdjuntoTicketMeta[]>;
+  /** Marca o desmarca un adjunto como 📌 permanente. */
+  marcarPermanente(id: string, permanente: boolean): Promise<void>;
 }
