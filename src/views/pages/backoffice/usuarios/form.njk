@@ -96,6 +96,21 @@
         </div>
       </details>
 
+      {% if modo == 'editar' and secciones and secciones.length %}
+        <fieldset class="field" id="secciones-visibles">
+          <legend>👁️ Secciones visibles para {{ usuario.nombre }}</legend>
+          <p class="muted">Desmarca las que no debe ver: desaparecen de su menú y no puede entrar a ellas.
+            Todas marcadas = sin restricción (lo que su rol permite).</p>
+          <input type="hidden" name="seccionesEnviado" value="1" />
+          <div class="perm-group">
+            {% for s in secciones %}
+              <input type="hidden" name="seccionConfigurable" value="{{ s.permiso }}" />
+              <label class="field--check" style="white-space:nowrap;margin-right:1rem"><input type="checkbox" name="seccionVisible" value="{{ s.permiso }}" {{ '' if s.permiso in usuario.permisosRevocados else 'checked' }} /> <span>{{ s.etiqueta }}</span></label>
+            {% endfor %}
+          </div>
+        </fieldset>
+      {% endif %}
+
       <details class="disclosure"{{ ' open' if usuario.permisosExtra | length or usuario.permisosRevocados | length }}>
         <summary class="disclosure__summary">Permisos avanzados <span class="disclosure__hint">— ajustar por encima del rol</span></summary>
         <div class="disclosure__body">

@@ -174,3 +174,41 @@ describe('gestión de usuarios (admin)', () => {
     expect(res.headers.location).toBe('/app');
   });
 });
+
+describe('«👁️ Secciones visibles» por usuario (paridad con el viejo)', () => {
+  it('desmarcar una sección la quita del menú y bloquea sus rutas; volver a marcarla la devuelve', async () => {
+    const SUP = { uid: 'u-sup', email: 'sup@dattasoft.mx', password: 'super12345', nombre: 'Sup', rol: 'supervisor' as const };
+    const t = makeTestApp({ usuarios: [ADMIN, SUP] });
+    const { agent, csrf } = await login(t.app, ADMIN.email, ADMIN.password);
+
+    const form = await agent.get(`/app/usuarios/${SUP.uid}`);
+    expect(form.text).toContain('Secciones visibles');
+    expect(form.text).toContain('name="seccionVisible" value="empresas:leer"');
+
+    const guardar = (visibles: string[]) =>
+      agent.post(`/app/usuarios/${SUP.uid}`).type('form').send({
+        _csrf: csrf, nombre: 'Sup', roles: 'supervisor', activo: 'on',
+        seccionesEnviado: '1', seccionConfigurable: ['empresas:leer', 'contactos:leer'], seccionVisible: visibles,
+      });
+    expect((await guardar(['contactos:leer'])).status).toBe(302);
+    expect((await t.usuarioRepo.findByUid(SUP.uid))!.permisosRevocados).toEqual(['empresas:leer']);
+
+    const sup = await login(t.app, SUP.email, SUP.password);
+    expect((await sup.agent.get('/app/empresas')).status).toBe(403);
+    const menu = await sup.agent.get('/app/contactos');
+    expect(menu.status).toBe(200);
+    expect(menu.text).not.toContain('href="/app/empresas"');
+
+    await guardar(['contactos:leer', 'empresas:leer']);
+    expect((await t.usuarioRepo.findByUid(SUP.uid))!.permisosRevocados).toEqual([]);
+    const otra = await login(t.app, SUP.email, SUP.password);
+    expect((await otra.agent.get('/app/empresas')).status).toBe(200);
+  });
+
+  it('a un administrador no se le ofrece (ve todo)', async () => {
+    const OTRO = { uid: 'u-a2', email: 'a2@dattasoft.mx', password: 'admin12345', nombre: 'A2', rol: 'admin' as const };
+    const t = makeTestApp({ usuarios: [ADMIN, OTRO] });
+    const { agent } = await login(t.app, ADMIN.email, ADMIN.password);
+    expect((await agent.get(`/app/usuarios/${OTRO.uid}`)).text).not.toContain('Secciones visibles');
+  });
+});

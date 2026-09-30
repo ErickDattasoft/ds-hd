@@ -44,6 +44,14 @@ de permisos combina rol base + extras − revocados; el cambio tarda hasta un mi
 reflejarse (la sesión cachea el perfil brevemente) y no requiere que el usuario vuelva a
 iniciar sesión.
 
+## Secciones visibles
+
+En la ficha de un usuario que no es administrador aparece **👁️ Secciones visibles**, con una
+casilla por sección que su rol le permite (Empresas, Contactos, Cotizaciones y embudo, Tickets,
+Eventos, Versiones, Base de conocimiento, Tareas, Configuración). Desmarcar una la quita de su
+menú y le impide entrar; todas marcadas = sin restricción. Por dentro revoca el permiso de
+lectura de esa sección, así que también se ve en *Permisos avanzados*.
+
 ## Desactivar una cuenta
 
 Editar el usuario y desmarcar **Activo**. No borra su historial (tickets asignados, notas,

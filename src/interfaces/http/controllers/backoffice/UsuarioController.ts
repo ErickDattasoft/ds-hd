@@ -17,6 +17,7 @@ import {
   parseRoles,
 } from '../../../../core/entities/value-objects/Rol.js';
 import { permisosPorModulo } from '../../rbac/permissions.js';
+import { revocadosConSecciones, seccionesConfigurables } from '../../rbac/secciones.js';
 import { invalidarCacheUsuario } from '../../middlewares/sessionAuth.js';
 
 /** Gestión de usuarios y perfiles (requiere `usuarios:gestionar`). */
@@ -186,6 +187,7 @@ export class UsuarioController {
       ROL_ETIQUETA,
       ROL_GRUPOS,
       permisosModulo: permisosPorModulo(),
+      secciones: seccionesConfigurables(usuario.roles, usuario.permisosExtra),
       empresas: await this.empresas.list({ activa: true }),
       valores: { ...usuario, roles: [...usuario.roles], esCliente: usuario.esCliente },
       errores: {},
@@ -221,7 +223,14 @@ export class UsuarioController {
         // Las casillas desmarcadas no llegan: el marcador indica que la sección sí se envió.
         empresasAdicionales: body.empresasAdicionalesEnviado ? (aArreglo(body.empresasAdicionales) ?? []) : undefined,
         permisosExtra: aArreglo(body.permisosExtra),
-        permisosRevocados: aArreglo(body.permisosRevocados),
+        // «👁️ Secciones visibles»: la casilla desmarcada revoca el permiso de lectura de la sección.
+        permisosRevocados: body.seccionesEnviado
+          ? revocadosConSecciones(
+              aArreglo(body.permisosRevocados) ?? [],
+              aArreglo(body.seccionConfigurable) ?? [],
+              aArreglo(body.seccionVisible) ?? [],
+            )
+          : aArreglo(body.permisosRevocados),
         agente: {
           grupo: body.agenteGrupo || null,
           capacidadMax: Number(body.agenteCapacidad ?? 0),
@@ -247,6 +256,7 @@ export class UsuarioController {
         ROL_ETIQUETA,
         ROL_GRUPOS,
         permisosModulo: permisosPorModulo(),
+        secciones: usuario ? seccionesConfigurables(usuario.roles, usuario.permisosExtra) : [],
         empresas: await this.empresas.list({ activa: true }),
         valores: { ...usuario, ...body, roles, esCliente, empresasAdicionales: aArreglo(body.empresasAdicionales) ?? [] },
         errores,
