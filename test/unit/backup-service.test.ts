@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { BackupService } from '../../src/application/configuracion/BackupService.js';
 import { Empresa } from '../../src/core/entities/Empresa.js';
 import { Ticket } from '../../src/core/entities/Ticket.js';
-import { ForbiddenError } from '../../src/core/errors/DomainError.js';
+import { ForbiddenError, ValidationError } from '../../src/core/errors/DomainError.js';
 import type { SessionUser } from '../../src/application/shared/SessionUser.js';
 import { InMemoryEmpresaRepository, InMemoryContactoRepository } from '../fakes/crm.js';
 import {
@@ -145,6 +145,15 @@ describe('BackupService', () => {
     await service2.restaurar(actor(), { empresas: [] });
 
     expect(await empresas2.findById('ya-existia')).not.toBeNull();
+  });
+
+  it('rechaza un respaldo del CRM viejo en vez de «restaurar» 0 en todo', async () => {
+    const crmViejo = { version: '3', app: 'CRM DATTASOFT', fecha: '2026-09-15', datos: { empresas: [{ nombre: 'X' }] } };
+    await expect(service.restaurar(actor(), crmViejo)).rejects.toThrow(/respaldo del CRM viejo/);
+  });
+
+  it('rechaza un JSON sin ninguna sección de backup', async () => {
+    await expect(service.restaurar(actor(), { hola: 'mundo' })).rejects.toThrow(ValidationError);
   });
 
   it('sin permiso configuracion:integraciones no se puede restaurar', async () => {

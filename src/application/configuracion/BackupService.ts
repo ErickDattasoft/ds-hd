@@ -25,7 +25,7 @@ import { sanearAcercaDe } from '../../core/entities/AcercaDe.js';
 import { sanearConfigCotizaciones } from '../../core/entities/ConfiguracionCotizaciones.js';
 import { sanearConfigResumen } from '../../core/entities/ConfiguracionResumen.js';
 import { CONTADOR_TICKETS } from '../tickets/constantes.js';
-import { ForbiddenError } from '../../core/errors/DomainError.js';
+import { ForbiddenError, ValidationError } from '../../core/errors/DomainError.js';
 import type { SessionUser } from '../shared/SessionUser.js';
 
 /** Versión del formato de backup — súbela si cambia la forma de alguna sección. */
@@ -44,6 +44,23 @@ export interface ResumenRestauracion {
 }
 
 const arr = (v: unknown): Record<string, unknown>[] => (Array.isArray(v) ? (v as Record<string, unknown>[]) : []);
+
+/** Secciones que `restaurar()` lee; un archivo sin ninguna como arreglo no es un backup de ds-hd. */
+const SECCIONES_BACKUP = ['empresas', 'contactos', 'tickets', 'cotizaciones', 'oportunidades', 'versiones', 'kb', 'usuarios'];
+
+/**
+ * Rechaza un archivo que no tenga la forma de `exportar()`. Sin esto, un respaldo del CRM viejo
+ * (`{ version, app, fecha, datos: {...} }`) "se restauraba" con 0 en todo y sin ningún aviso.
+ */
+function validarFormaBackup(datos: Record<string, unknown>): void {
+  if (SECCIONES_BACKUP.some((k) => Array.isArray(datos[k]))) return;
+  const esCrmViejo = typeof datos.datos === 'object' && datos.datos !== null && !Array.isArray(datos.datos);
+  throw new ValidationError(
+    esCrmViejo
+      ? 'Este archivo es un respaldo del CRM viejo, no un backup de ds-hd. Súbelo en «📥 Importar respaldo del CRM viejo», más abajo en esta misma página.'
+      : 'Este archivo no es un backup de ds-hd: no trae empresas, contactos, tickets ni ninguna otra sección. Usa un archivo generado con «Descargar backup».',
+  );
+}
 
 const RE_FECHA_ISO = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/;
 
@@ -198,6 +215,7 @@ export class BackupService {
     if (!actor.permisos.includes('configuracion:integraciones')) {
       throw new ForbiddenError('No puedes restaurar backups');
     }
+    validarFormaBackup(datosCrudos);
     const datos = reviveFechas(datosCrudos) as Record<string, unknown>;
 
     const resumen: ResumenRestauracion = {
