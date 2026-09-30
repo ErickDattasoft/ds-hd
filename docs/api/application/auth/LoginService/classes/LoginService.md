@@ -12,7 +12,7 @@ Caso de uso: iniciar sesión con correo y contraseña.
 
 ### Constructor
 
-> **new LoginService**(`usuarios`, `auth`, `sesiones`, `clock`, `logger`, `intentos`, `dosPasos?`): `LoginService`
+> **new LoginService**(`usuarios`, `auth`, `sesiones`, `clock`, `logger`, `intentos`, `dosPasos?`, `bitacora?`): `LoginService`
 
 #### Parameters
 
@@ -43,6 +43,10 @@ Caso de uso: iniciar sesión con correo y contraseña.
 ##### dosPasos?
 
 [`DosPasosService`](../../DosPasosService/classes/DosPasosService.md)
+
+##### bitacora?
+
+[`BitacoraService`](../../../shared/BitacoraService/classes/BitacoraService.md)
 
 #### Returns
 

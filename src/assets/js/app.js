@@ -1349,7 +1349,30 @@
     try { localStorage.setItem('crm_whatsapp_modo', e.target.value); } catch { /* sin almacenamiento */ }
     toast('📱 WhatsApp se abrirá con: ' + (e.target.value === 'app' ? 'la app instalada' : 'el navegador'));
   });
+  // ── ✉️ Correo: Zoho Mail web (como el viejo, por defecto) o el programa de la computadora ─
+  function modoCorreo() {
+    try { return localStorage.getItem('crm_correo_modo') || 'zoho'; } catch { return 'zoho'; }
+  }
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest && e.target.closest('a[href^="mailto:"]');
+    if (!a || modoCorreo() !== 'zoho' || !document.querySelector('.sidebar')) return;
+    e.preventDefault();
+    var para = decodeURIComponent(a.getAttribute('href').slice(7).split('?')[0]);
+    window.open('https://mail.zoho.com/zm/#compose', '_blank', 'noopener');
+    if (navigator.clipboard && para) {
+      navigator.clipboard.writeText(para).then(function () {
+        toast('✉️ Zoho abierto · Correo copiado: ' + para + ' — pégalo en «Para:»');
+      }, function () { toast('✉️ Zoho abierto · Destinatario: ' + para); });
+    }
+  });
+  document.addEventListener('change', function (e) {
+    if (!e.target.matches || !e.target.matches('[data-correo-modo]')) return;
+    try { localStorage.setItem('crm_correo_modo', e.target.value); } catch { /* sin almacenamiento */ }
+    toast('✉️ Los botones de correo abrirán: ' + (e.target.value === 'zoho' ? 'Zoho Mail' : 'tu programa de correo'));
+  });
   function iniciarModoWhatsApp() {
+    var mc = modoCorreo();
+    Array.prototype.forEach.call(document.querySelectorAll('[data-correo-modo]'), function (r) { r.checked = r.value === mc; });
     var modo = modoWhatsApp();
     Array.prototype.forEach.call(document.querySelectorAll('[data-whatsapp-modo]'), function (r) {
       r.checked = r.value === modo;
@@ -1404,6 +1427,66 @@
     var q = e.target.closest && e.target.closest('[data-quitar-imagen-publica]');
     if (q) q.closest('[data-imagen-publica]').remove();
   });
+
+  // ── Aviso del navegador cuando llegan tickets del portal público (como el viejo) ─
+  // El conteo viene en cada página; se compara con el último que vio este navegador.
+  function revisarBuzonPublico() {
+    var el = document.querySelector('[data-avisos-globales]');
+    if (!el) return;
+    var n = Number(el.getAttribute('data-buzon')) || 0;
+    var previo = null;
+    try { previo = localStorage.getItem('crm_buzon_publico_visto'); } catch { /* sin almacenamiento */ }
+    try { localStorage.setItem('crm_buzon_publico_visto', String(n)); } catch { /* sin almacenamiento */ }
+    if (previo === null || n <= Number(previo)) return;
+    if (!('Notification' in window) || Notification.permission !== 'granted') return;
+    var aviso = new Notification('🎫 Ticket nuevo del portal', {
+      body: (n - Number(previo)) + ' solicitud(es) de clientes esperan ser revisadas',
+      icon: '/logo',
+      tag: 'ticket-pub',
+    });
+    aviso.onclick = function () { window.focus(); location.href = '/app/tickets/buzon'; };
+  }
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest && e.target.closest('[data-activar-notificaciones]');
+    if (!b || !('Notification' in window)) return;
+    Notification.requestPermission().then(function (p) {
+      toast(p === 'granted' ? '🔔 Avisos del navegador activados' : 'El navegador no dio permiso para avisos');
+      pintarEstadoNotificaciones();
+    });
+  });
+  function pintarEstadoNotificaciones() {
+    var el = document.querySelector('[data-estado-notificaciones]');
+    if (!el) return;
+    el.textContent = !('Notification' in window) ? 'Este navegador no permite avisos.'
+      : Notification.permission === 'granted' ? '✅ Activados en este navegador.'
+      : Notification.permission === 'denied' ? '🚫 Bloqueados — actívalos en la configuración del sitio del navegador.'
+      : 'Aún no activados.';
+  }
+
+  // ── KB: «desde mi última exportación» (fecha guardada en este navegador, como el viejo) ─
+  function ultimaExportacionKB() {
+    try { return localStorage.getItem('crm_kb_ultima_exportacion') || ''; } catch { return ''; }
+  }
+  function conUltima(url) {
+    if (url.indexOf('desde=ultima') < 0) return url;
+    return url.replace(/([?&])ultima=[^&]*/, '$1').replace('desde=ultima', 'desde=ultima&ultima=' + encodeURIComponent(ultimaExportacionKB()));
+  }
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest && e.target.closest('a[href*="/app/kb"]');
+    if (!a) return;
+    var href = a.getAttribute('href');
+    if (href.indexOf('desde=ultima') >= 0) a.setAttribute('href', conUltima(href));
+    if (/\/app\/kb\/export\.(zip|json)/.test(href)) {
+      try { localStorage.setItem('crm_kb_ultima_exportacion', new Date().toISOString()); } catch { /* sin almacenamiento */ }
+    }
+  }, true);
+  document.addEventListener('submit', function (e) {
+    var sel = e.target.querySelector && e.target.querySelector('select[name="desde"]');
+    if (!sel || sel.value !== 'ultima') return;
+    var campo = e.target.querySelector('input[name="ultima"]');
+    if (!campo) { campo = document.createElement('input'); campo.type = 'hidden'; campo.name = 'ultima'; e.target.appendChild(campo); }
+    campo.value = ultimaExportacionKB();
+  }, true);
 
   // ── Limpieza de adjuntos: «Eliminar» se habilita al descargar el ZIP de la tanda ─
   document.addEventListener('click', function (e) {
@@ -2377,6 +2460,8 @@
     initCapsLock();
     iniciarCompac();
     iniciarModoWhatsApp();
+    revisarBuzonPublico();
+    pintarEstadoNotificaciones();
   }
   document.addEventListener('DOMContentLoaded', iniciarPagina);
   window.addEventListener('resize', medirTopbar);

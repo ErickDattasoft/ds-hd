@@ -1,3 +1,4 @@
+import { ticketRepoConBitacora } from '../../src/application/tickets/ticketRepoConBitacora.js';
 import { createApp } from '../../src/app.js';
 import { buildContainer, type ContainerOverrides } from '../../src/config/container.js';
 import { loadConfig } from '../../src/config/env.js';
@@ -133,7 +134,11 @@ export function makeTestApp(opts: { usuarios?: { uid: string; email: string; pas
     filtroGuardadoRepo: new InMemoryFiltroGuardadoRepository(),
     oportunidadRepo: new InMemoryOportunidadRepository(),
     adjuntoTicketRepo,
-    ticketRepo: new InMemoryTicketRepository(ticketStore),
+    // Igual que en el contenedor real: la actividad de los tickets se copia a la bitácora.
+    ticketRepo: ticketRepoConBitacora(new InMemoryTicketRepository(ticketStore), bitacoraRepo, {
+      newId: () => crypto.randomUUID(),
+      newToken: () => crypto.randomUUID(),
+    }),
     ticketQueries: new InMemoryTicketQueries(ticketStore),
     contadorRepo: new InMemoryContadorRepository(),
     configuracionRepo,

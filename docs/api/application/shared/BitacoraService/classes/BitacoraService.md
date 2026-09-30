@@ -49,7 +49,7 @@ acción relevante. Best-effort — si el registro falla, se loguea pero no rompe
 
 ###### actor
 
-[`SessionUser`](../../SessionUser/interfaces/SessionUser.md) \| `null`
+`Pick`\<[`SessionUser`](../../SessionUser/interfaces/SessionUser.md), `"uid"` \| `"nombre"`\> \| `null`
 
 ###### accion
 

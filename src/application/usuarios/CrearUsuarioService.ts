@@ -1,3 +1,4 @@
+import type { BitacoraService } from '../shared/BitacoraService.js';
 import type { IUsuarioRepository } from '../../core/ports/repositories/IUsuarioRepository.js';
 import type { IInvitacionRepository } from '../../core/ports/repositories/IInvitacionRepository.js';
 import type { IAuthProvider } from '../../core/ports/services/IAuthProvider.js';
@@ -42,6 +43,7 @@ export class CrearUsuarioService {
     private readonly baseUrl: string,
     private readonly invitacionTtlHoras: number,
     private readonly webhooks?: IWebhookPublisher,
+    private readonly bitacora?: BitacoraService,
   ) {}
 
   async ejecutar(input: CrearUsuarioInput): Promise<CrearUsuarioResultado> {
@@ -100,6 +102,14 @@ export class CrearUsuarioService {
       evento: 'usuario.creado',
       canal: 'tickets',
       payload: { uid, nombre, email: correo.value, rol: roles.join(', '), creadoPor: input.actor.nombre },
+    });
+    await this.bitacora?.registrar({
+      actor: input.actor,
+      accion: 'crear',
+      modulo: 'usuarios',
+      entidadTipo: 'Usuario',
+      entidadId: uid,
+      resumen: `Nuevo usuario creado: ${nombre} (${roles.join(', ')})`,
     });
     this.logger.info('Usuario staff creado', { uid, roles, por: input.actor.uid });
     return { usuario, urlInvitacion };

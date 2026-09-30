@@ -12,7 +12,7 @@ Caso de uso: editar nombre, rol, estado, permisos y perfil de agente de un usuar
 
 ### Constructor
 
-> **new ActualizarUsuarioService**(`usuarios`, `auth`, `clock`, `logger`): `ActualizarUsuarioService`
+> **new ActualizarUsuarioService**(`usuarios`, `auth`, `clock`, `logger`, `bitacora?`): `ActualizarUsuarioService`
 
 #### Parameters
 
@@ -31,6 +31,10 @@ Caso de uso: editar nombre, rol, estado, permisos y perfil de agente de un usuar
 ##### logger
 
 [`ILogger`](../../../../core/ports/services/ILogger/interfaces/ILogger.md)
+
+##### bitacora?
+
+[`BitacoraService`](../../../shared/BitacoraService/classes/BitacoraService.md)
 
 #### Returns
 

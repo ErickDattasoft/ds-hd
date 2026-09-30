@@ -1,3 +1,4 @@
+import type { BitacoraService } from '../shared/BitacoraService.js';
 import type { IUsuarioRepository } from '../../core/ports/repositories/IUsuarioRepository.js';
 import type { IIntentosLoginRepository } from '../../core/ports/repositories/IIntentosLoginRepository.js';
 import type { IAuthProvider } from '../../core/ports/services/IAuthProvider.js';
@@ -38,6 +39,7 @@ export class LoginService {
     private readonly logger: ILogger,
     private readonly intentos: IIntentosLoginRepository,
     private readonly dosPasos?: DosPasosService,
+    private readonly bitacora?: BitacoraService,
   ) {}
 
   async ejecutar(input: LoginInput): Promise<LoginResultado> {
@@ -111,6 +113,12 @@ export class LoginService {
     await this.usuarios.save(usuario);
 
     const token = await this.sesiones.issue({ uid: usuario.uid });
+    if (!usuario.esCliente) {
+      await this.bitacora?.registrar({
+        actor: { uid: usuario.uid, nombre: usuario.nombre }, accion: 'login', modulo: 'sesion',
+        entidadTipo: 'Usuario', entidadId: usuario.uid, resumen: 'Sesión iniciada',
+      });
+    }
     this.logger.info('Login correcto', { uid: usuario.uid, rol: usuario.rol });
     return { token, usuario };
   }

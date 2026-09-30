@@ -1,3 +1,4 @@
+import type { BitacoraService } from '../shared/BitacoraService.js';
 import type { HojaExcel, IExcelIO } from '../../core/ports/services/IExcelIO.js';
 import { COLUMNAS_EMPRESAS, type EmpresaExcelService, type ResumenImportacionExcel } from '../empresas/EmpresaExcelService.js';
 import { COLUMNAS_CONTACTOS, type ContactoExcelService } from '../contactos/ContactoExcelService.js';
@@ -38,6 +39,7 @@ export class ExcelUnificadoService {
     private readonly contactoExcel: ContactoExcelService,
     private readonly ticketExcel: TicketExcelService,
     private readonly excel: IExcelIO,
+    private readonly bitacora?: BitacoraService,
   ) {}
 
   async exportar(actor: SessionUser, incluir: SeleccionExcelUnificado): Promise<Buffer> {
@@ -58,7 +60,12 @@ export class ExcelUnificadoService {
     if (hojas.length === 0) {
       throw new ValidationError('Selecciona al menos un tipo de dato (y ten permiso para verlo)');
     }
-    return this.excel.escribirVarias(hojas);
+    const archivo = await this.excel.escribirVarias(hojas);
+    await this.bitacora?.registrar({
+      actor, accion: 'exportar', modulo: 'excel', entidadTipo: 'Excel', entidadId: '-',
+      resumen: `Exportación Excel: ${hojas.map((h) => `${h.filas.length} ${h.nombre.toLowerCase()}`).join(', ')}`,
+    });
+    return archivo;
   }
 
   async importar(actor: SessionUser, buffer: Buffer): Promise<ResumenImportUnificado> {
@@ -76,6 +83,10 @@ export class ExcelUnificadoService {
     if (!resumen.empresas && !resumen.contactos) {
       throw new ValidationError('El archivo no trae hojas "Empresas"/"Contactos" reconocibles (o no tienes permiso)');
     }
+    await this.bitacora?.registrar({
+      actor, accion: 'importar', modulo: 'excel', entidadTipo: 'Excel', entidadId: '-',
+      resumen: `Importación desde Excel: ${JSON.stringify(resumen).replace(/["{}]/g, '').replace(/,/g, ', ')}`.slice(0, 300),
+    });
     return resumen;
   }
 }

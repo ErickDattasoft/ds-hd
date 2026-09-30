@@ -22,6 +22,11 @@ function corteDesde(valor: string): Date | null {
   const ahora = new Date();
   if (valor === 'hoy') return new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate());
   if (valor === 'semana') return new Date(ahora.getTime() - 7 * 86_400_000);
+  // «Desde mi última exportación»: el navegador manda la fecha (la guarda al exportar).
+  if (/^\d{4}-\d{2}-\d{2}T[\d:.]+Z$/.test(valor)) {
+    const d = new Date(valor);
+    return Number.isNaN(d.getTime()) ? null : d;
+  }
   return null;
 }
 
@@ -82,7 +87,8 @@ export class KnowledgeController {
     const texto = str(req.query.q);
     const categoria = str(req.query.categoria);
     const tag = str(req.query.tag);
-    const desde = str(req.query.desde);
+    const desdeSel = str(req.query.desde);
+    const desde = desdeSel === 'ultima' ? str(req.query.ultima) : desdeSel;
     const orden = str(req.query.orden);
     const fraseExacta = str(req.query.frase) === '1';
     const todos = await this.kb.listarVisibles(contexto(req), texto ? { texto, fraseExacta } : {});
@@ -96,7 +102,7 @@ export class KnowledgeController {
       q: texto,
       categoria,
       tag,
-      desde,
+      desde: desdeSel,
       orden,
       fraseExacta,
       kbLayout: this.layoutDe(req),
@@ -163,7 +169,8 @@ export class KnowledgeController {
     const ctx = contexto(req);
     const categoria = str(req.query.categoria);
     const tag = str(req.query.tag);
-    const desde = str(req.query.desde);
+    const desdeSel = str(req.query.desde);
+    const desde = desdeSel === 'ultima' ? str(req.query.ultima) : desdeSel;
     // El buscador del «SOPORTE» del viejo: título o contenido, con «frase exacta» e historial.
     const texto = str(req.query.q);
     const fraseExacta = str(req.query.frase) === '1';
@@ -184,7 +191,7 @@ export class KnowledgeController {
       fraseExacta,
       categoria,
       tag,
-      desde,
+      desde: desdeSel,
       orden,
       aviso: str(req.query.aviso) || null,
     });
@@ -224,7 +231,7 @@ export class KnowledgeController {
   exportJson = async (req: Request, res: Response): Promise<void> => {
     const ctx = contexto(req);
     const categoria = str(req.query.categoria);
-    const desde = corteDesde(str(req.query.desde));
+    const desde = corteDesde(str(req.query.desde) === 'ultima' ? str(req.query.ultima) : str(req.query.desde));
     let articulos = await this.kb.listarVisibles(ctx, categoria ? { categoria } : {});
     if (desde) articulos = articulos.filter((a) => a.updatedAt >= desde);
     const fecha = new Date().toISOString().slice(0, 10);
@@ -250,7 +257,7 @@ export class KnowledgeController {
 
   exportZip = async (req: Request, res: Response): Promise<void> => {
     const categoria = str(req.query.categoria);
-    const desde = corteDesde(str(req.query.desde));
+    const desde = corteDesde(str(req.query.desde) === 'ultima' ? str(req.query.ultima) : str(req.query.desde));
     const buffer = await this.kb.exportarZip(contexto(req), {
       ...(categoria ? { categoria } : {}),
       ...(desde ? { desde } : {}),

@@ -79,6 +79,7 @@
 - [application/tickets/efectos](application/tickets/efectos/README.md)
 - [application/tickets/historialCorreo](application/tickets/historialCorreo/README.md)
 - [application/tickets/notificacionTicket](application/tickets/notificacionTicket/README.md)
+- [application/tickets/ticketRepoConBitacora](application/tickets/ticketRepoConBitacora/README.md)
 - [application/usuarios/AceptarInvitacionService](application/usuarios/AceptarInvitacionService/README.md)
 - [application/usuarios/ActualizarMiFirmaService](application/usuarios/ActualizarMiFirmaService/README.md)
 - [application/usuarios/ActualizarUsuarioService](application/usuarios/ActualizarUsuarioService/README.md)

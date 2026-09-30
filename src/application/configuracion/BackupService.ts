@@ -1,3 +1,4 @@
+import type { BitacoraService } from '../shared/BitacoraService.js';
 import type { IEmpresaRepository } from '../../core/ports/repositories/IEmpresaRepository.js';
 import type { IContactoRepository } from '../../core/ports/repositories/IContactoRepository.js';
 import type { ITicketRepository } from '../../core/ports/repositories/ITicketRepository.js';
@@ -85,6 +86,7 @@ export class BackupService {
     private readonly clock: IClock,
     private readonly oportunidades?: IOportunidadRepository,
     private readonly webhooks?: IWebhookPublisher,
+    private readonly bitacora?: BitacoraService,
   ) {}
 
   /** Anota quién y cuándo descargó el backup (para la alerta de 7 días, como el viejo). */
@@ -94,6 +96,10 @@ export class BackupService {
       ...actual,
       ultimoBackup: this.clock.now().toISOString(),
       ultimoBackupPor: actor.nombre,
+    });
+    await this.bitacora?.registrar({
+      actor, accion: 'descargar', modulo: 'backup', entidadTipo: 'Backup', entidadId: '-',
+      resumen: 'Backup completo descargado',
     });
   }
 
@@ -291,6 +297,10 @@ export class BackupService {
     if (cfg.logo) await this.configuracion.guardarLogo(cfg.logo as never);
     if (cfg.resumen) await this.configuracion.guardarResumen(sanearConfigResumen(cfg.resumen));
 
+    await this.bitacora?.registrar({
+      actor, accion: 'restaurar', modulo: 'backup', entidadTipo: 'Backup', entidadId: '-',
+      resumen: `Backup restaurado: ${Object.entries(resumen).filter(([, n]) => typeof n === 'number' && n > 0).map(([k, n]) => `${n} ${k}`).join(', ') || 'sin cambios'}`,
+    });
     return resumen;
   }
 }

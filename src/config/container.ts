@@ -76,6 +76,7 @@ import { MisTicketsService } from '../application/portal/MisTicketsService.js';
 import { ResponderMiTicketService } from '../application/portal/ResponderMiTicketService.js';
 import { CrearTicketService } from '../application/tickets/CrearTicketService.js';
 import { EditarTicketService } from '../application/tickets/EditarTicketService.js';
+import { ticketRepoConBitacora } from '../application/tickets/ticketRepoConBitacora.js';
 import { ImagenesRespaldoService } from '../application/configuracion/ImagenesRespaldoService.js';
 import { LimpiezaAdjuntosService } from '../application/configuracion/LimpiezaAdjuntosService.js';
 import { ActualizarGestionTicketService } from '../application/tickets/ActualizarGestionTicketService.js';
@@ -441,8 +442,8 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
         new FirestoreInvitacionRepository(requireFirestore(firestoreDb)),
     ).singleton(),
     ticketRepo: asFunction(
-      ({ firestoreDb }: Cradle): ITicketRepository =>
-        new FirestoreTicketRepository(requireFirestore(firestoreDb)),
+      ({ firestoreDb, bitacoraRepo, idGenerator }: Cradle): ITicketRepository =>
+        ticketRepoConBitacora(new FirestoreTicketRepository(requireFirestore(firestoreDb)), bitacoraRepo, idGenerator),
     ).singleton(),
     ticketQueries: asFunction(
       ({ firestoreDb }: Cradle): ITicketQueries =>
@@ -573,6 +574,7 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
           c.logger,
           c.intentosLoginRepo,
           c.dosPasosService,
+          c.bitacoraService,
         ),
     ).singleton(),
     dosPasosController: asFunction((c: Cradle) => new DosPasosController(c.dosPasosService)).singleton(),
@@ -605,14 +607,15 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
           c.config.baseUrl,
           72,
           c.webhookPublisher,
+          c.bitacoraService,
         ),
     ).singleton(),
     actualizarUsuarioService: asFunction(
       (c: Cradle) =>
-        new ActualizarUsuarioService(c.usuarioRepo, c.authProvider, c.clock, c.logger),
+        new ActualizarUsuarioService(c.usuarioRepo, c.authProvider, c.clock, c.logger, c.bitacoraService),
     ).singleton(),
     contrasenaService: asFunction(
-      (c: Cradle) => new ContrasenaService(c.usuarioRepo, c.authProvider, c.logger),
+      (c: Cradle) => new ContrasenaService(c.usuarioRepo, c.authProvider, c.logger, c.bitacoraService),
     ).singleton(),
     actualizarMiFirmaService: asFunction(
       (c: Cradle) => new ActualizarMiFirmaService(c.usuarioRepo, c.clock),
@@ -850,7 +853,13 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
     ).singleton(),
     excelUnificadoService: asFunction(
       (c: Cradle) =>
-        new ExcelUnificadoService(c.empresaExcelService, c.contactoExcelService, c.ticketExcelService, c.excelIO),
+        new ExcelUnificadoService(
+          c.empresaExcelService,
+          c.contactoExcelService,
+          c.ticketExcelService,
+          c.excelIO,
+          c.bitacoraService,
+        ),
     ).singleton(),
     versionService: asFunction(
       (c: Cradle) => new VersionService(c.versionRepo, c.idGenerator, c.clock, c.bitacoraService),
@@ -1042,6 +1051,7 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
           c.clock,
           c.oportunidadRepo,
           c.webhookPublisher,
+          c.bitacoraService,
         ),
     ).singleton(),
     configuracionController: asFunction(
@@ -1067,7 +1077,9 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
             c.idGenerator,
             c.clock,
             c.logger,
+            c.bitacoraService,
           ),
+          c.bitacoraService,
         ),
     ).singleton(),
     ticketPublicoController: asFunction(

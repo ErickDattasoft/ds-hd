@@ -40,6 +40,7 @@
         <option value="">cualquier fecha</option>
         <option value="hoy" {{ 'selected' if desde == 'hoy' }}>hoy</option>
         <option value="semana" {{ 'selected' if desde == 'semana' }}>últimos 7 días</option>
+        <option value="ultima" {{ 'selected' if desde == 'ultima' }}>desde mi última exportación</option>
       </select>
     </label>
     <label class="field"><span>Orden</span>

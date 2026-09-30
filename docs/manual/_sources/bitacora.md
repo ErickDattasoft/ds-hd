@@ -13,6 +13,13 @@ etc.) queda anotada aquí de forma automática — no se edita a mano.
 
 ## Qué muestra cada entrada
 
+Se registra, entre otros: los inicios de sesión; toda la actividad de los tickets (creación,
+cambios de estado, notas, adjuntos, correos, facturación y papelera); el alta y los cambios de
+usuarios y contraseñas; cada guardado de Configuración; backups descargados o restaurados;
+exportaciones e importaciones de Excel; y la limpieza de adjuntos.
+
+
+
 Fecha, quién hizo la acción, en qué módulo, sobre qué entidad y un resumen en texto plano.
 Es de solo lectura: sirve para reconstruir "quién tocó qué y cuándo" ante una duda o un
 reclamo, y para todos los roles con acceso es visible sin importar si tienen permiso de

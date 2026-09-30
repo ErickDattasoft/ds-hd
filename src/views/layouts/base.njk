@@ -6,7 +6,7 @@
   <meta name="color-scheme" content="light dark" />
   <meta name="theme-color" content="#f6f7f9" media="(prefers-color-scheme: light)" />
   <meta name="theme-color" content="#0e1116" media="(prefers-color-scheme: dark)" />
-  <title>{% block title %}{{ titulo | default(appNombre) }}{% endblock %} · {{ appNombre }}</title>
+  <title>{% if avisosGlobales and avisosGlobales.correoSinLeer %}({{ avisosGlobales.correoSinLeer }} sin leer) {% endif %}{% block title %}{{ titulo | default(appNombre) }}{% endblock %} · {{ appNombre }}</title>
   <link rel="icon" href="/logo" />
   <link rel="apple-touch-icon" href="/logo" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -32,6 +32,7 @@
   <script src="/static/build/app.js" defer></script>
 </head>
 <body>
+  {% if avisosGlobales and avisosGlobales.buzonPendientes !== null %}<span hidden data-avisos-globales data-buzon="{{ avisosGlobales.buzonPendientes }}"></span>{% endif %}
   <a class="skip-link" href="#contenido">Saltar al contenido</a>
   {% block body %}
   <main id="contenido" class="container">

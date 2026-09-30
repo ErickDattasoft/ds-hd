@@ -1,3 +1,4 @@
+import type { BitacoraService } from '../../../../application/shared/BitacoraService.js';
 import type { LimpiezaAdjuntosService } from '../../../../application/configuracion/LimpiezaAdjuntosService.js';
 import type { ImagenesRespaldoService } from '../../../../application/configuracion/ImagenesRespaldoService.js';
 import type { Request, Response } from 'express';
@@ -50,7 +51,20 @@ export class ConfiguracionController {
     private readonly correoEntrante: CorreoEntranteService,
     private readonly imagenesRespaldo: ImagenesRespaldoService,
     private readonly limpiezaAdjuntos: LimpiezaAdjuntosService,
+    private readonly bitacora?: BitacoraService,
   ) {}
+
+  /** Deja en la Bitácora el guardado de una pantalla de Configuración (como el viejo). */
+  private async auditar(req: Request, resumen: string): Promise<void> {
+    await this.bitacora?.registrar({
+      actor: req.user!,
+      accion: 'actualizar',
+      modulo: 'configuracion',
+      entidadTipo: 'Configuracion',
+      entidadId: '-',
+      resumen,
+    });
+  }
 
   // ── Mantenimiento de adjuntos (archivar y eliminar los de tickets cerrados) ──
   private diasLimpieza(v: unknown): number {
@@ -116,6 +130,7 @@ export class ConfiguracionController {
         emisorTelefonoPorDefecto: str(b.emisorTelefonoPorDefecto),
         catalogoConceptos: this.catalogoConceptosDe(b),
       });
+      await this.auditar(req, 'Configuración de cotizaciones actualizada');
       res.render('pages/backoffice/configuracion/cotizaciones', {
         titulo: 'Configuración de cotizaciones',
         config: await this.configCotizaciones.obtener(),
@@ -153,6 +168,7 @@ export class ConfiguracionController {
         ultimaActualizacion: str(b.ultimaActualizacion),
         notas: str(b.notas),
       });
+      await this.auditar(req, 'Acerca De actualizado');
       res.render('pages/backoffice/acerca-de', {
         titulo: 'Acerca de',
         info: INFO_APP,
@@ -324,6 +340,7 @@ export class ConfiguracionController {
           asignarAlCreador: b.predAsignarAlCreador === 'on',
         },
       });
+      await this.auditar(req, 'Configuración de tickets actualizada (catálogos, SLA, avisos)');
       const config = await this.configTickets.obtener();
       res.render('pages/backoffice/configuracion/tickets', {
       estadosFacturacion: catalogoFacturacion(),
@@ -393,6 +410,7 @@ export class ConfiguracionController {
         },
         reglas: ConfiguracionIntegracionesService.reglasDeForm(b),
       });
+      await this.auditar(req, 'Integraciones actualizadas (n8n / WhatsApp / reglas)');
       await this.renderIntegraciones(res, { guardado: true });
     } catch (err) {
       await this.renderIntegraciones(res, { status: 422, errores: camposDeError(err) });
@@ -439,6 +457,7 @@ export class ConfiguracionController {
       carpeta: str(b.carpeta),
       soloContactoDelTicket: b.soloContactoDelTicket === 'on',
     });
+    await this.auditar(req, 'Correo entrante (Zoho) actualizado');
     await this.renderCorreoEntrante(req, res, { guardado: true });
   };
 
@@ -520,6 +539,7 @@ export class ConfiguracionController {
         })),
         precioSQL: b.precioSQL,
       });
+      await this.auditar(req, 'Calculadora Compac: catálogos y precios actualizados');
       res.render('pages/backoffice/configuracion/calculadora', {
         titulo: 'Configuración de la calculadora',
         config: await this.configCalculadora.obtener(),
@@ -560,6 +580,7 @@ export class ConfiguracionController {
         contentType: str(req.body?.contentType),
         base64: str(req.body?.base64),
       });
+      await this.auditar(req, 'Logo de la empresa actualizado');
       res.json({ ok: true });
     } catch (err) {
       res.status(422).json({ ok: false, error: err instanceof Error ? err.message : 'No se pudo subir el logo' });
@@ -568,6 +589,7 @@ export class ConfiguracionController {
 
   logoEliminarPost = async (req: Request, res: Response): Promise<void> => {
     await this.configLogo.eliminar(req.user!);
+    await this.auditar(req, 'Logo de la empresa quitado');
     res.redirect('/app/configuracion/apariencia');
   };
 
@@ -610,6 +632,7 @@ export class ConfiguracionController {
         destinatarios: str(b.destinatarios),
         horaEnvio: b.horaEnvio,
       });
+      await this.auditar(req, 'Resumen diario configurado');
       await this.renderResumen(res, { guardado: true });
     } catch (err) {
       await this.renderResumen(res, { status: 422, errores: camposDeError(err) });

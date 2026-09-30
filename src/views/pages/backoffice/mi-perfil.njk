@@ -74,7 +74,20 @@
     <p class="muted">Cómo abrir los botones 💬 de WhatsApp en este navegador — es una preferencia local, cada quien deja la suya.</p>
     <label class="field--check"><input type="radio" name="whatsappModo" value="web" data-whatsapp-modo /> <span>🌐 Navegador (WhatsApp Web)</span></label>
     <label class="field--check"><input type="radio" name="whatsappModo" value="app" data-whatsapp-modo /> <span>📲 App instalada</span></label>
+    <h2 style="margin-top:1rem">✉️ Correo en esta computadora</h2>
+    <p class="muted">Qué abren los botones ✉️ de empresas y contactos.</p>
+    <label class="field--check"><input type="radio" name="correoModo" value="zoho" data-correo-modo /> <span>🌐 Zoho Mail (web) — abre la redacción y copia el correo del destinatario</span></label>
+    <label class="field--check"><input type="radio" name="correoModo" value="mailto" data-correo-modo /> <span>💻 Programa de correo de la computadora (Outlook, etc.)</span></label>
   </div>
+
+  {% if can('tickets:crear') %}
+  <div class="card" id="notificaciones">
+    <h2>🔔 Avisos del navegador</h2>
+    <p class="muted">Te avisa en esta computadora cuando llega un ticket nuevo del portal público (al navegar por el CRM).</p>
+    <button type="button" class="btn btn--sm btn--secondary" data-activar-notificaciones>🔔 Activar avisos</button>
+    <span class="muted" data-estado-notificaciones></span>
+  </div>
+  {% endif %}
 
   <div class="card" id="dos-pasos">
     <h2>🔐 Verificación en dos pasos</h2>

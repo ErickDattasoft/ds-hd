@@ -12,7 +12,7 @@ Casos de uso de contraseña: cambiar la propia y restablecer la de otro (admin).
 
 ### Constructor
 
-> **new ContrasenaService**(`usuarios`, `auth`, `logger`): `ContrasenaService`
+> **new ContrasenaService**(`usuarios`, `auth`, `logger`, `bitacora?`): `ContrasenaService`
 
 #### Parameters
 
@@ -27,6 +27,10 @@ Casos de uso de contraseña: cambiar la propia y restablecer la de otro (admin).
 ##### logger
 
 [`ILogger`](../../../../core/ports/services/ILogger/interfaces/ILogger.md)
+
+##### bitacora?
+
+[`BitacoraService`](../../../shared/BitacoraService/classes/BitacoraService.md)
 
 #### Returns
 

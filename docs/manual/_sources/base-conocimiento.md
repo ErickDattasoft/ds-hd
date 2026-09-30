@@ -39,3 +39,10 @@ modificación y orden (A→Z, Z→A, más recientes).
   duplicarse. Las carpetas grandes se suben en tandas con barra de avance; los archivos que
   no son de texto (imágenes, ejecutables) se omiten.
 - 🗑️ elimina un documento (desde la lista o al editarlo).
+
+## Exportar
+
+**Exportar ZIP** baja los documentos con sus rutas originales (descomprímelo sobre la carpeta
+raíz de tus scripts y cada archivo cae en su lugar). Respeta los filtros de la lista: categoría
+y «Modificados» — hoy, últimos 7 días o **desde mi última exportación** (la fecha se recuerda
+en ese navegador al exportar). **Exportar JSON** baja lo mismo como datos.

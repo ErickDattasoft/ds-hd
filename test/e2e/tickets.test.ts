@@ -469,3 +469,20 @@ describe('ticket público: imágenes y correos (paridad con ticket-publico.astro
     expect(adjuntos.map((a) => a.nombre)).toEqual(['imagen-1.png', 'imagen-2.png', 'imagen-3.png']);
   });
 });
+
+describe('avisos globales (título de pestaña y buzón público, como el viejo)', () => {
+  it('el título dice «(N sin leer)» con tickets de correo abiertos y la página trae el conteo del buzón', async () => {
+    const t = makeTestApp({ usuarios: [SUP] });
+    const { agent, csrf } = await login(t.app, SUP.email, SUP.password);
+    await agent.post('/app/tickets').type('form').send({
+      _csrf: csrf, asunto: 'Respuesta del cliente', descripcion: 'Llegó por correo electrónico', tipo: 'Correo Electrónico', prioridad: 'Media',
+    });
+    await t.ticketPublicoRepo.create({
+      folio: 'PUB-1', nombre: 'Ext', empresa: null, correo: 'e@x.com', telefono: null, asunto: 'Ayuda',
+      sistema: null, tipo: null, prioridad: 'Media', descripcion: 'Necesito ayuda urgente',
+    });
+    const pagina = await agent.get('/app/contactos');
+    expect(pagina.text).toMatch(/<title>\(1 sin leer\) /);
+    expect(pagina.text).toContain('data-buzon="1"');
+  });
+});

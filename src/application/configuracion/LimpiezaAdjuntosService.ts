@@ -1,3 +1,4 @@
+import type { BitacoraService } from '../shared/BitacoraService.js';
 import { zipSync } from 'fflate';
 import type { IAdjuntoTicketRepository } from '../../core/ports/repositories/IAdjuntoTicketRepository.js';
 import type { ITicketQueries } from '../../core/ports/repositories/ITicketQueries.js';
@@ -56,6 +57,7 @@ export class LimpiezaAdjuntosService {
     private readonly ids: IIdGenerator,
     private readonly clock: IClock,
     private readonly logger: ILogger,
+    private readonly bitacora?: BitacoraService,
   ) {}
 
   async buscar(actor: SessionUser, dias: number): Promise<ResultadoLimpieza> {
@@ -102,6 +104,12 @@ export class LimpiezaAdjuntosService {
         resumen: `Adjunto archivado localmente y eliminado: ${c.nombre}`,
         actor,
         at: ahora,
+      });
+    }
+    if (elegidos.length) {
+      await this.bitacora?.registrar({
+        actor, accion: 'limpiar', modulo: 'backup', entidadTipo: 'Adjunto', entidadId: '-',
+        resumen: `Archivado + limpieza de adjuntos: ${elegidos.length} eliminado(s) (tickets cerrados hace ${dias}+ días)`,
       });
     }
     this.logger.info('Limpieza de adjuntos', { eliminados: elegidos.length, dias, por: actor.uid });

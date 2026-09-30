@@ -19,7 +19,7 @@ opción segura.
 
 ### Constructor
 
-> **new BackupService**(`empresas`, `contactos`, `ticketRepo`, `ticketQueries`, `cotizaciones`, `versiones`, `kb`, `usuarios`, `configuracion`, `contador`, `clock`, `oportunidades?`, `webhooks?`): `BackupService`
+> **new BackupService**(`empresas`, `contactos`, `ticketRepo`, `ticketQueries`, `cotizaciones`, `versiones`, `kb`, `usuarios`, `configuracion`, `contador`, `clock`, `oportunidades?`, `webhooks?`, `bitacora?`): `BackupService`
 
 #### Parameters
 
@@ -74,6 +74,10 @@ opción segura.
 ##### webhooks?
 
 [`IWebhookPublisher`](../../../../core/ports/services/IWebhookPublisher/interfaces/IWebhookPublisher.md)
+
+##### bitacora?
+
+[`BitacoraService`](../../../shared/BitacoraService/classes/BitacoraService.md)
 
 #### Returns
 

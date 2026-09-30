@@ -283,6 +283,9 @@ export class InMemoryTicketPublicoRepository implements ITicketPublicoRepository
   async listPendientes(): Promise<TicketPublico[]> {
     return [...this.items.values()].filter((t) => t.estado === 'pendiente');
   }
+  async contarPendientes(): Promise<number> {
+    return (await this.listPendientes()).length;
+  }
   async marcarAceptado(id: string, ticketNumero: number): Promise<void> {
     const t = this.items.get(id);
     if (t) {

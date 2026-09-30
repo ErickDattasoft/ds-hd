@@ -1,3 +1,4 @@
+import type { BitacoraService } from '../shared/BitacoraService.js';
 import type { IUsuarioRepository } from '../../core/ports/repositories/IUsuarioRepository.js';
 import type { IAuthProvider } from '../../core/ports/services/IAuthProvider.js';
 import type { IClock } from '../../core/ports/services/IClock.js';
@@ -30,6 +31,7 @@ export class ActualizarUsuarioService {
     private readonly auth: IAuthProvider,
     private readonly clock: IClock,
     private readonly logger: ILogger,
+    private readonly bitacora?: BitacoraService,
   ) {}
 
   async ejecutar(input: ActualizarUsuarioInput): Promise<void> {
@@ -93,6 +95,17 @@ export class ActualizarUsuarioService {
     // vuelve a autenticarse y recalcula permisos.
     await this.auth.revokeSessions(usuario.uid);
 
+    await this.bitacora?.registrar({
+      actor: input.actor,
+      accion: 'actualizar',
+      modulo: 'usuarios',
+      entidadTipo: 'Usuario',
+      entidadId: usuario.uid,
+      resumen:
+        `Usuario ${usuario.nombre} actualizado — ${usuario.activo ? 'activo' : 'inactivo'}, ` +
+        `roles: ${usuario.roles.join(', ')}` +
+        (usuario.permisosRevocados.length ? `, sin: ${usuario.permisosRevocados.join(', ')}` : ''),
+    });
     this.logger.info('Usuario actualizado', {
       uid: usuario.uid,
       por: input.actor.uid,

@@ -33,6 +33,12 @@ async function contadoresDelMenu(
     cotizacionesBorrador: () => container.resolve('cotizacionRepo').contarEnEstado('borrador'),
     empresasTotal: () => container.resolve('empresaRepo').contar(),
     contactosTotal: () => container.resolve('contactoRepo').contar(),
+    ticketsPublicosPendientes: () => container.resolve('ticketPublicoRepo').contarPendientes(),
+    // Como el título de pestaña del viejo: «(N sin leer)» = tickets abiertos de un tipo de correo.
+    ticketsCorreoSinLeer: async () =>
+      (await container.resolve('ticketQueries').listar({ soloAbiertos: true, archivado: false })).filter((t) =>
+        (t.tipo ?? '').toLowerCase().includes('correo'),
+      ).length,
     solicitudesAccesoPendientes: async () =>
       (await container.resolve('solicitudAccesoService').listarPendientes(user)).length,
   };
@@ -81,9 +87,17 @@ export function backofficeRoutes(container: Container): Router {
   });
   r.use(async (req, res, next) => {
     const secciones = construirNavSecciones(req.user!);
-    const claves = contadoresNecesarios(secciones);
+    // Los POST casi siempre redirigen: no vale la pena contar (ni cachear un conteo previo al cambio).
+    const claves = req.method === 'GET' ? contadoresNecesarios(secciones) : [];
+    const permisos = req.method === 'GET' ? req.user!.permisos : [];
+    if (permisos.includes('tickets:leer')) claves.push('ticketsCorreoSinLeer');
+    if (permisos.includes('tickets:crear')) claves.push('ticketsPublicosPendientes');
     const contadores = await contadoresDelMenu(container, claves, req.user!);
     res.locals.navSecciones = conContadores(secciones, contadores);
+    res.locals.avisosGlobales = {
+      buzonPendientes: contadores.ticketsPublicosPendientes ?? null,
+      correoSinLeer: contadores.ticketsCorreoSinLeer ?? 0,
+    };
     res.locals.area = 'backoffice';
     next();
   });

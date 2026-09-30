@@ -15,7 +15,7 @@ Nunca toca imágenes pegadas en la descripción de un ticket (la descripción la
 
 ### Constructor
 
-> **new LimpiezaAdjuntosService**(`adjuntos`, `ticketQueries`, `tickets`, `ids`, `clock`, `logger`): `LimpiezaAdjuntosService`
+> **new LimpiezaAdjuntosService**(`adjuntos`, `ticketQueries`, `tickets`, `ids`, `clock`, `logger`, `bitacora?`): `LimpiezaAdjuntosService`
 
 #### Parameters
 
@@ -42,6 +42,10 @@ Nunca toca imágenes pegadas en la descripción de un ticket (la descripción la
 ##### logger
 
 [`ILogger`](../../../../core/ports/services/ILogger/interfaces/ILogger.md)
+
+##### bitacora?
+
+[`BitacoraService`](../../../shared/BitacoraService/classes/BitacoraService.md)
 
 #### Returns
 

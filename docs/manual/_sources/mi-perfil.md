@@ -31,6 +31,16 @@ nuevo, y si los tickets que creas se te asignan a ti.
 Si los botones 💬 abren **WhatsApp Web** o la **app instalada**. Se guarda en ese navegador:
 en otra computadora eliges de nuevo.
 
+En la misma tarjeta, **✉️ Correo en esta computadora**: con *Zoho Mail (web)* (lo de siempre)
+los botones ✉️ abren la redacción de Zoho y copian el correo del destinatario para pegarlo en
+«Para:»; con *Programa de correo* abren Outlook u otro programa instalado.
+
+## 🔔 Avisos del navegador
+
+Con **Activar avisos**, el navegador te avisa cuando llega un ticket nuevo del portal público
+(se revisa al navegar por el CRM). La pestaña del navegador muestra además «(N sin leer)»
+cuando hay tickets de correo abiertos.
+
 ## 🔐 Seguridad
 
 - **Verificación en dos pasos**: actívala con una app de autenticación (Google

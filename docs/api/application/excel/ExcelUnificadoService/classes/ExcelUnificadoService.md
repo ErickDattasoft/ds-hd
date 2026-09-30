@@ -15,7 +15,7 @@ Tickets es de solo exportación, igual que en `TicketExcelService` (paridad con 
 
 ### Constructor
 
-> **new ExcelUnificadoService**(`empresaExcel`, `contactoExcel`, `ticketExcel`, `excel`): `ExcelUnificadoService`
+> **new ExcelUnificadoService**(`empresaExcel`, `contactoExcel`, `ticketExcel`, `excel`, `bitacora?`): `ExcelUnificadoService`
 
 #### Parameters
 
@@ -34,6 +34,10 @@ Tickets es de solo exportación, igual que en `TicketExcelService` (paridad con 
 ##### excel
 
 [`IExcelIO`](../../../../core/ports/services/IExcelIO/interfaces/IExcelIO.md)
+
+##### bitacora?
+
+[`BitacoraService`](../../../shared/BitacoraService/classes/BitacoraService.md)
 
 #### Returns
 

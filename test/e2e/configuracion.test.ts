@@ -310,3 +310,30 @@ describe('configuración → mantenimiento de adjuntos (paridad con «Archivar y
     expect((await agent.get('/app/configuracion/backup/limpieza?dias=0')).text).toContain('No hay adjuntos no permanentes');
   });
 });
+
+describe('Bitácora transversal (como logBitacora del viejo)', () => {
+  it('registra sesión, tickets, usuarios, configuración y backup', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    const { agent, csrf } = await login(t.app, ADMIN.email, ADMIN.password);
+    const crear = await agent.post('/app/tickets').type('form').send({
+      _csrf: csrf, asunto: 'Bitácora', descripcion: 'Probar la bitácora general', tipo: 'General', prioridad: 'Baja',
+    });
+    const id = String(crear.headers.location).split('/').pop()!;
+    await agent.post(`/app/tickets/${id}/estado`).type('form').send({ _csrf: csrf, estado: 'Cerrado' });
+    await agent.post('/app/usuarios').type('form').send({ _csrf: csrf, nombre: 'Nueva', email: 'nueva@dattasoft.mx', roles: 'agente' });
+    await agent.post('/app/configuracion/calculadora').type('form').send({
+      _csrf: csrf, sistema: ['Contabilidad'], equipoNombre: ['Servidor'], equipoPrimer: ['800'], equipoAdicional: ['400'], precioSQL: '800',
+    });
+    await agent.get('/app/configuracion/backup/descargar');
+
+    const resumenes = (await t.bitacoraRepo.listar()).map((e) => `${e.modulo}|${e.resumen}`);
+    expect(resumenes).toEqual(expect.arrayContaining([
+      'sesion|Sesión iniciada',
+      'usuarios|Nuevo usuario creado: Nueva (agente)',
+      'configuracion|Calculadora Compac: catálogos y precios actualizados',
+      'backup|Backup completo descargado',
+    ]));
+    expect(resumenes.some((r) => /^tickets\|Ticket #\d+ creado/.test(r))).toBe(true);
+    expect(resumenes.some((r) => /^tickets\|Ticket #\d+: Estado: .* → Cerrado/.test(r))).toBe(true);
+  });
+});

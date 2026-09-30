@@ -28,7 +28,7 @@ export class BitacoraService {
   ) {}
 
   async registrar(data: {
-    actor: SessionUser | null;
+    actor: Pick<SessionUser, 'uid' | 'nombre'> | null;
     accion: string;
     modulo: string;
     entidadTipo: string;

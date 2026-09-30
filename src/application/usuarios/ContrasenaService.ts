@@ -1,3 +1,4 @@
+import type { BitacoraService } from '../shared/BitacoraService.js';
 import type { IUsuarioRepository } from '../../core/ports/repositories/IUsuarioRepository.js';
 import type { IAuthProvider } from '../../core/ports/services/IAuthProvider.js';
 import type { ILogger } from '../../core/ports/services/ILogger.js';
@@ -45,6 +46,7 @@ export class ContrasenaService {
     private readonly usuarios: IUsuarioRepository,
     private readonly auth: IAuthProvider,
     private readonly logger: ILogger,
+    private readonly bitacora?: BitacoraService,
   ) {}
 
   /** El usuario cambia su contraseña confirmando la actual. */
@@ -64,6 +66,10 @@ export class ContrasenaService {
       throw err;
     }
     await this.guardar(input.actor.uid, input.password);
+    await this.bitacora?.registrar({
+      actor: input.actor, accion: 'contrasena', modulo: 'usuarios', entidadTipo: 'Usuario',
+      entidadId: input.actor.uid, resumen: 'Contraseña propia actualizada',
+    });
     this.logger.info('Contraseña cambiada por el usuario', { uid: input.actor.uid });
   }
 
@@ -82,6 +88,10 @@ export class ContrasenaService {
     validarNueva(input.password, input.passwordConfirmacion);
     await this.guardar(usuario.uid, input.password);
     await this.auth.revokeSessions(usuario.uid);
+    await this.bitacora?.registrar({
+      actor: input.actor, accion: 'contrasena', modulo: 'usuarios', entidadTipo: 'Usuario',
+      entidadId: usuario.uid, resumen: `Contraseña restablecida: ${usuario.nombre}`,
+    });
     this.logger.info('Contraseña restablecida por admin', { uid: usuario.uid, por: input.actor.uid });
   }
 

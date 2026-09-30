@@ -52,6 +52,18 @@ Buzón de tickets entrantes del portal público (`tickets_publicos`).
 
 ***
 
+### contarPendientes()
+
+> **contarPendientes**(): `Promise`\<`number`\>
+
+Cuántos esperan revisión (conteo del servidor, sin bajar los documentos).
+
+#### Returns
+
+`Promise`\<`number`\>
+
+***
+
 ### marcarAceptado()
 
 > **marcarAceptado**(`id`, `ticketNumero`): `Promise`\<`void`\>

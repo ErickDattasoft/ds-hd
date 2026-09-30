@@ -20,7 +20,10 @@ export type ContadorNavKey =
   | 'cotizacionesBorrador'
   | 'solicitudesAccesoPendientes'
   | 'empresasTotal'
-  | 'contactosTotal';
+  | 'contactosTotal'
+  /** Avisos globales (no son de un item del menú): buzón público y tickets de correo abiertos. */
+  | 'ticketsPublicosPendientes'
+  | 'ticketsCorreoSinLeer';
 
 export interface NavItem {
   etiqueta: string;

@@ -303,6 +303,13 @@ modificación y orden (A→Z, Z→A, más recientes).
   no son de texto (imágenes, ejecutables) se omiten.
 - 🗑️ elimina un documento (desde la lista o al editarlo).
 
+## Exportar
+
+**Exportar ZIP** baja los documentos con sus rutas originales (descomprímelo sobre la carpeta
+raíz de tus scripts y cada archivo cae en su lugar). Respeta los filtros de la lista: categoría
+y «Modificados» — hoy, últimos 7 días o **desde mi última exportación** (la fecha se recuerda
+en ese navegador al exportar). **Exportar JSON** baja lo mismo como datos.
+
 ---
 
 ## Seguimiento comercial (tareas e interacciones)
@@ -353,6 +360,13 @@ etc.) queda anotada aquí de forma automática — no se edita a mano.
 *(captura pendiente: bitacora-lista.png — corre `npm run docs:screenshots` contra la app corriendo y con datos de `npm run seed:demo`)*
 
 ## Qué muestra cada entrada
+
+Se registra, entre otros: los inicios de sesión; toda la actividad de los tickets (creación,
+cambios de estado, notas, adjuntos, correos, facturación y papelera); el alta y los cambios de
+usuarios y contraseñas; cada guardado de Configuración; backups descargados o restaurados;
+exportaciones e importaciones de Excel; y la limpieza de adjuntos.
+
+
 
 Fecha, quién hizo la acción, en qué módulo, sobre qué entidad y un resumen en texto plano.
 Es de solo lectura: sirve para reconstruir "quién tocó qué y cuándo" ante una duda o un
@@ -513,6 +527,16 @@ nuevo, y si los tickets que creas se te asignan a ti.
 
 Si los botones 💬 abren **WhatsApp Web** o la **app instalada**. Se guarda en ese navegador:
 en otra computadora eliges de nuevo.
+
+En la misma tarjeta, **✉️ Correo en esta computadora**: con *Zoho Mail (web)* (lo de siempre)
+los botones ✉️ abren la redacción de Zoho y copian el correo del destinatario para pegarlo en
+«Para:»; con *Programa de correo* abren Outlook u otro programa instalado.
+
+## 🔔 Avisos del navegador
+
+Con **Activar avisos**, el navegador te avisa cuando llega un ticket nuevo del portal público
+(se revisa al navegar por el CRM). La pestaña del navegador muestra además «(N sin leer)»
+cuando hay tickets de correo abiertos.
 
 ## 🔐 Seguridad
 

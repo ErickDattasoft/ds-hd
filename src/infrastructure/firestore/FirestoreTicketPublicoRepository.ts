@@ -47,6 +47,10 @@ export class FirestoreTicketPublicoRepository implements ITicketPublicoRepositor
       .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
   }
 
+  async contarPendientes(): Promise<number> {
+    return (await this.db.collection(COL).where('estado', '==', 'pendiente').count().get()).data().count;
+  }
+
   async marcarAceptado(id: string, ticketNumero: number): Promise<void> {
     await this.db.collection(COL).doc(id).update({ estado: 'aceptado', ticketNumero });
   }
