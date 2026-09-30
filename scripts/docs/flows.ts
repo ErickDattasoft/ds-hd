@@ -43,6 +43,7 @@ export const FLOWS: Flow[] = [
       { modulo: 'eventos-staff', paso: 'lista', ruta: '/app/eventos' },
       { modulo: 'usuarios-y-permisos', paso: 'lista', ruta: '/app/usuarios' },
       { modulo: 'configuracion', paso: 'tickets', ruta: '/app/configuracion/tickets' },
+      { modulo: 'mi-perfil', paso: 'ver', ruta: '/app/mi-perfil' },
     ],
   },
   {

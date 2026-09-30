@@ -32,3 +32,10 @@ aquí directamente.
 
 - **Nuevo contacto** (`/app/contactos/nuevo`): elige la empresa a la que pertenece.
 - **Archivar**: igual que empresas, va a la papelera y es reversible.
+
+## 🔖 Filtros guardados
+
+En Empresas, arma la búsqueda que usas seguido (texto, sistema, filtros de pendientes…),
+escríbele un nombre en «Guardar esta búsqueda como…» y da **Guardar filtro**. Queda como una
+etiqueta arriba de la tabla: un clic la vuelve a aplicar y la ✕ la borra. Cada usuario tiene
+los suyos.
