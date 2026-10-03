@@ -81,6 +81,14 @@ describe('BackupService', () => {
       ahora: new Date('2026-03-01T00:00:00Z'),
     });
     await ticketRepo.save(ticketOriginal);
+    await ticketRepo.agregarNota('t1', {
+      id: 'n1', tipo: 'publica', cuerpo: 'Ya quedó', autorUid: 'correo-entrante', autorNombre: 'Luis',
+      correoDe: 'luis@cliente.mx', adjuntoIds: ['a1'], createdAt: new Date('2026-03-02T00:00:00Z'),
+    });
+    await ticketRepo.registrarEvento('t1', {
+      id: 'ev1', tipo: 'correo', resumen: 'Luis respondió por correo', actorUid: null, actorNombre: null,
+      at: new Date('2026-03-02T00:00:00Z'),
+    });
     await config.guardarAcercaDe({ version: 'v9.9.9', ultimaActualizacion: 'Enero 2026', notas: 'nota' });
 
     const exportado = await service.exportar();
@@ -121,6 +129,11 @@ describe('BackupService', () => {
     expect(ticketRestaurado?.numero).toBe(501);
     expect(ticketRestaurado?.abiertoEn).toEqual(new Date('2026-03-01T00:00:00Z'));
     expect(ticketRestaurado?.historialEstados[0]!.at).toEqual(new Date('2026-03-01T00:00:00Z'));
+    // La conversación y la actividad viajan con el respaldo.
+    expect(await ticketRepo2.listarNotas('t1')).toEqual([
+      expect.objectContaining({ id: 'n1', cuerpo: 'Ya quedó', correoDe: 'luis@cliente.mx', adjuntoIds: ['a1'], createdAt: new Date('2026-03-02T00:00:00Z') }),
+    ]);
+    expect((await ticketRepo2.listarEventos('t1')).map((e) => e.id)).toEqual(['ev1']);
   });
 
   it('restaurar es upsert: no toca lo que ya existe en destino y no viene en el archivo', async () => {

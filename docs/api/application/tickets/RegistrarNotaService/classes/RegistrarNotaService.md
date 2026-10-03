@@ -12,7 +12,7 @@ Caso de uso: agregar una nota (pública o interna) a un ticket.
 
 ### Constructor
 
-> **new RegistrarNotaService**(`tickets`, `config`, `usuarios`, `ids`, `clock`, `email`, `logger`, `webhooks?`): `RegistrarNotaService`
+> **new RegistrarNotaService**(`tickets`, `config`, `usuarios`, `ids`, `clock`, `email`, `logger`, `webhooks?`, `adjuntos?`, `baseUrl?`): `RegistrarNotaService`
 
 #### Parameters
 
@@ -48,9 +48,27 @@ Caso de uso: agregar una nota (pública o interna) a un ticket.
 
 [`IWebhookPublisher`](../../../../core/ports/services/IWebhookPublisher/interfaces/IWebhookPublisher.md)
 
+##### adjuntos?
+
+[`IAdjuntoTicketRepository`](../../../../core/ports/repositories/IAdjuntoTicketRepository/interfaces/IAdjuntoTicketRepository.md)
+
+##### baseUrl?
+
+`string` = `''`
+
+URL pública del CRM: las imágenes del correo apuntan a `/adjunto/<id>`.
+
 #### Returns
 
 `RegistrarNotaService`
+
+## Properties
+
+### MAX\_IMAGENES
+
+> `readonly` `static` **MAX\_IMAGENES**: `5` = `5`
+
+Máximo de capturas por respuesta.
 
 ## Methods
 

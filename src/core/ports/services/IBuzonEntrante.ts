@@ -5,10 +5,16 @@ export interface CorreoRecibido {
   id: string;
   /** Carpeta a la que pertenece (Zoho la pide para leer y para marcar como leído). */
   carpetaId: string;
+  /** Correo del remitente, en minúsculas. */
   de: string;
+  /** Nombre visible del remitente ("Erick Casas"), si el correo lo trae. */
+  nombreDe?: string;
   asunto: string;
+  /** Texto plano ya sin HTML (la cita del hilo se recorta después, con `cuerpoSinCita`). */
   cuerpo: string;
   recibidoEn: Date;
+  /** Imágenes adjuntas (solo las que alguien adjuntó a propósito, no las incrustadas). */
+  adjuntos?: { nombre: string; contentType: string; base64: string }[];
 }
 
 /**

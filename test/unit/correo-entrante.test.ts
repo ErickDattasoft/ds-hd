@@ -85,7 +85,7 @@ describe('correo entrante (Zoho)', () => {
       correo({ id: 'a', asunto: 'Consulta general' }),
       correo({ id: 'b', asunto: 'Ticket #999' }),
       correo({ id: 'c', de: 'otro@ajeno.mx' }),
-      correo({ id: 'd', cuerpo: '> solo cita' }),
+      correo({ id: 'd', cuerpo: '   ' }),
     ];
     const r = await service.revisar();
     expect(r.agregados).toBe(0);

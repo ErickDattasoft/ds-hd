@@ -236,7 +236,7 @@ describe('encuesta de satisfacción y reportes', () => {
     const id = String(crear.headers.location).split('/').pop()!;
     await agent.post(`/app/tickets/${id}/estado`).type('form').send({ _csrf: csrf, estado: 'En proceso' });
     await agent.post(`/app/tickets/${id}/estado`).type('form').send({ _csrf: csrf, estado: 'Resuelto' });
-    const correo = t.emailSender.enviados.find((e) => e.asunto.includes('resuelto'));
+    const correo = t.emailSender.enviados.find((e) => e.tags?.includes('ticket-resuelto'));
     expect(correo).toBeTruthy();
     const liga = /href="https?:\/\/[^/]+(\/encuesta\/[^"?]+)\?c=5"/.exec(correo!.html)![1]!;
     const falsa = await request(t.app).get(`/encuesta/${id}/firmafalsa?c=5`);
@@ -331,7 +331,8 @@ describe('avisar al cliente al cambiar de estado', () => {
     t.emailSender.enviados.length = 0;
 
     await agent.post(`/app/tickets/${id}/estado`).type('form').send({ _csrf: csrf, estado: 'En proceso' });
-    expect(t.emailSender.enviados.map((e) => e.asunto)).toEqual(['Ticket #1 — En proceso']);
+    expect(t.emailSender.enviados.map((e) => e.asunto)).toEqual(['[Ticket #1] Avance']);
+    expect(t.emailSender.enviados[0]!.html).toMatch(/Estado: <strong>.+<\/strong> → <strong>En proceso<\/strong>/);
     expect(t.emailSender.enviados[0]!.para).toEqual([{ email: 'luis@cliente.mx', nombre: 'Luis' }]);
 
     await agent.post(`/app/tickets/${id}/estado`).type('form').send({ _csrf: csrf, estado: 'Pendiente' });
@@ -375,7 +376,7 @@ describe('firma con formato (como el editor del viejo)', () => {
     const id = String(crear.headers.location).split('/').pop()!;
     t.emailSender.enviados.length = 0;
     await agent.post(`/app/tickets/${id}/nota`).type('form').send({ _csrf: csrf, cuerpo: 'Listo', tipo: 'publica' });
-    const correo = t.emailSender.enviados.find((c) => c.asunto.includes('Actualización'));
+    const correo = t.emailSender.enviados.find((c) => c.tags?.includes('ticket-nota'));
     expect(correo?.html).toContain('<hr /><p><b>Erick</b></p><p>Soporte</p>');
   });
 });

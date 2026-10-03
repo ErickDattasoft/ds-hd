@@ -25,6 +25,7 @@ import { sanearAcercaDe } from '../../core/entities/AcercaDe.js';
 import { sanearConfigCotizaciones } from '../../core/entities/ConfiguracionCotizaciones.js';
 import { sanearConfigResumen } from '../../core/entities/ConfiguracionResumen.js';
 import { CONTADOR_TICKETS } from '../tickets/constantes.js';
+import type { EventoTicket, NotaTicket } from '../../core/entities/NotaTicket.js';
 import { ForbiddenError, ValidationError } from '../../core/errors/DomainError.js';
 import type { SessionUser } from '../shared/SessionUser.js';
 
@@ -166,6 +167,7 @@ export class BackupService {
       logo,
       resumen,
       oportunidades,
+      detalle,
     ] = await Promise.all([
       this.empresas.list({}),
       this.contactos.list({}),
@@ -182,6 +184,7 @@ export class BackupService {
       this.configuracion.obtenerLogo(),
       this.configuracion.obtenerResumen(),
       this.oportunidades?.list() ?? Promise.resolve([]),
+      this.ticketRepo.listarDetalleTodos(),
     ]);
 
     return {
@@ -190,6 +193,8 @@ export class BackupService {
       empresas,
       contactos,
       tickets,
+      // Conversación (respuestas por correo y del CRM) y actividad de cada ticket, por id.
+      ticketsDetalle: Object.fromEntries(detalle),
       cotizaciones,
       versiones,
       kb,
@@ -246,14 +251,28 @@ export class BackupService {
       }
     }
     let maxNumero = 0;
+    const detalle = (datos.ticketsDetalle ?? {}) as Record<string, { notas?: NotaTicket[]; eventos?: EventoTicket[] }>;
+    const conDetalle: { ticket: Ticket; notas: NotaTicket[]; eventos: EventoTicket[] }[] = [];
     for (const d of arr(datos.tickets)) {
       try {
         const ticket = new Ticket(d as unknown as TicketProps);
         await this.ticketRepo.save(ticket);
         maxNumero = Math.max(maxNumero, ticket.numero);
         resumen.tickets++;
+        const det = detalle[ticket.id];
+        if (det && (det.notas?.length || det.eventos?.length)) {
+          conDetalle.push({ ticket, notas: det.notas ?? [], eventos: det.eventos ?? [] });
+        }
       } catch (err) {
         resumen.errores.push(`ticket #${d.numero}: ${err instanceof Error ? err.message : err}`);
+      }
+    }
+    // Notas y eventos conservan su id: restaurar dos veces no duplica la conversación.
+    if (conDetalle.length) {
+      try {
+        await this.ticketRepo.guardarVariosConDetalle(conDetalle);
+      } catch (err) {
+        resumen.errores.push(`conversaciones de tickets: ${err instanceof Error ? err.message : err}`);
       }
     }
     if (maxNumero > 0) await this.contador.fijar(CONTADOR_TICKETS, maxNumero);

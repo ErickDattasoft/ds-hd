@@ -54,6 +54,33 @@ export class FirestoreTicketRepository implements ITicketRepository {
     await this.enTandas(refs, (batch, ref) => batch.delete(ref));
   }
 
+  async listarDetalleTodos(): Promise<Map<string, { notas: NotaTicket[]; eventos: EventoTicket[] }>> {
+    const out = new Map<string, { notas: NotaTicket[]; eventos: EventoTicket[] }>();
+    const de = (ticketId: string) => {
+      let d = out.get(ticketId);
+      if (!d) out.set(ticketId, (d = { notas: [], eventos: [] }));
+      return d;
+    };
+    const [notas, eventos] = await Promise.all([
+      this.db.collectionGroup('notas').get(),
+      this.db.collectionGroup('eventos').get(),
+    ]);
+    // `tickets/<id>/<sub>/<doc>`: el grupo también trae subcolecciones homónimas de otras colecciones.
+    for (const h of notas.docs) {
+      const [col, ticketId] = h.ref.path.split('/');
+      if (col === COL && ticketId) de(ticketId).notas.push(TicketMapper.notaToDomain(h.id, h.data()));
+    }
+    for (const h of eventos.docs) {
+      const [col, ticketId] = h.ref.path.split('/');
+      if (col === COL && ticketId) de(ticketId).eventos.push(TicketMapper.eventoToDomain(h.id, h.data()));
+    }
+    for (const d of out.values()) {
+      d.notas.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+      d.eventos.sort((a, b) => a.at.getTime() - b.at.getTime());
+    }
+    return out;
+  }
+
   /** Ticket + sus notas + sus eventos en una sola escritura. */
   async guardarConDetalle(
     ticket: Ticket,

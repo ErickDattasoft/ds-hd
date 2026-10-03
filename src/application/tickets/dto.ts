@@ -77,4 +77,8 @@ export interface RegistrarNotaInput {
   ticketId: string;
   cuerpo: string;
   tipo: 'publica' | 'interna';
+  /** "Con copia" de esta respuesta (además de los CC del ticket). Solo notas públicas. */
+  cc?: string[];
+  /** Capturas de pantalla (solo imágenes ≤700 KB): quedan como adjuntos y se ven en la nota. */
+  imagenes?: { nombre: string; contentType: string; base64: string }[];
 }

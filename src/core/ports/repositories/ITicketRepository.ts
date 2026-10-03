@@ -37,4 +37,10 @@ export interface ITicketRepository {
 
   /** Borrado permanente de varios tickets (con sus notas y eventos), agrupando las llamadas. */
   eliminarVarios(ids: string[]): Promise<void>;
+
+  /**
+   * Notas (la conversación) y eventos (la actividad) de TODOS los tickets, por id de ticket — para
+   * el respaldo. Dos lecturas en total, no dos por ticket (el tope de subpeticiones del worker).
+   */
+  listarDetalleTodos(): Promise<Map<string, { notas: NotaTicket[]; eventos: EventoTicket[] }>>;
 }

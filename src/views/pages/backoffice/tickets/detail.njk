@@ -33,29 +33,45 @@
       </div>
 
       <div class="card">
-        <p><strong>Conversación</strong></p>
-        {% for n in notas %}
-          <div class="nota nota--{{ n.tipo }}">
+        <p><strong>💬 Conversación</strong> <span class="muted">— lo más reciente arriba · verde = recibido por correo, azul = enviado desde el CRM</span></p>
+
+        {% if permisos.editar %}
+          <form method="post" action="/app/tickets/{{ ticket.id }}/nota" class="form" data-nota-form>
+            <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+            <input type="hidden" name="imagenesNota" value="" data-nota-imagenes-campo />
+            {{ tk.editorToolbar(user, '#nota-cuerpo', config.respuestas) }}
+            <textarea name="cuerpo" id="nota-cuerpo" rows="4" required placeholder="Escribe una respuesta… (se manda por correo al cliente; puedes pegar capturas)"></textarea>
+            <label class="field"><span>Con copia (opcional, separados por coma)</span>
+              <input type="text" name="ccRespuesta" placeholder="otro@cliente.com, agente@dattasoft.mx" autocomplete="off" />
+            </label>
+            <label class="field"><span>🖼️ Capturas (solo imágenes)</span>
+              <input type="file" accept="image/png,image/jpeg,image/gif,image/webp" multiple data-nota-imagenes-file />
+            </label>
+            <div class="nota__imgs" data-nota-imagenes-preview></div>
+            <label class="field--check">
+              <input type="checkbox" name="tipo" value="interna" {{ 'disabled' if not permisos.notasInternas }} />
+              <span>Nota interna (no visible para el cliente, no manda correo)</span>
+            </label>
+            <button class="btn btn--sm" type="submit">Enviar respuesta</button>
+          </form>
+        {% endif %}
+
+        {% for n in notas | reverse %}
+          {% set recibida = n.autorUid == 'correo-entrante' or n.correoDe %}
+          <div class="nota nota--{{ n.tipo }}{% if n.tipo == 'publica' %} {{ 'nota--recibida' if recibida else 'nota--enviada' }}{% endif %}">
             <div class="nota__head">
-              <span>{{ n.autorNombre }}</span>
+              <span>{{ '📥' if recibida else '📤' }} {{ n.autorNombre }}{% if n.correoDe and n.correoDe != n.autorNombre %} &lt;{{ n.correoDe }}&gt;{% endif %}</span>
+              <span>· {{ n.createdAt | fechahora }}</span>
               {% if n.tipo == 'interna' %}<span class="badge badge--warning">interna</span>{% endif %}
             </div>
             <p style="white-space:pre-wrap">{{ n.cuerpo }}</p>
+            {% if n.adjuntoIds and n.adjuntoIds.length %}
+              <div class="nota__imgs">
+                {% for aid in n.adjuntoIds %}<a href="/app/tickets/{{ ticket.id }}/adjuntos/{{ aid }}" target="_blank" rel="noopener"><img src="/app/tickets/{{ ticket.id }}/adjuntos/{{ aid }}" alt="Captura {{ loop.index }}" class="adjunto-thumb" loading="lazy" /></a>{% endfor %}
+              </div>
+            {% endif %}
           </div>
-        {% else %}<p class="muted">Sin notas todavía.</p>{% endfor %}
-
-        {% if permisos.editar %}
-          <form method="post" action="/app/tickets/{{ ticket.id }}/nota" class="form">
-            <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
-            {{ tk.editorToolbar(user, '#nota-cuerpo', config.respuestas) }}
-            <textarea name="cuerpo" id="nota-cuerpo" rows="3" required placeholder="Escribe una respuesta…"></textarea>
-            <label class="field--check">
-              <input type="checkbox" name="tipo" value="interna" {{ 'disabled' if not permisos.notasInternas }} />
-              <span>Nota interna (no visible para el cliente)</span>
-            </label>
-            <button class="btn btn--sm" type="submit">Agregar nota</button>
-          </form>
-        {% endif %}
+        {% else %}<p class="muted">Sin respuestas todavía.</p>{% endfor %}
       </div>
 
       {% if permisos.editar %}

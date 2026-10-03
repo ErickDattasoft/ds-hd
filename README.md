@@ -97,6 +97,7 @@ ilustran cada sección se toman con `npm run docs:screenshots` contra la app cor
 | `N8N_WEBHOOK_COTIZACIONES` | sí | URL del webhook n8n para eventos de cotizaciones. |
 | `TURNSTILE_SITE_KEY` | sí | Site key de Cloudflare Turnstile (formularios públicos). |
 | `TURNSTILE_SECRET` | sí | Secret de Cloudflare Turnstile (verificación server-side). |
+| `CORREO_ENTRANTE_SECRET` | sí | Clave `?key=` del webhook /webhooks/correo-entrante (CloudMailin). Vacía = cerrado. |
 | `JOBS_SECRET` | sí | Bearer que protege los endpoints /jobs/* invocados por el cron. |
 | `DISABLE_FIREBASE` | sí | Si es true, no inicializa firebase-admin (útil para smoke tests sin credenciales). |
 

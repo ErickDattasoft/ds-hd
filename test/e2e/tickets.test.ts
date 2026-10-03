@@ -503,4 +503,57 @@ describe('avisos globales (título de pestaña y buzón público, como el viejo)
     expect(pagina.text).toMatch(/<title>\(1 sin leer\) /);
     expect(pagina.text).toContain('data-buzon="1"');
   });
+
+  it('webhook de correo entrante: cerrado sin clave; con clave crea solicitud o nota', async () => {
+    process.env.CORREO_ENTRANTE_SECRET = 'clave-correo';
+    try {
+      const t = makeTestApp({ usuarios: [SUP] });
+      const sinClave = await request(t.app).post('/webhooks/correo-entrante').send({});
+      expect(sinClave.status).toBe(401);
+
+      const solicitud = await request(t.app)
+        .post('/webhooks/correo-entrante?key=clave-correo')
+        .send({ headers: { from: 'Ana <ana@nueva.mx>', subject: 'No abre el sistema' }, plain: 'Ayuda por favor' });
+      expect(solicitud.body).toMatchObject({ ok: true, accion: 'solicitud' });
+
+      const sup = await login(t.app, SUP.email, SUP.password);
+      const buzon = await sup.agent.get('/app/tickets/buzon');
+      expect(buzon.text).toContain('por correo');
+      expect(buzon.text).toContain('Convertir a ticket');
+      const lista = await sup.agent.get('/app/tickets');
+      expect(lista.text).toContain('esperando revisión');
+
+      const [pub] = [...t.ticketPublicoRepo.items.values()];
+      await sup.agent.post(`/app/tickets/buzon/${pub!.id}/aceptar`).type('form').send({ _csrf: sup.csrf });
+      const respuesta = await request(t.app)
+        .post('/webhooks/correo-entrante?key=clave-correo')
+        .send({ headers: { from: '"Ana Ruiz" <ana@nueva.mx>', subject: 'RE: [Ticket #1] No abre el sistema' }, plain: 'Ya funciona' });
+      expect(respuesta.body).toMatchObject({ ok: true, accion: 'nota', ticket: 1 });
+    } finally {
+      delete process.env.CORREO_ENTRANTE_SECRET;
+    }
+  });
+
+  it('responder desde el ticket: con copia, captura y asunto [Ticket #N]', async () => {
+    const t = makeTestApp({ usuarios: [SUP] });
+    const sup = await login(t.app, SUP.email, SUP.password);
+    const crear = await sup.agent.post('/app/tickets').type('form').send({
+      _csrf: sup.csrf, asunto: 'Pantalla en blanco', descripcion: 'descripción larga', tipo: 'General', prioridad: 'Baja',
+      contactoNombre: 'Luis', contactoCorreo: 'luis@cliente.mx',
+    });
+    const id = String(crear.headers.location).split('/').pop()!;
+    t.emailSender.enviados.length = 0;
+    const img = Buffer.from('png-falso').toString('base64');
+    await sup.agent.post(`/app/tickets/${id}/nota`).type('form').send({
+      _csrf: sup.csrf, cuerpo: 'Revisa la captura', ccRespuesta: 'jefe@cliente.mx, mal-correo',
+      imagenesNota: JSON.stringify([{ nombre: 'cap.jpg', contentType: 'image/jpeg', base64: img }]),
+    });
+    const correo = t.emailSender.ultimo!;
+    expect(correo.asunto).toBe('[Ticket #1] Pantalla en blanco');
+    expect(correo.cc?.map((c) => c.email)).toContain('jefe@cliente.mx');
+    expect(correo.html).toMatch(/\/adjunto\/[\w-]+/);
+    const detalle = await sup.agent.get(`/app/tickets/${id}`);
+    expect(detalle.text).toContain('nota--enviada');
+    expect(detalle.text).toMatch(/adjuntos\/[\w-]+" alt="Captura 1"/);
+  });
 });

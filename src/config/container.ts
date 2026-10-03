@@ -129,6 +129,7 @@ import { BackupService } from '../application/configuracion/BackupService.js';
 import { MigracionCrmViejoService } from '../application/migracion/MigracionCrmViejoService.js';
 import { TicketPublicoController } from '../interfaces/http/controllers/public/TicketPublicoController.js';
 import { BrevoWebhookController } from '../interfaces/http/controllers/webhooks/BrevoWebhookController.js';
+import { CorreoEntranteWebhookController } from '../interfaces/http/controllers/webhooks/CorreoEntranteWebhookController.js';
 import { EmpresaController } from '../interfaces/http/controllers/backoffice/EmpresaController.js';
 import { AvisarEmpresasService } from '../application/empresas/AvisarEmpresasService.js';
 import { ContactoController } from '../interfaces/http/controllers/backoffice/ContactoController.js';
@@ -316,6 +317,7 @@ export interface Cradle {
   migracionCrmViejoService: MigracionCrmViejoService;
   ticketPublicoController: TicketPublicoController;
   brevoWebhookController: BrevoWebhookController;
+  correoEntranteWebhookController: CorreoEntranteWebhookController;
   empresaController: EmpresaController;
   contactoController: ContactoController;
   bitacoraController: BitacoraController;
@@ -581,7 +583,15 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
     buzonEntrante: asFunction((): IBuzonEntrante => new ZohoBuzonEntrante()).singleton(),
     correoEntranteService: asFunction(
       (c: Cradle) =>
-        new CorreoEntranteService(c.ticketRepo, c.configuracionRepo, c.buzonEntrante, c.idGenerator, c.clock, c.logger),
+        new CorreoEntranteService(c.ticketRepo, c.configuracionRepo, c.buzonEntrante, c.idGenerator, c.clock, c.logger, {
+          adjuntos: c.adjuntoTicketRepo,
+          solicitudes: c.ticketPublicoRepo,
+          usuarios: c.usuarioRepo,
+          email: c.emailSender,
+          // Desde aquí sale todo el correo del CRM: lo que llegue DE estas direcciones es un rebote propio.
+          remitentesPropios: [c.config.brevo.senderEmail, c.config.smtp.user].filter(Boolean),
+          webhookActivo: !!c.config.correoEntrante.secret,
+        }),
     ).singleton(),
     dosPasosService: asFunction(
       (c: Cradle) =>
@@ -726,6 +736,8 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
           c.emailSender,
           c.logger,
           c.webhookPublisher,
+          c.adjuntoTicketRepo,
+          c.config.baseUrl,
         ),
     ).singleton(),
     reenviarCorreoTicketService: asFunction(
@@ -1092,6 +1104,9 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
     ).singleton(),
     brevoWebhookController: asFunction(
       (c: Cradle) => new BrevoWebhookController(c.eventoService, c.config.jobs.secret, c.logger),
+    ).singleton(),
+    correoEntranteWebhookController: asFunction(
+      (c: Cradle) => new CorreoEntranteWebhookController(c.correoEntranteService, c.config.correoEntrante.secret, c.logger),
     ).singleton(),
     empresaController: asFunction(
       (c: Cradle) =>

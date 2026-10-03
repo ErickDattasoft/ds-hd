@@ -871,6 +871,80 @@
       if (it.kind === 'file') { var f = it.getAsFile(); if (f) { f.__cont = cont; agregarAdjunto(f); } }
     });
   });
+  // ── Capturas en la respuesta de un ticket ───────────────────────────────
+  // Se comprimen en el navegador (máx. 1600 px, JPEG) y viajan en un campo oculto (JSON) con la
+  // respuesta; el servidor las guarda como adjuntos y las muestra en el hilo y en el correo.
+  (function () {
+    var MAX_IMGS = 5;
+    var MAX_DIM = 1600;
+    function campoDe(form) { return form.querySelector('[data-nota-imagenes-campo]'); }
+    function leer(form) { try { return JSON.parse(campoDe(form).value || '[]'); } catch (e) { void e; return []; } }
+    function pintar(form, arr) {
+      campoDe(form).value = arr.length ? JSON.stringify(arr) : '';
+      var prev = form.querySelector('[data-nota-imagenes-preview]');
+      if (!prev) return;
+      prev.innerHTML = arr.map(function (a, i) {
+        return '<span><img class="adjunto-thumb" alt="" src="data:' + a.contentType + ';base64,' + a.base64 + '" />' +
+          ' <button type="button" class="btn btn--ghost btn--sm" data-nota-quitar-img="' + i + '">✕</button></span>';
+      }).join('');
+    }
+    function comprimir(file, cb) {
+      var reader = new FileReader();
+      reader.onload = function () {
+        var img = new Image();
+        img.onload = function () {
+          var escala = Math.min(1, MAX_DIM / Math.max(img.width, img.height));
+          var c = document.createElement('canvas');
+          c.width = Math.round(img.width * escala);
+          c.height = Math.round(img.height * escala);
+          c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+          var d = c.toDataURL('image/jpeg', 0.82);
+          cb(d.slice(d.indexOf(',') + 1));
+        };
+        img.onerror = function () { toast('No se pudo leer la imagen'); };
+        img.src = String(reader.result || '');
+      };
+      reader.readAsDataURL(file);
+    }
+    function agregar(form, file) {
+      if (!file || !/^image\//.test(file.type)) return;
+      comprimir(file, function (b64) {
+        var arr = leer(form);
+        if (arr.length >= MAX_IMGS) { toast('Máximo ' + MAX_IMGS + ' imágenes por respuesta'); return; }
+        if (b64.length * 0.75 > ADJ_MAX) { toast('"' + (file.name || 'captura') + '" sigue pesando más de 700 KB'); return; }
+        arr.push({ nombre: (file.name || 'captura').replace(/\.[^.]+$/, '') + '.jpg', contentType: 'image/jpeg', base64: b64 });
+        pintar(form, arr);
+      });
+    }
+    document.addEventListener('change', function (e) {
+      var input = e.target.closest('[data-nota-imagenes-file]');
+      if (!input || !input.files) return;
+      var form = input.closest('[data-nota-form]');
+      Array.prototype.forEach.call(input.files, function (f) { agregar(form, f); });
+      input.value = '';
+    });
+    document.addEventListener('click', function (e) {
+      var q = e.target.closest('[data-nota-quitar-img]');
+      if (!q) return;
+      var form = q.closest('[data-nota-form]');
+      var arr = leer(form);
+      arr.splice(parseInt(q.getAttribute('data-nota-quitar-img'), 10), 1);
+      pintar(form, arr);
+    });
+    // Pegar una captura en la caja de respuesta la agrega a la respuesta (no a los adjuntos
+    // generales del ticket): fase de captura para ganarle al pegado de adjuntos de abajo.
+    document.addEventListener('paste', function (e) {
+      var form = e.target.closest && e.target.closest('[data-nota-form]');
+      if (!form) return;
+      var items = (e.clipboardData && e.clipboardData.items) || [];
+      var hubo = false;
+      Array.prototype.forEach.call(items, function (it) {
+        if (it.kind === 'file' && /^image\//.test(it.type)) { hubo = true; agregar(form, it.getAsFile()); }
+      });
+      if (hubo) { e.preventDefault(); e.stopPropagation(); }
+    }, true);
+  })();
+
   // Botón 🖼️ Imagen del editor: si el destino es el editor enriquecido de la descripción,
   // inserta la imagen INLINE (ver rteImagenes abajo); si no (p. ej. "Agregar nota"), abre el
   // selector de adjuntos normal como antes.

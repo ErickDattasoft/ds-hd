@@ -16,7 +16,7 @@ CC — así un tercero no puede escribir en un ticket ajeno solo con adivinar el
 
 ### Constructor
 
-> **new CorreoEntranteService**(`tickets`, `config`, `buzon`, `ids`, `clock`, `logger`): `CorreoEntranteService`
+> **new CorreoEntranteService**(`tickets`, `config`, `buzon`, `ids`, `clock`, `logger`, `deps?`): `CorreoEntranteService`
 
 #### Parameters
 
@@ -44,11 +44,49 @@ CC — así un tercero no puede escribir en un ticket ajeno solo con adivinar el
 
 [`ILogger`](../../../../core/ports/services/ILogger/interfaces/ILogger.md)
 
+##### deps?
+
+[`DepsCorreoEntrante`](../interfaces/DepsCorreoEntrante.md) = `{}`
+
 #### Returns
 
 `CorreoEntranteService`
 
+## Accessors
+
+### webhookActivo
+
+#### Get Signature
+
+> **get** **webhookActivo**(): `boolean`
+
+¿El webhook de CloudMailin está habilitado (tiene clave)?
+
+##### Returns
+
+`boolean`
+
 ## Methods
+
+### recibirWebhook()
+
+> **recibirWebhook**(`correo`): `Promise`\<[`ResultadoWebhookCorreo`](../type-aliases/ResultadoWebhookCorreo.md)\>
+
+Un correo que llegó por webhook (CloudMailin). Con número de ticket → nota en ese ticket;
+sin número → solicitud en el buzón de tickets públicos, para convertirla o descartarla a mano
+(nunca se crea un ticket solo). No depende de "habilitado": el webhook ya es la decisión.
+
+#### Parameters
+
+##### correo
+
+[`CorreoRecibido`](../../../../core/ports/services/IBuzonEntrante/interfaces/CorreoRecibido.md)
+
+#### Returns
+
+`Promise`\<[`ResultadoWebhookCorreo`](../type-aliases/ResultadoWebhookCorreo.md)\>
+
+***
 
 ### revisar()
 

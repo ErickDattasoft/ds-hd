@@ -16,6 +16,8 @@ export interface TicketPublico {
   descripcion: string;
   /** Hasta {@link MAX_IMAGENES_PUBLICO} imágenes (data URL, ya comprimidas por el navegador). */
   imagenes?: ImagenTicketPublico[];
+  /** De dónde llegó: el formulario público o un correo sin número de ticket (solicitud por correo). */
+  origen?: 'formulario' | 'correo';
   estado: 'pendiente' | 'aceptado' | 'rechazado';
   ticketNumero: number | null;
   createdAt: Date;

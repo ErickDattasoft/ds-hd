@@ -41,7 +41,7 @@ export class GestionTicketPublicoService {
       tipo: entrada.tipo ?? 'Soporte Técnico',
       prioridad,
       sistema: entrada.sistema,
-      canal: 'publico',
+      canal: entrada.origen === 'correo' ? 'correo' : 'publico',
       empresaNombre: entrada.empresa,
       contactoNombre: entrada.nombre,
       contactoCorreo: entrada.correo,

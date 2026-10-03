@@ -679,6 +679,9 @@ fieldset.field {
 .ticket-side { display: flex; flex-direction: column; gap: var(--space-3); }
 .nota { border-left: 3px solid var(--color-border-strong); padding: var(--space-1) var(--space-3); margin-block: var(--space-3); }
 .nota--interna { border-left-color: var(--warning); background: var(--warning-weak); border-radius: 0 var(--radius-sm) var(--radius-sm) 0; }
+.nota--recibida { border-left: 4px solid var(--success); background: var(--success-weak); border-radius: 0 var(--radius-sm) var(--radius-sm) 0; }
+.nota--enviada { border-left: 4px solid var(--info, #3b82f6); border-radius: 0 var(--radius-sm) var(--radius-sm) 0; }
+.nota__imgs { display: flex; gap: var(--space-2); flex-wrap: wrap; margin-top: var(--space-1); }
 .nota__head { display: flex; gap: var(--space-2); font-size: var(--text-xs); color: var(--color-text-muted); margin-bottom: 2px; }
 .timeline { list-style: none; padding: 0; font-size: var(--text-sm); }
 .timeline li { padding: var(--space-2) 0; border-bottom: 1px solid var(--color-border); }

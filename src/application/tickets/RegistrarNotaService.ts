@@ -8,6 +8,13 @@ import type { ILogger } from '../../core/ports/services/ILogger.js';
 import type { IEmailSender } from '../../core/ports/services/IEmailSender.js';
 import type { IWebhookPublisher } from '../../core/ports/services/IWebhookPublisher.js';
 import type { NotaTicket } from '../../core/entities/NotaTicket.js';
+import type { IAdjuntoTicketRepository } from '../../core/ports/repositories/IAdjuntoTicketRepository.js';
+import {
+  MAX_ADJUNTO_BYTES,
+  normalizarTipoAdjunto,
+  sanearNombreArchivo,
+} from '../../core/entities/AdjuntoTicket.js';
+import { Email } from '../../core/entities/value-objects/Email.js';
 import { ForbiddenError, NotFoundError, ValidationError } from '../../core/errors/DomainError.js';
 import { publicarNotaInterna, registrarEvento } from './efectos.js';
 import { historialActividadHtml } from './historialCorreo.js';
@@ -26,7 +33,13 @@ export class RegistrarNotaService {
     private readonly email: IEmailSender,
     private readonly logger: ILogger,
     private readonly webhooks?: IWebhookPublisher,
+    private readonly adjuntos?: IAdjuntoTicketRepository,
+    /** URL pública del CRM: las imágenes del correo apuntan a `/adjunto/<id>`. */
+    private readonly baseUrl = '',
   ) {}
+
+  /** Máximo de capturas por respuesta. */
+  static readonly MAX_IMAGENES = 5;
 
   async ejecutar(input: RegistrarNotaInput): Promise<NotaTicket> {
     const cuerpo = input.cuerpo.trim();
@@ -50,6 +63,7 @@ export class RegistrarNotaService {
     }
 
     const ahora = this.clock.now();
+    const adjuntoIds = await this.guardarImagenes(ticket.id, input, ahora);
     const nota: NotaTicket = {
       id: this.ids.newId(),
       tipo: input.tipo,
@@ -57,11 +71,14 @@ export class RegistrarNotaService {
       autorUid: input.actor.uid,
       autorNombre: input.actor.nombre,
       createdAt: ahora,
+      ...(adjuntoIds.length ? { adjuntoIds } : {}),
     };
     await this.tickets.agregarNota(ticket.id, nota);
     await registrarEvento(this.tickets, this.ids, ticket.id, {
       tipo: 'nota',
-      resumen: `Nota ${input.tipo} de ${input.actor.nombre}`,
+      resumen: `${input.tipo === 'publica' && input.actor.esStaff ? 'Respuesta' : `Nota ${input.tipo}`} de ${input.actor.nombre}${
+        adjuntoIds.length ? ` (${adjuntoIds.length} imagen(es))` : ''
+      }`,
       actor: input.actor,
       at: ahora,
     });
@@ -89,13 +106,25 @@ export class RegistrarNotaService {
         const avisoSinContacto = dest.sinContacto
           ? `<p style="background:#fef3c7;color:#92400e;padding:8px 12px;border-radius:6px">⚠️ El contacto del ticket no tiene correo — esta nota solo llegó al equipo.</p>`
           : '';
+        // "Con copia" de esta respuesta, sin repetir a quien ya va en Para/CC.
+        const yaVan = new Set([...dest.para, ...dest.cc].map((d) => d.email.toLowerCase()));
+        const ccExtra = (input.cc ?? [])
+          .map((c) => Email.tryCreate(c.trim()))
+          .filter((c): c is Email => c !== null && !yaVan.has(c.value))
+          .map((c) => ({ email: c.value }));
+        const cc = [...dest.cc, ...ccExtra];
+        const base = this.baseUrl.replace(/\/+$/, '');
+        const imagenesHtml = adjuntoIds
+          .map((id, i) => `<p><a href="${base}/adjunto/${id}"><img src="${base}/adjunto/${id}" alt="Imagen ${i + 1}" style="max-width:100%;height:auto"></a></p>`)
+          .join('');
         await this.email.enviar({
           para: dest.para,
-          ...(dest.cc.length ? { cc: dest.cc } : {}),
+          ...(cc.length ? { cc } : {}),
           ...(dest.cco.length ? { cco: dest.cco } : {}),
           ...(dest.responderA ? { responderA: dest.responderA } : {}),
-          asunto: `Actualización de tu ticket #${ticket.numero}`,
-          html: `${avisoSinContacto}<p>${cuerpo}</p>${firma}<hr /><p class="muted">Ticket #${ticket.numero} — ${ticket.asunto}</p>${historial}`,
+          // "[Ticket #N]" en el asunto: si el cliente contesta, su respuesta regresa a este ticket.
+          asunto: `[Ticket #${ticket.numero}] ${ticket.asunto}`,
+          html: `${avisoSinContacto}<div>${textoOHtmlASeguro(cuerpo)}</div>${imagenesHtml}${firma}<hr /><p class="muted">Ticket #${ticket.numero} — ${ticket.asunto}</p>${historial}`,
           tags: ['ticket-nota', `ticket-${ticket.numero}`],
         });
       }
@@ -103,5 +132,36 @@ export class RegistrarNotaService {
 
     this.logger.info('Nota registrada', { numero: ticket.numero, tipo: input.tipo, por: input.actor.uid });
     return nota;
+  }
+
+  /** Guarda las capturas como adjuntos del ticket y devuelve sus ids (valida tipo y tamaño). */
+  private async guardarImagenes(ticketId: string, input: RegistrarNotaInput, ahora: Date): Promise<string[]> {
+    if (!this.adjuntos || !input.imagenes?.length) return [];
+    const ids: string[] = [];
+    for (const img of input.imagenes.slice(0, RegistrarNotaService.MAX_IMAGENES)) {
+      const contentType = normalizarTipoAdjunto(img.nombre, img.contentType);
+      const base64 = img.base64.replace(/\s/g, '');
+      const tamano = Math.floor((base64.length * 3) / 4);
+      if (!contentType.startsWith('image/') || contentType === 'image/svg+xml') {
+        throw new ValidationError('Solo se pueden adjuntar imágenes a una respuesta', { imagenes: 'Tipo no permitido' });
+      }
+      if (!tamano || tamano > MAX_ADJUNTO_BYTES) {
+        throw new ValidationError(`Cada imagen debe pesar menos de ${Math.round(MAX_ADJUNTO_BYTES / 1024)} KB`, { imagenes: 'Muy grande' });
+      }
+      const id = this.ids.newId();
+      await this.adjuntos.crear({
+        id,
+        ticketId,
+        nombre: sanearNombreArchivo(img.nombre),
+        contentType,
+        tamano,
+        data: `data:${contentType};base64,${base64}`,
+        subidoPorUid: input.actor.uid,
+        subidoPorNombre: input.actor.nombre,
+        createdAt: ahora,
+      });
+      ids.push(id);
+    }
+    return ids;
   }
 }

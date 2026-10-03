@@ -17,7 +17,7 @@ El módulo de tickets (`/app/tickets`) es el corazón del sistema de soporte.
 | Tablero (kanban) | `/app/tickets/tablero` | arrastrar un ticket entre columnas para cambiar su estado |
 | Mis asignados | `/app/tickets/mis-asignados` | los tickets asignados a ti (agente) |
 | Carga de agentes | `/app/tickets/carga-agentes` | cuántos tickets abiertos tiene cada agente frente a su capacidad máxima (requiere permiso de asignar) |
-| Buzón público | `/app/tickets/buzon` | tickets creados desde el formulario público, pendientes de aceptar o rechazar |
+| Solicitudes de ticket | `/app/tickets/buzon` | solicitudes del formulario público o de un correo sin número de ticket, pendientes de convertir o descartar |
 
 ![Tablero kanban](../screenshots/tickets-tablero.png)
 
@@ -34,13 +34,31 @@ ticket o arrastrando su tarjeta en el tablero.
 opcionalmente lo ligas a una empresa/contacto existentes. Al guardar, el sistema le asigna
 un folio consecutivo y calcula su fecha de vencimiento de SLA según la prioridad.
 
-## Buzón de tickets públicos
+## Solicitudes de ticket (formulario público y correo)
 
-Cuando alguien externo crea un ticket desde `/ticket-publico` (sin cuenta), cae primero en
-el buzón (`/app/tickets/buzon`) y **no** es un ticket real todavía. Desde ahí:
+Cuando alguien externo crea un ticket desde `/ticket-publico` (sin cuenta), o manda un correo
+que no trae número de ticket en el asunto, cae primero en *Solicitudes de ticket*
+(`/app/tickets/buzon`) y **no** es un ticket real todavía. Arriba de la lista de tickets sale un
+aviso con cuántas esperan. Desde ahí:
 
-- **Aceptar**: lo convierte en un ticket normal (folio, SLA, todo).
-- **Rechazar**: lo descarta sin crear ticket.
+- **🎫 Convertir a ticket**: lo vuelve un ticket normal (folio, SLA, todo); las imágenes pasan a adjuntos.
+- **🗑️ Descartar**: lo quita sin crear ticket.
+
+## Conversación por correo
+
+En el detalle del ticket, **💬 Conversación** muestra lo más reciente arriba: en verde lo que
+llegó por correo y en azul lo que se mandó desde el CRM. La caja de respuesta manda el mensaje
+por correo al cliente (con *Con copia* opcional y hasta 5 capturas, que también puedes pegar con
+Ctrl+V). Todos los correos de un ticket llevan `[Ticket #N]` en el asunto: cuando el cliente o un
+agente en copia contesta, su respuesta (con sus capturas) aparece sola en la conversación y queda
+en la actividad del ticket y en la Bitácora. Se configura en *Configuración → Correo entrante*.
+
+## Quién ve qué ticket
+
+Administradores, supervisores y lectura ven todos. Un agente (o soporte) ve los suyos —por
+**Agente** o por **Canalizado a**, aunque el nombre esté corto ("DIEGO") o completo— más los que
+nadie tiene asignados todavía, para que no queden invisibles. El filtro *Agente* de la lista busca
+igual, en los dos campos.
 
 ## Asignar y trabajar un ticket
 

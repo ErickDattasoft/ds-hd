@@ -11,6 +11,30 @@
   {% if error %}<p class="alert alert--error">{{ error }}</p>{% endif %}
 
   <div class="card">
+    <p><strong>✅ Opción recomendada: filtro de Zoho → CloudMailin</strong> {% if webhookActivo %}<span class="badge badge--ok">clave configurada</span>{% else %}<span class="badge badge--warning">falta la clave</span>{% endif %}</p>
+    <p>No hace falta ser administrador de Zoho ni tocar el dominio. Cada correo llega al instante:</p>
+    <ul>
+      <li>Si el asunto trae <code>[Ticket #123]</code> → se agrega como respuesta en ese ticket (con sus capturas), y se avisa a los correos de notificación.</li>
+      <li>Si no trae número → queda como <strong>solicitud</strong> en <a href="/app/tickets/buzon">Solicitudes de ticket</a>, para convertirla o descartarla. Nunca se crea un ticket solo.</li>
+      <li>Lo que manda el propio CRM se ignora (evita el bucle de correos que tuvo el CRM viejo).</li>
+    </ul>
+    <details class="disclosure">
+      <summary class="disclosure__summary">❓ Cómo dejarlo funcionando (una sola vez)</summary>
+      <div class="disclosure__body">
+        <ol>
+          <li>Pide que pongan el secreto <code>CORREO_ENTRANTE_SECRET</code> en Cloudflare (<code>npx wrangler secret put CORREO_ENTRANTE_SECRET</code>) con una clave larga al azar.</li>
+          <li>En <a href="https://www.cloudmailin.com" target="_blank" rel="noopener">cloudmailin.com</a> (plan gratis) crea una dirección con formato <strong>JSON (Normalized)</strong> y destino:
+            <br /><code>{{ config.baseUrl }}/webhooks/correo-entrante?key=&lt;la clave&gt;</code></li>
+          <li>En Zoho Mail → Configuración → Filtros: «si el asunto contiene <code>[Ticket #</code>, reenviar a» la dirección de CloudMailin.
+            Con un buzón dedicado (p. ej. servicio@), reenvía <strong>todo</strong> para que también lleguen las solicitudes nuevas.</li>
+          <li>Ojo: mientras el CRM viejo siga recibiendo de ese mismo filtro, solo uno de los dos puede quedar como destino.</li>
+        </ol>
+      </div>
+    </details>
+  </div>
+
+  <div class="card">
+    <p><strong>Alternativa: revisar el buzón por la API de Zoho</strong> (requiere autorizar una aplicación en Zoho).</p>
     <p>Cada hora el sistema revisa un buzón de <strong>Zoho Mail</strong>. Si un correo trae el número
       de ticket en el asunto (<code>Ticket #123</code>), su texto se agrega como respuesta en ese ticket.
       <strong>No hay que tocar nada del dominio</strong>: solo autorizar una vez la aplicación en Zoho.</p>

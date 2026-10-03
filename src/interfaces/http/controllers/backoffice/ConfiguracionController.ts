@@ -438,6 +438,7 @@ export class ConfiguracionController {
     res.render('pages/backoffice/configuracion/correo-entrante', {
       titulo: 'Correo entrante',
       cfg: await this.correoEntrante.configuracion(req.user!),
+      webhookActivo: this.correoEntrante.webhookActivo,
       guardado: false,
       aviso: '',
       error: '',

@@ -85,6 +85,14 @@ Hasta [MAX\_IMAGENES\_PUBLICO](../variables/MAX_IMAGENES_PUBLICO.md) imágenes (
 
 ***
 
+### origen?
+
+> `optional` **origen?**: `"correo"` \| `"formulario"`
+
+De dónde llegó: el formulario público o un correo sin número de ticket (solicitud por correo).
+
+***
+
 ### estado
 
 > **estado**: `"pendiente"` \| `"aceptado"` \| `"rechazado"`

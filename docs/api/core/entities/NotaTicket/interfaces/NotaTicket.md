@@ -43,3 +43,19 @@ Nota en la conversación de un ticket. `interna` no es visible para el cliente e
 ### createdAt
 
 > **createdAt**: `Date`
+
+***
+
+### adjuntoIds?
+
+> `optional` **adjuntoIds?**: `string`[]
+
+Imágenes de la nota (ids de `tickets_adjuntos`): capturas de una respuesta por correo o del CRM.
+
+***
+
+### correoDe?
+
+> `optional` **correoDe?**: `string`
+
+Correo de quien la escribió, si llegó por correo (para distinguirla de las del CRM).

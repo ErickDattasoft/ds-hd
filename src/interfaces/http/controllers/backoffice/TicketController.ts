@@ -110,11 +110,13 @@ export class TicketController {
   listarView = async (req: Request, res: Response): Promise<void> => {
     const filtro = await this.filtroDeQuery(req);
     const puedePapelera = req.user!.permisos.includes('papelera:gestionar');
-    const [{ tickets, total, config }, resumen, agentes, enPapelera] = await Promise.all([
+    const puedeBuzon = req.user!.permisos.includes('tickets:crear');
+    const [{ tickets, total, config }, resumen, agentes, enPapelera, solicitudesPendientes] = await Promise.all([
       this.listar.listar(req.user!, filtro),
       this.listar.resumenPorEstado(req.user!),
       this.usuarios.list({ roles: ROLES_ASIGNABLES, activo: true }).catch(() => []),
       puedePapelera ? this.listar.contarEnPapelera(req.user!).catch(() => 0) : 0,
+      puedeBuzon ? this.buzon.contarPendientes().catch(() => 0) : 0,
     ]);
     const ahora = this.clock.now();
     res.render('pages/backoffice/tickets/list', {
@@ -125,6 +127,7 @@ export class TicketController {
       config,
       agentes,
       enPapelera,
+      solicitudesPendientes,
       estadosFacturacion: ESTADOS_FACTURACION.map((e) => ({ valor: e, etiqueta: ETIQUETAS_FACTURACION[e] })),
       filtro: req.query,
     });
@@ -503,11 +506,26 @@ export class TicketController {
   };
 
   notaPost = async (req: Request, res: Response): Promise<void> => {
+    let imagenes: { nombre: string; contentType: string; base64: string }[] = [];
+    try {
+      const crudo = JSON.parse(str(req.body?.imagenesNota) || '[]') as unknown;
+      if (Array.isArray(crudo)) {
+        imagenes = crudo.map((i: Record<string, unknown>) => ({
+          nombre: str(i?.nombre) || 'captura.jpg',
+          contentType: str(i?.contentType),
+          base64: str(i?.base64),
+        }));
+      }
+    } catch {
+      /* campo vacío o inválido: sin imágenes */
+    }
     await this.registrarNota.ejecutar({
       actor: req.user!,
       ticketId: str(req.params.id),
       cuerpo: str(req.body?.cuerpo),
       tipo: req.body?.tipo === 'interna' ? 'interna' : 'publica',
+      cc: str(req.body?.ccRespuesta).split(/[,;\s]+/).filter(Boolean),
+      imagenes,
     });
     res.redirect(`/app/tickets/${str(req.params.id)}`);
   };
@@ -673,7 +691,7 @@ export class TicketController {
   // ── Buzón público ─────────────────────────────────────────────────────────
   buzonView = async (_req: Request, res: Response): Promise<void> => {
     const pendientes = await this.buzon.listPendientes();
-    res.render('pages/backoffice/tickets/buzon', { titulo: 'Tickets del portal', pendientes });
+    res.render('pages/backoffice/tickets/buzon', { titulo: 'Solicitudes de ticket', pendientes });
   };
 
   aceptarPublicoPost = async (req: Request, res: Response): Promise<void> => {

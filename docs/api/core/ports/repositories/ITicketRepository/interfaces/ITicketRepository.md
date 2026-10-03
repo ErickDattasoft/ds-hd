@@ -215,3 +215,16 @@ Borrado permanente de varios tickets (con sus notas y eventos), agrupando las ll
 #### Returns
 
 `Promise`\<`void`\>
+
+***
+
+### listarDetalleTodos()
+
+> **listarDetalleTodos**(): `Promise`\<`Map`\<`string`, \{ `notas`: [`NotaTicket`](../../../../entities/NotaTicket/interfaces/NotaTicket.md)[]; `eventos`: [`EventoTicket`](../../../../entities/NotaTicket/interfaces/EventoTicket.md)[]; \}\>\>
+
+Notas (la conversación) y eventos (la actividad) de TODOS los tickets, por id de ticket — para
+el respaldo. Dos lecturas en total, no dos por ticket (el tope de subpeticiones del worker).
+
+#### Returns
+
+`Promise`\<`Map`\<`string`, \{ `notas`: [`NotaTicket`](../../../../entities/NotaTicket/interfaces/NotaTicket.md)[]; `eventos`: [`EventoTicket`](../../../../entities/NotaTicket/interfaces/EventoTicket.md)[]; \}\>\>

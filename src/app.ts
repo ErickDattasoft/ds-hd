@@ -170,7 +170,9 @@ export function createApp(container: Container, options: CreateAppOptions = {}):
   }
   app.use(securityHeaders(config));
   if (runtime === 'node') app.use(compression());
-  app.use(express.urlencoded({ extended: false, limit: '1mb' }));
+  // 8mb: los formularios llevan capturas en base64 (adjuntos al crear un ticket, imágenes de una
+  // respuesta: hasta 700 KB c/u). Con 1mb, un solo adjunto grande daba 413.
+  app.use(express.urlencoded({ extended: false, limit: '8mb' }));
   // 15mb: el backup completo (empresas/contactos/tickets/KB/...) se restaura como JSON en
   // el body — hoy pesa ~1.4mb y crece con el tiempo; el resto de rutas usa payloads chicos.
   app.use(express.json({ limit: '15mb' }));

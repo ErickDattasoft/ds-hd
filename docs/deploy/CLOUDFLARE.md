@@ -45,6 +45,7 @@ npx wrangler secret put TURNSTILE_SECRET
 npx wrangler secret put APP_BASE_URL                    # p. ej. https://ds-hd.dattasoft.mx
 npx wrangler secret put JOBS_SECRET                      # genera uno nuevo: openssl rand -hex 32
 npx wrangler secret put BREVO_API_KEY
+npx wrangler secret put CORREO_ENTRANTE_SECRET           # webhook de CloudMailin: openssl rand -hex 24
 ```
 
 `FIREBASE_SERVICE_ACCOUNT_B64` es el JSON del service account del proyecto Firebase

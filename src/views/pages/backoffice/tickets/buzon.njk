@@ -1,12 +1,15 @@
 {% extends "layouts/backoffice.njk" %}
-{% block title %}Tickets del portal{% endblock %}
+{% block title %}Solicitudes de ticket{% endblock %}
 {% block content %}
-  <h1>Tickets del portal <span class="muted">({{ pendientes | length }} pendientes)</span></h1>
+  <h1>Solicitudes de ticket <span class="muted">({{ pendientes | length }} pendientes)</span></h1>
+  <p class="muted">Llegan del formulario público o por correo (un correo sin número de ticket). Nunca se crea un ticket solo: conviértelo o descártalo.</p>
   {% for t in pendientes %}
     <div class="card">
-      <p><strong>{{ t.asunto }}</strong> — <span class="{{ t.prioridad | prioridadClase }}">{{ t.prioridad }}</span></p>
+      <p>{% if t.origen == 'correo' %}<span class="badge">📧 por correo</span>{% else %}<span class="badge">🌐 formulario</span>{% endif %}
+        <strong>{{ t.asunto }}</strong> — <span class="{{ t.prioridad | prioridadClase }}">{{ t.prioridad }}</span></p>
       <p class="muted">{{ t.nombre }} ({{ t.correo }}){% if t.empresa %} · {{ t.empresa }}{% endif %} · folio {{ t.folio }}</p>
-      <p>{{ t.descripcion }}</p>
+      <p class="muted">{{ t.createdAt | fechahora }}</p>
+      <p style="white-space:pre-wrap">{{ t.descripcion }}</p>
       {% if t.imagenes and t.imagenes.length %}
         <p class="muted">🖼️ {{ t.imagenes.length }} imagen(es) — se agregan como adjuntos al aceptar.</p>
         <div style="display:flex;gap:.5rem;flex-wrap:wrap">
@@ -16,15 +19,15 @@
       <div class="page-head__actions">
         <form method="post" action="/app/tickets/buzon/{{ t.id }}/aceptar" class="inline">
           <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
-          <button class="btn btn--sm" type="submit">Aceptar</button>
+          <button class="btn btn--sm" type="submit">🎫 Convertir a ticket</button>
         </form>
-        <form method="post" action="/app/tickets/buzon/{{ t.id }}/rechazar" class="inline" data-confirm="¿Rechazar este ticket del portal?">
+        <form method="post" action="/app/tickets/buzon/{{ t.id }}/rechazar" class="inline" data-confirm="¿Descartar esta solicitud?">
           <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
-          <button class="btn btn--sm btn--ghost" type="submit">Rechazar</button>
+          <button class="btn btn--sm btn--ghost" type="submit">🗑️ Descartar</button>
         </form>
       </div>
     </div>
   {% else %}
-    <p class="muted">No hay tickets del portal pendientes de revisión.</p>
+    <p class="muted">No hay solicitudes pendientes de revisión.</p>
   {% endfor %}
 {% endblock %}

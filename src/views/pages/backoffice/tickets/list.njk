@@ -23,6 +23,11 @@
     </div>
   {% endif %}
 
+  {% if solicitudesPendientes %}
+    <p class="alert alert--warn">📥 <strong>{{ solicitudesPendientes }}</strong> solicitud{{ 'es' if solicitudesPendientes != 1 }} de ticket (correo o formulario) esperando revisión.
+      <a class="btn btn--secondary btn--sm" href="/app/tickets/buzon">Revisar</a></p>
+  {% endif %}
+
   <form method="get" class="filterbar">
     <input type="hidden" name="f" value="1" />
     {% if filtro.agenda == '1' %}<input type="hidden" name="agenda" value="1" />{% endif %}

@@ -82,6 +82,11 @@ export const envSchema = z.object({
   TURNSTILE_SITE_KEY: z.string().default('').describe('Site key de Cloudflare Turnstile (formularios públicos).'),
   TURNSTILE_SECRET: z.string().default('').describe('Secret de Cloudflare Turnstile (verificación server-side).'),
 
+  CORREO_ENTRANTE_SECRET: z
+    .string()
+    .default('')
+    .describe('Clave `?key=` del webhook /webhooks/correo-entrante (CloudMailin). Vacía = cerrado.'),
+
   JOBS_SECRET: z
     .string()
     .default('dev-jobs-secret')
@@ -123,6 +128,7 @@ export type AppConfig = {
   readonly n8n: { readonly ticketsWebhook: string; readonly cotizacionesWebhook: string };
   readonly turnstile: { readonly siteKey: string; readonly secret: string };
   readonly jobs: { readonly secret: string };
+  readonly correoEntrante: { readonly secret: string };
 };
 
 /** Valida `process.env` y devuelve la configuración tipada de la app. Lanza si algo es inválido. */
@@ -164,5 +170,6 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): AppConfig {
     n8n: { ticketsWebhook: e.N8N_WEBHOOK_TICKETS, cotizacionesWebhook: e.N8N_WEBHOOK_COTIZACIONES },
     turnstile: { siteKey: e.TURNSTILE_SITE_KEY, secret: e.TURNSTILE_SECRET },
     jobs: { secret: e.JOBS_SECRET },
+    correoEntrante: { secret: e.CORREO_ENTRANTE_SECRET },
   };
 }

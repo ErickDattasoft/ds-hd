@@ -107,6 +107,12 @@ export class InMemoryTicketRepository implements ITicketRepository {
   async listarEventos(ticketId: string): Promise<EventoTicket[]> {
     return [...(this.store.eventos.get(ticketId) ?? [])].sort((a, b) => a.at.getTime() - b.at.getTime());
   }
+  async listarDetalleTodos(): Promise<Map<string, { notas: NotaTicket[]; eventos: EventoTicket[] }>> {
+    const ids = new Set([...this.store.notas.keys(), ...this.store.eventos.keys()]);
+    const out = new Map<string, { notas: NotaTicket[]; eventos: EventoTicket[] }>();
+    for (const id of ids) out.set(id, { notas: await this.listarNotas(id), eventos: await this.listarEventos(id) });
+    return out;
+  }
 }
 
 export class InMemoryTicketQueries implements ITicketQueries {

@@ -5,5 +5,6 @@ import type { Container } from '../../../config/container.js';
 export function webhookRoutes(container: Container): Router {
   const r = Router();
   r.post('/brevo', (req, res) => container.resolve('brevoWebhookController').handle(req, res));
+  r.post('/correo-entrante', (req, res) => container.resolve('correoEntranteWebhookController').handle(req, res));
   return r;
 }

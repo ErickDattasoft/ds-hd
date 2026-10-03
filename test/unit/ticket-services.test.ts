@@ -146,7 +146,8 @@ describe('ActualizarEstadoTicketService', () => {
     await cambiar.ejecutar({ actor: actor(), ticketId: t.id, nuevoEstado: 'Cerrado' });
 
     expect(email.enviados).toHaveLength(1);
-    expect(email.ultimo?.asunto).toContain('cerrado');
+    expect(email.ultimo?.asunto).toBe('[Ticket #1] Cliente con problema');
+    expect(email.ultimo?.html).toContain('cerrado');
     expect(webhooks.eventos).toContain('ticket.cerrado');
     // El correo lleva la bitácora: creación + el cambio de estado que acaba de ocurrir.
     expect(email.ultimo?.html).toContain('Actividad del ticket');

@@ -11,7 +11,7 @@ import { esFacturacionCompletada } from '../../core/entities/value-objects/Estad
 import { ForbiddenError, NotFoundError } from '../../core/errors/DomainError.js';
 import { publicarNotaInterna, registrarEvento } from './efectos.js';
 import { avisarSiQuedoCerradoYFacturado } from './cerradoFacturado.js';
-import { historialActividadHtml } from './historialCorreo.js';
+import { escaparHtml, historialActividadHtml } from './historialCorreo.js';
 import { destinatariosTicket } from './notificacionTicket.js';
 import type { EncuestaSatisfaccionService } from './EncuestaSatisfaccionService.js';
 import type { CambiarEstadoInput } from './dto.js';
@@ -95,7 +95,7 @@ export class ActualizarEstadoTicketService {
     if (resultado.quedoResuelto || resultado.quedoCerrado) {
       await this.notificarCierre(ticket, resultado.quedoCerrado ? 'cerrado' : 'resuelto', input, ahora);
     } else if ((cfg.avisarClienteEstados ?? []).includes(resultado.nuevo)) {
-      await this.notificarAvance(ticket, resultado.nuevo, input, ahora);
+      await this.notificarAvance(ticket, resultado.nuevo, input, ahora, resultado.anterior);
     }
 
     this.logger.info('Estado de ticket actualizado', {
@@ -129,6 +129,7 @@ export class ActualizarEstadoTicketService {
     estado: string,
     input: CambiarEstadoInput,
     ahora: Date,
+    anterior?: string,
   ): Promise<void> {
     const cfg = await this.config.obtenerTickets();
     const copiaInterna = await this.emailAgenteOActor(ticket, input.actor.email);
@@ -142,11 +143,13 @@ export class ActualizarEstadoTicketService {
       ...(dest.cc.length ? { cc: dest.cc } : {}),
       ...(dest.cco.length ? { cco: dest.cco } : {}),
       ...(dest.responderA ? { responderA: dest.responderA } : {}),
-      asunto: `Ticket #${ticket.numero} — ${estado}`,
+      // "[Ticket #N]" en el asunto: si el cliente contesta, su respuesta regresa a este ticket.
+      asunto: `[Ticket #${ticket.numero}] ${ticket.asunto}`,
       html:
-        `<p>Tu ticket <strong>#${ticket.numero} — ${ticket.asunto}</strong> cambió a ` +
-        `<strong>${estado}</strong>.</p>` +
-        `${ticket.agenteAsignadoNombre ? `<p>Lo atiende: ${ticket.agenteAsignadoNombre}.</p>` : ''}${historial}` +
+        `<p>📌 Actualización de tu ticket <strong>#${ticket.numero} — ${escaparHtml(ticket.asunto)}</strong>:</p>` +
+        `<p style="background:#f0fdf4;color:#166534;padding:10px 14px;border-radius:6px">Estado: ` +
+        `${anterior ? `<strong>${escaparHtml(anterior)}</strong> → ` : ''}<strong>${escaparHtml(estado)}</strong></p>` +
+        `${ticket.agenteAsignadoNombre ? `<p>Lo atiende: ${escaparHtml(ticket.agenteAsignadoNombre)}.</p>` : ''}${historial}` +
         '<p>Puedes responder a este correo para agregar información.</p>',
       tags: ['ticket-avance', `ticket-${ticket.numero}`],
     });
@@ -184,8 +187,8 @@ export class ActualizarEstadoTicketService {
       ...(dest.cc.length ? { cc: dest.cc } : {}),
       ...(dest.cco.length ? { cco: dest.cco } : {}),
       ...(dest.responderA ? { responderA: dest.responderA } : {}),
-      asunto: `Ticket #${ticket.numero} — ${tipo}`,
-      html: `${avisoSinContacto}<p>El ticket <strong>#${ticket.numero} — ${ticket.asunto}</strong> fue marcado como <strong>${tipo}</strong>.</p>${historial}${
+      asunto: `[Ticket #${ticket.numero}] ${ticket.asunto}`,
+      html: `${avisoSinContacto}<p>El ticket <strong>#${ticket.numero} — ${escaparHtml(ticket.asunto)}</strong> fue marcado como <strong>${tipo}</strong>.</p>${historial}${
         this.encuesta && !dest.sinContacto ? this.encuesta.bloqueCorreo(ticket) : ''
       }`,
       tags: [`ticket-${tipo}`, `ticket-${ticket.numero}`],

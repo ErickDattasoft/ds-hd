@@ -19,3 +19,6 @@
 - [sanearConfigCorreoEntrante](functions/sanearConfigCorreoEntrante.md)
 - [numeroTicketDeAsunto](functions/numeroTicketDeAsunto.md)
 - [cuerpoSinCita](functions/cuerpoSinCita.md)
+- [textoDeHtmlCorreo](functions/textoDeHtmlCorreo.md)
+- [correoDeRemitente](functions/correoDeRemitente.md)
+- [nombreDeRemitente](functions/nombreDeRemitente.md)
