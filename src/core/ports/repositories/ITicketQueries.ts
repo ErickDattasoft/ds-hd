@@ -6,6 +6,16 @@ export interface FiltroTickets {
   prioridad?: string;
   grupo?: string;
   agenteAsignadoUid?: string;
+  /**
+   * Tickets de este agente: por uid o por su nombre en "Agente" / "Canalizado a" (ver
+   * `ticketEsDeAgente`). Se filtra en memoria.
+   */
+  deAgente?: { uid: string; nombre: string };
+  /**
+   * Alcance de un agente sin `tickets:leer_todos`: los suyos (como `deAgente`) más los que nadie
+   * tiene asignados todavía. Se filtra en memoria.
+   */
+  alcanceAgente?: { uid: string; nombre: string };
   /** `true` = solo sin asignar. */
   sinAsignar?: boolean;
   empresaId?: string;

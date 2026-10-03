@@ -12,6 +12,7 @@ import {
 import { ForbiddenError, NotFoundError, ValidationError } from '../../core/errors/DomainError.js';
 import { registrarEvento } from './efectos.js';
 import type { SessionUser } from '../shared/SessionUser.js';
+import { ticketVisiblePara } from './alcance.js';
 
 /** Datos de subida de un adjunto (el navegador manda el archivo en base64, sin multipart). */
 export interface SubirAdjuntoInput {
@@ -167,9 +168,7 @@ export class AdjuntoTicketService {
       return ticket;
     }
     if (!ticket) throw new NotFoundError('Ticket', ticketId);
-    const puedeTodos = actor.permisos.includes('tickets:leer_todos');
-    const esSuyo = ticket.agenteAsignadoUid === actor.uid;
-    if (!puedeTodos && !esSuyo) throw new ForbiddenError('Solo puedes ver tickets asignados a ti');
+    if (!ticketVisiblePara(ticket, actor)) throw new ForbiddenError('Solo puedes ver tickets asignados a ti');
     if (modo === 'escribir' && !actor.permisos.includes('tickets:editar')) {
       throw new ForbiddenError('No puedes editar tickets');
     }

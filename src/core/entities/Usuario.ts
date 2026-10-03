@@ -4,6 +4,7 @@ import {
   parseRoles,
   rolPrincipal,
   rolesIncluyenTecnico,
+  rolesPuedenRecibirTickets,
   sonRolesCoherentes,
   type Rol,
 } from './value-objects/Rol.js';
@@ -145,6 +146,11 @@ export class Usuario {
   /** ¿Puede tomar tickets como técnico (aparece en dropdowns de asignación)? */
   get esTecnico(): boolean {
     return rolesIncluyenTecnico(this.roles);
+  }
+
+  /** ¿Se le puede asignar un ticket a mano? (técnicos, admin y supervisor). */
+  get puedeRecibirTickets(): boolean {
+    return rolesPuedenRecibirTickets(this.roles);
   }
 
   tieneRol(rol: Rol): boolean {

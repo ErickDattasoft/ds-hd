@@ -28,7 +28,8 @@ import type { IEmpresaRepository } from '../../../../core/ports/repositories/IEm
 import type { IClock } from '../../../../core/ports/services/IClock.js';
 import type { FiltroTickets } from '../../../../core/ports/repositories/ITicketQueries.js';
 import { parsePrioridad } from '../../../../core/entities/value-objects/Prioridad.js';
-import { ROLES_TECNICOS } from '../../../../core/entities/value-objects/Rol.js';
+import { alcanceTickets } from '../../../../application/tickets/alcance.js';
+import { ROLES_ASIGNABLES } from '../../../../core/entities/value-objects/Rol.js';
 import {
   ESTADOS_FACTURACION,
   ETIQUETAS_FACTURACION,
@@ -79,13 +80,20 @@ export class TicketController {
     private readonly cotizacionesRepo?: ICotizacionRepository,
   ) {}
 
-  private filtroDeQuery(req: Request): FiltroTickets {
+  /**
+   * Filtro de la URL. El agente se busca por uid **o por nombre** ("Agente"/"Canalizado a"): los
+   * tickets migrados del CRM viejo traen solo el nombre, y allá casi todo se asignaba por
+   * "Canalizado a".
+   */
+  private async filtroDeQuery(req: Request): Promise<FiltroTickets> {
     const q = req.query;
+    const agenteUid = str(q.agente);
+    const agente = agenteUid ? await this.usuarios.findByUid(agenteUid).catch(() => null) : null;
     return {
+      ...(agenteUid ? { deAgente: { uid: agenteUid, nombre: agente?.nombre ?? '' } } : {}),
       ...(str(q.estado) ? { estado: str(q.estado) } : {}),
       ...(str(q.prioridad) ? { prioridad: str(q.prioridad) } : {}),
       ...(str(q.grupo) ? { grupo: str(q.grupo) } : {}),
-      ...(str(q.agente) ? { agenteAsignadoUid: str(q.agente) } : {}),
       ...(q.sinAsignar === '1' ? { sinAsignar: true } : {}),
       ...(str(q.texto) ? { texto: str(q.texto) } : {}),
       ...(str(q.tipo) ? { tipo: str(q.tipo) } : {}),
@@ -100,12 +108,12 @@ export class TicketController {
   }
 
   listarView = async (req: Request, res: Response): Promise<void> => {
-    const filtro = this.filtroDeQuery(req);
+    const filtro = await this.filtroDeQuery(req);
     const puedePapelera = req.user!.permisos.includes('papelera:gestionar');
     const [{ tickets, total, config }, resumen, agentes, enPapelera] = await Promise.all([
       this.listar.listar(req.user!, filtro),
       this.listar.resumenPorEstado(req.user!),
-      this.usuarios.list({ roles: ROLES_TECNICOS, activo: true }).catch(() => []),
+      this.usuarios.list({ roles: ROLES_ASIGNABLES, activo: true }).catch(() => []),
       puedePapelera ? this.listar.contarEnPapelera(req.user!).catch(() => 0) : 0,
     ]);
     const ahora = this.clock.now();
@@ -123,14 +131,14 @@ export class TicketController {
   };
 
   exportarExcel = async (req: Request, res: Response): Promise<void> => {
-    const buffer = await this.excel.exportar(this.filtroDeQuery(req));
+    const buffer = await this.excel.exportar({ ...(await this.filtroDeQuery(req)), ...alcanceTickets(req.user!) });
     const fecha = new Date().toISOString().slice(0, 10);
     res.setHeader('Content-Disposition', `attachment; filename="tickets-${fecha}.xlsx"`);
     res.type('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet').send(buffer);
   };
 
   tableroView = async (req: Request, res: Response): Promise<void> => {
-    const { columnas, config } = await this.listar.tablero(req.user!, this.filtroDeQuery(req));
+    const { columnas, config } = await this.listar.tablero(req.user!, await this.filtroDeQuery(req));
     const ahora = this.clock.now();
     res.render('pages/backoffice/tickets/kanban', {
       titulo: 'Tablero de tickets',
@@ -141,7 +149,7 @@ export class TicketController {
 
   misAsignadosView = async (req: Request, res: Response): Promise<void> => {
     const { tickets, config } = await this.listar.listar(req.user!, {
-      agenteAsignadoUid: req.user!.uid,
+      deAgente: { uid: req.user!.uid, nombre: req.user!.nombre },
       soloAbiertos: req.query.abiertos !== '0',
       archivado: false,
     });
@@ -187,7 +195,7 @@ export class TicketController {
       folioSiguiente: ultimoFolio + 1,
       estadosFacturacion: catalogoFacturacion(),
       equipoRecordatorio: await this.listar.equipoRecordatorio().catch(() => []),
-      agentes: puedeAsignar ? await this.usuarios.list({ roles: ROLES_TECNICOS, activo: true }) : [],
+      agentes: puedeAsignar ? await this.usuarios.list({ roles: ROLES_ASIGNABLES, activo: true }) : [],
       puedeAsignar,
       puedeNotasInternas: user.permisos.includes('tickets:ver_notas_internas'),
       // Para el buscador de contacto (autocompletar empresa/correo al elegir).
@@ -442,7 +450,7 @@ export class TicketController {
     const d = await this.ver.ejecutar(req.user!, str(req.params.id));
     const ahora = this.clock.now();
     const agentes = d.puedeAsignar
-      ? await this.usuarios.list({ roles: ROLES_TECNICOS, activo: true })
+      ? await this.usuarios.list({ roles: ROLES_ASIGNABLES, activo: true })
       : [];
     res.render('pages/backoffice/tickets/detail', {
       titulo: `Ticket #${d.ticket.numero}`,

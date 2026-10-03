@@ -27,3 +27,6 @@
 ## Functions
 
 - [coincideTexto](functions/coincideTexto.md)
+- [nombresCoinciden](functions/nombresCoinciden.md)
+- [ticketEsDeAgente](functions/ticketEsDeAgente.md)
+- [ticketSinNadieAsignado](functions/ticketSinNadieAsignado.md)

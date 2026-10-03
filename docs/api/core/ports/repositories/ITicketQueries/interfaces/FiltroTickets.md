@@ -34,6 +34,40 @@ Filtros para listar/contar tickets.
 
 ***
 
+### deAgente?
+
+> `optional` **deAgente?**: `object`
+
+Tickets de este agente: por uid o por su nombre en "Agente" / "Canalizado a" (ver
+`ticketEsDeAgente`). Se filtra en memoria.
+
+#### uid
+
+> **uid**: `string`
+
+#### nombre
+
+> **nombre**: `string`
+
+***
+
+### alcanceAgente?
+
+> `optional` **alcanceAgente?**: `object`
+
+Alcance de un agente sin `tickets:leer_todos`: los suyos (como `deAgente`) más los que nadie
+tiene asignados todavía. Se filtra en memoria.
+
+#### uid
+
+> **uid**: `string`
+
+#### nombre
+
+> **nombre**: `string`
+
+***
+
 ### sinAsignar?
 
 > `optional` **sinAsignar?**: `boolean`

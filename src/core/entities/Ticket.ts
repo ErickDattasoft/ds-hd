@@ -579,3 +579,43 @@ export function coincideTexto(t: Pick<Ticket, 'asunto' | 'numero' | 'empresaNomb
     (v ?? '').toLowerCase().includes(q),
   );
 }
+
+/** Palabras de un nombre para compararlo: minúsculas, sin acentos ni signos. */
+function palabrasNombre(nombre: string | null | undefined): string[] {
+  return (nombre ?? '')
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase()
+    .split(/[^a-z0-9ñ]+/)
+    .filter(Boolean);
+}
+
+/**
+ * ¿Dos nombres se refieren a la misma persona? "DIEGO" = "Diego Armando" = "diego armando": todas
+ * las palabras del más corto están en el más largo (el CRM viejo guarda unas veces el nombre
+ * corto y otras el completo). Por palabras, no por subcadena, para que "Ana" no calce "Mariana".
+ */
+export function nombresCoinciden(a: string | null | undefined, b: string | null | undefined): boolean {
+  const pa = palabrasNombre(a);
+  const pb = palabrasNombre(b);
+  if (!pa.length || !pb.length) return false;
+  const [corto, largo] = pa.length <= pb.length ? [pa, new Set(pb)] : [pb, new Set(pa)];
+  return corto.every((p) => largo.has(p));
+}
+
+type TicketAsignacion = Pick<Ticket, 'agenteAsignadoUid' | 'agenteAsignadoNombre' | 'canalizadoA'>;
+
+/**
+ * ¿El ticket es de este agente? Por uid, o por nombre en "Agente" o en "Canalizado a" — los
+ * tickets migrados del CRM viejo solo traen el nombre (sin uid), y allá la mayoría se asignaba
+ * escribiendo a la persona en "Canalizado a".
+ */
+export function ticketEsDeAgente(t: TicketAsignacion, agente: { uid: string; nombre: string }): boolean {
+  if (t.agenteAsignadoUid && t.agenteAsignadoUid === agente.uid) return true;
+  return nombresCoinciden(t.agenteAsignadoNombre, agente.nombre) || nombresCoinciden(t.canalizadoA, agente.nombre);
+}
+
+/** ¿Nadie tiene el ticket todavía? (sin agente ni "Canalizado a"). */
+export function ticketSinNadieAsignado(t: TicketAsignacion): boolean {
+  return !t.agenteAsignadoUid && !t.agenteAsignadoNombre?.trim() && !t.canalizadoA?.trim();
+}

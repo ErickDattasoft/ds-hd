@@ -132,27 +132,45 @@ describe('flujo de tickets', () => {
     expect(await t.adjuntoTicketRepo.listarPorTicket(id)).toHaveLength(0);
   });
 
-  it('el agente solo ve/edita sus tickets asignados', async () => {
+  it('el agente ve los suyos (uid o "Canalizado a") y los sin asignar, no los ajenos', async () => {
     const t = makeTestApp({ usuarios: [SUP, AG] });
     const sup = await login(t.app, SUP.email, SUP.password);
-    const crear = await sup.agent
-      .post('/app/tickets')
-      .type('form')
-      .send({ _csrf: sup.csrf, asunto: 'Ticket sin asignar', descripcion: 'descripción larga', tipo: 'General', prioridad: 'Baja' });
-    const id = String(crear.headers.location).split('/').pop()!;
+    const nuevo = async (asunto: string, canalizadoA = '') => {
+      const r = await sup.agent
+        .post('/app/tickets')
+        .type('form')
+        .send({ _csrf: sup.csrf, asunto, descripcion: 'descripción larga', tipo: 'General', prioridad: 'Baja', canalizadoA });
+      return String(r.headers.location).split('/').pop()!;
+    };
+    const ajeno = await nuevo('Ticket ajeno', 'Pedro Ajeno');
+    const libre = await nuevo('Ticket sin asignar');
+    const canalizado = await nuevo('Ticket canalizado', 'AGENTE');
 
     const ag = await login(t.app, AG.email, AG.password);
-    const verAjeno = await ag.agent.get(`/app/tickets/${id}`);
-    expect(verAjeno.status).toBe(403);
+    expect((await ag.agent.get(`/app/tickets/${ajeno}`)).status).toBe(403);
+    expect((await ag.agent.get(`/app/tickets/${libre}`)).status).toBe(200);
+    expect((await ag.agent.get(`/app/tickets/${canalizado}`)).status).toBe(200);
 
-    // el supervisor se lo asigna
-    await sup.agent.post(`/app/tickets/${id}/asignar`).type('form').send({ _csrf: sup.csrf, agenteUid: AG.uid });
-    const verPropio = await ag.agent.get(`/app/tickets/${id}`);
-    expect(verPropio.status).toBe(200);
+    // el supervisor le asigna el ajeno: ahora sí lo ve
+    await sup.agent.post(`/app/tickets/${ajeno}/asignar`).type('form').send({ _csrf: sup.csrf, agenteUid: AG.uid });
+    expect((await ag.agent.get(`/app/tickets/${ajeno}`)).status).toBe(200);
 
-    // lista del agente: solo el suyo
     const lista = await ag.agent.get('/app/tickets');
     expect(lista.text).toContain('Ticket sin asignar');
+    expect(lista.text).toContain('Ticket canalizado');
+  });
+
+  it('el filtro de Agente lista a los admins y encuentra por "Canalizado a"', async () => {
+    const t = makeTestApp({ usuarios: [SUP, AG] });
+    const sup = await login(t.app, SUP.email, SUP.password);
+    for (const [asunto, canalizadoA] of [['Para el agente', 'Agente'], ['Para otro', 'Pedro']]) {
+      await sup.agent.post('/app/tickets').type('form')
+        .send({ _csrf: sup.csrf, asunto, descripcion: 'descripción larga', tipo: 'General', prioridad: 'Baja', canalizadoA });
+    }
+    const lista = await sup.agent.get(`/app/tickets?agente=${AG.uid}`);
+    expect(lista.text).toContain(`value="${SUP.uid}"`);
+    expect(lista.text).toContain('Para el agente');
+    expect(lista.text).not.toContain('Para otro');
   });
 
   it('el buzón público: crear desde el formulario y aceptar como ticket real', async () => {

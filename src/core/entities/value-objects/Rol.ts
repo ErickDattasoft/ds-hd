@@ -29,6 +29,13 @@ export const ROLES_STAFF: readonly Rol[] = [
  */
 export const ROLES_TECNICOS: readonly Rol[] = ['agente', 'soporte'];
 
+/**
+ * Roles a los que se les puede asignar un ticket a mano (y que salen en el filtro de Agente):
+ * los técnicos más admin y supervisor, que en DATTASOFT también atienden tickets. La asignación
+ * automática (round-robin) sigue siendo solo para {@link ROLES_TECNICOS}.
+ */
+export const ROLES_ASIGNABLES: readonly Rol[] = ['admin', 'supervisor', 'agente', 'soporte'];
+
 /** Type guard: ¿el valor es uno de los roles válidos? */
 export function esRol(value: unknown): value is Rol {
   return typeof value === 'string' && (ROLES as readonly string[]).includes(value);
@@ -67,6 +74,11 @@ export function rolPrincipal(roles: readonly Rol[]): Rol {
   const principal = ROLES.find((r) => roles.includes(r));
   if (!principal) throw new ValidationError('El usuario no tiene ningún rol', { roles: 'Requerido' });
   return principal;
+}
+
+/** ¿Se le puede asignar un ticket a mano? (ver {@link ROLES_ASIGNABLES}). */
+export function rolesPuedenRecibirTickets(roles: readonly Rol[]): boolean {
+  return roles.some((r) => ROLES_ASIGNABLES.includes(r));
 }
 
 /** ¿Alguno de los roles puede tomar tickets como técnico? */

@@ -15,6 +15,7 @@
 - [ROLES](variables/ROLES.md)
 - [ROLES\_STAFF](variables/ROLES_STAFF.md)
 - [ROLES\_TECNICOS](variables/ROLES_TECNICOS.md)
+- [ROLES\_ASIGNABLES](variables/ROLES_ASIGNABLES.md)
 - [ROL\_ETIQUETA](variables/ROL_ETIQUETA.md)
 - [ROL\_GRUPOS](variables/ROL_GRUPOS.md)
 
@@ -24,5 +25,6 @@
 - [esRolStaff](functions/esRolStaff.md)
 - [parseRoles](functions/parseRoles.md)
 - [rolPrincipal](functions/rolPrincipal.md)
+- [rolesPuedenRecibirTickets](functions/rolesPuedenRecibirTickets.md)
 - [rolesIncluyenTecnico](functions/rolesIncluyenTecnico.md)
 - [sonRolesCoherentes](functions/sonRolesCoherentes.md)

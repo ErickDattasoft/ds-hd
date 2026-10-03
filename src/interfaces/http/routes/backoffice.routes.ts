@@ -3,6 +3,7 @@ import type { Container } from '../../../config/container.js';
 import { requireAuth, requireStaff, requirePermission } from '../middlewares/authz.js';
 import { uploadSingleFile } from '../middlewares/uploadSingleFile.js';
 import { construirNavSecciones, contadoresNecesarios, conContadores, type ContadoresNav } from '../view-helpers/nav.js';
+import { alcanceTickets } from '../../../application/tickets/alcance.js';
 
 /** Excel `.xlsx` de import (empresas/contactos), en memoria — nunca toca disco. */
 const uploadExcel = uploadSingleFile('archivo', 10 * 1024 * 1024);
@@ -26,9 +27,13 @@ async function contadoresDelMenu(
     cacheContadores.set(container, cache);
   }
   const ahora = Date.now();
+  // Un agente sin `tickets:leer_todos` cuenta solo lo que puede abrir (los suyos + sin asignar),
+  // y su caché es aparte de la del resto del equipo.
+  const alcance = alcanceTickets(user);
+  const sufijoCache = alcance.alcanceAgente ? `|${user.uid}` : '';
   const calcular: Record<string, () => Promise<number>> = {
-    ticketsAbiertos: () => container.resolve('ticketQueries').contar({ soloAbiertos: true, archivado: false }),
-    ticketsTotal: () => container.resolve('ticketQueries').contar({ archivado: false }),
+    ticketsAbiertos: () => container.resolve('ticketQueries').contar({ soloAbiertos: true, archivado: false, ...alcance }),
+    ticketsTotal: () => container.resolve('ticketQueries').contar({ archivado: false, ...alcance }),
     // Conteo del servidor: antes se descargaban TODAS las cotizaciones solo para contar borradores.
     cotizacionesBorrador: () => container.resolve('cotizacionRepo').contarEnEstado('borrador'),
     empresasTotal: () => container.resolve('empresaRepo').contar(),
@@ -36,7 +41,7 @@ async function contadoresDelMenu(
     ticketsPublicosPendientes: () => container.resolve('ticketPublicoRepo').contarPendientes(),
     // Como el título de pestaña del viejo: «(N sin leer)» = tickets abiertos de un tipo de correo.
     ticketsCorreoSinLeer: async () =>
-      (await container.resolve('ticketQueries').listar({ soloAbiertos: true, archivado: false })).filter((t) =>
+      (await container.resolve('ticketQueries').listar({ soloAbiertos: true, archivado: false, ...alcance })).filter((t) =>
         (t.tipo ?? '').toLowerCase().includes('correo'),
       ).length,
     solicitudesAccesoPendientes: async () =>
@@ -47,13 +52,14 @@ async function contadoresDelMenu(
     claves
       .filter((k) => calcular[k])
       .map(async (k) => {
-        const guardado = cache.get(k);
+        const clave = k + sufijoCache;
+        const guardado = cache.get(clave);
         if (guardado && guardado.exp > ahora) {
           (contadores as Record<string, number>)[k] = guardado.valor;
           return;
         }
         const valor = await calcular[k]!().catch(() => guardado?.valor ?? 0);
-        cache.set(k, { valor, exp: ahora + CONTADORES_TTL_MS });
+        cache.set(clave, { valor, exp: ahora + CONTADORES_TTL_MS });
         (contadores as Record<string, number>)[k] = valor;
       }),
   );

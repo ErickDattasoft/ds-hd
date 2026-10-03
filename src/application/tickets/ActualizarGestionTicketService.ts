@@ -6,6 +6,7 @@ import type { IWebhookPublisher } from '../../core/ports/services/IWebhookPublis
 import { ForbiddenError, NotFoundError } from '../../core/errors/DomainError.js';
 import { publicarNotaInterna, registrarEvento } from './efectos.js';
 import type { SessionUser } from '../shared/SessionUser.js';
+import { ticketVisiblePara } from './alcance.js';
 
 /** Datos de gestión interna editables desde el detalle del ticket. */
 export interface ActualizarGestionInput {
@@ -33,10 +34,7 @@ export class ActualizarGestionTicketService {
     }
     const ticket = await this.tickets.findById(input.ticketId);
     if (!ticket) throw new NotFoundError('Ticket', input.ticketId);
-    if (
-      !input.actor.permisos.includes('tickets:leer_todos') &&
-      ticket.agenteAsignadoUid !== input.actor.uid
-    ) {
+    if (!ticketVisiblePara(ticket, input.actor)) {
       throw new ForbiddenError('Solo puedes editar tickets asignados a ti');
     }
 

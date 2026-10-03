@@ -8,6 +8,7 @@ import type { ConfiguracionTickets } from '../../core/entities/ConfiguracionTick
 import { ForbiddenError, NotFoundError } from '../../core/errors/DomainError.js';
 import type { SessionUser } from '../shared/SessionUser.js';
 import { resolverImagenesDescripcion } from './descripcionImagenes.js';
+import { ticketVisiblePara } from './alcance.js';
 
 /** Ticket con sus notas/eventos/adjuntos y los permisos del actor ya resueltos para la vista. */
 export interface DetalleTicket {
@@ -35,9 +36,7 @@ export class VerTicketService {
     const ticket = await this.tickets.findById(ticketId);
     if (!ticket) throw new NotFoundError('Ticket', ticketId);
 
-    const puedeTodos = actor.permisos.includes('tickets:leer_todos');
-    const esSuyo = ticket.agenteAsignadoUid === actor.uid;
-    if (!puedeTodos && !esSuyo) {
+    if (!ticketVisiblePara(ticket, actor)) {
       throw new ForbiddenError('Solo puedes ver tickets asignados a ti');
     }
 
@@ -59,10 +58,10 @@ export class VerTicketService {
       adjuntos,
       config,
       descripcionHtml,
-      puedeEditar: actor.permisos.includes('tickets:editar') && (puedeTodos || esSuyo),
+      puedeEditar: actor.permisos.includes('tickets:editar'),
       puedeAsignar: actor.permisos.includes('tickets:asignar'),
       puedeCambiarEstado:
-        actor.permisos.includes('tickets:cambiar_estado') && (puedeTodos || esSuyo),
+        actor.permisos.includes('tickets:cambiar_estado'),
     };
   }
 }

@@ -1,7 +1,7 @@
 import type { ITicketQueries, CargaAgente } from '../../core/ports/repositories/ITicketQueries.js';
 import type { IUsuarioRepository } from '../../core/ports/repositories/IUsuarioRepository.js';
 import type { IClock } from '../../core/ports/services/IClock.js';
-import { ROLES_TECNICOS } from '../../core/entities/value-objects/Rol.js';
+import { ROLES_ASIGNABLES } from '../../core/entities/value-objects/Rol.js';
 
 /** Caso de uso: panel de carga de trabajo por agente (para decidir asignaciones). */
 export class PanelCargaAgentesService {
@@ -12,7 +12,7 @@ export class PanelCargaAgentesService {
   ) {}
 
   async ejecutar(): Promise<CargaAgente[]> {
-    const agentes = await this.usuarios.list({ roles: ROLES_TECNICOS });
+    const agentes = await this.usuarios.list({ roles: ROLES_ASIGNABLES });
     const carga = await this.queries.cargaPorAgente(
       agentes.map((a) => ({
         uid: a.uid,

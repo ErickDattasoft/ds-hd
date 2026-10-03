@@ -15,6 +15,7 @@ import { historialActividadHtml } from './historialCorreo.js';
 import { destinatariosTicket } from './notificacionTicket.js';
 import type { EncuestaSatisfaccionService } from './EncuestaSatisfaccionService.js';
 import type { CambiarEstadoInput } from './dto.js';
+import { ticketVisiblePara } from './alcance.js';
 
 /**
  * Caso de uso: cambiar el estado de un ticket, con los efectos colaterales del ciclo de vida
@@ -114,12 +115,10 @@ export class ActualizarEstadoTicketService {
   }
 
   private verificarPermiso(ticket: Ticket, input: CambiarEstadoInput): void {
-    const puedeTodos = input.actor.permisos.includes('tickets:leer_todos');
-    const esSuyo = ticket.agenteAsignadoUid === input.actor.uid;
     if (!input.actor.permisos.includes('tickets:cambiar_estado')) {
       throw new ForbiddenError('No puedes cambiar el estado de tickets');
     }
-    if (!puedeTodos && !esSuyo) {
+    if (!ticketVisiblePara(ticket, input.actor)) {
       throw new ForbiddenError('Solo puedes cambiar el estado de tickets asignados a ti');
     }
   }

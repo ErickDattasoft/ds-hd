@@ -12,6 +12,8 @@ import { estadoActualizacion } from '../../core/entities/value-objects/version.j
 import { esEstadoFinal } from '../../core/entities/value-objects/EstadoTicket.js';
 import type { IContactoRepository } from '../../core/ports/repositories/IContactoRepository.js';
 import type { AvisarEmpresasService } from '../empresas/AvisarEmpresasService.js';
+import { alcanceTickets } from '../tickets/alcance.js';
+import { ticketSinNadieAsignado } from '../../core/entities/Ticket.js';
 
 /** Orden de las tarjetas por estado (como las del CRM viejo); los demás van después. */
 const ORDEN_ESTADOS = ['Abierto', 'En proceso', 'Pendiente', 'Resuelto', 'Cerrado'];
@@ -142,9 +144,7 @@ export class ObtenerMetricasService {
   async ejecutar(actor: SessionUser): Promise<Metricas> {
     const ahora = this.clock.now();
     const haceUnaSemana = new Date(ahora.getTime() - 7 * 86_400_000);
-    const alcance = actor.permisos.includes('tickets:leer_todos')
-      ? {}
-      : { agenteAsignadoUid: actor.uid };
+    const alcance = alcanceTickets(actor);
     const puedeVerEmpresas = actor.permisos.includes('empresas:leer');
 
     const puedeVerBuzon = actor.permisos.includes('tickets:crear');
@@ -190,7 +190,7 @@ export class ObtenerMetricasService {
       tickets: {
         abiertos: abiertos.length,
         vencidos: abiertos.filter((t) => t.estaVencido(ahora)).length,
-        sinAsignar: abiertos.filter((t) => !t.agenteAsignadoUid).length,
+        sinAsignar: abiertos.filter(ticketSinNadieAsignado).length,
         creadosSemana: abiertos.filter((t) => t.abiertoEn >= haceUnaSemana).length,
         porEstado: enSegmentos([...porEstado].map(([etiqueta, valor]) => ({ etiqueta, valor }))),
         porPrioridad: enSegmentos([...porPrioridad].map(([etiqueta, valor]) => ({ etiqueta, valor }))),

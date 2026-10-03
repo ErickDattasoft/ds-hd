@@ -3,6 +3,7 @@ import type { IEventoRepository } from '../../core/ports/repositories/IEventoRep
 import type { ITareaRepository } from '../../core/ports/repositories/ISeguimientoRepository.js';
 import type { IClock } from '../../core/ports/services/IClock.js';
 import type { SessionUser } from '../shared/SessionUser.js';
+import { alcanceTickets } from '../tickets/alcance.js';
 
 /** Un elemento agendado en un día del calendario. */
 export interface ItemAgenda {
@@ -65,7 +66,7 @@ export class AgendaService {
     const finGrid = new Date(inicioGrid);
     finGrid.setDate(finGrid.getDate() + 42);
 
-    const alcance = actor.permisos.includes('tickets:leer_todos') ? {} : { agenteAsignadoUid: actor.uid };
+    const alcance = alcanceTickets(actor);
     const [ticketsProg, todosEventos, tareasPendientes] = await Promise.all([
       actor.permisos.includes('tickets:leer')
         ? this.ticketQueries.listar({ ...alcance, soloProgramados: true })

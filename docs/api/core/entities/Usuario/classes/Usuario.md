@@ -228,6 +228,20 @@ El rol de mayor alcance. Se usa donde antes se leía un solo `rol` (badges, `dat
 
 `boolean`
 
+***
+
+### puedeRecibirTickets
+
+#### Get Signature
+
+> **get** **puedeRecibirTickets**(): `boolean`
+
+¿Se le puede asignar un ticket a mano? (técnicos, admin y supervisor).
+
+##### Returns
+
+`boolean`
+
 ## Methods
 
 ### agregarEmpresa()

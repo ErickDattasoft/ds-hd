@@ -10,6 +10,7 @@ import { ForbiddenError, NotFoundError, ValidationError } from '../../core/error
 import { registrarEvento } from './efectos.js';
 import { destinatariosTicket, resumenTicketHtml } from './notificacionTicket.js';
 import type { SessionUser } from '../shared/SessionUser.js';
+import { ticketVisiblePara } from './alcance.js';
 
 /** Datos para reenviar el correo de un ticket. */
 export interface ReenviarCorreoInput {
@@ -41,10 +42,7 @@ export class ReenviarCorreoTicketService {
     const ticket = await this.tickets.findById(input.ticketId);
     if (!ticket) throw new NotFoundError('Ticket', input.ticketId);
 
-    if (
-      !input.actor.permisos.includes('tickets:leer_todos') &&
-      ticket.agenteAsignadoUid !== input.actor.uid
-    ) {
+    if (!ticketVisiblePara(ticket, input.actor)) {
       throw new ForbiddenError('Solo puedes reenviar el correo de tickets asignados a ti');
     }
 

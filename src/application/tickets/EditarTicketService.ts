@@ -11,6 +11,7 @@ import { ForbiddenError, NotFoundError, ValidationError } from '../../core/error
 import { publicarNotaInterna, registrarEvento } from './efectos.js';
 import { desinflarImagenesDescripcion } from './desinflarImagenesDescripcion.js';
 import type { SessionUser } from '../shared/SessionUser.js';
+import { ticketVisiblePara } from './alcance.js';
 
 /** Todo lo que se captura al crear un ticket y se puede corregir después. */
 export interface EditarTicketInput {
@@ -71,7 +72,7 @@ export class EditarTicketService {
     }
     const ticket = await this.tickets.findById(input.ticketId);
     if (!ticket) throw new NotFoundError('Ticket', input.ticketId);
-    if (!input.actor.permisos.includes('tickets:leer_todos') && ticket.agenteAsignadoUid !== input.actor.uid) {
+    if (!ticketVisiblePara(ticket, input.actor)) {
       throw new ForbiddenError('Solo puedes editar tickets asignados a ti');
     }
     if (ticket.eliminadoPorAdmin) {

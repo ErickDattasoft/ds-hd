@@ -5,7 +5,7 @@ import type {
   FiltroTickets,
   ITicketQueries,
 } from '../../core/ports/repositories/ITicketQueries.js';
-import { coincideTexto, type Ticket } from '../../core/entities/Ticket.js';
+import { coincideTexto, ticketEsDeAgente, ticketSinNadieAsignado, type Ticket } from '../../core/entities/Ticket.js';
 import { esEstadoFinal, slugEstado } from '../../core/entities/value-objects/EstadoTicket.js';
 import { TicketMapper } from './mappers/TicketMapper.js';
 
@@ -39,6 +39,14 @@ export class FirestoreTicketQueries implements ITicketQueries {
       out = out.filter((x) => x.archivado === filtro.archivado);
     }
     if (filtro.texto) out = out.filter((x) => coincideTexto(x, filtro.texto!));
+    // Agente por uid o por nombre ("Agente" / "Canalizado a"): los migrados del viejo no traen uid.
+    if (filtro.deAgente) out = out.filter((x) => ticketEsDeAgente(x, filtro.deAgente!));
+    if (filtro.alcanceAgente) {
+      const a = filtro.alcanceAgente;
+      out = out.filter((x) => ticketEsDeAgente(x, a) || ticketSinNadieAsignado(x));
+    }
+    // El `where` de uid nulo deja pasar los migrados que traen el agente solo por nombre.
+    if (filtro.sinAsignar) out = out.filter(ticketSinNadieAsignado);
     // Tipo y facturación en memoria: evita pedir índices compuestos para cada combinación.
     if (filtro.tipo) out = out.filter((x) => x.tipo === filtro.tipo);
     if (filtro.facturacion) out = out.filter((x) => x.facturacion.estado === filtro.facturacion);
@@ -61,7 +69,9 @@ export class FirestoreTicketQueries implements ITicketQueries {
 
   async contar(filtro: FiltroTickets): Promise<number> {
     // Con soloAbiertos ya es una query indexable; texto/archivado se filtran en memoria.
-    const enMemoria = filtro.texto || filtro.tipo || filtro.facturacion || filtro.soloProgramados;
+    const enMemoria =
+      filtro.texto || filtro.tipo || filtro.facturacion || filtro.soloProgramados ||
+      filtro.deAgente || filtro.alcanceAgente || filtro.sinAsignar;
     if (!enMemoria && filtro.archivado === undefined) {
       const agg = await this.aplicar(filtro).count().get();
       return agg.data().count;

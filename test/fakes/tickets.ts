@@ -1,5 +1,5 @@
 import { sanearEstadoBackup, type EstadoBackup } from '../../src/core/entities/EstadoBackup.js';
-import { coincideTexto } from '../../src/core/entities/Ticket.js';
+import { coincideTexto, ticketEsDeAgente, ticketSinNadieAsignado } from '../../src/core/entities/Ticket.js';
 import {
   CONFIG_CORREO_ENTRANTE_POR_DEFECTO,
   type ConfiguracionCorreoEntrante,
@@ -117,7 +117,9 @@ export class InMemoryTicketQueries implements ITicketQueries {
     if (f.prioridad && t.prioridad !== f.prioridad) return false;
     if (f.grupo && t.grupo !== f.grupo) return false;
     if (f.agenteAsignadoUid && t.agenteAsignadoUid !== f.agenteAsignadoUid) return false;
-    if (f.sinAsignar && t.agenteAsignadoUid) return false;
+    if (f.sinAsignar && !ticketSinNadieAsignado(t)) return false;
+    if (f.deAgente && !ticketEsDeAgente(t, f.deAgente)) return false;
+    if (f.alcanceAgente && !ticketEsDeAgente(t, f.alcanceAgente) && !ticketSinNadieAsignado(t)) return false;
     if (f.empresaId && t.empresaId !== f.empresaId) return false;
     if (f.solicitanteUid && t.solicitanteUid !== f.solicitanteUid) return false;
     if (f.canal && t.canal !== f.canal) return false;

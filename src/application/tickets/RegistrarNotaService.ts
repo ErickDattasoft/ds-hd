@@ -13,6 +13,7 @@ import { publicarNotaInterna, registrarEvento } from './efectos.js';
 import { historialActividadHtml } from './historialCorreo.js';
 import { destinatariosTicket } from './notificacionTicket.js';
 import type { RegistrarNotaInput } from './dto.js';
+import { ticketVisiblePara } from './alcance.js';
 
 /** Caso de uso: agregar una nota (pública o interna) a un ticket. */
 export class RegistrarNotaService {
@@ -43,8 +44,7 @@ export class RegistrarNotaService {
 
     if (
       input.actor.esStaff &&
-      !input.actor.permisos.includes('tickets:leer_todos') &&
-      ticket.agenteAsignadoUid !== input.actor.uid
+      !ticketVisiblePara(ticket, input.actor)
     ) {
       throw new ForbiddenError('Solo puedes escribir en tickets asignados a ti');
     }

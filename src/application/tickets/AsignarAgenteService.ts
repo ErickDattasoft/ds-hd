@@ -34,7 +34,7 @@ export class AsignarAgenteService {
     if (!ticket) throw new NotFoundError('Ticket', input.ticketId);
 
     const agente = await this.usuarios.findByUid(input.agenteUid);
-    if (!agente || !agente.esTecnico || !agente.activo) {
+    if (!agente || !agente.puedeRecibirTickets || !agente.activo) {
       throw new ValidationError('El usuario no es un agente activo', { agenteUid: 'No válido' });
     }
 
