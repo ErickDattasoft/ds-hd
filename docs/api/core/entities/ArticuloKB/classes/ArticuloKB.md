@@ -6,7 +6,7 @@
 
 # Class: ArticuloKB
 
-Artículo de la base de conocimiento.
+Artículo de la base de conocimiento: un archivo indexado de una de las dos carpetas.
 
 ## Constructors
 
@@ -44,6 +44,12 @@ Artículo de la base de conocimiento.
 
 ***
 
+### carpeta
+
+> **carpeta**: `"soporte"` \| `"empresas"`
+
+***
+
 ### categoria
 
 > **categoria**: `string` \| `null`
@@ -65,18 +71,6 @@ Artículo de la base de conocimiento.
 ### rutaDestino
 
 > **rutaDestino**: `string` \| `null`
-
-***
-
-### publicado
-
-> **publicado**: `boolean`
-
-***
-
-### visibilidad
-
-> **visibilidad**: [`VisibilidadKB`](../type-aliases/VisibilidadKB.md)
 
 ***
 
@@ -116,20 +110,30 @@ Artículo de la base de conocimiento.
 
 `boolean`
 
-## Methods
+***
 
-### visiblePara()
+### esMarkdown
 
-> **visiblePara**(`contexto`): `boolean`
+#### Get Signature
 
-¿Lo puede ver alguien con estos roles? (ver [VisibilidadKB](../type-aliases/VisibilidadKB.md))
+> **get** **esMarkdown**(): `boolean`
 
-#### Parameters
+¿Se muestra como Markdown? Los `.ps1`, `.sql`, `.txt`… se muestran tal cual (texto plano).
 
-##### contexto
-
-[`ContextoKB`](../interfaces/ContextoKB.md)
-
-#### Returns
+##### Returns
 
 `boolean`
+
+***
+
+### subcarpeta
+
+#### Get Signature
+
+> **get** **subcarpeta**(): `string`
+
+Subcarpeta dentro de la carpeta indexada (sin la raíz ni el archivo), p. ej. `ACME/Nóminas`.
+
+##### Returns
+
+`string`

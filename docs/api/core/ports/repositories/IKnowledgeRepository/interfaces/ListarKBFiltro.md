@@ -16,12 +16,6 @@ Filtros para listar artículos de la base de conocimiento.
 
 ***
 
-### publicado?
-
-> `optional` **publicado?**: `boolean`
-
-***
-
 ### texto?
 
 > `optional` **texto?**: `string`

@@ -10,7 +10,8 @@
 
 Filtro de alcance para listados/conteos: quien no ve todos ve los suyos (por uid o por nombre en
 "Agente"/"Canalizado a") más los que nadie tiene todavía — si no, los sin asignar quedarían
-invisibles para todo el equipo hasta que un admin los repartiera (igual que el CRM viejo).
+invisibles para todo el equipo hasta que un admin los repartiera (igual que el CRM viejo). Un
+ticket con un admin en "Agente" y sin canalizar también cuenta como «de nadie todavía».
 
 ## Parameters
 

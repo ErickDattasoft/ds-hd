@@ -3,6 +3,9 @@ import request from 'supertest';
 import { makeTestApp, cookieValor } from '../helpers/app.js';
 
 const ADMIN = { uid: 'u-a', email: 'admin@dattasoft.mx', password: 'admin12345', nombre: 'Admin', rol: 'admin' as const };
+/** El propietario de la KB (KB_PROPIETARIO_EMAIL): el único que indexa y da acceso. */
+const DUENO = { uid: 'u-e', email: 'erick.casas@dattasoft.mx', password: 'erick12345', nombre: 'Erick', rol: 'admin' as const };
+const GABY = { uid: 'u-g', email: 'gaby@dattasoft.mx', password: 'gaby12345', nombre: 'Gaby', rol: 'soporte' as const };
 const CLI = { uid: 'u-c', email: 'c@e.com', password: 'cliente123', nombre: 'Cli', rol: 'cliente' as const, empresaId: 'e1' };
 
 async function login(app: ReturnType<typeof makeTestApp>['app'], email: string, password: string) {
@@ -83,141 +86,10 @@ describe('versiones de sistemas', () => {
   });
 });
 
-describe('base de conocimiento — visibilidad', () => {
-  it('Soporte lo ven admin y soporte; Administrador solo admin; clientes y público ya no tienen KB', async () => {
-    const SOP = { uid: 'u-sop', email: 'sop@dattasoft.mx', password: 'soporte1234', nombre: 'Sofi', rol: 'soporte' as const };
-    const AGT = { uid: 'u-agt', email: 'agt@dattasoft.mx', password: 'agente1234', nombre: 'Agus', rol: 'agente' as const };
-    const t = makeTestApp({ usuarios: [ADMIN, CLI, SOP, AGT] });
-    const admin = await login(t.app, ADMIN.email, ADMIN.password);
-    await admin.agent.post('/app/kb').type('form').send({
-      _csrf: admin.csrf, titulo: 'Como resetear el servicio', cuerpoMarkdown: 'Ve a **Servicios** y reinicia *CONTPAQi*.', visibilidad: 'soporte',
-    });
-    await admin.agent.post('/app/kb').type('form').send({
-      _csrf: admin.csrf, titulo: 'Claves del servidor', cuerpoMarkdown: 'Solo para administradores del equipo.', visibilidad: 'admin',
-    });
-
-    const adminKb = await admin.agent.get('/app/kb');
-    expect(adminKb.text).toContain('Como resetear el servicio');
-    expect(adminKb.text).toContain('Claves del servidor');
-
-    const sop = await login(t.app, SOP.email, SOP.password);
-    const sopKb = await sop.agent.get('/app/kb');
-    expect(sopKb.text).toContain('Como resetear el servicio');
-    expect(sopKb.text).not.toContain('Claves del servidor');
-    const soporteArt = [...t.knowledgeRepo.items.values()].find((a) => a.visibilidad === 'soporte')!;
-    const art = await sop.agent.get(`/app/kb/${soporteArt.slug}`);
-    expect(art.text).toContain('<strong>Servicios</strong>'); // el markdown se renderiza
-
-    const agt = await login(t.app, AGT.email, AGT.password);
-    const agtKb = await agt.agent.get('/app/kb');
-    expect(agtKb.text).not.toContain('Como resetear el servicio');
-
-    // Clientes y público: sin base de conocimiento.
-    const pub = await request(t.app).get('/kb');
-    expect(pub.status).toBe(302);
-    const cli = await login(t.app, CLI.email, CLI.password);
-    const portalKb = await cli.agent.get('/portal/kb');
-    expect(portalKb.status).toBe(302);
-    expect(portalKb.headers.location).toBe('/portal');
-  });
-
-  it('subida en lote + export JSON/ZIP + filtro por categoría script', async () => {
-    const t = makeTestApp({ usuarios: [ADMIN] });
-    const { agent, csrf } = await login(t.app, ADMIN.email, ADMIN.password);
-
-    const sub = await agent.post('/app/kb/subir').set('x-csrf-token', csrf).send({
-      archivos: [
-        { nombre: 'limpieza.ps1', contenido: 'Remove-Item C:\\temp\\* -Recurse -Force', rutaRelativa: 'ps/limpieza.ps1' },
-        { nombre: 'manual.md', contenido: '# Manual\nTexto de ayuda suficientemente largo.' },
-      ],
-      visibilidad: 'staff',
-    });
-    expect(sub.status).toBe(200);
-    expect(sub.body).toMatchObject({ ok: true, creados: 2 });
-
-    const gestion = await agent.get('/app/kb?categoria=script');
-    expect(gestion.text).toContain('limpieza');
-    expect(gestion.text).not.toContain('>manual<');
-
-    const json = await agent.get('/app/kb/export.json?categoria=script');
-    expect(json.status).toBe(200);
-    const arr = JSON.parse(json.text);
-    expect(arr).toHaveLength(1);
-    expect(arr[0].rutaDestino).toBe('ps/limpieza.ps1');
-
-    const zip = await agent.get('/app/kb/export.zip');
-    expect(zip.status).toBe(200);
-    expect(zip.headers['content-type']).toContain('zip');
-  });
-
-  it('un agente sin permiso de publicar no puede publicar', async () => {
-    const AG = { uid: 'u-g', email: 'g@d.com', password: 'agente12345', nombre: 'Ag', rol: 'agente' as const };
-    const t = makeTestApp({ usuarios: [AG] });
-    const { agent, csrf } = await login(t.app, AG.email, AG.password);
-    const res = await agent.post('/app/kb').type('form').send({
-      _csrf: csrf, titulo: 'Intento de publicar', cuerpoMarkdown: 'contenido suficiente para pasar', publicado: 'on',
-    });
-    expect(res.status).toBe(422);
-    expect(res.text).toContain('permiso');
-  });
-});
-
-describe('base de conocimiento — descubrimiento (tags, ver también, comparar)', () => {
-  it('nube de tags filtra la lista, y el detalle muestra "Ver también" por tags compartidos', async () => {
-    const t = makeTestApp({ usuarios: [ADMIN] });
-    const { agent, csrf } = await login(t.app, ADMIN.email, ADMIN.password);
-    await agent.post('/app/kb').type('form').send({
-      _csrf: csrf, titulo: 'Reinicio de licencias', cuerpoMarkdown: 'Pasos para reiniciar el servicio de licencias.',
-      tags: 'contpaqi, licencias', visibilidad: 'soporte',
-    });
-    await agent.post('/app/kb').type('form').send({
-      _csrf: csrf, titulo: 'Backup de licencias', cuerpoMarkdown: 'Cómo respaldar el archivo de licencias.',
-      tags: 'contpaqi', visibilidad: 'soporte',
-    });
-    await agent.post('/app/kb').type('form').send({
-      _csrf: csrf, titulo: 'Nómina quincenal', cuerpoMarkdown: 'Proceso de nómina quincenal.',
-      tags: 'nomina', visibilidad: 'soporte',
-    });
-
-    const lista = await agent.get('/app/kb');
-    expect(lista.text).toContain('contpaqi (2)');
-
-    const filtrada = await agent.get('/app/kb?tag=nomina');
-    expect(filtrada.text).toContain('Nómina quincenal');
-    expect(filtrada.text).not.toContain('Reinicio de licencias');
-
-    const [reinicio] = [...t.knowledgeRepo.items.values()].filter((a) => a.titulo === 'Reinicio de licencias');
-    const detalle = await agent.get(`/app/kb/${reinicio!.slug}`);
-    expect(detalle.text).toContain('Ver también');
-    expect(detalle.text).toContain('Backup de licencias');
-    expect(detalle.text).not.toContain('Nómina quincenal');
-  });
-
-  it('vista dividida: sin "b" pide elegir; con "a" y "b" muestra ambos', async () => {
-    const t = makeTestApp({ usuarios: [ADMIN] });
-    const { agent, csrf } = await login(t.app, ADMIN.email, ADMIN.password);
-    await agent.post('/app/kb').type('form').send({
-      _csrf: csrf, titulo: 'Documento Uno', cuerpoMarkdown: 'Contenido del documento uno.', visibilidad: 'soporte',
-    });
-    await agent.post('/app/kb').type('form').send({
-      _csrf: csrf, titulo: 'Documento Dos', cuerpoMarkdown: 'Contenido del documento dos.', visibilidad: 'soporte',
-    });
-    const [uno, dos] = [...t.knowledgeRepo.items.values()].sort((a, b) => a.titulo.localeCompare(b.titulo));
-
-    const soloA = await agent.get(`/app/kb/comparar?a=${uno!.slug}`);
-    expect(soloA.text).toContain('Elige el segundo artículo');
-    expect(soloA.text).toContain('Documento Dos');
-
-    const ambos = await agent.get(`/app/kb/comparar?a=${uno!.slug}&b=${dos!.slug}`);
-    expect(ambos.text).toContain('Contenido del documento uno.');
-    expect(ambos.text).toContain('Contenido del documento dos.');
-  });
-});
-
 describe('base de conocimiento — pizarra personal', () => {
   it('el equipo tiene su pizarra con autoguardado; el portal ya no', async () => {
-    const t = makeTestApp({ usuarios: [ADMIN, CLI] });
-    const admin = await login(t.app, ADMIN.email, ADMIN.password);
+    const t = makeTestApp({ usuarios: [DUENO, CLI] });
+    const admin = await login(t.app, DUENO.email, DUENO.password);
 
     const vacia = await admin.agent.get('/app/kb/pizarra');
     expect(vacia.status).toBe(200);
@@ -242,17 +114,17 @@ describe('base de conocimiento — pizarra personal', () => {
 
 describe('base de conocimiento — historial de búsquedas (equipo)', () => {
   it('registra las búsquedas, las muestra, y se pueden borrar', async () => {
-    const t = makeTestApp({ usuarios: [ADMIN] });
-    const { agent, csrf } = await login(t.app, ADMIN.email, ADMIN.password);
+    const t = makeTestApp({ usuarios: [DUENO] });
+    const { agent, csrf } = await login(t.app, DUENO.email, DUENO.password);
 
     await agent.get('/app/kb?q=licencias');
     const conHistorial = await agent.get('/app/kb');
     expect(conHistorial.text).toContain('Búsquedas recientes');
     expect(conHistorial.text).toContain('licencias');
-    expect(await t.busquedaKBRepo.listar(ADMIN.uid)).toHaveLength(1);
+    expect(await t.busquedaKBRepo.listar(DUENO.uid)).toHaveLength(1);
 
     await agent.post('/app/kb/historial/limpiar').type('form').send({ _csrf: csrf });
-    expect(await t.busquedaKBRepo.listar(ADMIN.uid)).toHaveLength(0);
+    expect(await t.busquedaKBRepo.listar(DUENO.uid)).toHaveLength(0);
     expect((await agent.get('/app/kb')).text).not.toContain('Búsquedas recientes');
   });
 });
@@ -329,40 +201,113 @@ describe('versiones — historial de avisos enviados', () => {
     const res = await agent.get('/app/versiones/historial');
     expect(res.text).toContain('Sin avisos registrados todavía');
   });
-
-  it('el equipo busca en /app/kb (título o contenido), guarda historial y puede eliminar', async () => {
-    const t = makeTestApp({ usuarios: [ADMIN] });
-    const admin = await login(t.app, ADMIN.email, ADMIN.password);
-    await admin.agent.post('/app/kb').type('form').send({
-      _csrf: admin.csrf, titulo: 'Error 254 al ejecutar póliza', cuerpoMarkdown: 'Reindexar la base de datos de contabilidad.', visibilidad: 'staff',
-    });
-    await admin.agent.post('/app/kb').type('form').send({
-      _csrf: admin.csrf, titulo: 'Horario de soporte', cuerpoMarkdown: 'Atendemos de 9 a 18h.', visibilidad: 'staff',
-    });
-    const res = await admin.agent.get('/app/kb?q=reindexar');
-    expect(res.text).toContain('Error 254 al ejecutar póliza');
-    expect(res.text).not.toContain('Horario de soporte');
-    expect(res.text).toContain('1 resultado');
-    const otra = await admin.agent.get('/app/kb');
-    expect(otra.text).toContain('Búsquedas recientes');
-    expect(otra.text).toMatch(/\/app\/kb\/[^"]+\/eliminar/);
-  });
 });
 
-describe('base de conocimiento — orden', () => {
-  it('A→Z por defecto (números en orden natural), con botones A→Z / Z→A', async () => {
-    const t = makeTestApp({ usuarios: [ADMIN] });
-    const { agent, csrf } = await login(t.app, ADMIN.email, ADMIN.password);
-    for (const titulo of ['Error 10 al timbrar', 'banco no concilia', 'Error 2 al abrir', 'Álbum de scripts']) {
-      await agent.post('/app/kb').type('form').send({ _csrf: csrf, titulo, cuerpoMarkdown: 'contenido suficiente aquí', visibilidad: 'soporte' });
-    }
-    const pos = (html: string, t: string) => html.indexOf(t);
+describe('base de conocimiento — acceso por persona, solo lectura e indexado', () => {
+  const indexar = (agent: request.Agent, csrf: string, carpeta: string, archivos: { ruta: string; contenido: string }[]) =>
+    agent.post('/app/kb/indexar').set('x-csrf-token', csrf).set('accept', 'application/json').send({ carpeta, archivos });
+
+  it('solo ve la KB quien el propietario marca — aunque sea administrador', async () => {
+    const t = makeTestApp({ usuarios: [DUENO, ADMIN, GABY] });
+    const dueno = await login(t.app, DUENO.email, DUENO.password);
+    const admin = await login(t.app, ADMIN.email, ADMIN.password);
+    const gaby = await login(t.app, GABY.email, GABY.password);
+
+    expect((await dueno.agent.get('/app/kb')).status).toBe(200);
+    expect((await admin.agent.get('/app/kb')).status).toBe(403);
+    expect((await gaby.agent.get('/app/kb')).status).toBe(403);
+    expect((await admin.agent.get('/app/kb/acceso')).status).toBe(403);
+    expect((await admin.agent.get('/app')).text).not.toContain('href="/app/kb"');
+
+    const panel = await dueno.agent.get('/app/kb/acceso');
+    expect(panel.text).toContain('Gaby');
+    expect(panel.text).toContain('Admin');
+    const res = await dueno.agent.post('/app/kb/acceso').type('form').send({
+      _csrf: dueno.csrf, acceso: [GABY.uid], rutaEmpresas: 'D:\\KB\\EMPRESAS', rutaSoporte: '',
+    });
+    expect(res.status).toBe(302);
+    expect(t.configuracionRepo.kb.acceso).toEqual([GABY.uid]);
+
+    expect((await gaby.agent.get('/app/kb')).status).toBe(200);
+    expect((await admin.agent.get('/app/kb')).status).toBe(403);
+    // Gaby solo lee: no indexa, no da acceso, no exporta, no borra.
+    expect((await indexar(gaby.agent, gaby.csrf, 'soporte', [{ ruta: 'S/a.md', contenido: 'x' }])).status).toBe(403);
+    expect((await gaby.agent.get('/app/kb/acceso')).status).toBe(403);
+    expect((await gaby.agent.get('/app/kb/export.zip')).status).toBe(403);
+    expect((await gaby.agent.get('/app/kb')).text).not.toContain('Indexar');
+  });
+
+  it('indexar: sube, reindexa sin duplicar y el índice dice qué ya está', async () => {
+    const t = makeTestApp({ usuarios: [DUENO] });
+    const { agent, csrf } = await login(t.app, DUENO.email, DUENO.password);
+
+    const r1 = await indexar(agent, csrf, 'empresas', [
+      { ruta: 'EMPRESAS/ACME/accesos.md', contenido: '# ACME\nServidor 10.0.0.5, CONTPAQi 14.2.1' },
+      { ruta: 'EMPRESAS/BETA/notas.txt', contenido: 'Nada especial' },
+    ]);
+    expect(r1.body).toMatchObject({ ok: true, creados: 2, actualizados: 0 });
+    const r2 = await indexar(agent, csrf, 'empresas', [{ ruta: 'EMPRESAS/ACME/accesos.md', contenido: '# ACME\nServidor 10.0.0.9' }]);
+    expect(r2.body).toMatchObject({ ok: true, creados: 0, actualizados: 1 });
+    expect(await t.knowledgeRepo.list()).toHaveLength(2);
+
+    const idx = await agent.get('/app/kb/indice.json?carpeta=empresas').set('accept', 'application/json');
+    expect(idx.body.indice.map((e: { clave: string }) => e.clave).sort()).toEqual(['acme/accesos.md', 'beta/notas.txt']);
+
+    const mala = await indexar(agent, csrf, 'otra', []);
+    expect(mala.status).toBe(422);
+
+    // Quitar los que ya no están en la carpeta.
+    const beta = idx.body.indice.find((e: { clave: string }) => e.clave === 'beta/notas.txt');
+    const q = await agent.post('/app/kb/quitar').set('x-csrf-token', csrf).send({ carpeta: 'empresas', ids: [beta.id] });
+    expect(q.body).toMatchObject({ ok: true, quitados: 1 });
+  });
+
+  it('busca por nombre, empresa y contenido (sin acentos), separa carpetas y muestra el fragmento', async () => {
+    const t = makeTestApp({ usuarios: [DUENO] });
+    const { agent, csrf } = await login(t.app, DUENO.email, DUENO.password);
+    await indexar(agent, csrf, 'empresas', [{ ruta: 'EMPRESAS/Grupo ACME/Nóminas.md', contenido: 'Usan la versión 14.2.1 en el servidor.' }]);
+    await indexar(agent, csrf, 'soporte', [{ ruta: 'SOPORTE/Licencias/renovar.md', contenido: 'Renovar la licencia anual.' }]);
+
+    const porVersion = await agent.get('/app/kb?q=14.2.1');
+    expect(porVersion.text).toContain('Nóminas');
+    expect(porVersion.text).toContain('<mark>14.2.1</mark>');
+    expect(porVersion.text).not.toContain('renovar');
+
+    expect((await agent.get('/app/kb?q=nominas')).text).toContain('Nóminas');
+    expect((await agent.get('/app/kb?q=acme')).text).toContain('Nóminas');
+
+    const soloSoporte = await agent.get('/app/kb?carpeta=soporte');
+    expect(soloSoporte.text).toContain('renovar');
+    expect(soloSoporte.text).not.toContain('Nóminas');
+  });
+
+  it('el documento es de solo lectura: se copia, sin editar ni descargar', async () => {
+    const t = makeTestApp({ usuarios: [DUENO] });
+    const { agent, csrf } = await login(t.app, DUENO.email, DUENO.password);
+    await indexar(agent, csrf, 'soporte', [{ ruta: 'SOPORTE/script.ps1', contenido: 'Write-Host "<hola>"' }]);
+    const [a] = await t.knowledgeRepo.list();
+    const doc = await agent.get(`/app/kb/${a!.id}`);
+    expect(doc.text).toContain('data-kb-copiar');
+    expect(doc.text).not.toContain('data-kb-descargar');
+    expect(doc.text).not.toContain('/editar');
+    // Los scripts se muestran tal cual (escapados), no como Markdown.
+    expect(doc.text).toContain('Write-Host &quot;&lt;hola&gt;&quot;');
+    // Ya no existen alta ni edición a mano.
+    expect((await agent.get('/app/kb/nuevo')).status).toBe(404);
+    expect((await agent.post(`/app/kb/${a!.id}`).type('form').send({ _csrf: csrf, titulo: 'x' })).status).toBe(404);
+  });
+
+  it('A→Z por defecto con orden natural; Z→A disponible', async () => {
+    const t = makeTestApp({ usuarios: [DUENO] });
+    const { agent, csrf } = await login(t.app, DUENO.email, DUENO.password);
+    await indexar(agent, csrf, 'soporte', ['Error 10 al timbrar', 'banco no concilia', 'Error 2 al abrir', 'Álbum de scripts'].map((n) => ({
+      ruta: `SOPORTE/${n}.md`, contenido: 'contenido',
+    })));
+    const pos = (html: string, x: string) => html.indexOf(x);
     const az = (await agent.get('/app/kb')).text;
-    expect(az).toContain('>A → Z</a>');
     const orden = ['Álbum de scripts', 'banco no concilia', 'Error 2 al abrir', 'Error 10 al timbrar'].map((x) => pos(az, x));
     expect([...orden].sort((a, b) => a - b)).toEqual(orden);
     const za = (await agent.get('/app/kb?orden=za')).text;
     expect(pos(za, 'Error 10 al timbrar')).toBeLessThan(pos(za, 'Álbum de scripts'));
   });
 });
-

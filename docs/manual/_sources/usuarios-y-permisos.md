@@ -44,11 +44,22 @@ de permisos combina rol base + extras − revocados; el cambio tarda hasta un mi
 reflejarse (la sesión cachea el perfil brevemente) y no requiere que el usuario vuelva a
 iniciar sesión.
 
+## Permisos por apartado (panel de casillas)
+
+En *Usuarios* → **🔐 Permisos por apartado** ves a todo el equipo contra todos los apartados,
+como el panel del CRM viejo. Cada apartado tiene casillas **Ver** (entra) y **Editar** (crea y
+modifica; incluye Ver); en Tickets, además, **Todos** (ve los tickets de todo el equipo, no solo
+los suyos y los que nadie tiene). Ejemplo: alguien de Comercial que factura y necesita editar
+tickets → marca *Tickets · Editar* en su fila y *Guardar permisos*. Solo se guardan las casillas
+que cambiaste. Los administradores tienen todo siempre. Lo más fino (eliminar, aprobar
+cotizaciones…) sigue en *Permisos avanzados* de cada usuario.
+
 ## Secciones visibles
 
 En la ficha de un usuario que no es administrador aparece **👁️ Secciones visibles**, con una
 casilla por sección que su rol le permite (Empresas, Contactos, Cotizaciones y embudo, Tickets,
-Eventos, Versiones, Base de conocimiento, Tareas, Configuración). Desmarcar una la quita de su
+Eventos, Versiones, Tareas, Configuración). La base de conocimiento no está aquí: su acceso lo
+decide su propietario (ver *Base de conocimiento*). Desmarcar una la quita de su
 menú y le impide entrar; todas marcadas = sin restricción. Por dentro revoca el permiso de
 lectura de esa sección, así que también se ve en *Permisos avanzados*.
 

@@ -86,14 +86,12 @@ export class BusquedaGlobalService {
         this.kb
           .list({ texto })
           .then((rows) =>
-            // Misma regla por rol que la lista de la KB (Administrador / Soporte).
-            rows.filter((a) => a.visiblePara({ roles: user.roles })).slice(0, LIMITE_POR_TIPO).map((a) => ({
+            // Quien tiene kb:leer ve toda la KB (el acceso es por persona, no por artículo).
+            rows.slice(0, LIMITE_POR_TIPO).map((a) => ({
               tipo: 'kb' as const,
               etiquetaTipo: 'Base de conocimiento',
               titulo: a.titulo,
-              subtitulo: a.categoria ?? '',
-              // /editar requiere kb:escribir; /app/kb/:idOrSlug solo pide kb:leer, que es lo
-              // que ya se validó para incluir este resultado.
+              subtitulo: a.rutaDestino ?? a.categoria ?? '',
               href: `/app/kb/${a.slug || a.id}`,
             })),
           ),

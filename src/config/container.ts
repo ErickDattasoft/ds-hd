@@ -111,6 +111,7 @@ import { VersionService } from '../application/versiones/VersionService.js';
 import { ReporteVersionesService } from '../application/versiones/ReporteVersionesService.js';
 import { KnowledgeService } from '../application/knowledge/KnowledgeService.js';
 import { PizarraKBService } from '../application/knowledge/PizarraKBService.js';
+import { AccesoKBService } from '../application/knowledge/AccesoKBService.js';
 import { HistorialBusquedaKBService } from '../application/knowledge/HistorialBusquedaKBService.js';
 import { CotizacionService } from '../application/cotizaciones/CotizacionService.js';
 import { CalculadoraCompacService } from '../application/cotizaciones/CalculadoraCompacService.js';
@@ -291,6 +292,7 @@ export interface Cradle {
   knowledgeService: KnowledgeService;
   pizarraKBService: PizarraKBService;
   historialBusquedaKBService: HistorialBusquedaKBService;
+  accesoKBService: AccesoKBService;
   cotizacionService: CotizacionService;
   calculadoraCompacService: CalculadoraCompacService;
   seguimientoService: SeguimientoService;
@@ -894,6 +896,9 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
     pizarraKBService: asFunction(
       (c: Cradle) => new PizarraKBService(c.pizarraKBRepo, c.clock),
     ).singleton(),
+    accesoKBService: asFunction(
+      (c: Cradle) => new AccesoKBService(c.configuracionRepo, c.usuarioRepo, c.bitacoraService),
+    ).singleton(),
     historialBusquedaKBService: asFunction(
       (c: Cradle) => new HistorialBusquedaKBService(c.busquedaKBRepo, c.idGenerator, c.clock),
     ).singleton(),
@@ -1142,7 +1147,7 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
         ),
     ).singleton(),
     knowledgeController: asFunction(
-      (c: Cradle) => new KnowledgeController(c.knowledgeService, c.historialBusquedaKBService),
+      (c: Cradle) => new KnowledgeController(c.knowledgeService, c.historialBusquedaKBService, c.accesoKBService),
     ).singleton(),
     pizarraKBController: asFunction(
       (c: Cradle) => new PizarraKBController(c.pizarraKBService),

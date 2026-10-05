@@ -38,7 +38,6 @@ export class InMemoryKnowledgeRepository implements IKnowledgeRepository {
   }
   async list(f: ListarKBFiltro = {}): Promise<ArticuloKB[]> {
     let out = [...this.items.values()];
-    if (f.publicado !== undefined) out = out.filter((a) => a.publicado === f.publicado);
     if (f.categoria) out = out.filter((a) => a.categoria === f.categoria);
     if (f.tag) out = out.filter((a) => a.tags.includes(f.tag!));
     if (f.texto) out = out.filter((a) => coincideTexto(a, f.texto!, f.fraseExacta ?? false));

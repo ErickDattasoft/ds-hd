@@ -25,6 +25,12 @@ export const CSRF_COOKIE_NAME = 'x-csrf-token';
 /** Cache TTL del documento `usuarios/{uid}` cargado en cada request. */
 export const USER_CACHE_TTL_MS = 60 * 1000;
 
+/**
+ * Propietario de la base de conocimiento: el único que decide quién la ve y el único que la
+ * indexa (como «ERICK» en el CRM viejo). Ni otro administrador puede darse acceso.
+ */
+export const KB_PROPIETARIO_EMAIL = 'erick.casas@dattasoft.mx';
+
 /** Prefijos de ruta de cada área de la app. */
 export const ROUTE_PREFIX = {
   public: '/',

@@ -13,9 +13,10 @@ export interface FiltroTickets {
   deAgente?: { uid: string; nombre: string };
   /**
    * Alcance de un agente sin `tickets:leer_todos`: los suyos (como `deAgente`) más los que nadie
-   * tiene asignados todavía. Se filtra en memoria.
+   * tiene asignados todavía (o que tiene un admin sin canalizar, ver `ticketDisponibleParaEquipo`).
+   * Se filtra en memoria.
    */
-  alcanceAgente?: { uid: string; nombre: string };
+  alcanceAgente?: { uid: string; nombre: string; admins?: readonly { uid: string; nombre: string }[] };
   /** `true` = solo sin asignar. */
   sinAsignar?: boolean;
   empresaId?: string;

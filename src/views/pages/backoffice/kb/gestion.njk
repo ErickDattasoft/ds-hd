@@ -1,101 +1,130 @@
 {% extends "layouts/backoffice.njk" %}
 {% block title %}Base de conocimiento{% endblock %}
-{% macro qs(cat, ord, des) %}?categoria={{ cat }}&orden={{ ord }}&desde={{ des }}{% endmacro %}
-{% set extra = ('&q=' + (q | urlencode) + ('&frase=1' if fraseExacta else '')) if q else '' %}
+{# Conserva búsqueda y filtros al cambiar de pestaña u orden. #}
+{% set qsBusqueda = ('q=' + (q | urlencode) + ('&frase=1' if fraseExacta else '')) if q else '' %}
 {% block content %}
   <div class="page-head">
     <h1>Base de conocimiento</h1>
     <div class="page-head__actions">
       <a class="btn btn--sm btn--ghost" href="/app/kb/pizarra">📝 Pizarra</a>
-      <a class="btn btn--sm btn--secondary" href="/app/kb/subir">Subir archivos</a>
-      <a class="btn btn--sm btn--ghost" href="/app/kb/export.json{{ qs(categoria, orden, desde) }}">Exportar JSON</a>
-      <a class="btn btn--sm btn--ghost" href="/app/kb/export.zip{{ qs(categoria, orden, desde) }}">Exportar ZIP</a>
-      <a class="btn btn--sm" href="/app/kb/nuevo">Nuevo artículo</a>
+      {% if esPropietario %}
+        <a class="btn btn--sm btn--ghost" href="/app/kb/acceso" title="Quién puede ver la base de conocimiento">👥 Acceso</a>
+        <a class="btn btn--sm btn--ghost" href="/app/kb/export.zip{{ '?carpeta=' + carpeta if carpeta }}" title="Respaldo de los archivos indexados, con sus carpetas">💾 Respaldo ZIP</a>
+      {% endif %}
     </div>
   </div>
   {% if aviso %}<div class="alert alert--ok" role="status">{{ aviso }}</div>{% endif %}
-  {% if tags | length %}
-    <div class="kb-tags">
-      {% for t in tags %}
-        <a class="kb-tag {{ 'is-active' if tag == t.nombre }}" href="?categoria={{ categoria }}&orden={{ orden }}&desde={{ desde }}{{ extra }}&tag={{ '' if tag == t.nombre else t.nombre }}">{{ t.nombre }} ({{ t.total }})</a>
-      {% endfor %}
-    </div>
+
+  {% if esPropietario %}
+    {# Indexado: solo el propietario. El navegador recuerda cada carpeta (Chrome/Edge) y sube solo lo nuevo o cambiado. #}
+    <section class="card kb-indexar" data-kb-indexar-panel>
+      <h2 class="card__title">🔄 Indexar carpetas</h2>
+      <p class="muted">
+        La primera vez eliges la carpeta de Windows; después basta con el botón: compara contra lo que ya está
+        y sube solo los archivos nuevos o modificados. Nada se duplica.
+      </p>
+      <div class="kb-indexar__filas">
+        {% for c in carpetas %}
+          <div class="kb-indexar__fila">
+            <div>
+              <strong>{{ c.etiqueta }}</strong>
+              <div class="muted kb-indexar__ruta">{{ rutas[c.id] or 'Sin ruta anotada (ponla en 👥 Acceso)' }}</div>
+              <div class="muted kb-indexar__ruta" data-kb-carpeta-recordada="{{ c.id }}"></div>
+            </div>
+            <div class="kb-indexar__botones">
+              <button type="button" class="btn btn--sm" data-kb-indexar="{{ c.id }}">🔄 Indexar {{ c.etiqueta }}</button>
+              <button type="button" class="btn btn--sm btn--ghost" data-kb-elegir="{{ c.id }}" title="Elegir otra carpeta">📂</button>
+              <input type="file" webkitdirectory multiple hidden data-kb-input="{{ c.id }}" />
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+      <div data-kb-indexar-estado aria-live="polite"></div>
+    </section>
   {% endif %}
 
-  <form method="get" class="filterbar">
-    <input type="search" name="q" value="{{ q }}" placeholder="🔍 Buscar por título o contenido…" autocomplete="off" spellcheck="false" style="flex:1;min-width:16rem" />
+  <form method="get" class="filterbar kb-buscador" role="search">
+    {% if carpeta %}<input type="hidden" name="carpeta" value="{{ carpeta }}" />{% endif %}
+    <input type="search" name="q" value="{{ q }}" placeholder="🔍 Buscar por nombre, empresa, contenido, versión…" autocomplete="off" spellcheck="false" autofocus />
     <label class="field field--check"><input type="checkbox" name="frase" value="1" {{ 'checked' if fraseExacta }} /> <span>frase exacta</span></label>
-    {% if tag %}<input type="hidden" name="tag" value="{{ tag }}" />{% endif %}
-    <label class="field"><span>Categoría</span>
-      <select name="categoria">
-        <option value="">todas</option>
-        <option value="script" {{ 'selected' if categoria == 'script' }}>⚡ Scripts</option>
-        {% for c in categorias %}
-          {% if c.nombre != 'script' %}<option value="{{ c.nombre }}" {{ 'selected' if categoria == c.nombre }}>{{ c.nombre }} ({{ c.total }})</option>{% endif %}
-        {% endfor %}
-      </select>
-    </label>
+    {% if subcarpetas | length %}
+      <label class="field"><span>Subcarpeta</span>
+        <select name="sub">
+          <option value="">todas</option>
+          {% for s in subcarpetas %}<option value="{{ s }}" {{ 'selected' if sub == s }}>{{ s }}</option>{% endfor %}
+        </select>
+      </label>
+    {% endif %}
     <label class="field"><span>Modificados</span>
       <select name="desde">
         <option value="">cualquier fecha</option>
         <option value="hoy" {{ 'selected' if desde == 'hoy' }}>hoy</option>
         <option value="semana" {{ 'selected' if desde == 'semana' }}>últimos 7 días</option>
-        <option value="ultima" {{ 'selected' if desde == 'ultima' }}>desde mi última exportación</option>
       </select>
     </label>
     <label class="field"><span>Orden</span>
       <select name="orden">
-        {% if q %}<option value="" {{ 'selected' if not orden }}>relevancia</option>{% endif %}
-        <option value="recientes" {{ 'selected' if orden == 'recientes' }}>más recientes</option>
-        <option value="az" {{ 'selected' if orden == 'az' }}>A → Z</option>
+        <option value="" {{ 'selected' if not orden }}>{{ 'relevancia' if q else 'A → Z' }}</option>
+        {% if q %}<option value="az" {{ 'selected' if orden == 'az' }}>A → Z</option>{% endif %}
         <option value="za" {{ 'selected' if orden == 'za' }}>Z → A</option>
+        <option value="recientes" {{ 'selected' if orden == 'recientes' }}>más recientes</option>
       </select>
     </label>
-    <button class="btn btn--sm" type="submit">Aplicar</button>
+    <button class="btn btn--sm" type="submit">Buscar</button>
+    {% if q or sub or desde %}<a class="btn btn--sm btn--ghost" href="/app/kb{{ '?carpeta=' + carpeta if carpeta }}">Limpiar</a>{% endif %}
   </form>
+
+  <nav class="kb-tags" aria-label="Carpetas">
+    <a class="kb-tag {{ 'is-active' if not carpeta }}" href="/app/kb?{{ qsBusqueda }}">Todo ({{ conteos.empresas + conteos.soporte }})</a>
+    {% for c in carpetas %}
+      <a class="kb-tag {{ 'is-active' if carpeta == c.id }}" href="/app/kb?carpeta={{ c.id }}&{{ qsBusqueda }}">{{ c.etiqueta }} ({{ conteos[c.id] }})</a>
+    {% endfor %}
+  </nav>
 
   {% if historial | length %}
     <p class="muted">
       Búsquedas recientes:
-      {% for h in historial %}<a class="kb-tag" href="?q={{ h.texto | urlencode }}">{{ h.texto }}</a>{% endfor %}
+      {% for h in historial %}<a class="kb-tag" href="?q={{ h.texto | urlencode }}{{ '&carpeta=' + carpeta if carpeta }}">{{ h.texto }}</a>{% endfor %}
       · <form method="post" action="/app/kb/historial/limpiar" style="display:inline">
           <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
           <button type="submit" class="btn btn--sm btn--ghost">borrar</button>
         </form>
     </p>
   {% endif %}
-  {% if q %}<p class="muted">{{ articulos | length }} resultado{{ '' if articulos | length == 1 else 's' }} para «{{ q }}».</p>{% endif %}
+  {% if q %}<p class="muted">{{ total }} resultado{{ '' if total == 1 else 's' }} para «{{ q }}».</p>{% endif %}
 
-  {# Botones A→Z / Z→A del viejo: conservan búsqueda y filtros. #}
-  {% set filtrosQs = 'categoria=' + (categoria or '') + '&desde=' + (desde or '') + ('&tag=' + tag if tag else '') + extra %}
-  <div class="filterbar" role="group" aria-label="Orden">
-    <span class="muted">Orden:</span>
-    <a class="btn btn--sm {{ '' if orden == 'az' else 'btn--ghost' }}" href="?{{ filtrosQs }}&orden=az" aria-pressed="{{ 'true' if orden == 'az' else 'false' }}">A → Z</a>
-    <a class="btn btn--sm {{ '' if orden == 'za' else 'btn--ghost' }}" href="?{{ filtrosQs }}&orden=za" aria-pressed="{{ 'true' if orden == 'za' else 'false' }}">Z → A</a>
-    <a class="btn btn--sm {{ '' if orden == 'recientes' else 'btn--ghost' }}" href="?{{ filtrosQs }}&orden=recientes" aria-pressed="{{ 'true' if orden == 'recientes' else 'false' }}">Más recientes</a>
-  </div>
-
-  <table class="data-table">
-    <thead><tr><th>Título</th><th>Categoría</th><th>Ruta destino</th><th>Visibilidad</th><th>Modificado</th><th></th></tr></thead>
+  <table class="data-table kb-resultados">
+    <thead><tr><th>Nombre</th><th>Ubicación</th><th>Modificado</th>{% if esPropietario %}<th></th>{% endif %}</tr></thead>
     <tbody>
-      {% for a in articulos %}
+      {% for r in articulos %}
+        {% set a = r.a %}
         <tr>
-          <td><a href="/app/kb/{{ a.slug or a.id }}">{{ a.titulo }}</a></td>
-          <td>{% if a.esScript %}⚡ {% endif %}{{ a.categoria or '—' }}</td>
-          <td>{{ a.rutaDestino or '—' }}</td>
-          <td>{{ 'Administrador' if a.visibilidad == 'admin' else 'Soporte' }}</td>
+          <td>
+            <a href="/app/kb/{{ a.id }}">{% if a.esScript %}⚡ {% endif %}{{ a.titulo }}</a>
+            {% if r.fragmento %}
+              <div class="kb-fragmento">{{ r.fragmento.antes }}<mark>{{ r.fragmento.coincidencia }}</mark>{{ r.fragmento.despues }}</div>
+            {% endif %}
+          </td>
+          <td>
+            {% if not carpeta %}<span class="muted">{{ etiquetaCarpeta[a.carpeta] }}</span><br />{% endif %}
+            {{ a.subcarpeta or '—' }}
+          </td>
           <td>{{ a.updatedAt | fecha }}</td>
-          <td class="col-acciones">
-            <a class="btn btn--ghost btn--sm" href="/app/kb/{{ a.id }}/editar" title="Editar">✏️</a>
-            {% if can('kb:publicar') %}
-              <form method="post" action="/app/kb/{{ a.id }}/eliminar" class="inline" data-confirm="¿Eliminar «{{ a.titulo }}»? No se puede deshacer.">
+          {% if esPropietario %}
+            <td class="col-acciones">
+              <form method="post" action="/app/kb/{{ a.id }}/eliminar" class="inline" data-confirm="¿Eliminar «{{ a.titulo }}» del CRM? Si sigue en la carpeta de Windows, volverá al reindexar.">
                 <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
                 <button class="btn btn--ghost btn--sm" type="submit" title="Eliminar">🗑️</button>
               </form>
-            {% endif %}
-          </td>
+            </td>
+          {% endif %}
         </tr>
-      {% else %}<tr><td colspan="6" class="muted">Sin artículos que coincidan.</td></tr>{% endfor %}
+      {% else %}
+        <tr><td colspan="{{ 4 if esPropietario else 3 }}" class="muted">
+          {% if totalGeneral == 0 %}La base de conocimiento está vacía{{ ': usa 🔄 Indexar.' if esPropietario else '.' }}{% else %}Nada coincide con la búsqueda.{% endif %}
+        </td></tr>
+      {% endfor %}
     </tbody>
   </table>
+  {% if total > maxFilas %}<p class="muted">Se muestran {{ maxFilas }} de {{ total }}: afina la búsqueda o elige una carpeta.</p>{% endif %}
 {% endblock %}

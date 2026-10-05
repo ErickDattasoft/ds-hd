@@ -18,6 +18,14 @@ import {
 } from '../../../../core/entities/value-objects/Rol.js';
 import { permisosPorModulo } from '../../rbac/permissions.js';
 import { revocadosConSecciones, seccionesConfigurables } from '../../rbac/secciones.js';
+import {
+  APARTADOS,
+  NIVEL_ETIQUETA,
+  aplicarCasillas,
+  casillaMarcada,
+  type NivelApartado,
+} from '../../rbac/apartados.js';
+import { permisosEfectivos } from '../../rbac/policy.js';
 import { invalidarCacheUsuario } from '../../middlewares/sessionAuth.js';
 
 /** Gestión de usuarios y perfiles (requiere `usuarios:gestionar`). */
@@ -137,6 +145,63 @@ export class UsuarioController {
       q: texto,
       ROL_ETIQUETA,
     });
+  };
+
+  /**
+   * «🔐 Permisos por apartado»: todos los usuarios del equipo contra todos los apartados, con
+   * casillas Ver / Editar (como el panel del CRM viejo). Los administradores ven todo siempre.
+   */
+  permisosView = async (req: Request, res: Response): Promise<void> => {
+    const staff = (await this.usuarios.list({ activo: true }))
+      .filter((u) => u.esStaff)
+      .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
+    res.render('pages/backoffice/usuarios/permisos', {
+      titulo: 'Permisos por apartado',
+      apartados: APARTADOS.map((a) => ({
+        id: a.id,
+        etiqueta: a.etiqueta,
+        niveles: (Object.keys(a.niveles) as NivelApartado[]).map((n) => ({ id: n, etiqueta: NIVEL_ETIQUETA[n] })),
+      })),
+      filas: staff.map((u) => {
+        const efectivos = permisosEfectivos(u);
+        const marcadas: Record<string, boolean> = {};
+        for (const a of APARTADOS) {
+          for (const [n, permisos] of Object.entries(a.niveles) as [NivelApartado, readonly string[]][]) {
+            marcadas[`${a.id}|${n}`] = casillaMarcada(efectivos, permisos as never);
+          }
+        }
+        return { uid: u.uid, nombre: u.nombre, roles: u.roles.map((r) => ROL_ETIQUETA[r] ?? r).join(', '), esAdmin: u.tieneRol('admin'), marcadas };
+      }),
+      guardados: typeof req.query.ok === 'string' ? Number(req.query.ok) : null,
+    });
+  };
+
+  permisosPost = async (req: Request, res: Response): Promise<void> => {
+    const body = req.body ?? {};
+    const marcadas = new Set(aArreglo(body.p) ?? []);
+    const originales = new Set(aArreglo(body.o) ?? []);
+    // Solo las casillas que cambiaron: lo que no se tocó no se reescribe.
+    const cambiosPorUsuario = new Map<string, Map<string, Partial<Record<NivelApartado, boolean>>>>();
+    for (const clave of new Set([...marcadas, ...originales])) {
+      const dar = marcadas.has(clave);
+      if (dar === originales.has(clave)) continue;
+      const [uid, apartado, nivel] = clave.split('|') as [string, string, NivelApartado];
+      if (!uid || !APARTADOS.some((a) => a.id === apartado && a.niveles[nivel])) continue;
+      const delUsuario = cambiosPorUsuario.get(uid) ?? new Map();
+      delUsuario.set(apartado, { ...delUsuario.get(apartado), [nivel]: dar });
+      cambiosPorUsuario.set(uid, delUsuario);
+    }
+    let guardados = 0;
+    for (const [uid, cambios] of cambiosPorUsuario) {
+      const usuario = await this.usuarios.findByUid(uid);
+      // Los admins tienen todo por rol: el panel no los toca.
+      if (!usuario || !usuario.esStaff || usuario.tieneRol('admin')) continue;
+      const overrides = aplicarCasillas(usuario, permisosEfectivos(usuario), cambios);
+      await this.actualizar.ejecutar({ actor: req.user!, uid, ...overrides });
+      invalidarCacheUsuario(uid);
+      guardados += 1;
+    }
+    res.redirect(`/app/usuarios/permisos?ok=${guardados}`);
   };
 
   nuevo = (req: Request, res: Response): void => {

@@ -29,6 +29,11 @@ export interface SessionUser {
   readonly encabezado?: string | null;
   /** ¿Tiene activa la verificación en dos pasos? */
   readonly totpActivo?: boolean;
+  /**
+   * Admins activos (uid + nombre). Solo se llena para quien no ve todos los tickets: un ticket
+   * con un admin en "Agente" y sin canalizar es visible para todos (ver `ticketDisponibleParaEquipo`).
+   */
+  readonly adminsDelEquipo?: readonly { uid: string; nombre: string }[];
 }
 
 /** Empresas a las que el actor puede levantar tickets o ver en el portal. */

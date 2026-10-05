@@ -746,9 +746,6 @@ export function crearImportadores({ dryRun: DRY_RUN, log }: OpcionesImportacion)
               cuerpoMarkdown: s(d.content) || '(sin contenido)',
               tags: arr(d.tags as unknown as Dato[]).map(String),
               rutaDestino: s(d.sourcePath) || null,
-              // Documentación técnica interna del viejo: la ve Soporte (y Administrador).
-              publicado: true,
-              visibilidad: 'soporte',
               createdAt: fecha(d.created_at),
               updatedAt: fecha(d.updated_at ?? d.content_updated_at),
             }),

@@ -5,7 +5,8 @@ import { permisosDeRol } from './roles.js';
 /**
  * «👁️ Secciones visibles» por usuario, como en el CRM viejo: cada sección se controla con su
  * permiso de lectura. Desmarcar una sección = revocar ese permiso (desaparece del menú y sus
- * rutas responden 403). Es un atajo sobre «Permisos avanzados».
+ * rutas responden 403). Es un atajo sobre «Permisos avanzados». La base de conocimiento no está:
+ * tiene su propio candado, el panel «👥 Acceso» del propietario (como en el viejo).
  */
 export const SECCIONES_VISIBLES: readonly { permiso: Permiso; etiqueta: string }[] = [
   { permiso: 'empresas:leer', etiqueta: '🏢 Empresas' },
@@ -14,7 +15,6 @@ export const SECCIONES_VISIBLES: readonly { permiso: Permiso; etiqueta: string }
   { permiso: 'tickets:leer', etiqueta: '🎫 Tickets' },
   { permiso: 'eventos:leer', etiqueta: '📅 Eventos' },
   { permiso: 'versiones:leer', etiqueta: '🧩 Versiones' },
-  { permiso: 'kb:leer', etiqueta: '📚 Base de conocimiento' },
   { permiso: 'seguimiento:leer', etiqueta: '✅ Tareas' },
   { permiso: 'configuracion:catalogos', etiqueta: '⚙️ Configuración' },
 ];

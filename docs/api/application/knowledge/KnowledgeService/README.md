@@ -12,9 +12,10 @@
 
 ## Interfaces
 
-- [DatosArticulo](interfaces/DatosArticulo.md)
-- [ArchivoLote](interfaces/ArchivoLote.md)
+- [ArchivoIndexado](interfaces/ArchivoIndexado.md)
+- [EntradaIndiceKB](interfaces/EntradaIndiceKB.md)
+- [ResultadoIndexado](interfaces/ResultadoIndexado.md)
 
-## Type Aliases
+## Functions
 
-- [Contexto](type-aliases/Contexto.md)
+- [huellaKB](functions/huellaKB.md)

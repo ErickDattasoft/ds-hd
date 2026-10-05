@@ -619,3 +619,17 @@ export function ticketEsDeAgente(t: TicketAsignacion, agente: { uid: string; nom
 export function ticketSinNadieAsignado(t: TicketAsignacion): boolean {
   return !t.agenteAsignadoUid && !t.agenteAsignadoNombre?.trim() && !t.canalizadoA?.trim();
 }
+
+/**
+ * ¿Cualquier agente puede tomar el ticket? Si nadie lo tiene, o si su "Agente" es un admin y
+ * todavía no se canalizó a nadie: es el caso normal de «un admin lo captura y luego se reparte»
+ * (el Agente se queda con quien lo levantó). En cuanto se canaliza, ya es solo de esa persona.
+ */
+export function ticketDisponibleParaEquipo(
+  t: TicketAsignacion,
+  admins: readonly { uid: string; nombre: string }[] = [],
+): boolean {
+  if (ticketSinNadieAsignado(t)) return true;
+  if (t.canalizadoA?.trim()) return false;
+  return admins.some((a) => ticketEsDeAgente({ ...t, canalizadoA: null }, a));
+}

@@ -12,7 +12,7 @@ Un resultado de la búsqueda global, ya listo para pintar (título + enlace).
 
 ### tipo
 
-> **tipo**: `"ticket"` \| `"empresa"` \| `"contacto"` \| `"kb"`
+> **tipo**: `"empresa"` \| `"ticket"` \| `"kb"` \| `"contacto"`
 
 ***
 

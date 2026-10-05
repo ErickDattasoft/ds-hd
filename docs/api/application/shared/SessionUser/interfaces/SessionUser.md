@@ -115,3 +115,12 @@ Encabezado/plantilla del usuario para redactar tickets (con `[fecha]`).
 > `readonly` `optional` **totpActivo?**: `boolean`
 
 ¿Tiene activa la verificación en dos pasos?
+
+***
+
+### adminsDelEquipo?
+
+> `readonly` `optional` **adminsDelEquipo?**: readonly `object`[]
+
+Admins activos (uid + nombre). Solo se llena para quien no ve todos los tickets: un ticket
+con un admin en "Agente" y sin canalizar es visible para todos (ver `ticketDisponibleParaEquipo`).

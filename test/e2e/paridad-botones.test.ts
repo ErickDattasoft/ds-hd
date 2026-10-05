@@ -132,14 +132,15 @@ describe('configuración → predeterminados del ticket nuevo', () => {
 });
 
 describe('KB y menú', () => {
-  it('el artículo trae Copiar/Descargar y el menú respeta la cookie de colapsado', async () => {
-    const t = makeTestApp({ usuarios: [ADMIN] });
-    const { agent, csrf } = await login(t.app, ADMIN.email, ADMIN.password);
-    await agent.post('/app/kb').type('form').send({
-      _csrf: csrf, titulo: 'Cómo timbrar', cuerpoMarkdown: '# Paso 1\nAbre el sistema y timbra.', visibilidad: 'publico', publicado: 'on', categoria: 'General',
+  it('el artículo trae Copiar y el menú respeta la cookie de colapsado', async () => {
+    const dueno = { ...ADMIN, uid: 'u-e', email: 'erick.casas@dattasoft.mx' };
+    const t = makeTestApp({ usuarios: [dueno] });
+    const { agent, csrf } = await login(t.app, dueno.email, dueno.password);
+    await agent.post('/app/kb/indexar').set('x-csrf-token', csrf).send({
+      carpeta: 'soporte', archivos: [{ ruta: 'SOPORTE/Cómo timbrar.md', contenido: '# Paso 1\nAbre el sistema y timbra.' }],
     });
     const [art] = [...t.knowledgeRepo.items.values()];
-    const res = await agent.get(`/app/kb/${art!.slug}`);
+    const res = await agent.get(`/app/kb/${art!.id}`);
     expect(res.text).toContain('data-kb-copiar');
     expect(res.text).toContain('# Paso 1');
     const mini = await agent.get('/app').set('Cookie', 'sidebar=mini');
@@ -378,5 +379,53 @@ describe('firma con formato (como el editor del viejo)', () => {
     await agent.post(`/app/tickets/${id}/nota`).type('form').send({ _csrf: csrf, cuerpo: 'Listo', tipo: 'publica' });
     const correo = t.emailSender.enviados.find((c) => c.tags?.includes('ticket-nota'));
     expect(correo?.html).toContain('<hr /><p><b>Erick</b></p><p>Soporte</p>');
+  });
+});
+
+describe('Permisos por apartado (panel de casillas)', () => {
+  it('el admin da Editar tickets a alguien de ventas desde la matriz', async () => {
+    const VENTAS = { uid: 'u-v', email: 'gaby@dattasoft.mx', password: 'ventas1234', nombre: 'Gaby', rol: 'ventas' as const };
+    const t = makeTestApp({ usuarios: [ADMIN, VENTAS] });
+    const { agent, csrf } = await login(t.app, ADMIN.email, ADMIN.password);
+    const panel = await agent.get('/app/usuarios/permisos');
+    expect(panel.status).toBe(200);
+    expect(panel.text).toContain('Gaby');
+    expect(panel.text).toContain('value="u-v|empresas|ver" checked');
+    expect(panel.text).not.toContain('value="u-v|tickets|editar" checked');
+
+    // Lo que ya tenía viaja en `o`; se agrega la casilla nueva.
+    const res = await agent.post('/app/usuarios/permisos').type('form').send({
+      _csrf: csrf,
+      o: ['u-v|empresas|ver', 'u-v|empresas|editar'],
+      p: ['u-v|empresas|ver', 'u-v|empresas|editar', 'u-v|tickets|editar'],
+    });
+    expect(res.headers.location).toBe('/app/usuarios/permisos?ok=1');
+    const gaby = await t.usuarioRepo.findByUid('u-v');
+    expect(gaby!.permisosExtra).toEqual(expect.arrayContaining(['tickets:leer', 'tickets:editar']));
+
+    const vista = await login(t.app, VENTAS.email, VENTAS.password);
+    expect((await vista.agent.get('/app/tickets')).status).toBe(200);
+  });
+});
+
+describe('tickets: agente con un admin sin canalizar (viejo 9cd4001)', () => {
+  it('un agente ve el ticket que capturó un admin y aún no se canaliza; canalizado a otro, ya no', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN, AGENTE] });
+    const { Ticket } = await import('../../src/core/entities/Ticket.js');
+    const nuevo = (id: string, numero: number, asunto: string, canalizadoA: string | null) => {
+      const tk = Ticket.crear({
+        id, numero, asunto, descripcion: 'descripción del problema', tipo: 'General', prioridad: 'Media',
+        estadoInicial: 'Abierto', canal: 'interno', canalizadoA, ahora: new Date(),
+      });
+      tk.agenteAsignadoNombre = 'Admin'; // migrado: el agente viene solo por nombre
+      t.ticketStore.tickets.set(id, tk);
+    };
+    nuevo('t1', 1, 'Capturado por admin', null);
+    nuevo('t2', 2, 'Canalizado a otro', 'Diego');
+    const { agent } = await login(t.app, AGENTE.email, AGENTE.password);
+    const lista = await agent.get('/app/tickets');
+    expect(lista.text).toContain('Capturado por admin');
+    expect(lista.text).not.toContain('Canalizado a otro');
+    expect((await agent.get('/app/tickets/t1')).status).toBe(200);
   });
 });

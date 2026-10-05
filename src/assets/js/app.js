@@ -539,104 +539,241 @@
       });
   });
 
-  // ── Base de conocimiento: subida en lote (lee los archivos en el navegador) ──
-  // Una carpeta puede traer cientos de archivos: se mandan en tandas (como la barra de avance
-  // del viejo) porque todo en una sola petición se come el presupuesto por petición del worker.
-  // Solo archivos de texto: una carpeta real también trae imágenes, .exe, etc.
+  // ── Base de conocimiento: 🔄 Indexar (solo el propietario) ──────────────────
+  // La primera vez se elige la carpeta de Windows y el navegador la recuerda (File System Access
+  // API, Chrome/Edge; el handle vive en IndexedDB). Cada indexado compara la huella SHA-256 de
+  // cada archivo contra el índice del servidor y sube SOLO lo nuevo o cambiado, en tandas (todo
+  // en una petición se come el presupuesto por petición del worker). Solo archivos de texto.
   var KB_EXT_TEXTO = /\.(md|markdown|txt|ps1|bat|cmd|sql|sh|py|json|ya?ml|ini|reg|log|csv|xml|cfg|conf)$/i;
   var KB_TANDA_ARCHIVOS = 25;
   var KB_TANDA_BYTES = 1500000;
-  function kbLeerTexto(file) {
-    return new Promise(function (resolve) {
-      var reader = new FileReader();
-      reader.onload = function () {
-        resolve({ nombre: file.name || 'archivo', contenido: String(reader.result || ''), rutaRelativa: file.webkitRelativePath || file.name || '' });
-      };
-      reader.onerror = function () { resolve(null); };
-      reader.readAsText(file);
+  var KB_MAX_BYTES = 3500000;
+  var kbFaltantes = {};
+
+  function kbIdb() {
+    return new Promise(function (resolve, reject) {
+      var req = indexedDB.open('ds-hd-kb', 1);
+      req.onupgradeneeded = function () { req.result.createObjectStore('carpetas'); };
+      req.onsuccess = function () { resolve(req.result); };
+      req.onerror = function () { reject(req.error); };
     });
   }
-  document.addEventListener('submit', function (e) {
-    var form = e.target.closest('[data-kb-subir]');
-    if (!form) return;
-    e.preventDefault();
-    // Archivos sueltos y/o carpeta completa (la del input con webkitdirectory trae su ruta).
-    var todos = [];
-    Array.prototype.forEach.call(form.querySelectorAll('input[type="file"]'), function (inp) {
-      if (inp.files) todos = todos.concat(Array.prototype.slice.call(inp.files));
-    });
-    var salida = document.getElementById('resultado-kb-subir');
-    if (!salida) return;
-    var files = todos.filter(function (f) { return KB_EXT_TEXTO.test(f.name || ''); });
-    var ignorados = todos.length - files.length;
-    if (!files.length) {
-      salida.innerHTML = '<p class="alert alert--error">' + (todos.length ? 'Ninguno de los ' + todos.length + ' archivos es de texto (.md, .ps1, .bat, .sql, .txt…).' : 'Elige archivos o una carpeta.') + '</p>';
-      return;
+  async function kbCarpetaRecordada(carpeta) {
+    try {
+      var db = await kbIdb();
+      return await new Promise(function (resolve) {
+        var r = db.transaction('carpetas').objectStore('carpetas').get(carpeta);
+        r.onsuccess = function () { resolve(r.result || null); };
+        r.onerror = function () { resolve(null); };
+      });
+    } catch { return null; }
+  }
+  async function kbRecordarCarpeta(carpeta, handle) {
+    try {
+      var db = await kbIdb();
+      db.transaction('carpetas', 'readwrite').objectStore('carpetas').put(handle, carpeta);
+    } catch { /* sin IndexedDB: se pedirá la carpeta cada vez */ }
+  }
+  async function kbPintarRecordadas() {
+    var etiquetas = document.querySelectorAll('[data-kb-carpeta-recordada]');
+    for (var i = 0; i < etiquetas.length; i++) {
+      var el = etiquetas[i];
+      var h = await kbCarpetaRecordada(el.getAttribute('data-kb-carpeta-recordada'));
+      el.textContent = h ? '📁 Carpeta recordada: ' + h.name : (window.showDirectoryPicker ? 'La primera vez te pedirá elegir la carpeta.' : 'Este navegador no recuerda carpetas: la elegirás cada vez.');
     }
-    // Tandas por cantidad y por tamaño.
-    var tandas = [[]];
-    var bytes = 0;
-    files.forEach(function (f) {
-      var actual = tandas[tandas.length - 1];
-      if (actual.length && (actual.length >= KB_TANDA_ARCHIVOS || bytes + f.size > KB_TANDA_BYTES)) {
-        tandas.push([]);
-        bytes = 0;
-      }
-      tandas[tandas.length - 1].push(f);
-      bytes += f.size;
-    });
-    var vis = form.querySelector('[name="visibilidad"]');
-    var pub = form.querySelector('[name="publicado"]');
-    var cat = form.querySelector('[name="categoria"]');
-    var act = form.querySelector('[name="actualizar"]');
-    var btn = e.submitter || form.querySelector('button[type="submit"]');
-    if (btn) { btn.disabled = true; btn.classList.add('is-loading'); }
-    var hechos = 0;
-    var procesados = 0;
-    function pintar(texto) {
-      var pct = Math.round((hechos / files.length) * 100);
-      salida.innerHTML = '<p class="muted">' + texto + ' — ' + hechos + ' / ' + files.length + (ignorados ? ' (' + ignorados + ' no son de texto y se omiten)' : '') + '</p>' +
-        '<progress max="100" value="' + pct + '" style="width:100%"></progress>';
+  }
+
+  // Misma clave que `claveRutaKB` del servidor: ruta sin la carpeta raíz, en minúsculas.
+  function kbClave(ruta) {
+    var n = ruta.replace(/\\/g, '/').replace(/\/{2,}/g, '/').replace(/^\/+|\/+$/g, '').trim().toLowerCase();
+    var i = n.indexOf('/');
+    return i >= 0 ? n.slice(i + 1) : n;
+  }
+  async function kbHuella(texto) {
+    var buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(texto));
+    return Array.prototype.map.call(new Uint8Array(buf), function (b) { return b.toString(16).padStart(2, '0'); }).join('');
+  }
+  async function kbRecorrer(dir, prefijo, salida) {
+    for await (var par of dir.entries()) {
+      var nombre = par[0];
+      var h = par[1];
+      if (nombre.charAt(0) === '.' || nombre.charAt(0) === '~') continue;
+      var ruta = prefijo + '/' + nombre;
+      if (h.kind === 'directory') await kbRecorrer(h, ruta, salida);
+      else if (KB_EXT_TEXTO.test(nombre)) salida.archivos.push({ ruta: ruta, leer: h.getFile.bind(h) });
+      else salida.ignorados += 1;
     }
-    function fin() { if (btn) { btn.disabled = false; btn.classList.remove('is-loading'); } }
-    var i = 0;
-    function siguiente() {
-      if (i >= tandas.length) {
-        window.location.href = '/app/kb?aviso=' + encodeURIComponent(procesados + ' archivo(s) importado(s) o actualizado(s)' + (ignorados ? '; ' + ignorados + ' omitido(s) por no ser de texto' : ''));
+  }
+  function kbEstado(html) {
+    var el = document.querySelector('[data-kb-indexar-estado]');
+    if (el) el.innerHTML = html;
+  }
+  function kbEsc(t) {
+    return String(t).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; });
+  }
+  function kbBotones(deshabilitar) {
+    Array.prototype.forEach.call(document.querySelectorAll('[data-kb-indexar],[data-kb-elegir]'), function (b) { b.disabled = deshabilitar; });
+  }
+  function kbPost(url, cuerpo) {
+    return fetch(url, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', accept: 'application/json', 'x-csrf-token': cookie('x-csrf-token') },
+      body: JSON.stringify(cuerpo),
+    }).then(function (r) {
+      return r.json().catch(function () { return { ok: false, error: 'Respuesta inválida del servidor (HTTP ' + r.status + ')' }; })
+        .then(function (d) {
+          // El errorHandler responde `{ error: CÓDIGO, mensaje }` a quien pide JSON.
+          if (!r.ok) { d.ok = false; d.error = d.mensaje || d.error; }
+          return d;
+        });
+    });
+  }
+
+  async function kbIndexar(carpeta, fuente) {
+    kbBotones(true);
+    try {
+      var total = fuente.archivos.length;
+      if (!total) {
+        kbEstado('<p class="alert alert--error">La carpeta no tiene archivos de texto (.md, .txt, .ps1, .bat, .sql…).</p>');
         return;
       }
-      var tanda = tandas[i];
-      pintar('Subiendo');
-      Promise.all(tanda.map(kbLeerTexto)).then(function (archivos) {
-        return fetch(form.getAttribute('action'), {
-          method: 'POST',
-          headers: { 'content-type': 'application/json', 'x-csrf-token': cookie('x-csrf-token') },
-          body: JSON.stringify({
-            archivos: archivos.filter(Boolean),
-            visibilidad: vis ? vis.value : 'staff',
-            publicado: pub && pub.checked ? 'on' : '',
-            categoria: cat ? cat.value : '',
-            actualizar: act && act.checked ? 'on' : '',
-          }),
-        }).then(function (r) { return r.json().catch(function () { return { ok: false, error: 'Respuesta inválida del servidor (HTTP ' + r.status + ')' }; }); });
-      }).then(function (data) {
-        // Una tanda sin nada con contenido no es error: se sigue con la siguiente.
-        if (!data.ok && !/contenido para importar/.test(data.error || '')) {
-          salida.innerHTML = '<p class="alert alert--error">Se detuvo en la tanda ' + (i + 1) + ' de ' + tandas.length + ' (' + hechos + ' de ' + files.length + ' ya subidos): ' + (data.error || 'error') +
-            '. Puedes volver a subir la misma carpeta con «actualizar» marcado: lo ya subido no se duplica.</p>';
-          fin();
-          return;
+      kbEstado('<p class="muted">Comparando ' + total + ' archivo(s) con lo ya indexado…</p><progress style="width:100%"></progress>');
+      var idx = await fetch('/app/kb/indice.json?carpeta=' + carpeta, { headers: { accept: 'application/json' } }).then(function (r) { return r.json(); });
+      if (!idx.ok) throw new Error(idx.mensaje || idx.error || 'No se pudo leer el índice');
+      var porClave = new Map(idx.indice.map(function (e) { return [e.clave, e]; }));
+      var vistos = new Set();
+      var cambios = [];
+      var grandes = [];
+      for (var i = 0; i < total; i++) {
+        if (i % 25 === 0) kbEstado('<p class="muted">Revisando ' + (i + 1) + ' / ' + total + '…</p><progress max="' + total + '" value="' + (i + 1) + '" style="width:100%"></progress>');
+        var a = fuente.archivos[i];
+        var file = await a.leer();
+        var clave = kbClave(a.ruta);
+        vistos.add(clave);
+        if (file.size > KB_MAX_BYTES) { grandes.push(a.ruta); continue; }
+        var texto = await file.text();
+        var previo = porClave.get(clave);
+        if (previo && previo.huella === (await kbHuella(texto))) continue;
+        cambios.push({ ruta: a.ruta, contenido: texto, bytes: file.size });
+      }
+
+      // Tandas por cantidad y por tamaño.
+      var tandas = [[]];
+      var bytes = 0;
+      cambios.forEach(function (c) {
+        var actual = tandas[tandas.length - 1];
+        if (actual.length && (actual.length >= KB_TANDA_ARCHIVOS || bytes + c.bytes > KB_TANDA_BYTES)) { tandas.push([]); bytes = 0; }
+        tandas[tandas.length - 1].push({ ruta: c.ruta, contenido: c.contenido });
+        bytes += c.bytes;
+      });
+      var res = { creados: 0, actualizados: 0, omitidos: grandes.map(function (r) { return r + ': muy grande'; }) };
+      var enviados = 0;
+      for (var t = 0; t < tandas.length && cambios.length; t++) {
+        kbEstado('<p class="muted">Subiendo cambios: ' + enviados + ' / ' + cambios.length + '…</p><progress max="' + cambios.length + '" value="' + enviados + '" style="width:100%"></progress>');
+        var d = await kbPost('/app/kb/indexar', { carpeta: carpeta, archivos: tandas[t] });
+        if (!d.ok) throw new Error('Se detuvo en la tanda ' + (t + 1) + ' de ' + tandas.length + ': ' + (d.error || 'error') + '. Vuelve a indexar: lo ya subido no se repite.');
+        res.creados += d.creados || 0;
+        res.actualizados += d.actualizados || 0;
+        res.omitidos = res.omitidos.concat(d.omitidos || []);
+        enviados += tandas[t].length;
+      }
+
+      var faltantes = idx.indice.filter(function (e) { return !vistos.has(e.clave); });
+      kbFaltantes[carpeta] = faltantes.map(function (e) { return e.id; });
+      var html = '<div class="alert alert--ok" role="status">✅ <strong>' + kbEsc(fuente.nombre) + '</strong>: ' +
+        res.creados + ' nuevo(s), ' + res.actualizados + ' actualizado(s), ' + (total - cambios.length - grandes.length) + ' sin cambios' +
+        (fuente.ignorados ? ' · ' + fuente.ignorados + ' archivo(s) que no son de texto se ignoraron' : '') + '.</div>';
+      if (res.omitidos.length) {
+        html += '<p class="alert alert--error">No se guardaron ' + res.omitidos.length + ': ' + res.omitidos.slice(0, 10).map(kbEsc).join(' · ') + (res.omitidos.length > 10 ? '…' : '') + '</p>';
+      }
+      if (faltantes.length) {
+        html += '<div class="alert">⚠️ ' + faltantes.length + ' archivo(s) están en el CRM pero ya no en la carpeta: ' +
+          faltantes.slice(0, 15).map(function (e) { return kbEsc(e.titulo); }).join(', ') + (faltantes.length > 15 ? '…' : '') +
+          ' <button type="button" class="btn btn--sm btn--ghost" data-kb-quitar="' + carpeta + '">🗑️ Quitarlos del CRM</button></div>';
+      }
+      if (res.creados || res.actualizados) html += '<p><a class="btn btn--sm" href="/app/kb?carpeta=' + carpeta + '&orden=recientes">Ver lo indexado</a></p>';
+      kbEstado(html);
+    } catch (err) {
+      kbEstado('<p class="alert alert--error">' + kbEsc(err && err.message ? err.message : 'Se perdió la conexión. Vuelve a indexar: lo ya subido no se repite.') + '</p>');
+    } finally {
+      kbBotones(false);
+    }
+  }
+
+  async function kbIndexarConHandle(carpeta, handle) {
+    var permiso = await handle.queryPermission({ mode: 'read' });
+    if (permiso !== 'granted') permiso = await handle.requestPermission({ mode: 'read' });
+    if (permiso !== 'granted') { kbEstado('<p class="alert alert--error">Sin permiso para leer la carpeta.</p>'); return; }
+    kbEstado('<p class="muted">Leyendo la carpeta ' + kbEsc(handle.name) + '…</p>');
+    var fuente = { nombre: handle.name, archivos: [], ignorados: 0 };
+    await kbRecorrer(handle, handle.name, fuente);
+    await kbIndexar(carpeta, fuente);
+  }
+
+  async function kbElegir(carpeta) {
+    if (!window.showDirectoryPicker) {
+      var input = document.querySelector('[data-kb-input="' + carpeta + '"]');
+      if (input) input.click();
+      return;
+    }
+    try {
+      var handle = await window.showDirectoryPicker({ id: 'kb-' + carpeta, mode: 'read' });
+      await kbRecordarCarpeta(carpeta, handle);
+      kbPintarRecordadas();
+      await kbIndexarConHandle(carpeta, handle);
+    } catch (err) {
+      if (err && err.name === 'AbortError') return; // canceló el selector
+      kbEstado('<p class="alert alert--error">' + kbEsc(err && err.message ? err.message : 'No se pudo abrir la carpeta') + '</p>');
+    }
+  }
+
+  document.addEventListener('click', function (e) {
+    var indexar = e.target.closest('[data-kb-indexar]');
+    var elegir = e.target.closest('[data-kb-elegir]');
+    var quitar = e.target.closest('[data-kb-quitar]');
+    if (indexar) {
+      var carpeta = indexar.getAttribute('data-kb-indexar');
+      kbCarpetaRecordada(carpeta).then(function (handle) {
+        if (handle && window.showDirectoryPicker) {
+          kbIndexarConHandle(carpeta, handle).catch(function (err) {
+            // La carpeta se movió o se borró: volver a elegirla.
+            kbEstado('<p class="alert alert--error">No se pudo abrir «' + kbEsc(handle.name) + '» (' + kbEsc(err && err.message ? err.message : 'error') + '). Elige la carpeta otra vez con 📂.</p>');
+          });
+        } else {
+          kbElegir(carpeta);
         }
-        procesados += data.creados || 0;
-        hechos += tanda.length;
-        i += 1;
-        siguiente();
-      }).catch(function () {
-        salida.innerHTML = '<p class="alert alert--error">Se perdió la conexión en la tanda ' + (i + 1) + ' de ' + tandas.length + '. Vuelve a subir con «actualizar» marcado: lo ya subido no se duplica.</p>';
-        fin();
+      });
+    } else if (elegir) {
+      kbElegir(elegir.getAttribute('data-kb-elegir'));
+    } else if (quitar) {
+      var c = quitar.getAttribute('data-kb-quitar');
+      var ids = kbFaltantes[c] || [];
+      if (!ids.length || !confirm('¿Quitar del CRM ' + ids.length + ' archivo(s) que ya no están en la carpeta?')) return;
+      quitar.disabled = true;
+      kbPost('/app/kb/quitar', { carpeta: c, ids: ids }).then(function (d) {
+        if (!d.ok) throw new Error(d.error || 'No se pudo quitar');
+        kbFaltantes[c] = [];
+        kbEstado('<div class="alert alert--ok" role="status">🗑️ ' + d.quitados + ' archivo(s) quitados del CRM.</div>');
+      }).catch(function (err) {
+        quitar.disabled = false;
+        kbEstado('<p class="alert alert--error">' + kbEsc(err.message) + '</p>');
       });
     }
-    siguiente();
+  });
+
+  // Respaldo para navegadores sin File System Access (Firefox): elegir la carpeta cada vez.
+  document.addEventListener('change', function (e) {
+    var input = e.target.closest && e.target.closest('[data-kb-input]');
+    if (!input || !input.files || !input.files.length) return;
+    var files = Array.prototype.slice.call(input.files);
+    var nombre = (files[0].webkitRelativePath || '').split('/')[0] || 'carpeta';
+    var fuente = { nombre: nombre, archivos: [], ignorados: 0 };
+    files.forEach(function (f) {
+      if (KB_EXT_TEXTO.test(f.name || '')) fuente.archivos.push({ ruta: f.webkitRelativePath || f.name, leer: function () { return Promise.resolve(f); } });
+      else fuente.ignorados += 1;
+    });
+    kbIndexar(input.getAttribute('data-kb-input'), fuente);
+    input.value = '';
   });
 
   // ── Configuración → Integraciones: "probar conexión" (webhook n8n / WhatsApp) ──
@@ -1795,7 +1932,8 @@
 
   function initTablas(scope) {
     (scope || document).querySelectorAll('table.data-table').forEach(function (tabla) {
-      if (tabla.__enh) return;
+      // Tablas con encabezado de dos filas (la matriz de permisos): sin ordenar ni ajustar columnas.
+      if (tabla.__enh || tabla.hasAttribute('data-sin-mejoras')) return;
       tabla.__enh = true;
 
       if (!tabla.parentElement.classList.contains('table-wrap')) {
@@ -2352,30 +2490,17 @@
     banner.hidden = true;
   });
 
-  // ── KB: copiar / descargar el documento (Markdown) ──────────────────────────
+  // ── KB: copiar el documento (los documentos son de solo lectura: se copian, no se editan) ──
   document.addEventListener('click', function (e) {
     var copiar = e.target.closest('[data-kb-copiar]');
-    var descargar = e.target.closest('[data-kb-descargar]');
-    if (!copiar && !descargar) return;
+    if (!copiar) return;
     var fuente = document.querySelector('[data-kb-markdown]');
     if (!fuente) return;
-    var texto = fuente.value;
-    if (copiar) {
-      navigator.clipboard.writeText(texto).then(function () {
-        var original = copiar.textContent;
-        copiar.textContent = '✅ Copiado';
-        setTimeout(function () { copiar.textContent = original; }, 1500);
-      }, function () { alert('No se pudo copiar al portapapeles.'); });
-      return;
-    }
-    var url = URL.createObjectURL(new Blob([texto], { type: 'text/markdown;charset=utf-8' }));
-    var a = document.createElement('a');
-    a.href = url;
-    a.download = descargar.getAttribute('data-kb-descargar');
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+    navigator.clipboard.writeText(fuente.value).then(function () {
+      var original = copiar.textContent;
+      copiar.textContent = '✅ Copiado';
+      setTimeout(function () { copiar.textContent = original; }, 1500);
+    }, function () { alert('No se pudo copiar al portapapeles.'); });
   });
 
   // ── Favoritas: alternar sin recargar la página ────────────────────────────
@@ -2536,6 +2661,7 @@
     iniciarModoWhatsApp();
     revisarBuzonPublico();
     pintarEstadoNotificaciones();
+    kbPintarRecordadas();
   }
   document.addEventListener('DOMContentLoaded', iniciarPagina);
   window.addEventListener('resize', medirTopbar);

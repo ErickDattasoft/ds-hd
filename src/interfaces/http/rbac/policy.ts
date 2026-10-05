@@ -22,6 +22,20 @@ export function permisosEfectivos(usuario: Usuario): Permiso[] {
   return [...set];
 }
 
+/**
+ * La base de conocimiento no sigue al rol: se quitan todos los `kb:*` y se da `kb:leer` solo a
+ * quien el propietario marcó; indexar y borrar (`kb:escribir` / `kb:publicar`) son solo suyos.
+ */
+export function aplicarAccesoKB(
+  permisos: readonly Permiso[],
+  acceso: { esPropietario: boolean; marcado: boolean },
+): Permiso[] {
+  const out = permisos.filter((p) => !p.startsWith('kb:'));
+  if (acceso.esPropietario) out.push('kb:leer', 'kb:escribir', 'kb:publicar');
+  else if (acceso.marcado) out.push('kb:leer');
+  return out;
+}
+
 /** Contexto opcional para chequeos por recurso. */
 export interface RecursoContexto {
   /** uid del agente asignado a un ticket, empresa dueña, etc. */

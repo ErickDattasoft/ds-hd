@@ -1,0 +1,52 @@
+{% extends "layouts/backoffice.njk" %}
+{% block title %}Acceso a la base de conocimiento{% endblock %}
+{% block content %}
+  <div class="page-head">
+    <h1>👥 Acceso a la base de conocimiento</h1>
+    <a class="btn btn--sm btn--ghost" href="/app/kb">← Base de conocimiento</a>
+  </div>
+  {% if guardado %}<div class="alert alert--ok" role="status">Guardado. El cambio se aplica en menos de un minuto.</div>{% endif %}
+  <p class="muted">
+    Solo tú decides quién la ve, persona por persona. No depende del rol: un administrador que no
+    marques aquí <strong>no</strong> la ve. Quien tenga acceso solo puede buscar, leer y copiar;
+    indexar, borrar y exportar es solo tuyo.
+  </p>
+
+  <form method="post" action="/app/kb/acceso" class="form form--wide">
+    <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+    <table class="data-table">
+      <thead><tr><th style="width:4rem">Ve la KB</th><th>Usuario</th><th>Roles</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><input type="checkbox" checked disabled aria-label="Tú (propietario)" /></td>
+          <td><strong>{{ user.nombre }}</strong> <span class="muted">— propietario</span></td>
+          <td class="muted">siempre</td>
+        </tr>
+        {% for f in filas %}
+          <tr>
+            <td><input type="checkbox" name="acceso" value="{{ f.uid }}" id="acc-{{ loop.index }}" {{ 'checked' if f.marcado }} /></td>
+            <td><label for="acc-{{ loop.index }}">{{ f.nombre }}</label> <span class="muted">{{ f.email }}</span></td>
+            <td>{{ f.roles | join(', ') }}</td>
+          </tr>
+        {% else %}
+          <tr><td colspan="3" class="muted">No hay más usuarios del equipo activos.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <h2>Rutas de las carpetas</h2>
+    <p class="muted">
+      Solo como recordatorio junto al botón 🔄 Indexar. El navegador no puede abrir una ruta escrita: la primera vez
+      eliges la carpeta y la recuerda para las siguientes (Chrome / Edge).
+    </p>
+    <label class="field"><span>🏢 Empresas</span>
+      <input type="text" name="rutaEmpresas" value="{{ rutas.empresas }}" placeholder="D:\…\EMPRESAS" maxlength="300" />
+    </label>
+    <label class="field"><span>🛠 Soporte y licencias</span>
+      <input type="text" name="rutaSoporte" value="{{ rutas.soporte }}" placeholder="D:\…\SOPORTE Y LICENCIAS" maxlength="300" />
+    </label>
+    <div class="page-head__actions">
+      <button class="btn" type="submit">Guardar</button>
+    </div>
+  </form>
+{% endblock %}

@@ -6,7 +6,9 @@
 
 # Class: KnowledgeService
 
-Base de conocimiento: gestión (staff) y consulta (staff / portal / público).
+Base de conocimiento. Quién entra lo decide el propietario (ver `ConfiguracionKB`), no el rol;
+los artículos son de solo lectura: el contenido solo cambia al reindexar las carpetas, y eso
+(igual que borrar o exportar) es exclusivo del propietario.
 
 ## Constructors
 
@@ -38,17 +40,15 @@ Base de conocimiento: gestión (staff) y consulta (staff / portal / público).
 
 ## Methods
 
-### listarVisibles()
+### listar()
 
-> **listarVisibles**(`ctx`, `filtro?`): `Promise`\<[`ArticuloKB`](../../../../core/entities/ArticuloKB/classes/ArticuloKB.md)[]\>
-
-Lista visible para un contexto dado (por rol; «publicado» ya no cuenta, ver VisibilidadKB).
+> **listar**(`actor`, `filtro?`): `Promise`\<[`ArticuloKB`](../../../../core/entities/ArticuloKB/classes/ArticuloKB.md)[]\>
 
 #### Parameters
 
-##### ctx
+##### actor
 
-[`ContextoKB`](../../../../core/entities/ArticuloKB/interfaces/ContextoKB.md)
+[`SessionUser`](../../../shared/SessionUser/interfaces/SessionUser.md)
 
 ##### filtro?
 
@@ -60,15 +60,15 @@ Lista visible para un contexto dado (por rol; «publicado» ya no cuenta, ver Vi
 
 ***
 
-### verVisible()
+### ver()
 
-> **verVisible**(`ctx`, `idOSlug`): `Promise`\<[`ArticuloKB`](../../../../core/entities/ArticuloKB/classes/ArticuloKB.md)\>
+> **ver**(`actor`, `idOSlug`): `Promise`\<[`ArticuloKB`](../../../../core/entities/ArticuloKB/classes/ArticuloKB.md)\>
 
 #### Parameters
 
-##### ctx
+##### actor
 
-[`ContextoKB`](../../../../core/entities/ArticuloKB/interfaces/ContextoKB.md)
+[`SessionUser`](../../../shared/SessionUser/interfaces/SessionUser.md)
 
 ##### idOSlug
 
@@ -82,15 +82,16 @@ Lista visible para un contexto dado (por rol; «publicado» ya no cuenta, ver Vi
 
 ### relacionados()
 
-> **relacionados**(`ctx`, `articulo`, `limite?`): `Promise`\<[`ArticuloKB`](../../../../core/entities/ArticuloKB/classes/ArticuloKB.md)[]\>
+> **relacionados**(`actor`, `articulo`, `limite?`): `Promise`\<[`ArticuloKB`](../../../../core/entities/ArticuloKB/classes/ArticuloKB.md)[]\>
 
-Otros artículos visibles que comparten al menos un tag con `articulo`, más compartidos primero.
+«Ver también»: otros de la misma carpeta que comparten tags o, si no hay tags, la misma
+subcarpeta (p. ej. los demás documentos de la misma empresa).
 
 #### Parameters
 
-##### ctx
+##### actor
 
-[`ContextoKB`](../../../../core/entities/ArticuloKB/interfaces/ContextoKB.md)
+[`SessionUser`](../../../shared/SessionUser/interfaces/SessionUser.md)
 
 ##### articulo
 
@@ -106,9 +107,11 @@ Otros artículos visibles que comparten al menos un tag con `articulo`, más com
 
 ***
 
-### obtenerParaEditar()
+### indice()
 
-> **obtenerParaEditar**(`actor`, `id`): `Promise`\<[`ArticuloKB`](../../../../core/entities/ArticuloKB/classes/ArticuloKB.md)\>
+> **indice**(`actor`, `carpeta`): `Promise`\<[`EntradaIndiceKB`](../interfaces/EntradaIndiceKB.md)[]\>
+
+Huella de cada archivo ya indexado en la carpeta, para mandar solo lo nuevo o cambiado.
 
 #### Parameters
 
@@ -116,19 +119,23 @@ Otros artículos visibles que comparten al menos un tag con `articulo`, más com
 
 [`SessionUser`](../../../shared/SessionUser/interfaces/SessionUser.md)
 
-##### id
+##### carpeta
 
-`string`
+`"soporte"` \| `"empresas"`
 
 #### Returns
 
-`Promise`\<[`ArticuloKB`](../../../../core/entities/ArticuloKB/classes/ArticuloKB.md)\>
+`Promise`\<[`EntradaIndiceKB`](../interfaces/EntradaIndiceKB.md)[]\>
 
 ***
 
-### guardar()
+### indexar()
 
-> **guardar**(`actor`, `datos`, `id?`): `Promise`\<[`ArticuloKB`](../../../../core/entities/ArticuloKB/classes/ArticuloKB.md)\>
+> **indexar**(`actor`, `carpeta`, `archivos`): `Promise`\<[`ResultadoIndexado`](../interfaces/ResultadoIndexado.md)\>
+
+«🔄 Indexar»: crea los archivos nuevos y actualiza los que cambiaron, reconociendo cada uno
+por su ruta dentro de la carpeta (sin la raíz), así nunca se duplica. Si un archivo ya estaba
+pero en la otra carpeta con la MISMA ruta completa, se mueve a esta.
 
 #### Parameters
 
@@ -136,84 +143,63 @@ Otros artículos visibles que comparten al menos un tag con `articulo`, más com
 
 [`SessionUser`](../../../shared/SessionUser/interfaces/SessionUser.md)
 
-##### datos
+##### carpeta
 
-[`DatosArticulo`](../interfaces/DatosArticulo.md)
-
-##### id?
-
-`string`
-
-#### Returns
-
-`Promise`\<[`ArticuloKB`](../../../../core/entities/ArticuloKB/classes/ArticuloKB.md)\>
-
-***
-
-### crearLote()
-
-> **crearLote**(`actor`, `archivos`, `opts?`): `Promise`\<[`ArticuloKB`](../../../../core/entities/ArticuloKB/classes/ArticuloKB.md)[]\>
-
-Alta en lote desde archivos (`.md`, `.ps1`, `.bat`, `.sql`, `.txt`…). Un artículo por
-archivo: título = nombre sin extensión, cuerpo = contenido, categoría adivinada, y la
-ruta relativa se guarda como `rutaDestino` (para volver a exportarlos a Windows).
-
-#### Parameters
-
-##### actor
-
-[`SessionUser`](../../../shared/SessionUser/interfaces/SessionUser.md)
+`"soporte"` \| `"empresas"`
 
 ##### archivos
 
-[`ArchivoLote`](../interfaces/ArchivoLote.md)[]
-
-##### opts?
-
-###### visibilidad?
-
-[`VisibilidadKB`](../../../../core/entities/ArticuloKB/type-aliases/VisibilidadKB.md)
-
-###### publicado?
-
-`boolean`
-
-###### categoria?
-
-`string`
-
-Categoría para los que no son script (en el viejo se elegía al cargar); vacío = adivinar.
-
-###### actualizarExistentes?
-
-`boolean`
-
-«🔄 Indexar / Actualizar» del viejo: si ya hay un artículo con la misma ruta, se le
-reemplaza el contenido en vez de crear un duplicado.
+[`ArchivoIndexado`](../interfaces/ArchivoIndexado.md)[]
 
 #### Returns
 
-`Promise`\<[`ArticuloKB`](../../../../core/entities/ArticuloKB/classes/ArticuloKB.md)[]\>
+`Promise`\<[`ResultadoIndexado`](../interfaces/ResultadoIndexado.md)\>
+
+***
+
+### quitar()
+
+> **quitar**(`actor`, `carpeta`, `idsAQuitar`): `Promise`\<`number`\>
+
+Quita del CRM artículos de una carpeta (los que ya no existen en la carpeta de Windows).
+
+#### Parameters
+
+##### actor
+
+[`SessionUser`](../../../shared/SessionUser/interfaces/SessionUser.md)
+
+##### carpeta
+
+`"soporte"` \| `"empresas"`
+
+##### idsAQuitar
+
+`string`[]
+
+#### Returns
+
+`Promise`\<`number`\>
 
 ***
 
 ### exportarZip()
 
-> **exportarZip**(`ctx`, `filtro?`): `Promise`\<`Buffer`\<`ArrayBufferLike`\>\>
+> **exportarZip**(`actor`, `filtro?`): `Promise`\<`Buffer`\<`ArrayBufferLike`\>\>
 
-Los artículos visibles que cumplen el filtro, como `.zip` (un archivo por artículo).
+Respaldo: los artículos (de una carpeta o todos) como `.zip`, con su ruta original.
 
 #### Parameters
 
-##### ctx
+##### actor
 
-[`ContextoKB`](../../../../core/entities/ArticuloKB/interfaces/ContextoKB.md)
+[`SessionUser`](../../../shared/SessionUser/interfaces/SessionUser.md)
 
 ##### filtro?
 
-###### categoria?
+###### carpeta?
 
-`string`
+`"soporte"` \| `"empresas"`
 
 ###### desde?
 

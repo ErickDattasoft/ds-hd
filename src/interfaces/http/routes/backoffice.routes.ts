@@ -138,6 +138,8 @@ export function backofficeRoutes(container: Container): Router {
 
   r.get('/usuarios', gestUsuarios, (req, res) => usuarios().listar(req, res));
   r.get('/usuarios/nuevo', gestUsuarios, (req, res) => usuarios().nuevo(req, res));
+  r.get('/usuarios/permisos', gestUsuarios, (req, res) => usuarios().permisosView(req, res));
+  r.post('/usuarios/permisos', gestUsuarios, (req, res) => usuarios().permisosPost(req, res));
   r.post('/usuarios', gestUsuarios, (req, res) => usuarios().crearPost(req, res));
   r.get('/usuarios/invitar-cliente', gestUsuarios, (req, res) => usuarios().invitarClienteGet(req, res));
   r.post('/usuarios/invitar-cliente', gestUsuarios, (req, res) => usuarios().invitarClientePost(req, res));
@@ -290,21 +292,21 @@ export function backofficeRoutes(container: Container): Router {
   r.post('/versiones/:id/eliminar', requirePermission('versiones:editar'), (req, res) => versiones().eliminarPost(req, res));
 
   // ── Base de conocimiento ───────────────────────────────────────────────────
-  r.get('/kb', requirePermission('kb:leer'), (req, res) => kb().gestionar(req, res));
-  r.get('/kb/nuevo', requirePermission('kb:escribir'), (req, res) => kb().nuevo(req, res));
-  r.get('/kb/subir', requirePermission('kb:escribir'), (req, res) => kb().subirView(req, res));
-  r.post('/kb/subir', requirePermission('kb:escribir'), (req, res) => kb().subirPost(req, res));
-  r.get('/kb/export.json', requirePermission('kb:leer'), (req, res) => kb().exportJson(req, res));
-  r.get('/kb/export.zip', requirePermission('kb:leer'), (req, res) => kb().exportZip(req, res));
+  // kb:leer = a quien marcó el propietario; kb:escribir/kb:publicar = solo
+  // el propietario (ver `aplicarAccesoKB`). No hay alta ni edición a mano: todo entra indexando.
+  r.get('/kb', requirePermission('kb:leer'), (req, res) => kb().listar(req, res));
+  r.get('/kb/indice.json', requirePermission('kb:escribir'), (req, res) => kb().indiceJson(req, res));
+  r.post('/kb/indexar', requirePermission('kb:escribir'), (req, res) => kb().indexarPost(req, res));
+  r.post('/kb/quitar', requirePermission('kb:publicar'), (req, res) => kb().quitarPost(req, res));
+  r.get('/kb/acceso', requirePermission('kb:publicar'), (req, res) => kb().accesoView(req, res));
+  r.post('/kb/acceso', requirePermission('kb:publicar'), (req, res) => kb().accesoPost(req, res));
+  r.get('/kb/export.zip', requirePermission('kb:publicar'), (req, res) => kb().exportZip(req, res));
   r.get('/kb/comparar', requirePermission('kb:leer'), (req, res) => kb().comparar(req, res));
   const pizarra = () => container.resolve('pizarraKBController');
   r.get('/kb/pizarra', requirePermission('kb:leer'), (req, res) => pizarra().ver(req, res));
   r.post('/kb/historial/limpiar', requirePermission('kb:leer'), (req, res) => kb().historialLimpiarPost(req, res));
   r.post('/kb/pizarra', requirePermission('kb:leer'), (req, res) => pizarra().guardarJson(req, res));
-  r.post('/kb', requirePermission('kb:escribir'), (req, res) => kb().guardarPost(req, res));
-  r.get('/kb/:id/editar', requirePermission('kb:escribir'), (req, res) => kb().editar(req, res));
   r.post('/kb/:id/eliminar', requirePermission('kb:publicar'), (req, res) => kb().eliminarPost(req, res));
-  r.post('/kb/:id', requirePermission('kb:escribir'), (req, res) => kb().guardarPost(req, res));
   r.get('/kb/:idOrSlug', requirePermission('kb:leer'), (req, res) => kb().ver(req, res));
 
   // ── Seguimiento comercial ──────────────────────────────────────────────────

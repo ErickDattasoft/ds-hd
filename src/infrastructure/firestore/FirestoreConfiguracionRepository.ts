@@ -32,6 +32,8 @@ import { sanearAcercaDe, type AcercaDe } from '../../core/entities/AcercaDe.js';
 import type { ConfiguracionLogo } from '../../core/entities/ConfiguracionLogo.js';
 import { sanearConfigResumen, type ConfiguracionResumen } from '../../core/entities/ConfiguracionResumen.js';
 
+import { sanearConfigKB, type ConfiguracionKB } from '../../core/entities/ConfiguracionKB.js';
+
 const COL = 'configuracion';
 
 /** Documentos singleton `configuracion/{seccion}`. */
@@ -172,6 +174,15 @@ export class FirestoreConfiguracionRepository implements IConfiguracionRepositor
   async guardarEstadoBackup(estado: EstadoBackup): Promise<void> {
     await this.db.collection(COL).doc('backup').set(estado);
   }
+
+  async obtenerKB(): Promise<ConfiguracionKB> {
+    const snap = await this.db.collection(COL).doc('kb').get();
+    return sanearConfigKB(snap.exists ? snap.data() : null);
+  }
+
+  async guardarKB(config: ConfiguracionKB): Promise<void> {
+    await this.db.collection(COL).doc('kb').set(config);
+  }
 }
 
 function contactos(v: unknown): ContactoSoporte[] {
@@ -183,4 +194,5 @@ function contactos(v: unknown): ContactoSoporte[] {
 
 function arr(v: unknown, fallback: readonly string[]): string[] {
   return Array.isArray(v) && v.length ? v.map(String) : [...fallback];
+
 }

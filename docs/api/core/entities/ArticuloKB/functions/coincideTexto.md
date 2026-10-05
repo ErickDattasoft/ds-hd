@@ -8,10 +8,9 @@
 
 > **coincideTexto**(`articulo`, `texto`, `fraseExacta`): `boolean`
 
-¿El artículo coincide con una búsqueda de texto? Busca en título, cuerpo y tags.
-Por defecto (`fraseExacta=false`) exige que CADA palabra de `texto` aparezca en algún lado
-(más laxo, mejor recall); con `fraseExacta=true` exige la frase completa como substring
-contiguo en un solo campo (más estricto).
+¿El artículo coincide con una búsqueda? Busca en nombre, ruta (empresa/subcarpetas), tags y
+contenido, sin distinguir mayúsculas ni acentos. Por defecto (`fraseExacta=false`) exige que
+CADA palabra aparezca en algún lado; con `fraseExacta=true`, la frase completa en un campo.
 
 ## Parameters
 

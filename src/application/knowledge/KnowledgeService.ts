@@ -2,33 +2,58 @@ import type { IKnowledgeRepository, ListarKBFiltro } from '../../core/ports/repo
 import type { IClock } from '../../core/ports/services/IClock.js';
 import type { IIdGenerator } from '../../core/ports/services/IIdGenerator.js';
 import { zipSync, strToU8 } from 'fflate';
-import { ArticuloKB, adivinarCategoriaKB, slugify, type ContextoKB, type VisibilidadKB } from '../../core/entities/ArticuloKB.js';
-import { ForbiddenError, NotFoundError, ValidationError } from '../../core/errors/DomainError.js';
+import {
+  ArticuloKB,
+  adivinarCategoriaKB,
+  claveRutaKB,
+  normalizarRutaKB,
+  slugify,
+  type CarpetaKB,
+} from '../../core/entities/ArticuloKB.js';
+import { ForbiddenError, NotFoundError } from '../../core/errors/DomainError.js';
 import type { BitacoraService } from '../shared/BitacoraService.js';
 import type { SessionUser } from '../shared/SessionUser.js';
 
-/** Datos editables de un artículo de la base de conocimiento (alta o edición). */
-export interface DatosArticulo {
-  titulo: string;
-  categoria?: string;
-  cuerpoMarkdown: string;
-  tags?: string[];
-  rutaDestino?: string;
-  publicado?: boolean;
-  visibilidad?: VisibilidadKB;
-}
-
-/** Un archivo de la subida en lote. */
-export interface ArchivoLote {
-  nombre: string;
+/** Un archivo leído de la carpeta local al indexar. */
+export interface ArchivoIndexado {
+  /** Ruta dentro de la carpeta elegida, con la carpeta raíz (`EMPRESAS/ACME/notas.md`). */
+  ruta: string;
   contenido: string;
-  /** Ruta relativa dentro de la carpeta elegida (si se subió una carpeta). */
-  rutaRelativa?: string;
 }
 
-export type Contexto = ContextoKB;
+/** Lo que el navegador necesita para saber qué cambió sin volver a subir todo. */
+export interface EntradaIndiceKB {
+  id: string;
+  /** `claveRutaKB` de la ruta: sin la carpeta raíz y en minúsculas. */
+  clave: string;
+  titulo: string;
+  /** SHA-256 (hex) del contenido guardado. */
+  huella: string;
+}
 
-/** Base de conocimiento: gestión (staff) y consulta (staff / portal / público). */
+/** Resumen de una tanda del indexado. */
+export interface ResultadoIndexado {
+  creados: number;
+  actualizados: number;
+  sinCambios: number;
+  /** Archivos que no se guardaron, con el motivo. */
+  omitidos: string[];
+}
+
+/** Firestore no acepta documentos de más de 1 MiB; se deja margen para los demás campos. */
+const MAX_CONTENIDO = 900_000;
+
+/** SHA-256 en hex del texto (UTF-8). Es el mismo cálculo que hace el navegador al indexar. */
+export async function huellaKB(texto: string): Promise<string> {
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(texto));
+  return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+/**
+ * Base de conocimiento. Quién entra lo decide el propietario (ver `ConfiguracionKB`), no el rol;
+ * los artículos son de solo lectura: el contenido solo cambia al reindexar las carpetas, y eso
+ * (igual que borrar o exportar) es exclusivo del propietario.
+ */
 export class KnowledgeService {
   constructor(
     private readonly repo: IKnowledgeRepository,
@@ -37,161 +62,171 @@ export class KnowledgeService {
     private readonly bitacora: BitacoraService,
   ) {}
 
-  /** Lista visible para un contexto dado (por rol; «publicado» ya no cuenta, ver VisibilidadKB). */
-  async listarVisibles(ctx: Contexto, filtro: ListarKBFiltro = {}): Promise<ArticuloKB[]> {
-    const todos = await this.repo.list(filtro);
-    return todos.filter((a) => a.visiblePara(ctx));
+  private exigir(actor: SessionUser, permiso: 'kb:leer' | 'kb:escribir' | 'kb:publicar'): void {
+    if (actor.permisos.includes(permiso)) return;
+    throw new ForbiddenError(
+      permiso === 'kb:leer'
+        ? 'No tienes acceso a la base de conocimiento'
+        : 'Solo el propietario de la base de conocimiento puede hacer esto',
+    );
   }
 
-  async verVisible(ctx: Contexto, idOSlug: string): Promise<ArticuloKB> {
-    const articulo =
-      (await this.repo.findById(idOSlug)) ?? (await this.repo.findBySlug(idOSlug));
-    if (!articulo || !articulo.visiblePara(ctx)) throw new NotFoundError('Artículo', idOSlug);
-    return articulo;
+  async listar(actor: SessionUser, filtro: ListarKBFiltro = {}): Promise<ArticuloKB[]> {
+    this.exigir(actor, 'kb:leer');
+    return this.repo.list(filtro);
   }
 
-  /** Otros artículos visibles que comparten al menos un tag con `articulo`, más compartidos primero. */
-  async relacionados(ctx: Contexto, articulo: ArticuloKB, limite = 5): Promise<ArticuloKB[]> {
-    if (!articulo.tags.length) return [];
-    const candidatos = await this.listarVisibles(ctx);
-    return candidatos
-      .filter((a) => a.id !== articulo.id)
-      .map((a) => ({ a, compartidos: a.tags.filter((t) => articulo.tags.includes(t)).length }))
-      .filter((x) => x.compartidos > 0)
-      .sort((x, y) => y.compartidos - x.compartidos || y.a.updatedAt.getTime() - x.a.updatedAt.getTime())
-      .slice(0, limite)
-      .map((x) => x.a);
-  }
-
-  async obtenerParaEditar(actor: SessionUser, id: string): Promise<ArticuloKB> {
-    if (!actor.permisos.includes('kb:escribir')) throw new ForbiddenError('No puedes editar la base de conocimiento');
-    const a = await this.repo.findById(id);
-    if (!a) throw new NotFoundError('Artículo', id);
-    return a;
-  }
-
-  async guardar(actor: SessionUser, datos: DatosArticulo, id?: string): Promise<ArticuloKB> {
-    if (!actor.permisos.includes('kb:escribir')) throw new ForbiddenError('No puedes editar la base de conocimiento');
-    if (datos.publicado && !actor.permisos.includes('kb:publicar')) {
-      throw new ForbiddenError('No tienes permiso para publicar artículos');
-    }
-    const previo = id ? await this.repo.findById(id) : null;
-    if (id && !previo) throw new NotFoundError('Artículo', id);
-
-    const ahora = this.clock.now();
-    const articulo = new ArticuloKB({
-      id: id ?? this.ids.newId(),
-      titulo: datos.titulo,
-      categoria: datos.categoria ?? null,
-      cuerpoMarkdown: datos.cuerpoMarkdown,
-      tags: datos.tags ?? [],
-      rutaDestino: datos.rutaDestino ?? previo?.rutaDestino ?? null,
-      publicado: datos.publicado ?? previo?.publicado ?? false,
-      visibilidad: datos.visibilidad ?? previo?.visibilidad ?? 'soporte',
-      autorUid: previo?.autorUid ?? actor.uid,
-      autorNombre: previo?.autorNombre ?? actor.nombre,
-      createdAt: previo?.createdAt ?? ahora,
-      updatedAt: ahora,
-    });
-    await this.repo.save(articulo);
-    await this.bitacora.registrar({
-      actor,
-      accion: id ? 'editar' : 'crear',
-      modulo: 'kb',
-      entidadTipo: 'ArticuloKB',
-      entidadId: articulo.id,
-      resumen: `${articulo.publicado ? 'Publicado' : 'Borrador'}: ${articulo.titulo}`,
-    });
+  async ver(actor: SessionUser, idOSlug: string): Promise<ArticuloKB> {
+    this.exigir(actor, 'kb:leer');
+    const articulo = (await this.repo.findById(idOSlug)) ?? (await this.repo.findBySlug(idOSlug));
+    if (!articulo) throw new NotFoundError('Artículo', idOSlug);
     return articulo;
   }
 
   /**
-   * Alta en lote desde archivos (`.md`, `.ps1`, `.bat`, `.sql`, `.txt`…). Un artículo por
-   * archivo: título = nombre sin extensión, cuerpo = contenido, categoría adivinada, y la
-   * ruta relativa se guarda como `rutaDestino` (para volver a exportarlos a Windows).
+   * «Ver también»: otros de la misma carpeta que comparten tags o, si no hay tags, la misma
+   * subcarpeta (p. ej. los demás documentos de la misma empresa).
    */
-  async crearLote(
-    actor: SessionUser,
-    archivos: ArchivoLote[],
-    opts: {
-      visibilidad?: VisibilidadKB;
-      publicado?: boolean;
-      /** Categoría para los que no son script (en el viejo se elegía al cargar); vacío = adivinar. */
-      categoria?: string;
-      /**
-       * «🔄 Indexar / Actualizar» del viejo: si ya hay un artículo con la misma ruta, se le
-       * reemplaza el contenido en vez de crear un duplicado.
-       */
-      actualizarExistentes?: boolean;
-    } = {},
-  ): Promise<ArticuloKB[]> {
-    if (!actor.permisos.includes('kb:escribir')) throw new ForbiddenError('No puedes editar la base de conocimiento');
-    const publicado = opts.publicado ?? false;
-    if (publicado && !actor.permisos.includes('kb:publicar')) {
-      throw new ForbiddenError('No tienes permiso para publicar artículos');
-    }
-    const validos = archivos.filter((a) => a.nombre.trim() && a.contenido.trim().length >= 10);
-    if (!validos.length) throw new ValidationError('No hay archivos con contenido para importar', { archivos: 'Vacío' });
+  async relacionados(actor: SessionUser, articulo: ArticuloKB, limite = 5): Promise<ArticuloKB[]> {
+    const candidatos = (await this.listar(actor)).filter((a) => a.id !== articulo.id && a.carpeta === articulo.carpeta);
+    const puntaje = (a: ArticuloKB): number =>
+      a.tags.filter((t) => articulo.tags.includes(t)).length * 2 +
+      (articulo.subcarpeta && a.subcarpeta === articulo.subcarpeta ? 1 : 0);
+    return candidatos
+      .map((a) => ({ a, p: puntaje(a) }))
+      .filter((x) => x.p > 0)
+      .sort((x, y) => y.p - x.p || x.a.titulo.localeCompare(y.a.titulo, 'es', { numeric: true }))
+      .slice(0, limite)
+      .map((x) => x.a);
+  }
 
+  /** Huella de cada archivo ya indexado en la carpeta, para mandar solo lo nuevo o cambiado. */
+  async indice(actor: SessionUser, carpeta: CarpetaKB): Promise<EntradaIndiceKB[]> {
+    this.exigir(actor, 'kb:escribir');
+    const articulos = (await this.repo.list()).filter((a) => a.carpeta === carpeta && a.rutaDestino);
+    return Promise.all(
+      articulos.map(async (a) => ({
+        id: a.id,
+        clave: claveRutaKB(a.rutaDestino!),
+        titulo: a.titulo,
+        huella: await huellaKB(a.cuerpoMarkdown),
+      })),
+    );
+  }
+
+  /**
+   * «🔄 Indexar»: crea los archivos nuevos y actualiza los que cambiaron, reconociendo cada uno
+   * por su ruta dentro de la carpeta (sin la raíz), así nunca se duplica. Si un archivo ya estaba
+   * pero en la otra carpeta con la MISMA ruta completa, se mueve a esta.
+   */
+  async indexar(actor: SessionUser, carpeta: CarpetaKB, archivos: ArchivoIndexado[]): Promise<ResultadoIndexado> {
+    this.exigir(actor, 'kb:escribir');
+    const resultado: ResultadoIndexado = { creados: 0, actualizados: 0, sinCambios: 0, omitidos: [] };
     const ahora = this.clock.now();
-    const creados: ArticuloKB[] = [];
-    const normalizarRuta = (r: string): string => r.replace(/\\/g, '/').trim().toLowerCase();
+
+    const porClave = new Map<string, ArticuloKB>();
     const porRuta = new Map<string, ArticuloKB>();
-    if (opts.actualizarExistentes) {
-      for (const a of await this.repo.list()) if (a.rutaDestino) porRuta.set(normalizarRuta(a.rutaDestino), a);
+    for (const a of await this.repo.list()) {
+      if (!a.rutaDestino) continue;
+      if (a.carpeta === carpeta) porClave.set(claveRutaKB(a.rutaDestino), a);
+      porRuta.set(normalizarRutaKB(a.rutaDestino), a);
     }
-    let actualizados = 0;
-    const porGuardar: ArticuloKB[] = [];
-    for (const archivo of validos) {
-      const nombre = archivo.nombre.trim();
-      const titulo = nombre.replace(/\.[^.]+$/, '') || nombre;
-      const ruta = (archivo.rutaRelativa || nombre).replace(/\\/g, '/');
-      const existente = porRuta.get(normalizarRuta(ruta));
-      if (existente) {
-        if (existente.cuerpoMarkdown !== archivo.contenido) {
-          existente.cuerpoMarkdown = archivo.contenido;
-          existente.updatedAt = ahora;
-          porGuardar.push(existente);
-          actualizados += 1;
-        }
-        creados.push(existente);
+
+    const porGuardar = new Map<string, ArticuloKB>();
+    for (const archivo of archivos) {
+      const ruta = archivo.ruta.replace(/\\/g, '/').replace(/^\/+/, '').trim();
+      const nombre = ruta.split('/').pop() ?? '';
+      if (!nombre) continue;
+      if (!archivo.contenido.trim()) {
+        resultado.omitidos.push(`${ruta}: vacío`);
         continue;
       }
+      if (archivo.contenido.length > MAX_CONTENIDO) {
+        resultado.omitidos.push(`${ruta}: muy grande (más de ${Math.round(MAX_CONTENIDO / 1000)} mil caracteres)`);
+        continue;
+      }
+      const titulo = (nombre.replace(/\.[^.]+$/, '') || nombre).slice(0, 160);
       const adivinada = adivinarCategoriaKB(nombre);
-      const articulo = new ArticuloKB({
+      const categoria = adivinada === 'script' ? 'script' : carpeta === 'empresas' ? 'empresa' : adivinada;
+      const existente = porClave.get(claveRutaKB(ruta)) ?? porRuta.get(normalizarRutaKB(ruta));
+      if (existente) {
+        const cambio =
+          existente.cuerpoMarkdown !== archivo.contenido ||
+          existente.carpeta !== carpeta ||
+          existente.rutaDestino !== ruta ||
+          existente.titulo !== titulo;
+        if (!cambio) {
+          resultado.sinCambios += 1;
+          continue;
+        }
+        existente.cuerpoMarkdown = archivo.contenido;
+        existente.carpeta = carpeta;
+        existente.rutaDestino = ruta;
+        existente.titulo = titulo;
+        existente.updatedAt = ahora;
+        if (!porGuardar.has(existente.id)) resultado.actualizados += 1;
+        porGuardar.set(existente.id, existente);
+        continue;
+      }
+      const nuevo = new ArticuloKB({
         id: this.ids.newId(),
-        titulo: titulo.slice(0, 120),
+        titulo,
+        carpeta,
+        categoria,
         cuerpoMarkdown: archivo.contenido,
-        categoria: adivinada === 'script' ? 'script' : opts.categoria?.trim() || adivinada,
         rutaDestino: ruta,
-        publicado,
-        visibilidad: opts.visibilidad ?? 'soporte',
         autorUid: actor.uid,
         autorNombre: actor.nombre,
         createdAt: ahora,
         updatedAt: ahora,
       });
-      porGuardar.push(articulo);
-      creados.push(articulo);
+      // Dos veces el mismo archivo en la misma tanda: el segundo actualiza al primero.
+      porClave.set(claveRutaKB(ruta), nuevo);
+      porRuta.set(normalizarRutaKB(ruta), nuevo);
+      porGuardar.set(nuevo.id, nuevo);
+      resultado.creados += 1;
     }
-    await this.repo.guardarVarios(porGuardar);
-    await this.bitacora.registrar({
-      actor,
-      accion: 'crear',
-      modulo: 'kb',
-      entidadTipo: 'ArticuloKB',
-      entidadId: 'lote',
-      resumen: `Subida en lote: ${creados.length} archivo(s)${actualizados ? `, ${actualizados} actualizado(s)` : ''}`,
-    });
-    return creados;
+
+    if (porGuardar.size) {
+      await this.repo.guardarVarios([...porGuardar.values()]);
+      await this.bitacora.registrar({
+        actor,
+        accion: 'indexar',
+        modulo: 'kb',
+        entidadTipo: 'ArticuloKB',
+        entidadId: carpeta,
+        resumen: `Indexado ${carpeta === 'empresas' ? 'Empresas' : 'Soporte y licencias'}: ${resultado.creados} nuevo(s), ${resultado.actualizados} actualizado(s)`,
+      });
+    }
+    return resultado;
   }
 
-  /** Los artículos visibles que cumplen el filtro, como `.zip` (un archivo por artículo). */
-  async exportarZip(ctx: Contexto, filtro: { categoria?: string; desde?: Date } = {}): Promise<Buffer> {
-    const articulos = await this.listarVisibles(ctx, filtro.categoria ? { categoria: filtro.categoria } : {});
+  /** Quita del CRM artículos de una carpeta (los que ya no existen en la carpeta de Windows). */
+  async quitar(actor: SessionUser, carpeta: CarpetaKB, idsAQuitar: string[]): Promise<number> {
+    this.exigir(actor, 'kb:publicar');
+    const pedidos = new Set(idsAQuitar);
+    const borrar = (await this.repo.list()).filter((a) => a.carpeta === carpeta && pedidos.has(a.id));
+    if (!borrar.length) return 0;
+    await this.repo.eliminarVarios(borrar.map((a) => a.id));
+    await this.bitacora.registrar({
+      actor,
+      accion: 'eliminar',
+      modulo: 'kb',
+      entidadTipo: 'ArticuloKB',
+      entidadId: carpeta,
+      resumen: `Quitados ${borrar.length} archivo(s) que ya no están en la carpeta: ${borrar.slice(0, 5).map((a) => a.titulo).join(', ')}${borrar.length > 5 ? '…' : ''}`,
+    });
+    return borrar.length;
+  }
+
+  /** Respaldo: los artículos (de una carpeta o todos) como `.zip`, con su ruta original. */
+  async exportarZip(actor: SessionUser, filtro: { carpeta?: CarpetaKB; desde?: Date } = {}): Promise<Buffer> {
+    this.exigir(actor, 'kb:publicar');
+    const articulos = await this.repo.list();
     const usados = new Set<string>();
     const entradas: Record<string, Uint8Array> = {};
     for (const a of articulos) {
+      if (filtro.carpeta && a.carpeta !== filtro.carpeta) continue;
       if (filtro.desde && a.updatedAt < filtro.desde) continue;
       let ruta = (a.rutaDestino || `${a.slug || slugify(a.titulo)}.md`).replace(/\\/g, '/').replace(/^\/+/, '');
       if (usados.has(ruta)) {
@@ -205,7 +240,7 @@ export class KnowledgeService {
   }
 
   async eliminar(actor: SessionUser, id: string): Promise<void> {
-    if (!actor.permisos.includes('kb:publicar')) throw new ForbiddenError('No puedes eliminar artículos');
+    this.exigir(actor, 'kb:publicar');
     const a = await this.repo.findById(id);
     if (!a) throw new NotFoundError('Artículo', id);
     await this.repo.eliminar(id);

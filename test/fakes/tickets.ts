@@ -1,5 +1,6 @@
+import { sanearConfigKB, type ConfiguracionKB } from '../../src/core/entities/ConfiguracionKB.js';
 import { sanearEstadoBackup, type EstadoBackup } from '../../src/core/entities/EstadoBackup.js';
-import { coincideTexto, ticketEsDeAgente, ticketSinNadieAsignado } from '../../src/core/entities/Ticket.js';
+import { coincideTexto, ticketDisponibleParaEquipo, ticketEsDeAgente, ticketSinNadieAsignado } from '../../src/core/entities/Ticket.js';
 import {
   CONFIG_CORREO_ENTRANTE_POR_DEFECTO,
   type ConfiguracionCorreoEntrante,
@@ -125,7 +126,7 @@ export class InMemoryTicketQueries implements ITicketQueries {
     if (f.agenteAsignadoUid && t.agenteAsignadoUid !== f.agenteAsignadoUid) return false;
     if (f.sinAsignar && !ticketSinNadieAsignado(t)) return false;
     if (f.deAgente && !ticketEsDeAgente(t, f.deAgente)) return false;
-    if (f.alcanceAgente && !ticketEsDeAgente(t, f.alcanceAgente) && !ticketSinNadieAsignado(t)) return false;
+    if (f.alcanceAgente && !ticketEsDeAgente(t, f.alcanceAgente) && !ticketDisponibleParaEquipo(t, f.alcanceAgente.admins)) return false;
     if (f.empresaId && t.empresaId !== f.empresaId) return false;
     if (f.solicitanteUid && t.solicitanteUid !== f.solicitanteUid) return false;
     if (f.canal && t.canal !== f.canal) return false;
@@ -266,6 +267,13 @@ export class InMemoryConfiguracionRepository implements IConfiguracionRepository
   }
   async guardarEstadoBackup(estado: EstadoBackup): Promise<void> {
     this.estadoBackup = estado;
+  }
+  kb: ConfiguracionKB = sanearConfigKB(null);
+  async obtenerKB(): Promise<ConfiguracionKB> {
+    return this.kb;
+  }
+  async guardarKB(config: ConfiguracionKB): Promise<void> {
+    this.kb = config;
   }
 }
 

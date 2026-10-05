@@ -30,3 +30,4 @@
 - [nombresCoinciden](functions/nombresCoinciden.md)
 - [ticketEsDeAgente](functions/ticketEsDeAgente.md)
 - [ticketSinNadieAsignado](functions/ticketSinNadieAsignado.md)
+- [ticketDisponibleParaEquipo](functions/ticketDisponibleParaEquipo.md)

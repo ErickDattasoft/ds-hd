@@ -1,0 +1,60 @@
+{% extends "layouts/backoffice.njk" %}
+{% block title %}Permisos por apartado{% endblock %}
+{% block content %}
+  <div class="page-head">
+    <h1>🔐 Permisos por apartado</h1>
+    <a class="btn btn--sm btn--ghost" href="/app/usuarios">← Usuarios</a>
+  </div>
+  {% if guardados !== null %}
+    <div class="alert alert--ok" role="status">
+      {{ 'Sin cambios.' if guardados == 0 else ('Guardado: ' + guardados + ' usuario(s). Se aplica en menos de un minuto.') }}
+    </div>
+  {% endif %}
+  <p class="muted">
+    Marca qué puede hacer cada persona, sin importar su rol. <strong>Ver</strong> = entra al apartado;
+    <strong>Editar</strong> = crea y modifica (incluye Ver); en Tickets, <strong>Todos</strong> = ve los de todo el equipo, no solo los suyos.
+    Los administradores tienen todo. La base de conocimiento no está aquí: la controla su propietario en 📚 → 👥 Acceso.
+    Para algo más fino (eliminar, aprobar…), abre al usuario → Permisos avanzados.
+  </p>
+
+  <form method="post" action="/app/usuarios/permisos">
+    <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+    <div class="permisos-matriz__scroll">
+      <table class="data-table permisos-matriz" data-sin-mejoras>
+        <thead>
+          <tr>
+            <th rowspan="2">Usuario</th>
+            {% for a in apartados %}<th colspan="{{ a.niveles | length }}" class="permisos-matriz__ap">{{ a.etiqueta }}</th>{% endfor %}
+          </tr>
+          <tr>
+            {% for a in apartados %}{% for n in a.niveles %}<th class="permisos-matriz__nivel">{{ n.etiqueta }}</th>{% endfor %}{% endfor %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for f in filas %}
+            <tr>
+              <th scope="row">{{ f.nombre }}<br /><span class="muted">{{ f.roles }}</span></th>
+              {% for a in apartados %}
+                {% for n in a.niveles %}
+                  {% set clave = f.uid + '|' + a.id + '|' + n.id %}
+                  {% set marcada = f.marcadas[a.id + '|' + n.id] %}
+                  <td class="permisos-matriz__celda">
+                    {% if f.esAdmin %}
+                      <input type="checkbox" checked disabled title="Administrador: tiene todo" />
+                    {% else %}
+                      <input type="checkbox" name="p" value="{{ clave }}" {{ 'checked' if marcada }} aria-label="{{ f.nombre }} — {{ a.etiqueta }} — {{ n.etiqueta }}" />
+                      {% if marcada %}<input type="hidden" name="o" value="{{ clave }}" />{% endif %}
+                    {% endif %}
+                  </td>
+                {% endfor %}
+              {% endfor %}
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div class="page-head__actions">
+      <button class="btn" type="submit">Guardar permisos</button>
+    </div>
+  </form>
+{% endblock %}

@@ -28,6 +28,12 @@ Props para construir un [ArticuloKB](../classes/ArticuloKB.md); `slug` se autoge
 
 ***
 
+### carpeta?
+
+> `optional` **carpeta?**: `"soporte"` \| `"empresas"`
+
+***
+
 ### categoria?
 
 > `optional` **categoria?**: `string` \| `null`
@@ -50,19 +56,7 @@ Props para construir un [ArticuloKB](../classes/ArticuloKB.md); `slug` se autoge
 
 > `optional` **rutaDestino?**: `string` \| `null`
 
-Ruta destino en Windows (para scripts que se despliegan a una carpeta).
-
-***
-
-### publicado?
-
-> `optional` **publicado?**: `boolean`
-
-***
-
-### visibilidad?
-
-> `optional` **visibilidad?**: [`VisibilidadKB`](../type-aliases/VisibilidadKB.md)
+Ruta del archivo dentro de la carpeta indexada (con la carpeta raíz, como `EMPRESAS/x.md`).
 
 ***
 

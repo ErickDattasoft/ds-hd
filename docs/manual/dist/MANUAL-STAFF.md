@@ -286,47 +286,49 @@ del equipo, o escribir otros correos a mano.
 
 ## Base de conocimiento
 
-Documentos de soporte del equipo (soluciones, datos de empresas, scripts), escritos en
-Markdown. Es solo del equipo: los clientes del portal y el público ya no la ven.
+Los archivos de soporte del equipo, separados en dos carpetas igual que en Windows:
+**🏢 Empresas** y **🛠 Soporte y licencias**. Son de **solo lectura**: se buscan, se leen y se
+copian (📋 Copiar); nadie los edita en el CRM. El contenido solo cambia al **indexar** las
+carpetas.
 
 *(captura pendiente: base-conocimiento-staff.png — corre `npm run docs:screenshots` contra la app corriendo y con datos de `npm run seed:demo`)*
 
-## Quién ve cada documento
+## Quién la ve
 
-Cada documento tiene una **visibilidad**:
-
-| Visibilidad | La ven |
-| --- | --- |
-| **Soporte** | los usuarios con el rol *Administrador* o *Soporte técnico* marcado |
-| **Administrador** | solo los usuarios con el rol *Administrador* |
-
-Los demás roles (Supervisor, Comercial, Agente técnico mixto, Solo lectura) no ven los
-documentos. Si alguien de esos roles necesita verlos, márcale también *Soporte técnico* en
-*Usuarios*.
+No depende del rol. El propietario (Erick) decide persona por persona en **👥 Acceso**: solo
+quien tenga su casilla marcada la ve — un administrador sin marcar **no** la ve. Quien tiene
+acceso solo busca, lee y copia; indexar, eliminar, exportar y dar acceso es exclusivo del
+propietario. El cambio se aplica en menos de un minuto.
 
 ## Buscar
 
-En `/app/kb`, el buscador encuentra por título o contenido. Con **frase exacta** exige la
-frase completa; sin ella basta con que aparezca cada palabra. Tus búsquedas recientes quedan
-abajo del buscador y se pueden borrar. También filtras por categoría, etiqueta, fecha de
-modificación y orden (A→Z, Z→A, más recientes).
+El buscador encuentra por **nombre** del archivo, **empresa o subcarpeta** (la ruta) y
+**contenido** — incluidos números de versión como `14.2.1` —, sin importar mayúsculas ni
+acentos. Cada resultado muestra el pedazo del contenido donde coincidió, resaltado. Con
+**frase exacta** exige la frase completa. Las pestañas separan *Empresas* y *Soporte y
+licencias* (con el conteo de resultados de cada una) y, dentro de una carpeta, puedes filtrar
+por subcarpeta. Tus búsquedas recientes quedan abajo del buscador y se pueden borrar.
 
-## Escribir y subir documentos
+## Indexar (solo el propietario)
 
-- *Nuevo artículo*: título, contenido en Markdown, categoría, etiquetas y visibilidad.
-- *Subir archivos*: varios archivos sueltos o **una carpeta completa**. Eliges la categoría
-  (los `.ps1`, `.bat`, `.cmd` y `.sql` siempre quedan como Script) y, si marcas
-  **actualizar**, un archivo con la misma ruta reemplaza al que ya existe en vez de
-  duplicarse. Las carpetas grandes se suben en tandas con barra de avance; los archivos que
-  no son de texto (imágenes, ejecutables) se omiten.
-- 🗑️ elimina un documento (desde la lista o al editarlo).
+Arriba de la lista hay un botón **🔄 Indexar** por carpeta:
 
-## Exportar
+1. La primera vez te pide elegir la carpeta de Windows. El navegador (Chrome / Edge) la recuerda;
+   desde entonces basta con el botón. 📂 sirve para elegir otra.
+2. Compara cada archivo con lo ya indexado y sube **solo lo nuevo o modificado**. Un archivo se
+   reconoce por su ruta dentro de la carpeta, así que reindexar nunca duplica (aunque renombres
+   la carpeta raíz).
+3. Si en el CRM hay archivos que ya no existen en la carpeta, lo avisa y ofrece
+   **🗑️ Quitarlos del CRM**.
 
-**Exportar ZIP** baja los documentos con sus rutas originales (descomprímelo sobre la carpeta
-raíz de tus scripts y cada archivo cae en su lugar). Respeta los filtros de la lista: categoría
-y «Modificados» — hoy, últimos 7 días o **desde mi última exportación** (la fecha se recuerda
-en ese navegador al exportar). **Exportar JSON** baja lo mismo como datos.
+Solo se indexan archivos de texto (`.md`, `.txt`, `.ps1`, `.bat`, `.sql`…); imágenes y
+ejecutables se ignoran. Los `.md` se muestran con formato; los scripts y `.txt`, tal cual. La
+ruta de Windows de cada carpeta se anota en **👥 Acceso** como recordatorio (el navegador no
+puede abrir una ruta escrita a mano).
+
+## Respaldo
+
+**💾 Respaldo ZIP** (solo el propietario) baja los archivos indexados con sus carpetas.
 
 ---
 
@@ -503,11 +505,22 @@ de permisos combina rol base + extras − revocados; el cambio tarda hasta un mi
 reflejarse (la sesión cachea el perfil brevemente) y no requiere que el usuario vuelva a
 iniciar sesión.
 
+## Permisos por apartado (panel de casillas)
+
+En *Usuarios* → **🔐 Permisos por apartado** ves a todo el equipo contra todos los apartados,
+como el panel del CRM viejo. Cada apartado tiene casillas **Ver** (entra) y **Editar** (crea y
+modifica; incluye Ver); en Tickets, además, **Todos** (ve los tickets de todo el equipo, no solo
+los suyos y los que nadie tiene). Ejemplo: alguien de Comercial que factura y necesita editar
+tickets → marca *Tickets · Editar* en su fila y *Guardar permisos*. Solo se guardan las casillas
+que cambiaste. Los administradores tienen todo siempre. Lo más fino (eliminar, aprobar
+cotizaciones…) sigue en *Permisos avanzados* de cada usuario.
+
 ## Secciones visibles
 
 En la ficha de un usuario que no es administrador aparece **👁️ Secciones visibles**, con una
 casilla por sección que su rol le permite (Empresas, Contactos, Cotizaciones y embudo, Tickets,
-Eventos, Versiones, Base de conocimiento, Tareas, Configuración). Desmarcar una la quita de su
+Eventos, Versiones, Tareas, Configuración). La base de conocimiento no está aquí: su acceso lo
+decide su propietario (ver *Base de conocimiento*). Desmarcar una la quita de su
 menú y le impide entrar; todas marcadas = sin restricción. Por dentro revoca el permiso de
 lectura de esa sección, así que también se ve en *Permisos avanzados*.
 

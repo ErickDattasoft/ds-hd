@@ -1,10 +1,11 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { unzipSync, strFromU8 } from 'fflate';
-import { KnowledgeService } from '../../src/application/knowledge/KnowledgeService.js';
+import { KnowledgeService, huellaKB } from '../../src/application/knowledge/KnowledgeService.js';
 import { BitacoraService } from '../../src/application/shared/BitacoraService.js';
-import { ArticuloKB } from '../../src/core/entities/ArticuloKB.js';
-import { ForbiddenError, ValidationError } from '../../src/core/errors/DomainError.js';
+import { ArticuloKB, claveRutaKB, coincideTexto, fragmentoKB } from '../../src/core/entities/ArticuloKB.js';
+import { ForbiddenError } from '../../src/core/errors/DomainError.js';
 import type { SessionUser } from '../../src/application/shared/SessionUser.js';
+import { aplicarAccesoKB } from '../../src/interfaces/http/rbac/policy.js';
 import { InMemoryKnowledgeRepository } from '../fakes/kb.js';
 import { InMemoryBitacoraRepository } from '../fakes/crm.js';
 import { FixedClock, silentLogger } from '../fakes/support.js';
@@ -14,8 +15,8 @@ const ids = { newId: () => `id-${++seq}`, newToken: () => `tok-${++seq}` };
 
 const actor = (over: Partial<SessionUser> = {}): SessionUser => ({
   uid: 'u1',
-  nombre: 'Admin',
-  email: 'a@d.com',
+  nombre: 'Erick',
+  email: 'erick.casas@dattasoft.mx',
   roles: ['admin'],
   rol: 'admin',
   esTecnico: false,
@@ -23,13 +24,15 @@ const actor = (over: Partial<SessionUser> = {}): SessionUser => ({
   activo: true,
   esStaff: true,
   esCliente: false,
-  permisos: ['kb:escribir', 'kb:publicar'],
+  permisos: ['kb:leer', 'kb:escribir', 'kb:publicar'],
   ...over,
 });
+const lector = actor({ uid: 'u2', nombre: 'Gaby', permisos: ['kb:leer'] });
 
-const ctxStaff = { roles: ['admin'] };
+const art = (over: Partial<ConstructorParameters<typeof ArticuloKB>[0]> = {}) =>
+  new ArticuloKB({ id: `a${++seq}`, titulo: 'Doc', cuerpoMarkdown: 'contenido del documento', ...over });
 
-describe('KnowledgeService — lote y export', () => {
+describe('KnowledgeService — indexar carpetas', () => {
   let repo: InMemoryKnowledgeRepository;
   let bitacora: InMemoryBitacoraRepository;
   let clock: FixedClock;
@@ -39,163 +42,146 @@ describe('KnowledgeService — lote y export', () => {
     seq = 0;
     repo = new InMemoryKnowledgeRepository();
     bitacora = new InMemoryBitacoraRepository();
-    clock = new FixedClock(new Date('2026-09-09T12:00:00Z'));
+    clock = new FixedClock(new Date('2026-10-05T12:00:00Z'));
     service = new KnowledgeService(repo, ids, clock, new BitacoraService(bitacora, ids, clock, silentLogger));
   });
 
-  it('crearLote: un artículo por archivo, adivina categoría script y guarda rutaDestino', async () => {
-    const creados = await service.crearLote(actor(), [
-      { nombre: 'respaldo.ps1', contenido: 'Write-Host "hola mundo desde powershell"', rutaRelativa: 'scripts/respaldo.ps1' },
-      { nombre: 'guia.md', contenido: '# Guía\nContenido suficientemente largo.' },
-      { nombre: 'vacio.txt', contenido: '   ' }, // se descarta
+  it('crea un artículo por archivo, en su carpeta, con categoría script y ruta', async () => {
+    const r = await service.indexar(actor(), 'soporte', [
+      { ruta: 'SOPORTE/scripts/respaldo.ps1', contenido: 'Write-Host "hola"' },
+      { ruta: 'SOPORTE/Licencias/renovar.md', contenido: '# Renovar\nPasos.' },
+      { ruta: 'SOPORTE/vacio.txt', contenido: '   ' },
     ]);
-    expect(creados).toHaveLength(2);
-    const ps1 = creados.find((a) => a.titulo === 'respaldo')!;
-    expect(ps1.categoria).toBe('script');
+    expect(r).toMatchObject({ creados: 2, actualizados: 0, sinCambios: 0 });
+    expect(r.omitidos).toEqual(['SOPORTE/vacio.txt: vacío']);
+    const todos = await repo.list();
+    const ps1 = todos.find((a) => a.titulo === 'respaldo')!;
+    expect(ps1.carpeta).toBe('soporte');
     expect(ps1.esScript).toBe(true);
-    expect(ps1.rutaDestino).toBe('scripts/respaldo.ps1');
-    expect(creados.find((a) => a.titulo === 'guia')!.categoria).toBe('solucion');
+    expect(ps1.esMarkdown).toBe(false);
+    expect(todos.find((a) => a.titulo === 'renovar')!.subcarpeta).toBe('Licencias');
     expect(bitacora.entradas).toHaveLength(1);
+    expect(repo.guardados).toBe(1); // toda la tanda en una escritura agrupada
   });
 
-  it('crearLote con «actualizar»: reemplaza por ruta en vez de duplicar, y respeta la categoría elegida', async () => {
-    await service.crearLote(actor(), [{ nombre: 'error-254.md', contenido: 'versión uno del texto', rutaRelativa: 'soluciones/error-254.md' }], {
-      categoria: 'empresa',
-    });
-    await service.crearLote(
-      actor(),
-      [
-        { nombre: 'error-254.md', contenido: 'versión DOS del texto', rutaRelativa: 'soluciones\\error-254.md' },
-        { nombre: 'respaldo.ps1', contenido: 'Write-Host respaldo completo', rutaRelativa: 'soluciones/respaldo.ps1' },
-      ],
-      { actualizarExistentes: true, categoria: 'empresa' },
-    );
+  it('reindexar no duplica: actualiza lo cambiado, ignora lo igual, aunque la carpeta raíz se llame distinto', async () => {
+    await service.indexar(actor(), 'empresas', [
+      { ruta: 'EMPRESAS/ACME/notas.md', contenido: 'versión 1' },
+      { ruta: 'EMPRESAS/ACME/accesos.txt', contenido: 'igual' },
+    ]);
+    const r = await service.indexar(actor(), 'empresas', [
+      { ruta: 'Empresas 2026\\acme\\NOTAS.md', contenido: 'versión 2' },
+      { ruta: 'Empresas 2026/ACME/accesos.txt', contenido: 'igual' },
+    ]);
+    // accesos.txt no cambió de contenido, pero sí su ruta (otra raíz): se guarda la ruta nueva.
+    expect(r).toMatchObject({ creados: 0, actualizados: 2, sinCambios: 0 });
+    const igual = await service.indexar(actor(), 'empresas', [{ ruta: 'Empresas 2026/ACME/accesos.txt', contenido: 'igual' }]);
+    expect(igual).toMatchObject({ creados: 0, actualizados: 0, sinCambios: 1 });
     const todos = await repo.list();
     expect(todos).toHaveLength(2);
-    const doc = todos.find((a) => a.titulo === 'error-254')!;
-    expect(doc.cuerpoMarkdown).toBe('versión DOS del texto');
-    expect(doc.categoria).toBe('empresa');
-    expect(todos.find((a) => a.titulo === 'respaldo')!.categoria).toBe('script'); // los scripts siempre son script
+    const notas = todos.find((a) => a.titulo === 'NOTAS')!;
+    expect(notas.cuerpoMarkdown).toBe('versión 2');
+    expect(notas.carpeta).toBe('empresas');
+    expect(notas.categoria).toBe('empresa');
   });
 
-  it('crearLote guarda toda la tanda en una sola escritura agrupada', async () => {
-    const archivos = Array.from({ length: 60 }, (_, n) => ({ nombre: `doc-${n}.md`, contenido: `contenido del documento ${n}` }));
-    await service.crearLote(actor(), archivos);
-    expect(repo.guardados).toBe(1);
-    expect(repo.items.size).toBe(60);
+  it('el mismo nombre en las dos carpetas son archivos distintos', async () => {
+    await service.indexar(actor(), 'empresas', [{ ruta: 'EMPRESAS/LEEME.md', contenido: 'de empresas' }]);
+    await service.indexar(actor(), 'soporte', [{ ruta: 'SOPORTE/LEEME.md', contenido: 'de soporte' }]);
+    const todos = await repo.list();
+    expect(todos.map((a) => a.carpeta).sort()).toEqual(['empresas', 'soporte']);
   });
 
-  it('crearLote sin permiso de publicar no puede publicar', async () => {
-    await expect(
-      service.crearLote(actor({ permisos: ['kb:escribir'] }), [{ nombre: 'x.md', contenido: 'contenido largo aquí' }], {
-        publicado: true,
-      }),
-    ).rejects.toThrow(ForbiddenError);
+  it('el índice da la huella de cada archivo, igual a la que calcula el navegador', async () => {
+    await service.indexar(actor(), 'soporte', [{ ruta: 'SOPORTE/a.md', contenido: 'ñandú á' }]);
+    const indice = await service.indice(actor(), 'soporte');
+    expect(indice).toEqual([{ id: expect.any(String), clave: 'a.md', titulo: 'a', huella: await huellaKB('ñandú á') }]);
+    expect(await service.indice(actor(), 'empresas')).toEqual([]);
   });
 
-  it('crearLote sin archivos con contenido lanza ValidationError', async () => {
-    await expect(service.crearLote(actor(), [{ nombre: 'x.txt', contenido: 'no' }])).rejects.toThrow(ValidationError);
+  it('quitar borra solo los de esa carpeta', async () => {
+    await service.indexar(actor(), 'soporte', [{ ruta: 'S/a.md', contenido: 'x' }]);
+    await service.indexar(actor(), 'empresas', [{ ruta: 'E/b.md', contenido: 'y' }]);
+    const [a, b] = [(await repo.list()).find((x) => x.titulo === 'a')!, (await repo.list()).find((x) => x.titulo === 'b')!];
+    expect(await service.quitar(actor(), 'soporte', [a.id, b.id])).toBe(1);
+    expect((await repo.list()).map((x) => x.titulo)).toEqual(['b']);
   });
 
-  it('exportarZip: un archivo por artículo, en su rutaDestino', async () => {
-    await repo.save(
-      new ArticuloKB({
-        id: 'a1', titulo: 'Reinicio', cuerpoMarkdown: 'net stop / net start', categoria: 'script',
-        rutaDestino: 'scripts/reinicio.bat', publicado: true, visibilidad: 'soporte',
-      }),
-    );
-    await repo.save(
-      new ArticuloKB({ id: 'a2', titulo: 'Notas varias', cuerpoMarkdown: 'texto de notas largo', visibilidad: 'soporte' }),
-    );
-    const zip = await service.exportarZip(ctxStaff, { categoria: 'script' });
-    const archivos = unzipSync(new Uint8Array(zip));
-    expect(Object.keys(archivos)).toEqual(['scripts/reinicio.bat']);
-    expect(strFromU8(archivos['scripts/reinicio.bat']!)).toBe('net stop / net start');
+  it('quien solo tiene acceso de lectura no indexa, no borra, no exporta', async () => {
+    await expect(service.indexar(lector, 'soporte', [{ ruta: 'S/a.md', contenido: 'x' }])).rejects.toBeInstanceOf(ForbiddenError);
+    await expect(service.indice(lector, 'soporte')).rejects.toBeInstanceOf(ForbiddenError);
+    await expect(service.quitar(lector, 'soporte', ['x'])).rejects.toBeInstanceOf(ForbiddenError);
+    await expect(service.exportarZip(lector)).rejects.toBeInstanceOf(ForbiddenError);
+    await expect(service.listar(actor({ permisos: [] }))).rejects.toBeInstanceOf(ForbiddenError);
+    await expect(service.listar(lector)).resolves.toEqual([]);
   });
 
-  it('relacionados: artículos visibles que comparten tags, más compartidos primero, excluye el propio', async () => {
-    const base = { publicado: true, visibilidad: 'soporte' as const };
-    const a = new ArticuloKB({ id: 'a', titulo: 'Art A', cuerpoMarkdown: 'contenido suficiente', tags: ['contpaqi', 'nomina'], ...base });
-    await repo.save(a);
-    await repo.save(new ArticuloKB({ id: 'b', titulo: 'Art B', cuerpoMarkdown: 'contenido suficiente', tags: ['contpaqi'], ...base }));
-    await repo.save(new ArticuloKB({ id: 'c', titulo: 'Art C', cuerpoMarkdown: 'contenido suficiente', tags: ['contpaqi', 'nomina'], ...base }));
-    await repo.save(new ArticuloKB({ id: 'd', titulo: 'Art D', cuerpoMarkdown: 'contenido suficiente', tags: ['bancos'], ...base }));
-
-    const relacionados = await service.relacionados(ctxStaff, a);
-    expect(relacionados.map((r) => r.id)).toEqual(['c', 'b']);
+  it('exportarZip: un archivo por artículo, en su ruta; filtra por carpeta', async () => {
+    await service.indexar(actor(), 'soporte', [{ ruta: 'SOPORTE/scripts/x.ps1', contenido: 'Get-Date' }]);
+    await service.indexar(actor(), 'empresas', [{ ruta: 'EMPRESAS/y.md', contenido: 'empresa' }]);
+    const zip = unzipSync(await service.exportarZip(actor(), { carpeta: 'soporte' }));
+    expect(Object.keys(zip)).toEqual(['SOPORTE/scripts/x.ps1']);
+    expect(strFromU8(zip['SOPORTE/scripts/x.ps1']!)).toBe('Get-Date');
   });
 
-  it('relacionados: sin tags no hay nada que relacionar', async () => {
-    const a = new ArticuloKB({ id: 'a', titulo: 'Art A', cuerpoMarkdown: 'contenido suficiente', publicado: true, visibilidad: 'soporte' });
-    expect(await service.relacionados(ctxStaff, a)).toEqual([]);
+  it('relacionados: misma carpeta, por tags compartidos o misma subcarpeta', async () => {
+    const base = art({ titulo: 'Base', carpeta: 'empresas', rutaDestino: 'E/ACME/base.md', tags: ['nomina'] });
+    const mismaEmpresa = art({ titulo: 'Otra de ACME', carpeta: 'empresas', rutaDestino: 'E/ACME/otra.md' });
+    const porTag = art({ titulo: 'Por tag', carpeta: 'empresas', rutaDestino: 'E/BETA/x.md', tags: ['nomina'] });
+    const otraCarpeta = art({ titulo: 'Soporte', carpeta: 'soporte', rutaDestino: 'S/ACME/z.md', tags: ['nomina'] });
+    for (const a of [base, mismaEmpresa, porTag, otraCarpeta]) await repo.save(a);
+    const rel = await service.relacionados(lector, base);
+    expect(rel.map((a) => a.titulo)).toEqual(['Por tag', 'Otra de ACME']);
   });
 });
 
-describe('KnowledgeService — búsqueda: tag, frase exacta y cuerpo', () => {
-  let repo: InMemoryKnowledgeRepository;
-  let service: KnowledgeService;
-
-  beforeEach(async () => {
-    seq = 0;
-    repo = new InMemoryKnowledgeRepository();
-    const clock = new FixedClock(new Date('2026-09-16T12:00:00Z'));
-    service = new KnowledgeService(
-      repo,
-      ids,
-      clock,
-      new BitacoraService(new InMemoryBitacoraRepository(), ids, clock, silentLogger),
-    );
-    await repo.save(
-      new ArticuloKB({
-        id: 'a1', titulo: 'Reinicio de servicio Contpaqi', cuerpoMarkdown: 'Detener y arrancar el servicio de licencias.',
-        tags: ['contpaqi', 'licencias'], publicado: true, visibilidad: 'soporte',
-      }),
-    );
-    await repo.save(
-      new ArticuloKB({
-        id: 'a2', titulo: 'Backup de nómina', cuerpoMarkdown: 'Respaldo manual del módulo de nómina.',
-        tags: ['nomina'], publicado: true, visibilidad: 'soporte',
-      }),
-    );
+describe('Búsqueda en la base de conocimiento', () => {
+  const doc = art({
+    titulo: 'Configurar Nóminas',
+    rutaDestino: 'EMPRESAS/Grupo ACME/configurar.md',
+    cuerpoMarkdown: 'Para la versión 14.2.1 de CONTPAQi hay que reinstalar el servidor de licencias.',
+    tags: ['contpaqi'],
   });
 
-  const ctxPublico = { roles: ['soporte'] };
-
-  it('filtro por tag exacto', async () => {
-    const r = await service.listarVisibles(ctxPublico, { tag: 'nomina' });
-    expect(r.map((a) => a.id)).toEqual(['a2']);
+  it('busca en nombre, ruta (empresa) y contenido, sin acentos ni mayúsculas', () => {
+    expect(coincideTexto(doc, 'nominas', false)).toBe(true);
+    expect(coincideTexto(doc, 'acme', false)).toBe(true);
+    expect(coincideTexto(doc, '14.2.1', false)).toBe(true);
+    expect(coincideTexto(doc, 'VERSION licencias', false)).toBe(true);
+    expect(coincideTexto(doc, 'licencias versión', true)).toBe(false);
+    expect(coincideTexto(doc, 'servidor de licencias', true)).toBe(true);
+    expect(coincideTexto(doc, 'inexistente', false)).toBe(false);
   });
 
-  it('texto sin fraseExacta: busca cada palabra por separado, incluido el cuerpo', async () => {
-    const r = await service.listarVisibles(ctxPublico, { texto: 'arrancar servicio' });
-    expect(r.map((a) => a.id)).toEqual(['a1']);
+  it('el fragmento muestra dónde coincidió, con el texto original', () => {
+    const f = fragmentoKB(doc, 'version 14', 3)!;
+    expect(f.coincidencia).toBe('versión 14');
+    expect(f.antes.startsWith('…')).toBe(true);
+    expect(fragmentoKB(doc, 'nominas')).toBeNull(); // solo coincidió el nombre
   });
 
-  it('fraseExacta: exige la frase completa contigua', async () => {
-    const sinFrase = await service.listarVisibles(ctxPublico, { texto: 'servicio arrancar', fraseExacta: true });
-    expect(sinFrase).toHaveLength(0);
-    const conFrase = await service.listarVisibles(ctxPublico, { texto: 'arrancar el servicio', fraseExacta: true });
-    expect(conFrase.map((a) => a.id)).toEqual(['a1']);
+  it('la clave de ruta ignora la carpeta raíz, las diagonales y mayúsculas', () => {
+    expect(claveRutaKB('EMPRESAS\\ACME\\Notas.md')).toBe('acme/notas.md');
+    expect(claveRutaKB('/otra raíz//acme/notas.md/')).toBe('acme/notas.md');
+  });
+
+  it('carpeta: los artículos de antes se reparten por categoría', () => {
+    expect(art({ categoria: 'empresa' }).carpeta).toBe('empresas');
+    expect(art({ categoria: 'solucion' }).carpeta).toBe('soporte');
+    expect(art({}).carpeta).toBe('soporte');
   });
 });
 
-describe('ArticuloKB — quién lo ve (por rol)', () => {
-  const art = (visibilidad: 'admin' | 'soporte') =>
-    new ArticuloKB({ id: 'x', titulo: 'Artículo', cuerpoMarkdown: 'contenido suficiente', visibilidad });
-  it('Administrador: solo el rol admin; Soporte: admin o soporte; nadie más', () => {
-    expect(art('admin').visiblePara({ roles: ['admin'] })).toBe(true);
-    expect(art('admin').visiblePara({ roles: ['soporte'] })).toBe(false);
-    expect(art('soporte').visiblePara({ roles: ['soporte'] })).toBe(true);
-    expect(art('soporte').visiblePara({ roles: ['admin'] })).toBe(true);
-    for (const rol of ['supervisor', 'agente', 'ventas', 'lectura', 'cliente']) {
-      expect(art('soporte').visiblePara({ roles: [rol] })).toBe(false);
-    }
-    expect(art('soporte').visiblePara({ roles: ['agente', 'soporte'] })).toBe(true);
-  });
-
-  it('los valores viejos (staff / portal / publico) se leen como Soporte', () => {
-    for (const v of ['staff', 'portal', 'publico', undefined]) {
-      expect(new ArticuloKB({ id: 'x', titulo: 'Artículo', cuerpoMarkdown: 'contenido suficiente', visibilidad: v as never }).visibilidad).toBe('soporte');
-    }
+describe('Acceso a la KB (no depende del rol)', () => {
+  it('se quitan los kb:* del rol; el marcado solo lee; el propietario hace todo', () => {
+    const delRol = ['tickets:leer', 'kb:leer', 'kb:escribir'] as const;
+    expect(aplicarAccesoKB([...delRol], { esPropietario: false, marcado: false })).toEqual(['tickets:leer']);
+    expect(aplicarAccesoKB([...delRol], { esPropietario: false, marcado: true })).toEqual(['tickets:leer', 'kb:leer']);
+    expect(aplicarAccesoKB(['tickets:leer'], { esPropietario: true, marcado: false })).toEqual([
+      'tickets:leer',
+      'kb:leer',
+      'kb:escribir',
+      'kb:publicar',
+    ]);
   });
 });

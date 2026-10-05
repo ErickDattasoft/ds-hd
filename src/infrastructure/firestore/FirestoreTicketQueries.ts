@@ -5,7 +5,7 @@ import type {
   FiltroTickets,
   ITicketQueries,
 } from '../../core/ports/repositories/ITicketQueries.js';
-import { coincideTexto, ticketEsDeAgente, ticketSinNadieAsignado, type Ticket } from '../../core/entities/Ticket.js';
+import { coincideTexto, ticketDisponibleParaEquipo, ticketEsDeAgente, ticketSinNadieAsignado, type Ticket } from '../../core/entities/Ticket.js';
 import { esEstadoFinal, slugEstado } from '../../core/entities/value-objects/EstadoTicket.js';
 import { TicketMapper } from './mappers/TicketMapper.js';
 
@@ -43,7 +43,7 @@ export class FirestoreTicketQueries implements ITicketQueries {
     if (filtro.deAgente) out = out.filter((x) => ticketEsDeAgente(x, filtro.deAgente!));
     if (filtro.alcanceAgente) {
       const a = filtro.alcanceAgente;
-      out = out.filter((x) => ticketEsDeAgente(x, a) || ticketSinNadieAsignado(x));
+      out = out.filter((x) => ticketEsDeAgente(x, a) || ticketDisponibleParaEquipo(x, a.admins));
     }
     // El `where` de uid nulo deja pasar los migrados que traen el agente solo por nombre.
     if (filtro.sinAsignar) out = out.filter(ticketSinNadieAsignado);

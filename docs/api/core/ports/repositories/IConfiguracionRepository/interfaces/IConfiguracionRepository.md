@@ -267,3 +267,29 @@ Documentos singleton de configuración (`configuracion/{seccion}`).
 #### Returns
 
 `Promise`\<`void`\>
+
+***
+
+### obtenerKB()
+
+> **obtenerKB**(): `Promise`\<[`ConfiguracionKB`](../../../../entities/ConfiguracionKB/interfaces/ConfiguracionKB.md)\>
+
+#### Returns
+
+`Promise`\<[`ConfiguracionKB`](../../../../entities/ConfiguracionKB/interfaces/ConfiguracionKB.md)\>
+
+***
+
+### guardarKB()
+
+> **guardarKB**(`config`): `Promise`\<`void`\>
+
+#### Parameters
+
+##### config
+
+[`ConfiguracionKB`](../../../../entities/ConfiguracionKB/interfaces/ConfiguracionKB.md)
+
+#### Returns
+
+`Promise`\<`void`\>

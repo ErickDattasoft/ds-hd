@@ -1,23 +1,22 @@
-import { DomainError } from '../../../core/errors/DomainError.js';
 import type { Request, Response } from 'express';
-import type { ArchivoLote, KnowledgeService } from '../../../application/knowledge/KnowledgeService.js';
+import type { ArchivoIndexado, KnowledgeService } from '../../../application/knowledge/KnowledgeService.js';
+import type { AccesoKBService } from '../../../application/knowledge/AccesoKBService.js';
 import type { HistorialBusquedaKBService } from '../../../application/knowledge/HistorialBusquedaKBService.js';
-import { sanearVisibilidadKB, type ArticuloKB } from '../../../core/entities/ArticuloKB.js';
+import {
+  CARPETAS_KB,
+  CARPETA_KB_ETIQUETA,
+  esCarpetaKB,
+  fragmentoKB,
+  type ArticuloKB,
+} from '../../../core/entities/ArticuloKB.js';
+import { ValidationError } from '../../../core/errors/DomainError.js';
 import { renderMarkdown } from '../view-helpers/markdown.js';
-import { camposDeError } from '../support/errores.js';
+import { invalidarCacheAccesoKB } from '../middlewares/sessionAuth.js';
 
 const str = (v: unknown): string => (typeof v === 'string' ? v : '');
-const lista = (v: unknown): string[] =>
-  str(v)
-    .split(/[,\n]/)
-    .map((s) => s.trim())
-    .filter(Boolean);
+const arreglo = (v: unknown): string[] => (Array.isArray(v) ? v.map(String) : typeof v === 'string' && v ? [v] : []);
 
-function contexto(req: Request) {
-  return { roles: req.user?.roles ?? [] };
-}
-
-/** Traduce `hoy` / `semana` a una fecha de corte (o `null`). */
+/** Traduce `hoy` / `semana` / fecha ISO a una fecha de corte (o `null`). */
 function corteDesde(valor: string): Date | null {
   const ahora = new Date();
   if (valor === 'hoy') return new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate());
@@ -30,289 +29,209 @@ function corteDesde(valor: string): Date | null {
   return null;
 }
 
-/** Aplica categoría / tag / recientes / orden a una lista ya filtrada por visibilidad. */
-function filtrarYOrdenar(
-  articulos: ArticuloKB[],
-  opts: { categoria: string; tag: string; desde: string; orden: string },
-): ArticuloKB[] {
-  let out = articulos;
-  if (opts.categoria) out = out.filter((a) => (a.categoria ?? '') === opts.categoria);
-  if (opts.tag) out = out.filter((a) => a.tags.includes(opts.tag));
-  const corte = corteDesde(opts.desde);
-  if (corte) out = out.filter((a) => a.updatedAt >= corte);
-  // `numeric`: «Error 2» antes que «Error 10»; `base`: sin distinguir mayúsculas ni acentos.
-  const porTitulo = (a: ArticuloKB, b: ArticuloKB) =>
-    a.titulo.localeCompare(b.titulo, 'es', { numeric: true, sensitivity: 'base' });
-  if (opts.orden === 'az') out = [...out].sort(porTitulo);
-  else if (opts.orden === 'za') out = [...out].sort((a, b) => porTitulo(b, a));
-  else if (opts.orden === 'recientes') out = [...out].sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
-  return out;
+/** Minúsculas y sin acentos (para puntuar la relevancia igual que busca el repositorio). */
+const plano = (t: string): string => t.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+
+/** Relevancia: nombre del archivo > ruta (empresa/subcarpeta) > solo contenido. */
+function relevancia(a: ArticuloKB, q: string): number {
+  const t = plano(q.trim());
+  const palabras = t.split(/\s+/).filter(Boolean);
+  const titulo = plano(a.titulo);
+  const ruta = plano(a.rutaDestino ?? '');
+  if (titulo.includes(t)) return 4;
+  if (palabras.every((p) => titulo.includes(p))) return 3;
+  if (ruta.includes(t) || palabras.every((p) => ruta.includes(p) || titulo.includes(p))) return 2;
+  return 1;
 }
 
-/** Nube de tags con conteo, del total de artículos visibles (no del subconjunto ya filtrado). */
-function tagsDe(articulos: ArticuloKB[]): Array<{ nombre: string; total: number }> {
-  const cuenta = new Map<string, number>();
-  for (const a of articulos) {
-    for (const t of a.tags) cuenta.set(t, (cuenta.get(t) ?? 0) + 1);
-  }
-  return [...cuenta.entries()]
-    .map(([nombre, total]) => ({ nombre, total }))
-    .sort((a, b) => b.total - a.total || a.nombre.localeCompare(b.nombre, 'es'))
-    .slice(0, 40);
+const porTitulo = (a: ArticuloKB, b: ArticuloKB) =>
+  a.titulo.localeCompare(b.titulo, 'es', { numeric: true, sensitivity: 'base' });
+
+function ordenar(articulos: ArticuloKB[], orden: string, q: string): ArticuloKB[] {
+  const out = [...articulos];
+  if (orden === 'za') return out.sort((a, b) => porTitulo(b, a));
+  if (orden === 'recientes') return out.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
+  if (orden === 'az' || !q) return out.sort(porTitulo);
+  return out.sort((a, b) => relevancia(b, q) - relevancia(a, q) || porTitulo(a, b));
 }
+
+/** Contenido del artículo como HTML: Markdown si es `.md`; si no (scripts, .txt), tal cual. */
+function cuerpoHtml(a: ArticuloKB): string {
+  if (a.esMarkdown) return renderMarkdown(a.cuerpoMarkdown);
+  const escapado = a.cuerpoMarkdown.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  return `<pre class="kb-texto"><code>${escapado}</code></pre>`;
+}
+
+/** Máximo de filas que se pintan a la vez (con cientos de archivos la tabla se vuelve lenta). */
+const MAX_FILAS = 300;
 
 /**
- * Base de conocimiento. Sirve tres áreas con la misma lógica y distinta plantilla/contexto:
- *  - `/kb` público · `/portal/kb` clientes · `/app/kb` staff (+ CRUD).
+ * Base de conocimiento (`/app/kb`). De solo lectura: se busca, se ve y se copia. El contenido
+ * entra únicamente con «🔄 Indexar» desde las carpetas de Windows, y eso — igual que borrar,
+ * exportar y el panel «👥 Acceso» — es solo del propietario (`kb:escribir` / `kb:publicar`).
  */
 export class KnowledgeController {
   constructor(
     private readonly kb: KnowledgeService,
     private readonly historial: HistorialBusquedaKBService,
+    private readonly acceso: AccesoKBService,
   ) {}
 
-  private layoutDe(req: Request): string {
-    if (req.baseUrl.startsWith('/app')) return 'layouts/backoffice.njk';
-    if (req.baseUrl.startsWith('/portal')) return 'layouts/portal.njk';
-    return 'layouts/public-page.njk';
-  }
-
-  private baseDe(req: Request): string {
-    if (req.baseUrl.startsWith('/app')) return '/app/kb';
-    if (req.baseUrl.startsWith('/portal')) return '/portal/kb';
-    return '/kb';
-  }
-
   listar = async (req: Request, res: Response): Promise<void> => {
-    const texto = str(req.query.q);
-    const categoria = str(req.query.categoria);
-    const tag = str(req.query.tag);
-    const desdeSel = str(req.query.desde);
-    const desde = desdeSel === 'ultima' ? str(req.query.ultima) : desdeSel;
-    const orden = str(req.query.orden);
+    const user = req.user!;
+    const carpetaQ = str(req.query.carpeta);
+    const carpeta = esCarpetaKB(carpetaQ) ? carpetaQ : '';
+    const sub = str(req.query.sub);
+    const q = str(req.query.q).trim();
     const fraseExacta = str(req.query.frase) === '1';
-    const todos = await this.kb.listarVisibles(contexto(req), texto ? { texto, fraseExacta } : {});
-    if (texto.length >= 2 && req.user) await this.historial.registrar(req.user, texto);
-    res.render('pages/kb/list', {
+    const desdeSel = str(req.query.desde);
+    const corte = corteDesde(desdeSel === 'ultima' ? str(req.query.ultima) : desdeSel);
+    const orden = str(req.query.orden);
+
+    const [todos, encontrados] = await Promise.all([
+      this.kb.listar(user),
+      q ? this.kb.listar(user, { texto: q, fraseExacta }) : Promise.resolve(null),
+    ]);
+    if (q.length >= 2) await this.historial.registrar(user, q);
+
+    // Conteos por carpeta (de lo que coincide con la búsqueda, para saber dónde buscar).
+    const base = encontrados ?? todos;
+    const conteos = Object.fromEntries(CARPETAS_KB.map((c) => [c, base.filter((a) => a.carpeta === c).length]));
+    let filtrados = carpeta ? base.filter((a) => a.carpeta === carpeta) : base;
+    // Subcarpetas (empresa / tema) de la carpeta elegida, para filtrar con un clic.
+    const subcarpetas = carpeta
+      ? [...new Map(filtrados.filter((a) => a.subcarpeta).map((a) => [a.subcarpeta, 0])).keys()].sort((a, b) =>
+          a.localeCompare(b, 'es', { numeric: true, sensitivity: 'base' }),
+        )
+      : [];
+    if (sub) filtrados = filtrados.filter((a) => a.subcarpeta === sub || a.subcarpeta.startsWith(`${sub} / `));
+    if (corte) filtrados = filtrados.filter((a) => a.updatedAt >= corte);
+    const ordenados = ordenar(filtrados, orden, q);
+
+    res.render('pages/backoffice/kb/gestion', {
       titulo: 'Base de conocimiento',
-      articulos: filtrarYOrdenar(todos, { categoria, tag, desde, orden }),
-      categorias: this.categoriasDe(todos),
-      tags: tagsDe(todos),
-      historial: req.user ? await this.historial.listar(req.user) : [],
-      q: texto,
-      categoria,
-      tag,
+      articulos: ordenados.slice(0, MAX_FILAS).map((a) => ({ a, fragmento: q ? fragmentoKB(a, q) : null })),
+      total: ordenados.length,
+      maxFilas: MAX_FILAS,
+      totalGeneral: todos.length,
+      conteos,
+      carpetas: CARPETAS_KB.map((c) => ({ id: c, etiqueta: CARPETA_KB_ETIQUETA[c] })),
+      etiquetaCarpeta: CARPETA_KB_ETIQUETA,
+      carpeta,
+      subcarpetas,
+      sub,
+      q,
+      fraseExacta,
       desde: desdeSel,
       orden,
-      fraseExacta,
-      kbLayout: this.layoutDe(req),
-      kbBase: this.baseDe(req),
+      historial: await this.historial.listar(user),
+      esPropietario: user.permisos.includes('kb:escribir'),
+      rutas: user.permisos.includes('kb:escribir') ? await this.acceso.rutas() : null,
+      aviso: str(req.query.aviso) || null,
     });
   };
 
   historialLimpiarPost = async (req: Request, res: Response): Promise<void> => {
     await this.historial.limpiar(req.user!);
-    res.redirect(this.baseDe(req));
+    res.redirect('/app/kb');
   };
 
-  private categoriasDe(articulos: ArticuloKB[]): Array<{ nombre: string; total: number }> {
-    const cuenta = new Map<string, number>();
-    for (const a of articulos) {
-      const c = a.categoria ?? '';
-      if (c) cuenta.set(c, (cuenta.get(c) ?? 0) + 1);
-    }
-    return [...cuenta.entries()]
-      .map(([nombre, total]) => ({ nombre, total }))
-      .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
-  }
-
   ver = async (req: Request, res: Response): Promise<void> => {
-    const ctx = contexto(req);
-    const articulo = await this.kb.verVisible(ctx, str(req.params.idOrSlug));
+    const user = req.user!;
+    const articulo = await this.kb.ver(user, str(req.params.idOrSlug));
     res.render('pages/kb/articulo', {
       titulo: articulo.titulo,
       articulo,
-      cuerpoHtml: renderMarkdown(articulo.cuerpoMarkdown),
-      relacionados: await this.kb.relacionados(ctx, articulo),
-      kbLayout: this.layoutDe(req),
-      kbBase: this.baseDe(req),
-      puedeEditar: req.user?.permisos.includes('kb:escribir') ?? false,
+      etiquetaCarpeta: CARPETA_KB_ETIQUETA[articulo.carpeta],
+      cuerpoHtml: cuerpoHtml(articulo),
+      relacionados: await this.kb.relacionados(user, articulo),
+      esPropietario: user.permisos.includes('kb:publicar'),
     });
   };
 
-  /** Vista dividida: dos artículos lado a lado (`?a=idOrSlug&b=idOrSlug`). */
+  /** Vista dividida: dos artículos lado a lado (`?a=id&b=id`). */
   comparar = async (req: Request, res: Response): Promise<void> => {
-    const ctx = contexto(req);
+    const user = req.user!;
     const idA = str(req.query.a);
     const idB = str(req.query.b);
     if (!idA) {
-      res.redirect(this.baseDe(req));
+      res.redirect('/app/kb');
       return;
     }
-    const articuloA = await this.kb.verVisible(ctx, idA);
-    const articuloB = idB ? await this.kb.verVisible(ctx, idB) : null;
-    const todos = await this.kb.listarVisibles(ctx);
+    const articuloA = await this.kb.ver(user, idA);
+    const articuloB = idB ? await this.kb.ver(user, idB) : null;
+    const todos = await this.kb.listar(user);
     res.render('pages/kb/comparar', {
       titulo: articuloB ? `${articuloA.titulo} · ${articuloB.titulo}` : `Comparar: ${articuloA.titulo}`,
       articuloA,
       articuloB,
-      cuerpoHtmlA: renderMarkdown(articuloA.cuerpoMarkdown),
-      cuerpoHtmlB: articuloB ? renderMarkdown(articuloB.cuerpoMarkdown) : null,
-      otros: todos.filter((a) => a.id !== articuloA.id && a.id !== articuloB?.id),
-      kbLayout: this.layoutDe(req),
-      kbBase: this.baseDe(req),
+      cuerpoHtmlA: cuerpoHtml(articuloA),
+      cuerpoHtmlB: articuloB ? cuerpoHtml(articuloB) : null,
+      otros: todos.filter((a) => a.id !== articuloA.id && a.id !== articuloB?.id).sort(porTitulo),
     });
   };
 
-  // ── CRUD (solo staff) ─────────────────────────────────────────────────────
-  gestionar = async (req: Request, res: Response): Promise<void> => {
-    const ctx = contexto(req);
-    const categoria = str(req.query.categoria);
-    const tag = str(req.query.tag);
-    const desdeSel = str(req.query.desde);
-    const desde = desdeSel === 'ultima' ? str(req.query.ultima) : desdeSel;
-    // El buscador del «SOPORTE» del viejo: título o contenido, con «frase exacta» e historial.
-    const texto = str(req.query.q);
-    const fraseExacta = str(req.query.frase) === '1';
-    // A→Z por defecto, como el viejo; al buscar, por relevancia (salvo que se elija otro orden).
-    const orden = str(req.query.orden) || (texto ? '' : 'az');
-    const [todos, encontrados] = await Promise.all([
-      this.kb.listarVisibles(ctx),
-      texto ? this.kb.listarVisibles(ctx, { texto, fraseExacta }) : Promise.resolve(null),
-    ]);
-    if (texto.length >= 2 && req.user) await this.historial.registrar(req.user, texto);
-    res.render('pages/backoffice/kb/gestion', {
-      titulo: 'Gestionar base de conocimiento',
-      articulos: filtrarYOrdenar(encontrados ?? todos, { categoria, tag, desde, orden }),
-      categorias: this.categoriasDe(todos),
-      tags: tagsDe(todos),
-      historial: req.user ? await this.historial.listar(req.user) : [],
-      q: texto,
-      fraseExacta,
-      categoria,
-      tag,
-      desde: desdeSel,
-      orden,
-      aviso: str(req.query.aviso) || null,
-    });
+  // ── Solo el propietario ───────────────────────────────────────────────────
+
+  /** Huellas de lo ya indexado en una carpeta (el navegador compara y manda solo lo distinto). */
+  indiceJson = async (req: Request, res: Response): Promise<void> => {
+    const carpeta = str(req.query.carpeta);
+    if (!esCarpetaKB(carpeta)) throw new ValidationError('Carpeta inválida', { carpeta: 'empresas o soporte' });
+    res.json({ ok: true, indice: await this.kb.indice(req.user!, carpeta) });
   };
 
-  subirView = (_req: Request, res: Response): void => {
-    res.render('pages/backoffice/kb/subir', { titulo: 'Subir archivos a la base de conocimiento', errores: {} });
-  };
-
-  /** El navegador manda los archivos ya leídos como JSON (`[{nombre, contenido, rutaRelativa}]`). */
-  subirPost = async (req: Request, res: Response): Promise<void> => {
+  /** Una tanda del indexado: `{ carpeta, archivos: [{ ruta, contenido }] }`. */
+  indexarPost = async (req: Request, res: Response): Promise<void> => {
     const b = req.body ?? {};
-    const archivos: ArchivoLote[] = Array.isArray(b.archivos)
-      ? b.archivos.map((a: Record<string, unknown>) => ({
-          nombre: str(a.nombre),
-          contenido: str(a.contenido),
-          rutaRelativa: str(a.rutaRelativa) || undefined,
-        }))
+    const carpeta = str(b.carpeta);
+    if (!esCarpetaKB(carpeta)) throw new ValidationError('Carpeta inválida', { carpeta: 'empresas o soporte' });
+    const archivos: ArchivoIndexado[] = Array.isArray(b.archivos)
+      ? b.archivos.map((a: Record<string, unknown>) => ({ ruta: str(a.ruta), contenido: str(a.contenido) }))
       : [];
-    try {
-      const creados = await this.kb.crearLote(req.user!, archivos, {
-        visibilidad: sanearVisibilidadKB(str(b.visibilidad)),
-        publicado: b.publicado === 'on' || b.publicado === true,
-        categoria: str(b.categoria),
-        actualizarExistentes: b.actualizar === 'on' || b.actualizar === true,
-      });
-      res.json({ ok: true, creados: creados.length });
-    } catch (err) {
-      // Pantalla solo de staff: si no es un error de validación se muestra la causa (recortada),
-      // para no quedarse con un «No se pudo completar la acción» sin pista.
-      const campos = camposDeError(err);
-      const detalle = err instanceof DomainError ? null : err instanceof Error ? err.message.slice(0, 200) : null;
-      res.status(422).json({ ok: false, error: campos.archivos ?? (detalle ? `Error al guardar: ${detalle}` : campos.general) ?? 'No se pudo importar' });
-    }
+    res.json({ ok: true, ...(await this.kb.indexar(req.user!, carpeta, archivos)) });
   };
 
-  exportJson = async (req: Request, res: Response): Promise<void> => {
-    const ctx = contexto(req);
-    const categoria = str(req.query.categoria);
-    const desde = corteDesde(str(req.query.desde) === 'ultima' ? str(req.query.ultima) : str(req.query.desde));
-    let articulos = await this.kb.listarVisibles(ctx, categoria ? { categoria } : {});
-    if (desde) articulos = articulos.filter((a) => a.updatedAt >= desde);
-    const fecha = new Date().toISOString().slice(0, 10);
-    res.setHeader('Content-Disposition', `attachment; filename="kb-${fecha}.json"`);
-    res.type('application/json').send(
-      JSON.stringify(
-        articulos.map((a) => ({
-          titulo: a.titulo,
-          slug: a.slug,
-          categoria: a.categoria,
-          tags: a.tags,
-          rutaDestino: a.rutaDestino,
-          visibilidad: a.visibilidad,
-          publicado: a.publicado,
-          cuerpoMarkdown: a.cuerpoMarkdown,
-          actualizado: a.updatedAt.toISOString(),
-        })),
-        null,
-        2,
-      ),
-    );
+  /** Quita los que ya no existen en la carpeta de Windows: `{ carpeta, ids: [...] }`. */
+  quitarPost = async (req: Request, res: Response): Promise<void> => {
+    const b = req.body ?? {};
+    const carpeta = str(b.carpeta);
+    if (!esCarpetaKB(carpeta)) throw new ValidationError('Carpeta inválida', { carpeta: 'empresas o soporte' });
+    res.json({ ok: true, quitados: await this.kb.quitar(req.user!, carpeta, arreglo(b.ids)) });
+  };
+
+  accesoView = async (req: Request, res: Response): Promise<void> => {
+    const { filas, rutas } = await this.acceso.obtener(req.user!);
+    res.render('pages/backoffice/kb/acceso', {
+      titulo: 'Acceso a la base de conocimiento',
+      filas,
+      rutas,
+      carpetas: CARPETAS_KB.map((c) => ({ id: c, etiqueta: CARPETA_KB_ETIQUETA[c] })),
+      guardado: req.query.ok === '1',
+    });
+  };
+
+  accesoPost = async (req: Request, res: Response): Promise<void> => {
+    const b = req.body ?? {};
+    await this.acceso.guardarAcceso(req.user!, arreglo(b.acceso));
+    await this.acceso.guardarRutas(req.user!, { empresas: str(b.rutaEmpresas), soporte: str(b.rutaSoporte) });
+    invalidarCacheAccesoKB();
+    res.redirect('/app/kb/acceso?ok=1');
   };
 
   exportZip = async (req: Request, res: Response): Promise<void> => {
-    const categoria = str(req.query.categoria);
+    const carpeta = str(req.query.carpeta);
     const desde = corteDesde(str(req.query.desde) === 'ultima' ? str(req.query.ultima) : str(req.query.desde));
-    const buffer = await this.kb.exportarZip(contexto(req), {
-      ...(categoria ? { categoria } : {}),
+    const buffer = await this.kb.exportarZip(req.user!, {
+      ...(esCarpetaKB(carpeta) ? { carpeta } : {}),
       ...(desde ? { desde } : {}),
     });
     const fecha = new Date().toISOString().slice(0, 10);
-    res.setHeader('Content-Disposition', `attachment; filename="kb-${fecha}.zip"`);
+    res.setHeader('Content-Disposition', `attachment; filename="kb-${carpeta || 'todo'}-${fecha}.zip"`);
     res.type('application/zip').send(buffer);
-  };
-
-  nuevo = (_req: Request, res: Response): void => {
-    res.render('pages/backoffice/kb/form', { titulo: 'Nuevo artículo', modo: 'crear', valores: { visibilidad: 'staff' }, errores: {} });
-  };
-
-  editar = async (req: Request, res: Response): Promise<void> => {
-    const articulo = await this.kb.obtenerParaEditar(req.user!, str(req.params.id));
-    res.render('pages/backoffice/kb/form', {
-      titulo: `Editar ${articulo.titulo}`,
-      modo: 'editar',
-      articulo,
-      valores: { ...articulo, tags: articulo.tags.join(', ') },
-      errores: {},
-    });
-  };
-
-  guardarPost = async (req: Request, res: Response): Promise<void> => {
-    const id = req.params.id ? str(req.params.id) : undefined;
-    const b = req.body ?? {};
-    try {
-      await this.kb.guardar(
-        req.user!,
-        {
-          titulo: str(b.titulo),
-          categoria: str(b.categoria),
-          cuerpoMarkdown: str(b.cuerpoMarkdown),
-          tags: lista(b.tags),
-          rutaDestino: str(b.rutaDestino),
-          publicado: b.publicado === 'on',
-          visibilidad: sanearVisibilidadKB(str(b.visibilidad)),
-        },
-        id,
-      );
-      res.redirect('/app/kb');
-    } catch (err) {
-      res.status(422).render('pages/backoffice/kb/form', {
-        titulo: id ? 'Editar artículo' : 'Nuevo artículo',
-        modo: id ? 'editar' : 'crear',
-        articulo: id ? { id } : null,
-        valores: b,
-        errores: camposDeError(err),
-      });
-    }
   };
 
   eliminarPost = async (req: Request, res: Response): Promise<void> => {
     await this.kb.eliminar(req.user!, str(req.params.id));
-    res.redirect('/app/kb');
+    res.redirect('/app/kb?aviso=' + encodeURIComponent('Documento eliminado'));
   };
 }

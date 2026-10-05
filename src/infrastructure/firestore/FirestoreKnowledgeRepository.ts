@@ -1,7 +1,7 @@
 import { type DocumentData, type Firestore, type Query } from 'firebase-admin/firestore';
 import { Timestamp } from '../../core/entities/value-objects/Timestamp.js';
 import type { IKnowledgeRepository, ListarKBFiltro } from '../../core/ports/repositories/IKnowledgeRepository.js';
-import { ArticuloKB, coincideTexto, sanearVisibilidadKB } from '../../core/entities/ArticuloKB.js';
+import { ArticuloKB, coincideTexto, sanearCarpetaKB } from '../../core/entities/ArticuloKB.js';
 
 const COL = 'knowledge_base';
 const fecha = (v: unknown): Date | undefined => (v instanceof Timestamp ? v.toDate() : undefined);
@@ -12,11 +12,10 @@ const toDomain = (id: string, d: DocumentData): ArticuloKB =>
     titulo: String(d.titulo ?? ''),
     slug: String(d.slug ?? ''),
     categoria: d.categoria ?? null,
+    carpeta: sanearCarpetaKB(d.carpeta, d.categoria ?? null),
     cuerpoMarkdown: String(d.cuerpoMarkdown ?? ''),
     tags: Array.isArray(d.tags) ? d.tags.map(String) : [],
     rutaDestino: d.rutaDestino ?? null,
-    publicado: Boolean(d.publicado),
-    visibilidad: sanearVisibilidadKB(d.visibilidad),
     autorUid: d.autorUid ?? null,
     autorNombre: d.autorNombre ?? null,
     createdAt: fecha(d.createdAt) ?? new Date(),
@@ -39,7 +38,6 @@ export class FirestoreKnowledgeRepository implements IKnowledgeRepository {
 
   async list(filtro: ListarKBFiltro = {}): Promise<ArticuloKB[]> {
     let q: Query = this.db.collection(COL);
-    if (filtro.publicado !== undefined) q = q.where('publicado', '==', filtro.publicado);
     if (filtro.categoria) q = q.where('categoria', '==', filtro.categoria);
     const snap = await q.get();
     let arts = snap.docs.map((d) => toDomain(d.id, d.data()));
@@ -64,8 +62,7 @@ export class FirestoreKnowledgeRepository implements IKnowledgeRepository {
         cuerpoMarkdown: a.cuerpoMarkdown,
         tags: a.tags,
         rutaDestino: a.rutaDestino,
-        publicado: a.publicado,
-        visibilidad: a.visibilidad,
+        carpeta: a.carpeta,
         autorUid: a.autorUid,
         autorNombre: a.autorNombre,
         createdAt: Timestamp.fromDate(a.createdAt),
@@ -90,8 +87,7 @@ export class FirestoreKnowledgeRepository implements IKnowledgeRepository {
             cuerpoMarkdown: a.cuerpoMarkdown,
             tags: a.tags,
             rutaDestino: a.rutaDestino,
-            publicado: a.publicado,
-            visibilidad: a.visibilidad,
+            carpeta: a.carpeta,
             autorUid: a.autorUid,
             autorNombre: a.autorNombre,
             createdAt: Timestamp.fromDate(a.createdAt),

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { nombresCoinciden, ticketEsDeAgente, ticketSinNadieAsignado } from '../../src/core/entities/Ticket.js';
+import { nombresCoinciden, ticketDisponibleParaEquipo, ticketEsDeAgente, ticketSinNadieAsignado } from '../../src/core/entities/Ticket.js';
 
 describe('nombresCoinciden', () => {
   it('nombre corto y completo, sin importar mayúsculas ni acentos', () => {
@@ -26,5 +26,20 @@ describe('ticketEsDeAgente / ticketSinNadieAsignado', () => {
     expect(ticketSinNadieAsignado({ agenteAsignadoUid: null, agenteAsignadoNombre: null, canalizadoA: null })).toBe(true);
     expect(ticketSinNadieAsignado({ agenteAsignadoUid: null, agenteAsignadoNombre: 'DIEGO', canalizadoA: null })).toBe(false);
     expect(ticketSinNadieAsignado({ agenteAsignadoUid: null, agenteAsignadoNombre: null, canalizadoA: 'Soporte' })).toBe(false);
+  });
+});
+
+describe('ticketDisponibleParaEquipo', () => {
+  const erick = { uid: 'a1', nombre: 'Erick Casas' };
+  it('un admin en "Agente" sin canalizar = disponible para cualquiera (viejo 9cd4001)', () => {
+    expect(ticketDisponibleParaEquipo({ agenteAsignadoUid: null, agenteAsignadoNombre: 'ERICK', canalizadoA: null }, [erick])).toBe(true);
+    expect(ticketDisponibleParaEquipo({ agenteAsignadoUid: 'a1', agenteAsignadoNombre: 'Erick Casas', canalizadoA: null }, [erick])).toBe(true);
+  });
+  it('en cuanto se canaliza, ya no; y un agente que no es admin tampoco', () => {
+    expect(ticketDisponibleParaEquipo({ agenteAsignadoUid: null, agenteAsignadoNombre: 'ERICK', canalizadoA: 'Diego' }, [erick])).toBe(false);
+    expect(ticketDisponibleParaEquipo({ agenteAsignadoUid: null, agenteAsignadoNombre: 'DIEGO', canalizadoA: null }, [erick])).toBe(false);
+  });
+  it('sin nadie asignado sigue siendo disponible', () => {
+    expect(ticketDisponibleParaEquipo({ agenteAsignadoUid: null, agenteAsignadoNombre: null, canalizadoA: null })).toBe(true);
   });
 });

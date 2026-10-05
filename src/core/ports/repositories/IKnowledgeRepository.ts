@@ -3,7 +3,6 @@ import type { ArticuloKB } from '../../entities/ArticuloKB.js';
 /** Filtros para listar artículos de la base de conocimiento. */
 export interface ListarKBFiltro {
   categoria?: string;
-  publicado?: boolean;
   texto?: string;
   /** Si viene junto a `texto`: exige la frase completa como substring contiguo (en vez de
    * exigir cada palabra por separado, más laxo). */
