@@ -51,7 +51,8 @@ como el panel del CRM viejo. Cada apartado tiene casillas **Ver** (entra) y **Ed
 modifica; incluye Ver); en Tickets, además, **Todos** (ve los tickets de todo el equipo, no solo
 los suyos y los que nadie tiene). Ejemplo: alguien de Comercial que factura y necesita editar
 tickets → marca *Tickets · Editar* en su fila y *Guardar permisos*. Solo se guardan las casillas
-que cambiaste. Los administradores tienen todo siempre. Lo más fino (eliminar, aprobar
+que cambiaste. Los administradores tienen todo siempre, salvo la base de conocimiento: la columna **📚 KB** solo
+la ve el propietario de la KB y ahí decide quién la ve, admins incluidos. Lo más fino (eliminar, aprobar
 cotizaciones…) sigue en *Permisos avanzados* de cada usuario.
 
 ## Secciones visibles

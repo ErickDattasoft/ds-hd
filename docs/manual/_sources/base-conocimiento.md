@@ -17,7 +17,8 @@ carpetas.
 No depende del rol. El propietario (Erick) decide persona por persona en **👥 Acceso**: solo
 quien tenga su casilla marcada la ve — un administrador sin marcar **no** la ve. Quien tiene
 acceso solo busca, lee y copia; indexar, eliminar, exportar y dar acceso es exclusivo del
-propietario. El cambio se aplica en menos de un minuto.
+propietario. Lo mismo se marca en *Usuarios* → **🔐 Permisos por apartado**, columna **📚 KB**
+(solo el propietario la ve; es la misma lista). El cambio se aplica en menos de un minuto.
 
 ## Buscar
 

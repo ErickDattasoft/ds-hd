@@ -429,3 +429,29 @@ describe('tickets: agente con un admin sin canalizar (viejo 9cd4001)', () => {
     expect((await agent.get('/app/tickets/t1')).status).toBe(200);
   });
 });
+
+describe('Permisos por apartado — columna 📚 KB', () => {
+  it('solo el propietario ve la columna y desde ahí da acceso a la KB (también a un admin)', async () => {
+    const DUENO = { uid: 'u-e', email: 'erick.casas@dattasoft.mx', password: 'erick12345', nombre: 'Erick', rol: 'admin' as const };
+    const t = makeTestApp({ usuarios: [DUENO, ADMIN, AGENTE] });
+    const otroAdmin = await login(t.app, ADMIN.email, ADMIN.password);
+    expect((await otroAdmin.agent.get('/app/usuarios/permisos')).text).not.toContain('📚 KB');
+
+    const dueno = await login(t.app, DUENO.email, DUENO.password);
+    expect((await dueno.agent.get('/app/usuarios/permisos')).text).toContain('📚 KB');
+    const res = await dueno.agent.post('/app/usuarios/permisos').type('form').send({
+      _csrf: dueno.csrf, kbEnviado: '1', kb: [ADMIN.uid],
+    });
+    expect(res.headers.location).toBe('/app/usuarios/permisos?ok=1');
+    expect(t.configuracionRepo.kb.acceso).toEqual([ADMIN.uid]);
+    expect((await otroAdmin.agent.get('/app/kb')).status).toBe(200);
+
+    // Quitarlo: estaba marcado (kbo) y ya no viene en kb.
+    await dueno.agent.post('/app/usuarios/permisos').type('form').send({ _csrf: dueno.csrf, kbEnviado: '1', kbo: [ADMIN.uid] });
+    expect(t.configuracionRepo.kb.acceso).toEqual([]);
+
+    // Un admin que no es el propietario no puede colarse el campo.
+    await otroAdmin.agent.post('/app/usuarios/permisos').type('form').send({ _csrf: otroAdmin.csrf, kbEnviado: '1', kb: [AGENTE.uid] });
+    expect(t.configuracionRepo.kb.acceso).toEqual([]);
+  });
+});

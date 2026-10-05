@@ -1004,6 +1004,7 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
           c.actualizarMiFirmaService,
           c.contrasenaService,
           c.configuracionTicketsService,
+          c.accesoKBService,
         ),
     ).singleton(),
     solicitudAccesoController: asFunction(

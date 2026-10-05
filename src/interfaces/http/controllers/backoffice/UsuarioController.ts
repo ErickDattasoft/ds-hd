@@ -26,7 +26,8 @@ import {
   type NivelApartado,
 } from '../../rbac/apartados.js';
 import { permisosEfectivos } from '../../rbac/policy.js';
-import { invalidarCacheUsuario } from '../../middlewares/sessionAuth.js';
+import { invalidarCacheAccesoKB, invalidarCacheUsuario } from '../../middlewares/sessionAuth.js';
+import type { AccesoKBService } from '../../../../application/knowledge/AccesoKBService.js';
 
 /** Gestión de usuarios y perfiles (requiere `usuarios:gestionar`). */
 export class UsuarioController {
@@ -39,6 +40,7 @@ export class UsuarioController {
     private readonly actualizarFirma: ActualizarMiFirmaService,
     private readonly contrasena: ContrasenaService,
     private readonly configTickets: ConfiguracionTicketsService,
+    private readonly accesoKB: AccesoKBService,
   ) {}
 
   /** Renderiza Mi perfil (firma, encabezado, predeterminados y contraseña). */
@@ -155,6 +157,11 @@ export class UsuarioController {
     const staff = (await this.usuarios.list({ activo: true }))
       .filter((u) => u.esStaff)
       .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
+    // Columna «📚 KB»: solo la ve (y la cambia) el propietario de la base de conocimiento.
+    const esPropietarioKB = req.user!.permisos.includes('kb:publicar');
+    const conKB = esPropietarioKB
+      ? new Set((await this.accesoKB.obtener(req.user!)).filas.filter((f) => f.marcado).map((f) => f.uid))
+      : null;
     res.render('pages/backoffice/usuarios/permisos', {
       titulo: 'Permisos por apartado',
       apartados: APARTADOS.map((a) => ({
@@ -170,8 +177,17 @@ export class UsuarioController {
             marcadas[`${a.id}|${n}`] = casillaMarcada(efectivos, permisos as never);
           }
         }
-        return { uid: u.uid, nombre: u.nombre, roles: u.roles.map((r) => ROL_ETIQUETA[r] ?? r).join(', '), esAdmin: u.tieneRol('admin'), marcadas };
+        return {
+          uid: u.uid,
+          nombre: u.nombre,
+          roles: u.roles.map((r) => ROL_ETIQUETA[r] ?? r).join(', '),
+          esAdmin: u.tieneRol('admin'),
+          marcadas,
+          esYo: u.uid === req.user!.uid,
+          kb: conKB?.has(u.uid) ?? false,
+        };
       }),
+      esPropietarioKB,
       guardados: typeof req.query.ok === 'string' ? Number(req.query.ok) : null,
     });
   };
@@ -200,6 +216,23 @@ export class UsuarioController {
       await this.actualizar.ejecutar({ actor: req.user!, uid, ...overrides });
       invalidarCacheUsuario(uid);
       guardados += 1;
+    }
+    // Columna «📚 KB» (solo el propietario la manda): mismo guardado que 👥 Acceso de la KB.
+    if (req.user!.permisos.includes('kb:publicar') && body.kbEnviado) {
+      const conKB = new Set(aArreglo(body.kb) ?? []);
+      const antes = new Set(aArreglo(body.kbo) ?? []);
+      const cambios = [...new Set([...conKB, ...antes])].filter((uid) => conKB.has(uid) !== antes.has(uid));
+      if (cambios.length) {
+        const actuales = (await this.accesoKB.obtener(req.user!)).filas.filter((f) => f.marcado).map((f) => f.uid);
+        const nuevos = new Set(actuales);
+        for (const uid of cambios) {
+          if (conKB.has(uid)) nuevos.add(uid);
+          else nuevos.delete(uid);
+        }
+        await this.accesoKB.guardarAcceso(req.user!, [...nuevos]);
+        invalidarCacheAccesoKB();
+        guardados += cambios.filter((uid) => !cambiosPorUsuario.has(uid)).length;
+      }
     }
     res.redirect(`/app/usuarios/permisos?ok=${guardados}`);
   };

@@ -13,18 +13,21 @@
   <p class="muted">
     Marca qué puede hacer cada persona, sin importar su rol. <strong>Ver</strong> = entra al apartado;
     <strong>Editar</strong> = crea y modifica (incluye Ver); en Tickets, <strong>Todos</strong> = ve los de todo el equipo, no solo los suyos.
-    Los administradores tienen todo. La base de conocimiento no está aquí: la controla su propietario en 📚 → 👥 Acceso.
+    Los administradores tienen todo{{ '.' if esPropietarioKB else '. La base de conocimiento no está aquí: la controla su propietario.' }}
+    {% if esPropietarioKB %}<strong>📚 KB</strong> = ve la base de conocimiento (solo tú ves y cambias esta columna; también aplica a administradores).{% endif %}
     Para algo más fino (eliminar, aprobar…), abre al usuario → Permisos avanzados.
   </p>
 
   <form method="post" action="/app/usuarios/permisos">
     <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+    {% if esPropietarioKB %}<input type="hidden" name="kbEnviado" value="1" />{% endif %}
     <div class="permisos-matriz__scroll">
       <table class="data-table permisos-matriz" data-sin-mejoras>
         <thead>
           <tr>
             <th rowspan="2">Usuario</th>
             {% for a in apartados %}<th colspan="{{ a.niveles | length }}" class="permisos-matriz__ap">{{ a.etiqueta }}</th>{% endfor %}
+            {% if esPropietarioKB %}<th rowspan="2" class="permisos-matriz__ap">📚 KB</th>{% endif %}
           </tr>
           <tr>
             {% for a in apartados %}{% for n in a.niveles %}<th class="permisos-matriz__nivel">{{ n.etiqueta }}</th>{% endfor %}{% endfor %}
@@ -48,6 +51,16 @@
                   </td>
                 {% endfor %}
               {% endfor %}
+              {% if esPropietarioKB %}
+                <td class="permisos-matriz__celda permisos-matriz__ap">
+                  {% if f.esYo %}
+                    <input type="checkbox" checked disabled title="Propietario: siempre la ve" />
+                  {% else %}
+                    <input type="checkbox" name="kb" value="{{ f.uid }}" {{ 'checked' if f.kb }} aria-label="{{ f.nombre }} — Base de conocimiento" />
+                    {% if f.kb %}<input type="hidden" name="kbo" value="{{ f.uid }}" />{% endif %}
+                  {% endif %}
+                </td>
+              {% endif %}
             </tr>
           {% endfor %}
         </tbody>
