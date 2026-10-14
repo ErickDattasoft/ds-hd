@@ -88,7 +88,9 @@
         {% set e = fila.empresa %}
         <tr class="{{ 'tr-danger' if fila.vencidas }}" data-orden="{{ fila.orden }}" data-favorita="{{ 'true' if e.favorita else 'false' }}">
           {% if can('empresas:editar') %}
-            <td><input type="checkbox" form="avisar-form" name="empresaIds" value="{{ e.id }}" aria-label="Seleccionar {{ e.nombre }}" /></td>
+            {# Con el filtro de "sin avisar" (al que lleva la tarjeta del Dashboard) llegan ya
+               marcadas, como en el CRM viejo: solo falta elegir correo o WhatsApp. #}
+            <td><input type="checkbox" form="avisar-form" name="empresaIds" value="{{ e.id }}" aria-label="Seleccionar {{ e.nombre }}" {{ 'checked' if pendientes == 'versiones' or pendientes == 'licencias' }} /></td>
             <td>
               <button type="submit" form="fav-{{ e.id }}" class="star-btn" title="{{ 'Quitar de favoritas' if e.favorita else 'Marcar como favorita' }}"
                       aria-pressed="{{ 'true' if e.favorita else 'false' }}">{{ '⭐' if e.favorita else '☆' }}</button>
