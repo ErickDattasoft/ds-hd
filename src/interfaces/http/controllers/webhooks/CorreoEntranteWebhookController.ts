@@ -5,17 +5,17 @@ import { correoDeCloudMailin } from '../../../../infrastructure/email/CloudMaili
 
 /**
  * Recibe los correos que reenvía CloudMailin (filtro de Zoho → CloudMailin → aquí). Protegido por
- * `?key=` (secreto `CORREO_ENTRANTE_SECRET`); sin secreto configurado, el endpoint queda cerrado.
+ * `?key=` (secreto `CORREO_ENTRANTE_SECRET` o la clave generada en Configuración → Correo entrante);
+ * sin ninguna de las dos, el endpoint queda cerrado.
  */
 export class CorreoEntranteWebhookController {
   constructor(
     private readonly service: CorreoEntranteService,
-    private readonly secret: string,
     private readonly logger: ILogger,
   ) {}
 
   handle = async (req: Request, res: Response): Promise<void> => {
-    if (!this.secret || req.query.key !== this.secret) {
+    if (!(await this.service.claveWebhookValida(req.query.key))) {
       res.status(401).json({ ok: false, error: 'no autorizado' });
       return;
     }

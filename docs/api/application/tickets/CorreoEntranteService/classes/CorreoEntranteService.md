@@ -52,21 +52,43 @@ CC — así un tercero no puede escribir en un ticket ajeno solo con adivinar el
 
 `CorreoEntranteService`
 
-## Accessors
+## Methods
 
-### webhookActivo
+### webhookActivo()
 
-#### Get Signature
+> **webhookActivo**(`cfg`): `boolean`
 
-> **get** **webhookActivo**(): `boolean`
+¿El webhook de CloudMailin está habilitado (hay secreto del servidor o clave generada)?
 
-¿El webhook de CloudMailin está habilitado (tiene clave)?
+#### Parameters
 
-##### Returns
+##### cfg
+
+[`ConfiguracionCorreoEntrante`](../../../../core/entities/ConfiguracionCorreoEntrante/interfaces/ConfiguracionCorreoEntrante.md)
+
+#### Returns
 
 `boolean`
 
-## Methods
+***
+
+### claveWebhookValida()
+
+> **claveWebhookValida**(`key`): `Promise`\<`boolean`\>
+
+¿`key` abre el webhook? Vale el secreto del servidor o la clave generada en Configuración.
+
+#### Parameters
+
+##### key
+
+`unknown`
+
+#### Returns
+
+`Promise`\<`boolean`\>
+
+***
 
 ### recibirWebhook()
 
@@ -140,11 +162,59 @@ Guarda la config; los secretos vacíos conservan el valor anterior.
 
 ##### datos
 
-`Omit`\<[`ConfiguracionCorreoEntrante`](../../../../core/entities/ConfiguracionCorreoEntrante/interfaces/ConfiguracionCorreoEntrante.md), `"ultimaRevision"` \| `"ultimoResultado"`\>
+`Omit`\<[`ConfiguracionCorreoEntrante`](../../../../core/entities/ConfiguracionCorreoEntrante/interfaces/ConfiguracionCorreoEntrante.md), `"ultimaRevision"` \| `"ultimoResultado"` \| `"remitenteEmail"` \| `"remitenteNombre"` \| `"webhookKey"`\>
 
 #### Returns
 
 `Promise`\<`void`\>
+
+***
+
+### guardarRemitente()
+
+> **guardarRemitente**(`actor`, `datos`): `Promise`\<`string`\>
+
+Cambia el remitente de todo el correo del CRM. Antes de guardarlo pregunta al proveedor si lo
+acepta: un remitente sin verificar en Brevo haría que NINGÚN correo saliera. Vacío = volver al
+del servidor. Devuelve el detalle de la comprobación para mostrarlo.
+
+#### Parameters
+
+##### actor
+
+[`SessionUser`](../../../shared/SessionUser/interfaces/SessionUser.md)
+
+##### datos
+
+###### email
+
+`string`
+
+###### nombre
+
+`string`
+
+#### Returns
+
+`Promise`\<`string`\>
+
+***
+
+### generarClaveWebhook()
+
+> **generarClaveWebhook**(`actor`): `Promise`\<`string`\>
+
+Genera (o rota) la clave `?key=` del webhook de CloudMailin. La anterior deja de servir.
+
+#### Parameters
+
+##### actor
+
+[`SessionUser`](../../../shared/SessionUser/interfaces/SessionUser.md)
+
+#### Returns
+
+`Promise`\<`string`\>
 
 ***
 

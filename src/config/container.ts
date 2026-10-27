@@ -15,6 +15,7 @@ import { BrevoEmailSender } from '../infrastructure/email/BrevoEmailSender.js';
 import { LoggingEmailSender } from '../infrastructure/email/LoggingEmailSender.js';
 import { SmtpEmailSender } from '../infrastructure/email/SmtpEmailSender.js';
 import { LogoEmailSender } from '../infrastructure/email/LogoEmailSender.js';
+import { RemitenteEmailSender, verificarRemitenteBrevo } from '../infrastructure/email/RemitenteEmailSender.js';
 import { FirestoreTicketRepository } from '../infrastructure/firestore/FirestoreTicketRepository.js';
 import { FirestoreTicketQueries } from '../infrastructure/firestore/FirestoreTicketQueries.js';
 import { FirestoreContadorRepository } from '../infrastructure/firestore/FirestoreContadorRepository.js';
@@ -430,7 +431,7 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
               l,
             )
           : new LoggingEmailSender(l);
-      return new LogoEmailSender(base, c.configuracionRepo, cfg.baseUrl);
+      return new LogoEmailSender(new RemitenteEmailSender(base, c.configuracionRepo), c.configuracionRepo, cfg.baseUrl);
     }).singleton(),
 
     usuarioRepo: asFunction(
@@ -592,7 +593,11 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
           email: c.emailSender,
           // Desde aquí sale todo el correo del CRM: lo que llegue DE estas direcciones es un rebote propio.
           remitentesPropios: [c.config.brevo.senderEmail, c.config.smtp.user].filter(Boolean),
-          webhookActivo: !!c.config.correoEntrante.secret,
+          secretoServidor: c.config.correoEntrante.secret,
+          // Solo con Brevo se puede comprobar el remitente; con SMTP/log se guarda tal cual.
+          ...(!c.config.smtp.host && c.config.brevo.apiKey
+            ? { verificarRemitente: (email: string) => verificarRemitenteBrevo(c.config.brevo.apiKey, email) }
+            : {}),
         }),
     ).singleton(),
     dosPasosService: asFunction(
@@ -1112,7 +1117,7 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
       (c: Cradle) => new BrevoWebhookController(c.eventoService, c.config.jobs.secret, c.logger),
     ).singleton(),
     correoEntranteWebhookController: asFunction(
-      (c: Cradle) => new CorreoEntranteWebhookController(c.correoEntranteService, c.config.correoEntrante.secret, c.logger),
+      (c: Cradle) => new CorreoEntranteWebhookController(c.correoEntranteService, c.logger),
     ).singleton(),
     empresaController: asFunction(
       (c: Cradle) =>

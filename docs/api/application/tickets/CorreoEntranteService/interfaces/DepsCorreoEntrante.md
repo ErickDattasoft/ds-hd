@@ -50,8 +50,27 @@ en minutos) porque el aviso de "nueva respuesta" coincidía con el filtro de Zoh
 
 ***
 
-### webhookActivo?
+### secretoServidor?
 
-> `optional` **webhookActivo?**: `boolean`
+> `optional` **secretoServidor?**: `string`
 
-¿Está puesta la clave del webhook (`CORREO_ENTRANTE_SECRET`)? Solo para mostrarlo en Configuración.
+Secreto `CORREO_ENTRANTE_SECRET` del servidor (si existe). Vale además de la clave generada en Configuración.
+
+***
+
+### verificarRemitente?
+
+> `optional` **verificarRemitente?**: (`email`) => `Promise`\<\{ `ok`: `boolean`; `detalle`: `string`; \}\>
+
+¿El proveedor de correo deja mandar desde este remitente? Si no se inyecta, se guarda sin
+comprobar (dev/SMTP).
+
+#### Parameters
+
+##### email
+
+`string`
+
+#### Returns
+
+`Promise`\<\{ `ok`: `boolean`; `detalle`: `string`; \}\>

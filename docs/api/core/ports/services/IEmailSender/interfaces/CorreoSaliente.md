@@ -72,6 +72,22 @@ Texto plano opcional (si se omite, el proveedor puede derivarlo del HTML).
 
 ***
 
+### de?
+
+> `optional` **de?**: `object`
+
+Remitente de este correo; si se omite, el del servidor. Lo pone el decorador de remitente (Configuración → Correo entrante).
+
+#### email
+
+> **email**: `string`
+
+#### nombre?
+
+> `optional` **nombre?**: `string`
+
+***
+
 ### responderA?
 
 > `optional` **responderA?**: `object`

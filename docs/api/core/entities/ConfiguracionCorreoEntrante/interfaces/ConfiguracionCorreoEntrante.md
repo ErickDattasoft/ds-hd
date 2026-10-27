@@ -70,6 +70,33 @@ Solo se aceptan respuestas del correo del contacto del ticket (recomendado).
 
 ***
 
+### remitenteEmail
+
+> **remitenteEmail**: `string`
+
+Remitente de TODO el correo del CRM (p. ej. servicio@). Vacío = el del servidor
+(`BREVO_SENDER_EMAIL`). Se cambia desde Configuración sin tocar secretos; debe estar
+verificado en Brevo o los correos no salen.
+
+***
+
+### remitenteNombre
+
+> **remitenteNombre**: `string`
+
+Nombre visible del remitente; vacío = `BREVO_SENDER_NAME`.
+
+***
+
+### webhookKey
+
+> **webhookKey**: `string`
+
+Clave `?key=` del webhook de CloudMailin generada desde Configuración. Se acepta además del
+secreto `CORREO_ENTRANTE_SECRET` (si existe), así el corte no depende de tocar Cloudflare.
+
+***
+
 ### ultimaRevision
 
 > **ultimaRevision**: `string` \| `null`

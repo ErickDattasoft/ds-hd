@@ -9,7 +9,7 @@ import {
   numeroTicketDeAsunto,
   type ConfiguracionCorreoEntrante,
 } from '../../core/entities/ConfiguracionCorreoEntrante.js';
-import { ForbiddenError } from '../../core/errors/DomainError.js';
+import { ForbiddenError, ValidationError } from '../../core/errors/DomainError.js';
 import type { IAdjuntoTicketRepository } from '../../core/ports/repositories/IAdjuntoTicketRepository.js';
 import type { ITicketPublicoRepository } from '../../core/ports/repositories/ITicketPublicoRepository.js';
 import type { IUsuarioRepository } from '../../core/ports/repositories/IUsuarioRepository.js';
@@ -38,9 +38,16 @@ export interface DepsCorreoEntrante {
    * en minutos) porque el aviso de "nueva respuesta" coincidía con el filtro de Zoho.
    */
   remitentesPropios?: readonly string[];
-  /** ¿Está puesta la clave del webhook (`CORREO_ENTRANTE_SECRET`)? Solo para mostrarlo en Configuración. */
-  webhookActivo?: boolean;
+  /** Secreto `CORREO_ENTRANTE_SECRET` del servidor (si existe). Vale además de la clave generada en Configuración. */
+  secretoServidor?: string;
+  /**
+   * ¿El proveedor de correo deja mandar desde este remitente? Si no se inyecta, se guarda sin
+   * comprobar (dev/SMTP).
+   */
+  verificarRemitente?: (email: string) => Promise<{ ok: boolean; detalle: string }>;
 }
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /** Qué pasó con un correo recibido por webhook. */
 export type ResultadoWebhookCorreo =
@@ -82,15 +89,27 @@ export class CorreoEntranteService {
     private readonly deps: DepsCorreoEntrante = {},
   ) {}
 
-  /** ¿El webhook de CloudMailin está habilitado (tiene clave)? */
-  get webhookActivo(): boolean {
-    return this.deps.webhookActivo === true;
+  /** ¿El webhook de CloudMailin está habilitado (hay secreto del servidor o clave generada)? */
+  webhookActivo(cfg: ConfiguracionCorreoEntrante): boolean {
+    return !!this.deps.secretoServidor || !!cfg.webhookKey;
   }
 
-  /** ¿Lo mandó el propio CRM? (ver {@link DepsCorreoEntrante.remitentesPropios}). */
-  private esRemitentePropio(correo: string): boolean {
+  /** ¿`key` abre el webhook? Vale el secreto del servidor o la clave generada en Configuración. */
+  async claveWebhookValida(key: unknown): Promise<boolean> {
+    if (typeof key !== 'string' || !key) return false;
+    if (this.deps.secretoServidor && key === this.deps.secretoServidor) return true;
+    const cfg = await this.config.obtenerCorreoEntrante();
+    return !!cfg.webhookKey && key === cfg.webhookKey;
+  }
+
+  /**
+   * ¿Lo mandó el propio CRM? (ver {@link DepsCorreoEntrante.remitentesPropios}; también el
+   * remitente elegido en Configuración).
+   */
+  private esRemitentePropio(correo: string, cfg: ConfiguracionCorreoEntrante): boolean {
     const de = correo.trim().toLowerCase();
-    return !!de && (this.deps.remitentesPropios ?? []).some((r) => r.trim().toLowerCase() === de);
+    const propios = [...(this.deps.remitentesPropios ?? []), cfg.remitenteEmail];
+    return !!de && propios.some((r) => !!r && r.trim().toLowerCase() === de);
   }
 
   /**
@@ -100,13 +119,13 @@ export class CorreoEntranteService {
    */
   async recibirWebhook(correo: CorreoRecibido): Promise<ResultadoWebhookCorreo> {
     if (!correo.de) return { accion: 'ignorado', motivo: 'sin remitente' };
-    if (this.esRemitentePropio(correo.de)) {
+    const cfg = await this.config.obtenerCorreoEntrante();
+    if (this.esRemitentePropio(correo.de, cfg)) {
       this.logger.info('Correo entrante ignorado: lo mandó el propio CRM (anti-bucle)', { de: correo.de });
       return { accion: 'ignorado', motivo: 'remitente es el propio CRM' };
     }
-    const cfg = await this.config.obtenerCorreoEntrante();
     if (numeroTicketDeAsunto(correo.asunto)) {
-      const motivo = await this.procesar(correo, cfg.soloContactoDelTicket);
+      const motivo = await this.procesar(correo, cfg);
       if (motivo) {
         this.logger.warn('Correo entrante no ligado', { de: correo.de, asunto: correo.asunto, motivo });
         return { accion: 'ignorado', motivo };
@@ -152,7 +171,7 @@ export class CorreoEntranteService {
     const correos = await this.buzon.listarNoLeidos(cfg, LIMITE);
     for (const correo of correos) {
       resultado.revisados++;
-      const motivo = await this.procesar(correo, cfg.soloContactoDelTicket);
+      const motivo = await this.procesar(correo, cfg);
       if (motivo) {
         resultado.omitidos.push({ asunto: correo.asunto, de: correo.de, motivo });
         // No se marca como leído: queda en el buzón para atenderlo a mano.
@@ -179,13 +198,13 @@ export class CorreoEntranteService {
   }
 
   /** `null` si quedó agregado al ticket; si no, el motivo por el que se omitió. */
-  private async procesar(correo: CorreoRecibido, soloContacto: boolean): Promise<string | null> {
+  private async procesar(correo: CorreoRecibido, cfg: ConfiguracionCorreoEntrante): Promise<string | null> {
     const numero = numeroTicketDeAsunto(correo.asunto);
     if (!numero) return 'el asunto no trae número de ticket';
     const ticket = await this.tickets.findByNumero(numero);
     if (!ticket) return `no existe el ticket #${numero}`;
-    if (this.esRemitentePropio(correo.de)) return 'remitente es el propio CRM';
-    if (soloContacto) {
+    if (this.esRemitentePropio(correo.de, cfg)) return 'remitente es el propio CRM';
+    if (cfg.soloContactoDelTicket) {
       const permitidos = [ticket.contactoCorreo ?? '', ...ticket.cc, ...ticket.cco]
         .map((e) => e.trim().toLowerCase())
         .filter(Boolean);
@@ -294,7 +313,7 @@ export class CorreoEntranteService {
   /** Guarda la config; los secretos vacíos conservan el valor anterior. */
   async guardar(
     actor: SessionUser,
-    datos: Omit<ConfiguracionCorreoEntrante, 'ultimaRevision' | 'ultimoResultado'>,
+    datos: Omit<ConfiguracionCorreoEntrante, 'ultimaRevision' | 'ultimoResultado' | 'remitenteEmail' | 'remitenteNombre' | 'webhookKey'>,
   ): Promise<void> {
     this.permiso(actor);
     const previa = await this.config.obtenerCorreoEntrante();
@@ -305,6 +324,36 @@ export class CorreoEntranteService {
       refreshToken: datos.refreshToken.trim() || previa.refreshToken,
       region: datos.region.trim() || 'com',
     });
+  }
+
+  /**
+   * Cambia el remitente de todo el correo del CRM. Antes de guardarlo pregunta al proveedor si lo
+   * acepta: un remitente sin verificar en Brevo haría que NINGÚN correo saliera. Vacío = volver al
+   * del servidor. Devuelve el detalle de la comprobación para mostrarlo.
+   */
+  async guardarRemitente(actor: SessionUser, datos: { email: string; nombre: string }): Promise<string> {
+    this.permiso(actor);
+    const email = datos.email.trim().toLowerCase();
+    const nombre = datos.nombre.trim();
+    if (email && !EMAIL_RE.test(email)) throw new ValidationError('Escribe un correo de remitente válido', { remitenteEmail: 'Correo inválido' });
+    let detalle = email ? 'guardado sin comprobar (el servidor no usa Brevo)' : 'se usa el remitente del servidor';
+    if (email && this.deps.verificarRemitente) {
+      const v = await this.deps.verificarRemitente(email);
+      if (!v.ok) throw new ValidationError(`No se cambió el remitente: ${v.detalle}.`, { remitenteEmail: v.detalle });
+      detalle = v.detalle;
+    }
+    const previa = await this.config.obtenerCorreoEntrante();
+    await this.config.guardarCorreoEntrante({ ...previa, remitenteEmail: email, remitenteNombre: nombre });
+    return detalle;
+  }
+
+  /** Genera (o rota) la clave `?key=` del webhook de CloudMailin. La anterior deja de servir. */
+  async generarClaveWebhook(actor: SessionUser): Promise<string> {
+    this.permiso(actor);
+    const clave = this.ids.newToken();
+    const previa = await this.config.obtenerCorreoEntrante();
+    await this.config.guardarCorreoEntrante({ ...previa, webhookKey: clave });
+    return clave;
   }
 
   /** Revisión pedida a mano desde Configuración (aunque esté deshabilitado el automático). */

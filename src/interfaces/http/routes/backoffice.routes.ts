@@ -419,6 +419,12 @@ export function backofficeRoutes(container: Container): Router {
   r.post('/configuracion/correo-entrante', requirePermission('configuracion:integraciones'), (req, res) =>
     configuracion().correoEntrantePost(req, res),
   );
+  r.post('/configuracion/correo-entrante/remitente', requirePermission('configuracion:integraciones'), (req, res) =>
+    configuracion().correoRemitentePost(req, res),
+  );
+  r.post('/configuracion/correo-entrante/clave', requirePermission('configuracion:integraciones'), (req, res) =>
+    configuracion().correoClaveWebhookPost(req, res),
+  );
   r.post('/configuracion/correo-entrante/probar', requirePermission('configuracion:integraciones'), (req, res) =>
     configuracion().correoEntranteProbarPost(req, res),
   );

@@ -34,7 +34,7 @@ export class SmtpEmailSender implements IEmailSender {
 
   async enviar(correo: CorreoSaliente): Promise<void> {
     await this.tx.sendMail({
-      from: { name: this.opts.senderName, address: this.opts.senderEmail },
+      from: { name: correo.de?.nombre || this.opts.senderName, address: correo.de?.email || this.opts.senderEmail },
       to: correo.para.map((p) => (p.nombre ? `"${p.nombre}" <${p.email}>` : p.email)),
       cc: correo.cc?.map((p) => p.email),
       bcc: correo.cco?.map((p) => p.email),

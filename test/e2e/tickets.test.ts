@@ -534,6 +534,27 @@ describe('avisos globales (título de pestaña y buzón público, como el viejo)
     }
   });
 
+  it('webhook de correo con la clave generada en Configuración (sin secreto del servidor)', async () => {
+    const ADMIN = { uid: 'u-adm', email: 'adm@dattasoft.mx', password: 'admin12345', nombre: 'Adm', rol: 'admin' as const };
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    const adm = await login(t.app, ADMIN.email, ADMIN.password);
+    const correo = { headers: { from: 'Ana <ana@nueva.mx>', subject: 'No abre el sistema' }, plain: 'Ayuda' };
+    expect((await request(t.app).post('/webhooks/correo-entrante?key=').send(correo)).status).toBe(401);
+
+    const gen = await adm.agent.post('/app/configuracion/correo-entrante/clave').type('form').send({ _csrf: adm.csrf });
+    expect(gen.status).toBe(200);
+    const clave = t.configuracionRepo.correoEntrante.webhookKey;
+    expect(clave).not.toBe('');
+    expect(gen.text).toContain(`/webhooks/correo-entrante?key=${clave}`);
+    const ok = await request(t.app).post(`/webhooks/correo-entrante?key=${encodeURIComponent(clave)}`).send(correo);
+    expect(ok.body).toMatchObject({ ok: true, accion: 'solicitud' });
+
+    const rem = await adm.agent.post('/app/configuracion/correo-entrante/remitente').type('form')
+      .send({ _csrf: adm.csrf, remitenteEmail: 'servicio@dattasoft.mx', remitenteNombre: 'Soporte DATTASOFT' });
+    expect(rem.text).toContain('Remitente guardado');
+    expect(t.configuracionRepo.correoEntrante.remitenteEmail).toBe('servicio@dattasoft.mx');
+  });
+
   it('responder desde el ticket: con copia, captura y asunto [Ticket #N]', async () => {
     const t = makeTestApp({ usuarios: [SUP] });
     const sup = await login(t.app, SUP.email, SUP.password);

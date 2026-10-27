@@ -16,7 +16,7 @@ export class BrevoEmailSender implements IEmailSender {
 
   async enviar(correo: CorreoSaliente): Promise<void> {
     const body = {
-      sender: { name: this.opts.senderName, email: this.opts.senderEmail },
+      sender: { name: correo.de?.nombre || this.opts.senderName, email: correo.de?.email || this.opts.senderEmail },
       to: correo.para.map((p) => ({ email: p.email, name: p.nombre })),
       cc: correo.cc?.map((p) => ({ email: p.email, name: p.nombre })),
       bcc: correo.cco?.map((p) => ({ email: p.email, name: p.nombre })),

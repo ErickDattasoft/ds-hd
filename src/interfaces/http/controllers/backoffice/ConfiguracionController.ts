@@ -375,7 +375,7 @@ export class ConfiguracionController {
       wa: { ...WHATSAPP_CLIENTES_POR_DEFECTO, ...config.whatsappClientes },
       eventosEtiquetas: ETIQUETAS_EVENTOS,
       equipoNombres: equipoWhatsApp(config).map((d) => d.nombre),
-      infoCorreo: this.configIntegraciones.infoCorreo(),
+      infoCorreo: await this.configIntegraciones.infoCorreo(),
       errores: opts.errores ?? {},
       guardado: opts.guardado ?? false,
     });
@@ -435,10 +435,12 @@ export class ConfiguracionController {
     res: Response,
     extra: { guardado?: boolean; aviso?: string; error?: string } = {},
   ): Promise<void> {
+    const cfg = await this.correoEntrante.configuracion(req.user!);
     res.render('pages/backoffice/configuracion/correo-entrante', {
       titulo: 'Correo entrante',
-      cfg: await this.correoEntrante.configuracion(req.user!),
-      webhookActivo: this.correoEntrante.webhookActivo,
+      cfg,
+      webhookActivo: this.correoEntrante.webhookActivo(cfg),
+      remitenteServidor: this.configIntegraciones.remitenteServidor,
       guardado: false,
       aviso: '',
       error: '',
@@ -460,6 +462,27 @@ export class ConfiguracionController {
     });
     await this.auditar(req, 'Correo entrante (Zoho) actualizado');
     await this.renderCorreoEntrante(req, res, { guardado: true });
+  };
+
+  correoRemitentePost = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const detalle = await this.correoEntrante.guardarRemitente(req.user!, {
+        email: str(req.body?.remitenteEmail),
+        nombre: str(req.body?.remitenteNombre),
+      });
+      await this.auditar(req, `Remitente de correo cambiado a ${str(req.body?.remitenteEmail) || 'el del servidor'}`);
+      await this.renderCorreoEntrante(req, res, { aviso: `Remitente guardado: ${detalle}.` });
+    } catch (err) {
+      await this.renderCorreoEntrante(req, res, { error: err instanceof Error ? err.message : 'No se pudo guardar el remitente' });
+    }
+  };
+
+  correoClaveWebhookPost = async (req: Request, res: Response): Promise<void> => {
+    const clave = await this.correoEntrante.generarClaveWebhook(req.user!);
+    await this.auditar(req, 'Clave del webhook de correo entrante generada');
+    await this.renderCorreoEntrante(req, res, {
+      aviso: `Clave nueva generada (…${clave.slice(-6)}). Copia la URL de abajo a CloudMailin; la anterior ya no sirve.`,
+    });
   };
 
   correoEntranteProbarPost = async (req: Request, res: Response): Promise<void> => {

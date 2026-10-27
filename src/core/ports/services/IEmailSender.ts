@@ -7,6 +7,8 @@ export interface CorreoSaliente {
   texto?: string;
   cc?: { email: string; nombre?: string }[];
   cco?: { email: string; nombre?: string }[];
+  /** Remitente de este correo; si se omite, el del servidor. Lo pone el decorador de remitente (Configuración → Correo entrante). */
+  de?: { email: string; nombre?: string };
   /** Dirección a la que responde el destinatario (si se omite, el remitente configurado). */
   responderA?: { email: string; nombre?: string };
   /** Etiquetas para rastrear el correo en el proveedor (webhooks de entrega/rebote). */

@@ -61,9 +61,18 @@ export class ConfiguracionIntegracionesService {
     private readonly logger: ILogger,
   ) {}
 
-  /** Estado del envío de correo del servidor, para mostrarlo junto al botón de prueba. */
-  infoCorreo(): InfoCorreo {
-    return this.correo;
+  /**
+   * Estado del envío de correo, para mostrarlo junto al botón de prueba. El remitente elegido en
+   * Configuración → Correo entrante manda sobre el del servidor.
+   */
+  /** Remitente fijo del servidor (`BREVO_SENDER_EMAIL`), el que se usa si no se elige otro. */
+  get remitenteServidor(): string {
+    return this.correo.remitente;
+  }
+
+  async infoCorreo(): Promise<InfoCorreo> {
+    const propio = (await this.repo.obtenerCorreoEntrante().catch(() => null))?.remitenteEmail;
+    return propio ? { ...this.correo, remitente: propio } : this.correo;
   }
 
   obtener(): Promise<ConfiguracionIntegraciones> {
@@ -201,9 +210,10 @@ export class ConfiguracionIntegracionesService {
         tags: ['prueba-correo'],
       });
       this.logger.info('Correo de prueba enviado', { por: actor.uid, destino: email.value });
+      const { remitente } = await this.infoCorreo();
       return {
         ok: true,
-        detalle: `Enviado a ${email.value} desde ${this.correo.remitente} (vía ${this.correo.modo}). Revisa la bandeja y la carpeta de spam.`,
+        detalle: `Enviado a ${email.value} desde ${remitente} (vía ${this.correo.modo}). Revisa la bandeja y la carpeta de spam.`,
       };
     } catch (err) {
       return { ok: false, detalle: err instanceof Error ? err.message : 'No se pudo enviar el correo' };

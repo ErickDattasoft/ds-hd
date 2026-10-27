@@ -11,6 +11,53 @@
   {% if error %}<p class="alert alert--error">{{ error }}</p>{% endif %}
 
   <div class="card">
+    <h2>✉️ Remitente del CRM</h2>
+    <p>Desde esta dirección sale <strong>todo</strong> el correo del CRM (avisos de tickets, cotizaciones, invitaciones…).
+      Ahora: <strong>{{ cfg.remitenteEmail or remitenteServidor }}</strong>{% if not cfg.remitenteEmail %} <span class="muted">(el del servidor)</span>{% endif %}.</p>
+    <form method="post" action="/app/configuracion/correo-entrante/remitente" class="form form--wide">
+      <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+      <div class="form-grid">
+        <label class="field"><span>Correo del remitente</span>
+          <input type="email" name="remitenteEmail" value="{{ cfg.remitenteEmail }}" placeholder="{{ remitenteServidor }}" autocomplete="off" />
+          <em class="field__hint">Vacío = {{ remitenteServidor }}. Antes de guardar se comprueba en Brevo que esté verificado; si no, no se cambia nada.</em>
+        </label>
+        <label class="field"><span>Nombre visible</span>
+          <input type="text" name="remitenteNombre" value="{{ cfg.remitenteNombre }}" placeholder="Soporte DATTASOFT" autocomplete="off" />
+        </label>
+      </div>
+      <details class="disclosure">
+        <summary class="disclosure__summary">❓ Cómo verificar un remitente nuevo en Brevo</summary>
+        <div class="disclosure__body">
+          <ol>
+            <li>En Brevo → <em>Senders, Domains &amp; Dedicated IPs</em> → <em>Senders</em> → <em>Add a sender</em> con el correo nuevo.</li>
+            <li>Abre el buzón de ese correo (en otra ventana o de incógnito si ya tienes otra cuenta de Zoho abierta) y confirma el enlace o código de Brevo.</li>
+            <li>Vuelve aquí y guarda. Las respuestas que lleguen desde este remitente se ignoran (anti-bucle); las de tu correo personal sí entran como nota.</li>
+          </ol>
+        </div>
+      </details>
+      <button class="btn" type="submit">Guardar remitente</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2>🔑 Clave para CloudMailin</h2>
+    {% if cfg.webhookKey %}
+      <p>Destino que va en CloudMailin (formato <strong>JSON (Normalized)</strong>):</p>
+      <p><code>{{ config.baseUrl }}/webhooks/correo-entrante?key={{ cfg.webhookKey }}</code>
+        <button type="button" class="btn btn--sm btn--ghost" data-copiar-link
+                data-link="{{ config.baseUrl }}/webhooks/correo-entrante?key={{ cfg.webhookKey }}">📋 Copiar</button></p>
+      <p class="muted">No la compartas: quien tenga esta URL puede meter notas en los tickets. Si se filtra, genera otra.</p>
+    {% else %}
+      <p>Todavía no hay clave{% if webhookActivo %} generada aquí (el servidor tiene la suya, <code>CORREO_ENTRANTE_SECRET</code>){% endif %}. Genérala y copia la URL a CloudMailin el día del corte.</p>
+    {% endif %}
+    <form method="post" action="/app/configuracion/correo-entrante/clave" class="inline"
+      {% if cfg.webhookKey %}data-confirm="La URL actual dejará de funcionar. ¿Generar otra?"{% endif %}>
+      <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+      <button class="btn btn--sm btn--secondary" type="submit">{{ '🔄 Generar otra clave' if cfg.webhookKey else '🔑 Generar clave' }}</button>
+    </form>
+  </div>
+
+  <div class="card">
     <p><strong>✅ Opción recomendada: filtro de Zoho → CloudMailin</strong> {% if webhookActivo %}<span class="badge badge--ok">clave configurada</span>{% else %}<span class="badge badge--warning">falta la clave</span>{% endif %}</p>
     <p>No hace falta ser administrador de Zoho ni tocar el dominio. Cada correo llega al instante:</p>
     <ul>
@@ -22,9 +69,8 @@
       <summary class="disclosure__summary">❓ Cómo dejarlo funcionando (una sola vez)</summary>
       <div class="disclosure__body">
         <ol>
-          <li>Pide que pongan el secreto <code>CORREO_ENTRANTE_SECRET</code> en Cloudflare (<code>npx wrangler secret put CORREO_ENTRANTE_SECRET</code>) con una clave larga al azar.</li>
-          <li>En <a href="https://www.cloudmailin.com" target="_blank" rel="noopener">cloudmailin.com</a> (plan gratis) crea una dirección con formato <strong>JSON (Normalized)</strong> y destino:
-            <br /><code>{{ config.baseUrl }}/webhooks/correo-entrante?key=&lt;la clave&gt;</code></li>
+          <li>Arriba, en <strong>🔑 Clave para CloudMailin</strong>, genera la clave.</li>
+          <li>En <a href="https://www.cloudmailin.com" target="_blank" rel="noopener">cloudmailin.com</a> (plan gratis) crea o edita la dirección con formato <strong>JSON (Normalized)</strong> y pega como destino la URL de arriba.</li>
           <li>En Zoho Mail → Configuración → Filtros: «si el asunto contiene <code>[Ticket #</code>, reenviar a» la dirección de CloudMailin.
             Con un buzón dedicado (p. ej. servicio@), reenvía <strong>todo</strong> para que también lleguen las solicitudes nuevas.</li>
           <li>Ojo: mientras el CRM viejo siga recibiendo de ese mismo filtro, solo uno de los dos puede quedar como destino.</li>

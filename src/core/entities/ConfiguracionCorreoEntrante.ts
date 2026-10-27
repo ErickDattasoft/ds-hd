@@ -18,6 +18,19 @@ export interface ConfiguracionCorreoEntrante {
   carpeta: string;
   /** Solo se aceptan respuestas del correo del contacto del ticket (recomendado). */
   soloContactoDelTicket: boolean;
+  /**
+   * Remitente de TODO el correo del CRM (p. ej. servicio@). Vacío = el del servidor
+   * (`BREVO_SENDER_EMAIL`). Se cambia desde Configuración sin tocar secretos; debe estar
+   * verificado en Brevo o los correos no salen.
+   */
+  remitenteEmail: string;
+  /** Nombre visible del remitente; vacío = `BREVO_SENDER_NAME`. */
+  remitenteNombre: string;
+  /**
+   * Clave `?key=` del webhook de CloudMailin generada desde Configuración. Se acepta además del
+   * secreto `CORREO_ENTRANTE_SECRET` (si existe), así el corte no depende de tocar Cloudflare.
+   */
+  webhookKey: string;
   /** Resultado de la última revisión, para verlo en Configuración. */
   ultimaRevision: string | null;
   ultimoResultado: string | null;
@@ -32,6 +45,9 @@ export const CONFIG_CORREO_ENTRANTE_POR_DEFECTO: ConfiguracionCorreoEntrante = {
   accountId: '',
   carpeta: '',
   soloContactoDelTicket: true,
+  remitenteEmail: '',
+  remitenteNombre: '',
+  webhookKey: '',
   ultimaRevision: null,
   ultimoResultado: null,
 };
@@ -45,6 +61,9 @@ export function sanearConfigCorreoEntrante(d: unknown): ConfiguracionCorreoEntra
     habilitado: o.habilitado === true,
     soloContactoDelTicket: o.soloContactoDelTicket !== false,
     region: String(o.region ?? 'com'),
+    remitenteEmail: String(o.remitenteEmail ?? '').trim().toLowerCase(),
+    remitenteNombre: String(o.remitenteNombre ?? '').trim(),
+    webhookKey: String(o.webhookKey ?? ''),
   };
 }
 
