@@ -46,8 +46,9 @@ export class FirestoreContactoRepository implements IContactoRepository {
     return doc ? toDomain(doc.id, doc.data()) : null;
   }
 
+  /** Solo activos: los de la papelera no cuentan (como el contador de empresas). */
   async contar(): Promise<number> {
-    return (await this.db.collection(COL).count().get()).data().count;
+    return (await this.db.collection(COL).where('activo', '==', true).count().get()).data().count;
   }
 
   async list(filtro: ListarContactosFiltro = {}): Promise<Contacto[]> {
@@ -119,7 +120,7 @@ export class FirestoreContactoRepository implements IContactoRepository {
   }
 
   async contarPorEmpresa(empresaId: string): Promise<number> {
-    const agg = await this.db.collection(COL).where('empresaId', '==', empresaId).count().get();
+    const agg = await this.db.collection(COL).where('empresaId', '==', empresaId).where('activo', '==', true).count().get();
     return agg.data().count;
   }
 }

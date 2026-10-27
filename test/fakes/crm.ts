@@ -58,7 +58,7 @@ export class InMemoryContactoRepository implements IContactoRepository {
     return [...this.items.values()].find((c) => c.email === email.trim().toLowerCase()) ?? null;
   }
   async contar(): Promise<number> {
-    return (await this.list()).length;
+    return (await this.list({ activo: true })).length;
   }
   async list(f: ListarContactosFiltro = {}): Promise<Contacto[]> {
     let out = [...this.items.values()];
