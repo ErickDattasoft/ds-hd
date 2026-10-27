@@ -976,7 +976,12 @@
       })
         .then(function (r) { return r.json(); })
         .then(function (data) {
-          if (data.ok) window.location.reload();
+          if (data.ok) {
+            // Recargar borraría una respuesta a medio escribir: en ese caso solo se avisa.
+            var borrador = Array.prototype.some.call(document.querySelectorAll('[data-nota-form] textarea'), function (t) { return t.value.trim(); });
+            if (borrador) { if (salida) salida.textContent = '✅ "' + file.name + '" adjuntado al ticket (aparecerá en la lista al recargar).'; }
+            else window.location.reload();
+          }
           else if (salida) salida.textContent = '❌ ' + (data.detalle || 'No se pudo subir');
         })
         .catch(function () { if (salida) salida.textContent = '❌ No se pudo subir. Revisa tu conexión.'; });
@@ -1095,6 +1100,12 @@
       if (input) input.click();
       return;
     }
+    // En la caja de respuesta la imagen va a las capturas de ESA respuesta. Antes caía en los
+    // adjuntos generales, que suben y recargan la página: se perdía lo escrito y la imagen no
+    // salía en la respuesta.
+    var notaForm = destino && destino.closest('[data-nota-form]');
+    var notaFile = notaForm && notaForm.querySelector('[data-nota-imagenes-file]');
+    if (notaFile) { notaFile.click(); return; }
     var f = document.querySelector('[data-adjuntos] [data-adjunto-file]');
     if (f) f.click();
     else toast('Abre la sección "Adjuntos" para agregar imágenes');
