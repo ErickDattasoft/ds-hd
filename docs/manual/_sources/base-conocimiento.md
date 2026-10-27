@@ -5,8 +5,8 @@ rol_minimo: —
 orden: 70
 ---
 
-Los archivos de soporte del equipo, separados en tres carpetas igual que en Windows:
-**🏢 Empresas**, **🛠 Soporte** y **🔑 Licencias clientes**. Son de **solo lectura**: se buscan, se leen y se
+Los archivos de soporte del equipo, separados en dos carpetas igual que en Windows:
+**🏢 Empresas** y **🛠 Soporte y licencias**. Son de **solo lectura**: se buscan, se leen y se
 copian (📋 Copiar); nadie los edita en el CRM. El contenido solo cambia al **indexar** las
 carpetas.
 

@@ -6,9 +6,9 @@
 
 # Function: esCarpetaKB()
 
-> **esCarpetaKB**(`v`): v is "soporte" \| "empresas" \| "licencias"
+> **esCarpetaKB**(`v`): v is "soporte" \| "empresas"
 
-¿Es una de las carpetas válidas?
+¿Es una de las dos carpetas válidas?
 
 ## Parameters
 
@@ -18,4 +18,4 @@
 
 ## Returns
 
-v is "soporte" \| "empresas" \| "licencias"
+v is "soporte" \| "empresas"

@@ -6,10 +6,10 @@
 
 # Function: sanearCarpetaKB()
 
-> **sanearCarpetaKB**(`v`, `categoria?`): `"soporte"` \| `"empresas"` \| `"licencias"`
+> **sanearCarpetaKB**(`v`, `categoria?`): `"soporte"` \| `"empresas"`
 
 Carpeta guardada; los artículos de antes de que existiera el campo se reparten por su
-categoría (`empresa` → Empresas, todo lo demás → Soporte), sin reescribir datos.
+categoría (`empresa` → Empresas, todo lo demás → Soporte y licencias), sin reescribir datos.
 
 ## Parameters
 
@@ -23,4 +23,4 @@ categoría (`empresa` → Empresas, todo lo demás → Soporte), sin reescribir 
 
 ## Returns
 
-`"soporte"` \| `"empresas"` \| `"licencias"`
+`"soporte"` \| `"empresas"`

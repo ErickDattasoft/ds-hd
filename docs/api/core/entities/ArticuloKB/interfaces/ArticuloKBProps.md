@@ -30,7 +30,7 @@ Props para construir un [ArticuloKB](../classes/ArticuloKB.md); `slug` se autoge
 
 ### carpeta?
 
-> `optional` **carpeta?**: `"soporte"` \| `"empresas"` \| `"licencias"`
+> `optional` **carpeta?**: `"soporte"` \| `"empresas"`
 
 ***
 

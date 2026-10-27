@@ -1,26 +1,25 @@
 import { ValidationError } from '../errors/DomainError.js';
 
 /**
- * Las carpetas de la base de conocimiento, separadas como en Windows. Cada una se indexa
+ * Las dos carpetas de la base de conocimiento, separadas como en Windows. Cada una se indexa
  * desde su propia carpeta local y nunca se mezclan.
  */
-export const CARPETAS_KB = ['empresas', 'soporte', 'licencias'] as const;
+export const CARPETAS_KB = ['empresas', 'soporte'] as const;
 export type CarpetaKB = (typeof CARPETAS_KB)[number];
 
 export const CARPETA_KB_ETIQUETA: Record<CarpetaKB, string> = {
   empresas: '🏢 Empresas',
-  soporte: '🛠 Soporte',
-  licencias: '🔑 Licencias clientes',
+  soporte: '🛠 Soporte y licencias',
 };
 
-/** ¿Es una de las carpetas válidas? */
+/** ¿Es una de las dos carpetas válidas? */
 export function esCarpetaKB(v: unknown): v is CarpetaKB {
-  return (CARPETAS_KB as readonly unknown[]).includes(v);
+  return v === 'empresas' || v === 'soporte';
 }
 
 /**
  * Carpeta guardada; los artículos de antes de que existiera el campo se reparten por su
- * categoría (`empresa` → Empresas, todo lo demás → Soporte), sin reescribir datos.
+ * categoría (`empresa` → Empresas, todo lo demás → Soporte y licencias), sin reescribir datos.
  */
 export function sanearCarpetaKB(v: unknown, categoria?: string | null): CarpetaKB {
   if (esCarpetaKB(v)) return v;

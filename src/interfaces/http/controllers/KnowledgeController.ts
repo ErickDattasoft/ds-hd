@@ -176,7 +176,7 @@ export class KnowledgeController {
   /** Huellas de lo ya indexado en una carpeta (el navegador compara y manda solo lo distinto). */
   indiceJson = async (req: Request, res: Response): Promise<void> => {
     const carpeta = str(req.query.carpeta);
-    if (!esCarpetaKB(carpeta)) throw new ValidationError('Carpeta inválida', { carpeta: CARPETAS_KB.join(', ') });
+    if (!esCarpetaKB(carpeta)) throw new ValidationError('Carpeta inválida', { carpeta: 'empresas o soporte' });
     res.json({ ok: true, indice: await this.kb.indice(req.user!, carpeta) });
   };
 
@@ -184,7 +184,7 @@ export class KnowledgeController {
   indexarPost = async (req: Request, res: Response): Promise<void> => {
     const b = req.body ?? {};
     const carpeta = str(b.carpeta);
-    if (!esCarpetaKB(carpeta)) throw new ValidationError('Carpeta inválida', { carpeta: CARPETAS_KB.join(', ') });
+    if (!esCarpetaKB(carpeta)) throw new ValidationError('Carpeta inválida', { carpeta: 'empresas o soporte' });
     const archivos: ArchivoIndexado[] = Array.isArray(b.archivos)
       ? b.archivos.map((a: Record<string, unknown>) => ({ ruta: str(a.ruta), contenido: str(a.contenido) }))
       : [];
@@ -195,7 +195,7 @@ export class KnowledgeController {
   quitarPost = async (req: Request, res: Response): Promise<void> => {
     const b = req.body ?? {};
     const carpeta = str(b.carpeta);
-    if (!esCarpetaKB(carpeta)) throw new ValidationError('Carpeta inválida', { carpeta: CARPETAS_KB.join(', ') });
+    if (!esCarpetaKB(carpeta)) throw new ValidationError('Carpeta inválida', { carpeta: 'empresas o soporte' });
     res.json({ ok: true, quitados: await this.kb.quitar(req.user!, carpeta, arreglo(b.ids)) });
   };
 
@@ -213,7 +213,7 @@ export class KnowledgeController {
   accesoPost = async (req: Request, res: Response): Promise<void> => {
     const b = req.body ?? {};
     await this.acceso.guardarAcceso(req.user!, arreglo(b.acceso));
-    await this.acceso.guardarRutas(req.user!, { empresas: str(b.rutaEmpresas), soporte: str(b.rutaSoporte), licencias: str(b.rutaLicencias) });
+    await this.acceso.guardarRutas(req.user!, { empresas: str(b.rutaEmpresas), soporte: str(b.rutaSoporte) });
     invalidarCacheAccesoKB();
     res.redirect('/app/kb/acceso?ok=1');
   };

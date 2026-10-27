@@ -46,7 +46,7 @@ Artículo de la base de conocimiento: un archivo indexado de una de las dos carp
 
 ### carpeta
 
-> **carpeta**: `"soporte"` \| `"empresas"` \| `"licencias"`
+> **carpeta**: `"soporte"` \| `"empresas"`
 
 ***
 

@@ -4,7 +4,6 @@ import type { IIdGenerator } from '../../core/ports/services/IIdGenerator.js';
 import { zipSync, strToU8 } from 'fflate';
 import {
   ArticuloKB,
-  CARPETA_KB_ETIQUETA,
   adivinarCategoriaKB,
   claveRutaKB,
   normalizarRutaKB,
@@ -196,7 +195,7 @@ export class KnowledgeService {
         modulo: 'kb',
         entidadTipo: 'ArticuloKB',
         entidadId: carpeta,
-        resumen: `Indexado ${CARPETA_KB_ETIQUETA[carpeta]}: ${resultado.creados} nuevo(s), ${resultado.actualizados} actualizado(s)`,
+        resumen: `Indexado ${carpeta === 'empresas' ? 'Empresas' : 'Soporte y licencias'}: ${resultado.creados} nuevo(s), ${resultado.actualizados} actualizado(s)`,
       });
     }
     return resultado;
