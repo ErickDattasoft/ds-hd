@@ -521,6 +521,9 @@ fieldset.field {
 .badge--warning { background: var(--warning-weak); color: var(--warning); border-color: transparent; }
 .badge--ok { background: var(--success-weak); color: var(--success); border-color: transparent; }
 .badge--info { background: var(--info-weak); color: var(--info); border-color: transparent; }
+.badge--sm { font-size: 0.68rem; padding: 0.1em 0.5em; margin-top: 3px; }
+/* Ticket con SLA vencido: fila teñida, como el CRM viejo. */
+tr.fila--sla-vencido > td { background: color-mix(in srgb, var(--danger) 6%, transparent); }
 .badge--pulse { animation: badge-pulse 1.6s ease-in-out infinite; }
 @keyframes badge-pulse {
   0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--danger) 45%, transparent); }

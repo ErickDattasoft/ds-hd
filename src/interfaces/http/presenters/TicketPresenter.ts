@@ -11,6 +11,15 @@ function duracion(ms: number): string {
   return `${seg}s`;
 }
 
+/** Horas como en el CRM viejo: «5h», «1d 3h», «2d». */
+function duracionCorta(ms: number): string {
+  const horas = Math.max(0, Math.round(ms / 3_600_000));
+  if (horas < 24) return `${horas}h`;
+  const d = Math.floor(horas / 24);
+  const h = horas % 24;
+  return h ? `${d}d ${h}h` : `${d}d`;
+}
+
 export interface TicketVM {
   id: string;
   numero: number;
@@ -28,6 +37,8 @@ export interface TicketVM {
   abierto: boolean;
   slaEstado: 'ok' | 'por-vencer' | 'vencido' | 'na';
   slaTexto: string;
+  /** Badge corto bajo la prioridad, como el viejo: «⏰ +3h SLA», «⚠️ 2h», «✅ 1d 4h» ('' si ya terminó). */
+  slaCorto: string;
   /** Tiempo trabajado efectivo (ajuste manual si existe, si no el calculado). */
   tiempoTrabajado: string;
   /** El cálculo automático, para mostrar entre paréntesis cuando hay ajuste manual. */
@@ -69,14 +80,19 @@ export function ticketVM(t: Ticket, ahora: Date): TicketVM {
   } else if (restante < 0) {
     slaEstado = 'vencido';
     slaTexto = `Vencido hace ${duracion(-restante)}`;
-  } else if (restante < 2 * 3_600_000) {
+  } else if (restante < 0.2 * t.slaObjetivoMs()) {
+    // Como el CRM viejo: amarillo al consumir el 80% del tiempo.
     slaEstado = 'por-vencer';
     slaTexto = `Vence en ${duracion(restante)}`;
   } else {
     slaTexto = `${duracion(restante)} restantes`;
   }
 
+  const slaCorto =
+    slaEstado === 'na' ? '' : slaEstado === 'vencido' ? `⏰ +${duracionCorta(-restante)} SLA` : `${slaEstado === 'por-vencer' ? '⚠️' : '✅'} ${duracionCorta(restante)}`;
+
   return {
+    slaCorto,
     id: t.id,
     numero: t.numero,
     asunto: t.asunto,
