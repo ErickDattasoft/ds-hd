@@ -75,7 +75,7 @@
   </form>
 
   <nav class="kb-tags" aria-label="Carpetas">
-    <a class="kb-tag {{ 'is-active' if not carpeta }}" href="/app/kb?{{ qsBusqueda }}">Todo ({{ conteos.empresas + conteos.soporte }})</a>
+    <a class="kb-tag {{ 'is-active' if not carpeta }}" href="/app/kb?{{ qsBusqueda }}">Todo ({{ conteos.empresas + conteos.soporte + conteos.licencias }})</a>
     {% for c in carpetas %}
       <a class="kb-tag {{ 'is-active' if carpeta == c.id }}" href="/app/kb?carpeta={{ c.id }}&{{ qsBusqueda }}">{{ c.etiqueta }} ({{ conteos[c.id] }})</a>
     {% endfor %}

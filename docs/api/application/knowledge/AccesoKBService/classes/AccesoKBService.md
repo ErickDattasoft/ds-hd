@@ -38,7 +38,7 @@ la ruta de Windows de cada carpeta como recordatorio para indexar.
 
 ### obtener()
 
-> **obtener**(`actor`): `Promise`\<\{ `filas`: [`FilaAccesoKB`](../interfaces/FilaAccesoKB.md)[]; `rutas`: `Record`\<`"soporte"` \| `"empresas"`, `string`\>; \}\>
+> **obtener**(`actor`): `Promise`\<\{ `filas`: [`FilaAccesoKB`](../interfaces/FilaAccesoKB.md)[]; `rutas`: `Record`\<`"soporte"` \| `"empresas"` \| `"licencias"`, `string`\>; \}\>
 
 #### Parameters
 
@@ -48,7 +48,7 @@ la ruta de Windows de cada carpeta como recordatorio para indexar.
 
 #### Returns
 
-`Promise`\<\{ `filas`: [`FilaAccesoKB`](../interfaces/FilaAccesoKB.md)[]; `rutas`: `Record`\<`"soporte"` \| `"empresas"`, `string`\>; \}\>
+`Promise`\<\{ `filas`: [`FilaAccesoKB`](../interfaces/FilaAccesoKB.md)[]; `rutas`: `Record`\<`"soporte"` \| `"empresas"` \| `"licencias"`, `string`\>; \}\>
 
 ***
 
@@ -98,8 +98,8 @@ Ruta de Windows de cada carpeta (solo recordatorio; el navegador no puede abrirl
 
 ### rutas()
 
-> **rutas**(): `Promise`\<`Record`\<`"soporte"` \| `"empresas"`, `string`\>\>
+> **rutas**(): `Promise`\<`Record`\<`"soporte"` \| `"empresas"` \| `"licencias"`, `string`\>\>
 
 #### Returns
 
-`Promise`\<`Record`\<`"soporte"` \| `"empresas"`, `string`\>\>
+`Promise`\<`Record`\<`"soporte"` \| `"empresas"` \| `"licencias"`, `string`\>\>

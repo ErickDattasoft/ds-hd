@@ -18,7 +18,7 @@ Clave de un pendiente ya calculado (ver [claveAviso](claveAviso.md)).
 
 ### tipo
 
-`"versiones"` \| `"licencias"`
+`"licencias"` \| `"versiones"`
 
 ### p
 

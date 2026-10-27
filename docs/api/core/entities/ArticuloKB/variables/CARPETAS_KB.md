@@ -6,7 +6,7 @@
 
 # Variable: CARPETAS\_KB
 
-> `const` **CARPETAS\_KB**: readonly \[`"empresas"`, `"soporte"`\]
+> `const` **CARPETAS\_KB**: readonly \[`"empresas"`, `"soporte"`, `"licencias"`\]
 
-Las dos carpetas de la base de conocimiento, separadas como en Windows. Cada una se indexa
+Las carpetas de la base de conocimiento, separadas como en Windows. Cada una se indexa
 desde su propia carpeta local y nunca se mezclan.

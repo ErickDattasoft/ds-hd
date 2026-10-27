@@ -14,7 +14,7 @@ export interface ConfiguracionKB {
 
 export const CONFIG_KB_POR_DEFECTO: ConfiguracionKB = {
   acceso: [],
-  rutas: { empresas: '', soporte: '' },
+  rutas: { empresas: '', soporte: '', licencias: '' },
 };
 
 /** Rellena una config parcial de Firestore con los valores por defecto. */

@@ -121,7 +121,7 @@ Huella de cada archivo ya indexado en la carpeta, para mandar solo lo nuevo o ca
 
 ##### carpeta
 
-`"soporte"` \| `"empresas"`
+`"soporte"` \| `"empresas"` \| `"licencias"`
 
 #### Returns
 
@@ -145,7 +145,7 @@ pero en la otra carpeta con la MISMA ruta completa, se mueve a esta.
 
 ##### carpeta
 
-`"soporte"` \| `"empresas"`
+`"soporte"` \| `"empresas"` \| `"licencias"`
 
 ##### archivos
 
@@ -171,7 +171,7 @@ Quita del CRM artículos de una carpeta (los que ya no existen en la carpeta de 
 
 ##### carpeta
 
-`"soporte"` \| `"empresas"`
+`"soporte"` \| `"empresas"` \| `"licencias"`
 
 ##### idsAQuitar
 
@@ -199,7 +199,7 @@ Respaldo: los artículos (de una carpeta o todos) como `.zip`, con su ruta origi
 
 ###### carpeta?
 
-`"soporte"` \| `"empresas"`
+`"soporte"` \| `"empresas"` \| `"licencias"`
 
 ###### desde?
 
