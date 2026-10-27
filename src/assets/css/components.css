@@ -1200,3 +1200,14 @@ tr.fila--sla-vencido > td { background: color-mix(in srgb, var(--danger) 6%, tra
 .permisos-matriz__scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 .kb-acciones { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; }
 .permisos-matriz thead th { position: static; }
+
+/* Sugerencias del buscador de contacto (ticket): lista propia en vez de <datalist>. */
+.sugerencias {
+  position: absolute; left: 0; right: 0; top: 100%; z-index: 30; margin: 2px 0 0; padding: 4px 0;
+  list-style: none; max-height: 320px; overflow-y: auto;
+  background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md, 8px);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.15);
+}
+.sugerencias li { padding: 6px 12px; cursor: pointer; font-size: var(--text-sm); }
+.sugerencias li:hover, .sugerencias li.is-activo { background: var(--brand-weak); }
+.sugerencias li[aria-disabled] { cursor: default; background: none; }

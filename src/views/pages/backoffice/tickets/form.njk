@@ -26,7 +26,7 @@
     <div class="card" data-contacto-picker>
       <p><strong>1 · Contacto</strong></p>
       <label class="field"><span>🔍 Buscar contacto por empresa, nombre o correo</span>
-        <input list="ticket-contactos" data-buscar-contacto autocomplete="off" placeholder="Empieza a escribir…" value="{{ valores.contactoNombre }}" />
+        <input data-opciones="ticket-contactos" data-buscar-contacto autocomplete="off" placeholder="Empieza a escribir…" value="{{ valores.contactoNombre }}" />
       </label>
       <datalist id="ticket-contactos">
         {% for c in contactos %}<option value="{{ c.nombre }}" data-email="{{ c.email }}" data-empresa="{{ c.empresa }}" data-otro-nombre="{{ c.otroNombre }}" data-otro-email="{{ c.otroEmail }}" data-otro-rol="{{ c.otroRol }}">{{ c.empresa }}{% if c.rol %} · contacto {{ c.rol }}{% endif %}{% if c.email %} · {{ c.email }}{% endif %}</option>{% endfor %}

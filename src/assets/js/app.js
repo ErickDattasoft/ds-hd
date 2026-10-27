@@ -1281,13 +1281,19 @@
   })();
 
   // ── Form de ticket: buscador de contacto → autocompleta empresa y correo ──
-  document.addEventListener('input', function (e) {
-    var busca = e.target.closest('[data-buscar-contacto]');
-    if (!busca) return;
+  // Lista propia (no <datalist>): el datalist nativo solo compara contra el nombre en algunos
+  // navegadores (Brave/Chrome) y "no hacía nada" al buscar por empresa o correo. Los datos siguen
+  // viviendo en el <datalist> (data-opciones), que el navegador no muestra solo.
+  function opcionesContacto(busca) {
+    var dl = busca && document.getElementById(busca.getAttribute('data-opciones'));
+    return dl ? Array.prototype.slice.call(dl.options) : [];
+  }
+  function sinAcentosMin(t) {
+    return String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  }
+  function aplicarContacto(busca, opt) {
     var wrap = busca.closest('[data-contacto-picker]');
-    var dl = document.getElementById(busca.getAttribute('list'));
-    if (!wrap || !dl) return;
-    var opt = Array.prototype.filter.call(dl.options, function (o) { return o.value === busca.value; })[0];
+    if (!wrap) return;
     var nombre = wrap.querySelector('[data-c-nombre]');
     var correo = wrap.querySelector('[data-c-correo]');
     var empresa = wrap.querySelector('[data-c-empresa]');
@@ -1303,12 +1309,85 @@
     }
     if (opt) {
       if (nombre) nombre.value = opt.value;
-      if (correo && opt.getAttribute('data-email')) correo.value = opt.getAttribute('data-email');
+      if (correo) correo.value = opt.getAttribute('data-email') || '';
       if (empresa && opt.getAttribute('data-empresa')) empresa.value = opt.getAttribute('data-empresa');
     } else if (nombre) {
       nombre.value = busca.value;
     }
     poblarCcPicker(wrap);
+  }
+  function cajaSugerencias(busca) {
+    var caja = busca.parentNode.querySelector('.sugerencias');
+    if (!caja) {
+      caja = document.createElement('ul');
+      caja.className = 'sugerencias';
+      caja.setAttribute('role', 'listbox');
+      caja.hidden = true;
+      busca.parentNode.style.position = 'relative';
+      busca.parentNode.appendChild(caja);
+    }
+    return caja;
+  }
+  function pintarSugerencias(busca) {
+    var caja = cajaSugerencias(busca);
+    var palabras = sinAcentosMin(busca.value).split(/\s+/).filter(Boolean);
+    caja.__ops = [];
+    if (!palabras.length) { caja.hidden = true; return; }
+    caja.__ops = opcionesContacto(busca).filter(function (o) {
+      var texto = sinAcentosMin(o.value + ' ' + o.getAttribute('data-empresa') + ' ' + o.getAttribute('data-email'));
+      return palabras.every(function (p) { return texto.indexOf(p) !== -1; });
+    }).slice(0, 12);
+    caja.__activo = -1;
+    caja.innerHTML = caja.__ops.length
+      ? caja.__ops.map(function (o, i) {
+          return '<li role="option" data-i="' + i + '"><strong>' + escHtmlTexto(o.value) + '</strong> <span class="muted">' +
+            escHtmlTexto(o.textContent.trim()) + '</span></li>';
+        }).join('')
+      : '<li class="muted" aria-disabled="true">Sin coincidencias — se usará lo escrito como contacto nuevo</li>';
+    caja.hidden = false;
+  }
+  function elegirSugerencia(busca, i) {
+    var caja = cajaSugerencias(busca);
+    var opt = caja.__ops && caja.__ops[i];
+    if (!opt) return;
+    busca.value = opt.value;
+    caja.hidden = true;
+    aplicarContacto(busca, opt);
+  }
+  document.addEventListener('input', function (e) {
+    var busca = e.target.closest && e.target.closest('[data-buscar-contacto]');
+    if (!busca) return;
+    pintarSugerencias(busca);
+    aplicarContacto(busca, null);
+  });
+  document.addEventListener('keydown', function (e) {
+    var busca = e.target.closest && e.target.closest('[data-buscar-contacto]');
+    if (!busca) return;
+    var caja = cajaSugerencias(busca);
+    if (caja.hidden || !caja.__ops || !caja.__ops.length) return;
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      var n = caja.__ops.length;
+      caja.__activo = ((caja.__activo + (e.key === 'ArrowDown' ? 1 : -1)) % n + n) % n;
+      Array.prototype.forEach.call(caja.children, function (li, i) { li.classList.toggle('is-activo', i === caja.__activo); });
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      elegirSugerencia(busca, caja.__activo >= 0 ? caja.__activo : 0);
+    } else if (e.key === 'Escape') {
+      caja.hidden = true;
+    }
+  });
+  document.addEventListener('mousedown', function (e) {
+    var li = e.target.closest && e.target.closest('.sugerencias li[data-i]');
+    if (li) {
+      e.preventDefault();
+      var busca = li.closest('.sugerencias').parentNode.querySelector('[data-buscar-contacto]');
+      if (busca) elegirSugerencia(busca, Number(li.getAttribute('data-i')));
+      return;
+    }
+    Array.prototype.forEach.call(document.querySelectorAll('.sugerencias'), function (c) {
+      if (!c.parentNode.contains(e.target)) c.hidden = true;
+    });
   });
 
   // Lista de CC: los demás contactos (con correo) de la misma empresa, sin el contacto del
@@ -1316,7 +1395,7 @@
   function poblarCcPicker(wrap) {
     var sel = wrap && wrap.querySelector('[data-c-cc-picker]');
     var busca = wrap && wrap.querySelector('[data-buscar-contacto]');
-    var dl = busca && document.getElementById(busca.getAttribute('list'));
+    var dl = busca && document.getElementById(busca.getAttribute('data-opciones'));
     if (!sel || !dl) return;
     var empresa = (wrap.querySelector('[data-c-empresa]') || {}).value || '';
     var correoPrincipal = ((wrap.querySelector('[data-c-correo]') || {}).value || '').toLowerCase();
