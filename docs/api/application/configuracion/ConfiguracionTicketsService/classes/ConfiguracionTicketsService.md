@@ -12,7 +12,7 @@ Casos de uso: leer y actualizar los catálogos del módulo de tickets.
 
 ### Constructor
 
-> **new ConfiguracionTicketsService**(`repo`, `logger`): `ConfiguracionTicketsService`
+> **new ConfiguracionTicketsService**(`repo`, `logger`, `usuarios?`): `ConfiguracionTicketsService`
 
 #### Parameters
 
@@ -24,11 +24,27 @@ Casos de uso: leer y actualizar los catálogos del módulo de tickets.
 
 [`ILogger`](../../../../core/ports/services/ILogger/interfaces/ILogger.md)
 
+##### usuarios?
+
+[`IUsuarioRepository`](../../../../core/ports/repositories/IUsuarioRepository/interfaces/IUsuarioRepository.md)
+
 #### Returns
 
 `ConfiguracionTicketsService`
 
 ## Methods
+
+### agentesAsignables()
+
+> **agentesAsignables**(): `Promise`\<`object`[]\>
+
+Quiénes pueden ser el agente predeterminado (los mismos que se pueden asignar a un ticket).
+
+#### Returns
+
+`Promise`\<`object`[]\>
+
+***
 
 ### obtener()
 

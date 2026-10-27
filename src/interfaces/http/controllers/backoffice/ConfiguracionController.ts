@@ -303,6 +303,7 @@ export class ConfiguracionController {
     const config = await this.configTickets.obtener();
     res.render('pages/backoffice/configuracion/tickets', {
       estadosFacturacion: catalogoFacturacion(),
+      agentesPred: await this.configTickets.agentesAsignables(),
       respuestasATexto,
       titulo: 'Configuración de tickets',
       config,
@@ -332,6 +333,7 @@ export class ConfiguracionController {
         respuestas: str(b.respuestas),
         avisarClienteEstados: ([] as string[]).concat((b.avisarClienteEstados as string[]) ?? []).filter(Boolean),
         predeterminados: {
+          agenteUid: str(b.predAgenteUid),
           tipo: str(b.predTipo),
           prioridad: str(b.predPrioridad),
           sistema: str(b.predSistema),
@@ -344,6 +346,7 @@ export class ConfiguracionController {
       const config = await this.configTickets.obtener();
       res.render('pages/backoffice/configuracion/tickets', {
       estadosFacturacion: catalogoFacturacion(),
+      agentesPred: await this.configTickets.agentesAsignables(),
       respuestasATexto,
         titulo: 'Configuración de tickets',
         config,
@@ -354,6 +357,7 @@ export class ConfiguracionController {
       const config = await this.configTickets.obtener();
       res.status(422).render('pages/backoffice/configuracion/tickets', {
       estadosFacturacion: catalogoFacturacion(),
+      agentesPred: await this.configTickets.agentesAsignables(),
       respuestasATexto,
         titulo: 'Configuración de tickets',
         config,

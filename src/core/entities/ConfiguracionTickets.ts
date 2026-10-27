@@ -65,6 +65,8 @@ export interface PredeterminadosTicket {
   estadoFacturacion?: string;
   /** Ticket nuevo nace asignado a quien lo crea (si es técnico). */
   asignarAlCreador?: boolean;
+  /** Agente fijo con el que nace el ticket (el «Agente» predeterminado del CRM viejo); vacío = sin asignar. */
+  agenteUid?: string;
 }
 
 export const CONFIG_TICKETS_POR_DEFECTO: ConfiguracionTickets = {

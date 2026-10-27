@@ -45,3 +45,11 @@ Valores predeterminados del formulario de ticket nuevo; vacío = sin preselecci�
 > `optional` **asignarAlCreador?**: `boolean`
 
 Ticket nuevo nace asignado a quien lo crea (si es técnico).
+
+***
+
+### agenteUid?
+
+> `optional` **agenteUid?**: `string`
+
+Agente fijo con el que nace el ticket (el «Agente» predeterminado del CRM viejo); vacío = sin asignar.

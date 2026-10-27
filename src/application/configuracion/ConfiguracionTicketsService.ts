@@ -5,6 +5,8 @@ import type { PredeterminadosTicket } from '../../core/entities/ConfiguracionTic
 import { CONFIG_TICKETS_POR_DEFECTO, parsearRespuestas } from '../../core/entities/ConfiguracionTickets.js';
 import { ForbiddenError, ValidationError } from '../../core/errors/DomainError.js';
 import type { SessionUser } from '../shared/SessionUser.js';
+import type { IUsuarioRepository } from '../../core/ports/repositories/IUsuarioRepository.js';
+import { ROLES_ASIGNABLES } from '../../core/entities/value-objects/Rol.js';
 
 const listaLimpia = (v: unknown): string[] =>
   String(v ?? '')
@@ -17,7 +19,15 @@ export class ConfiguracionTicketsService {
   constructor(
     private readonly repo: IConfiguracionRepository,
     private readonly logger: ILogger,
+    private readonly usuarios?: IUsuarioRepository,
   ) {}
+
+  /** Quiénes pueden ser el agente predeterminado (los mismos que se pueden asignar a un ticket). */
+  async agentesAsignables(): Promise<{ uid: string; nombre: string }[]> {
+    if (!this.usuarios) return [];
+    const lista = await this.usuarios.list({ roles: ROLES_ASIGNABLES, activo: true }).catch(() => []);
+    return lista.map((u) => ({ uid: u.uid, nombre: u.nombre }));
+  }
 
   obtener(): Promise<ConfiguracionTickets> {
     return this.repo.obtenerTickets();
@@ -84,6 +94,7 @@ export class ConfiguracionTicketsService {
         grupo: en(p.grupo, config.grupos),
         estadoFacturacion: p.estadoFacturacion ?? '',
         asignarAlCreador: Boolean(p.asignarAlCreador),
+        agenteUid: (p.agenteUid ?? '').trim(),
       };
     }
     await this.repo.guardarTickets(config);

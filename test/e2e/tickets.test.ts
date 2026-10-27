@@ -534,6 +534,23 @@ describe('avisos globales (título de pestaña y buzón público, como el viejo)
     }
   });
 
+  it('predeterminados de Configuración (con agente fijo) llenan el ticket nuevo', async () => {
+    const ADMIN = { uid: 'u-adm', email: 'adm@dattasoft.mx', password: 'admin12345', nombre: 'Adm', rol: 'admin' as const };
+    const t = makeTestApp({ usuarios: [ADMIN, SUP] });
+    const cfg = await t.configuracionRepo.obtenerTickets();
+    await t.configuracionRepo.guardarTickets({
+      ...cfg,
+      predeterminados: { tipo: cfg.tipos[0], prioridad: 'Alta', grupo: cfg.grupos[0], estadoFacturacion: 'no_aplica', agenteUid: SUP.uid },
+    });
+    const adm = await login(t.app, ADMIN.email, ADMIN.password);
+    const vista = await adm.agent.get('/app/configuracion/tickets');
+    expect(vista.text).toMatch(new RegExp(`<option value="${SUP.uid}" selected>`));
+    const form = await adm.agent.get('/app/tickets/nuevo');
+    expect(form.text).toMatch(new RegExp(`<option value="${SUP.uid}" selected>`));
+    expect(form.text).toMatch(/<option value="Alta" selected|<option selected>Alta|value="Alta"\s+selected/);
+    expect(form.text).toMatch(/value="no_aplica" selected/);
+  });
+
   it('webhook de correo con la clave generada en Configuración (sin secreto del servidor)', async () => {
     const ADMIN = { uid: 'u-adm', email: 'adm@dattasoft.mx', password: 'admin12345', nombre: 'Adm', rol: 'admin' as const };
     const t = makeTestApp({ usuarios: [ADMIN] });

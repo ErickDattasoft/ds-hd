@@ -100,11 +100,14 @@
           {{ sel('predPrioridad', 'Prioridad', config.prioridades, pred.prioridad) }}
           {{ sel('predSistema', 'Sistema', config.sistemas, pred.sistema) }}
           {{ sel('predGrupo', 'Grupo', config.grupos, pred.grupo) }}
+          <label class="field"><span>Agente</span>
+            <select name="predAgenteUid"><option value="">— Sin asignar —</option>{% for a in agentesPred %}<option value="{{ a.uid }}" {{ 'selected' if pred.agenteUid == a.uid }}>{{ a.nombre }}</option>{% endfor %}</select>
+          </label>
           <label class="field"><span>Facturación</span>
             <select name="predFacturacion"><option value="">—</option>{% for ef in estadosFacturacion %}<option value="{{ ef.valor }}" {{ 'selected' if pred.estadoFacturacion == ef.valor }}>{{ ef.etiqueta }}</option>{% endfor %}</select>
           </label>
         </div>
-        <label class="field--check"><input type="checkbox" name="predAsignarAlCreador" {{ 'checked' if pred.asignarAlCreador }} /> <span>Agente: asignar el ticket a quien lo crea (técnicos)</span></label>
+        <label class="field--check"><input type="checkbox" name="predAsignarAlCreador" {{ 'checked' if pred.asignarAlCreador }} /> <span>Mejor asignar el ticket a quien lo crea (técnicos) — gana sobre el agente de arriba</span></label>
         <p class="muted">El estado inicial se elige en "Flujo de estados".</p>
       </div>
     </details>

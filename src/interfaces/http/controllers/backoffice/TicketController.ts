@@ -242,6 +242,8 @@ export class TicketController {
         grupo: pred.grupo || '',
         estadoFacturacion: pred.estadoFacturacion || 'no_facturado',
         asignarAMi: pred.asignarAlCreador && req.user!.esTecnico ? 'on' : '',
+        // Agente fijo de Configuración (como el «Agente» predeterminado del CRM viejo).
+        agenteUid: general.agenteUid || '',
       },
       aviso: req.query.ok ? 'ok' : '',
       errores: {},

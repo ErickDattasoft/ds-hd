@@ -823,8 +823,27 @@ export function crearImportadores({ dryRun: DRY_RUN, log }: OpcionesImportacion)
         .map((x) => x.trim())
         .filter(Boolean),
     };
+    // Predeterminados del ticket nuevo (`defaults` del viejo). El agente viene por NOMBRE: se busca
+    // entre los usuarios de ds-hd; si no hay uno con ese nombre, queda sin agente.
+    const def = (cfg.defaults ?? {}) as Dato;
+    const en = (v: unknown, lista: string[]): string => (s(v) && lista.includes(s(v)) ? s(v) : '');
+    const nombreAgente = s(def.agentes).toLowerCase();
+    const agente = nombreAgente
+      ? (await c.resolve('usuarioRepo').list({ activo: true }).catch(() => [])).find((u) => u.nombre.trim().toLowerCase() === nombreAgente)
+      : undefined;
+    const previa = await repo.obtenerTickets().catch(() => null);
+    nueva.predeterminados = {
+      ...(previa?.predeterminados ?? {}),
+      tipo: en(def.tipos, nueva.tipos),
+      prioridad: en(def.prioridades, nueva.prioridades),
+      sistema: en(def.sistemas, nueva.sistemas),
+      grupo: en(def.grupos, nueva.grupos),
+      estadoFacturacion: s(def.facturacion) ? estadoFacturacionDe(s(def.facturacion)) : '',
+      agenteUid: agente?.uid ?? '',
+    };
     if (!DRY_RUN) await repo.guardarTickets(nueva);
     log('configTickets', `catálogos reales importados (${nueva.tipos.length} tipos, ${nueva.estados.length} estados)`);
+    log('configTickets', `predeterminados: ${JSON.stringify({ ...nueva.predeterminados, agente: agente?.nombre ?? (nombreAgente ? `«${nombreAgente}» no encontrado` : '') })}`);
     return true;
   }
 
