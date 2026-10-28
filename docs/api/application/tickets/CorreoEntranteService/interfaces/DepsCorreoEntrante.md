@@ -40,6 +40,14 @@ Aviso al equipo de que llegó una respuesta.
 
 ***
 
+### respuestas?
+
+> `optional` **respuestas?**: [`RespuestasSinLeerService`](../../RespuestasSinLeerService/classes/RespuestasSinLeerService.md)
+
+Buzón «🔔 Respuestas» del CRM: la respuesta de un cliente queda como sin leer.
+
+***
+
 ### remitentesPropios?
 
 > `optional` **remitentesPropios?**: readonly `string`[]

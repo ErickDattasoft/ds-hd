@@ -12,7 +12,7 @@ Caso de uso: el cliente responde en su propio ticket (siempre nota pública).
 
 ### Constructor
 
-> **new ResponderMiTicketService**(`tickets`, `usuarios`, `ids`, `clock`, `email`, `logger`): `ResponderMiTicketService`
+> **new ResponderMiTicketService**(`tickets`, `usuarios`, `ids`, `clock`, `email`, `logger`, `respuestas?`): `ResponderMiTicketService`
 
 #### Parameters
 
@@ -39,6 +39,12 @@ Caso de uso: el cliente responde en su propio ticket (siempre nota pública).
 ##### logger
 
 [`ILogger`](../../../../core/ports/services/ILogger/interfaces/ILogger.md)
+
+##### respuestas?
+
+[`RespuestasSinLeerService`](../../../tickets/RespuestasSinLeerService/classes/RespuestasSinLeerService.md)
+
+Buzón «🔔 Respuestas» del back-office.
 
 #### Returns
 

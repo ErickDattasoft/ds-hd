@@ -12,7 +12,7 @@ Caso de uso: agregar una nota (pública o interna) a un ticket.
 
 ### Constructor
 
-> **new RegistrarNotaService**(`tickets`, `config`, `usuarios`, `ids`, `clock`, `email`, `logger`, `webhooks?`, `adjuntos?`, `baseUrl?`): `RegistrarNotaService`
+> **new RegistrarNotaService**(`tickets`, `config`, `usuarios`, `ids`, `clock`, `email`, `logger`, `webhooks?`, `adjuntos?`, `baseUrl?`, `respuestas?`): `RegistrarNotaService`
 
 #### Parameters
 
@@ -57,6 +57,12 @@ Caso de uso: agregar una nota (pública o interna) a un ticket.
 `string` = `''`
 
 URL pública del CRM: las imágenes del correo apuntan a `/adjunto/<id>`.
+
+##### respuestas?
+
+[`RespuestasSinLeerService`](../../RespuestasSinLeerService/classes/RespuestasSinLeerService.md)
+
+Contestarle al cliente también quita su respuesta del buzón 🔔.
 
 #### Returns
 
