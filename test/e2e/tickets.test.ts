@@ -591,7 +591,7 @@ describe('avisos globales (título de pestaña y buzón público, como el viejo)
     expect(correo.cc?.map((c) => c.email)).toContain('jefe@cliente.mx');
     expect(correo.html).toMatch(/\/adjunto\/[\w-]+/);
     const detalle = await sup.agent.get(`/app/tickets/${id}`);
-    expect(detalle.text).toContain('nota--enviada');
+    expect(detalle.text).toContain('chat__msg--equipo');
     expect(detalle.text).toMatch(/adjuntos\/[\w-]+" alt="Captura 1"/);
   });
 });

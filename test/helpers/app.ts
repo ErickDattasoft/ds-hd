@@ -29,6 +29,7 @@ import {
 import { InMemoryIntentosLoginRepository } from '../fakes/InMemoryIntentosLoginRepository.js';
 import { InMemoryOportunidadRepository } from '../fakes/InMemoryOportunidadRepository.js';
 import { InMemoryFiltroGuardadoRepository } from '../fakes/InMemoryFiltroGuardadoRepository.js';
+import { InMemoryRespuestaSinLeerRepository } from '../fakes/InMemoryRespuestaSinLeerRepository.js';
 import { InMemoryAdjuntoTicketRepository } from '../fakes/InMemoryAdjuntoTicketRepository.js';
 import {
   InMemoryVersionRepository,
@@ -71,6 +72,7 @@ export interface TestApp {
   listaNegraRepo: InMemoryListaNegraRepository;
   captchaVerifier: FakeCaptchaVerifier;
   filtroGuardadoRepo: InMemoryFiltroGuardadoRepository;
+  respuestaSinLeerRepo: InMemoryRespuestaSinLeerRepository;
   oportunidadRepo: InMemoryOportunidadRepository;
   adjuntoTicketRepo: InMemoryAdjuntoTicketRepository;
   solicitudAccesoRepo: InMemorySolicitudAccesoRepository;
@@ -132,6 +134,7 @@ export function makeTestApp(opts: { usuarios?: { uid: string; email: string; pas
     ),
     intentosLoginRepo: new InMemoryIntentosLoginRepository(),
     filtroGuardadoRepo: new InMemoryFiltroGuardadoRepository(),
+    respuestaSinLeerRepo: new InMemoryRespuestaSinLeerRepository(),
     oportunidadRepo: new InMemoryOportunidadRepository(),
     adjuntoTicketRepo,
     // Igual que en el contenedor real: la actividad de los tickets se copia a la bitácora.
@@ -188,6 +191,7 @@ export function makeTestApp(opts: { usuarios?: { uid: string; email: string; pas
     listaNegraRepo,
     captchaVerifier,
     filtroGuardadoRepo: overrides.filtroGuardadoRepo as InMemoryFiltroGuardadoRepository,
+    respuestaSinLeerRepo: overrides.respuestaSinLeerRepo as InMemoryRespuestaSinLeerRepository,
     oportunidadRepo: overrides.oportunidadRepo as InMemoryOportunidadRepository,
     adjuntoTicketRepo,
     solicitudAccesoRepo: overrides.solicitudAccesoRepo as InMemorySolicitudAccesoRepository,

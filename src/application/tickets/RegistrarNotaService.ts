@@ -21,6 +21,7 @@ import { historialActividadHtml } from './historialCorreo.js';
 import { destinatariosTicket } from './notificacionTicket.js';
 import type { RegistrarNotaInput } from './dto.js';
 import { ticketVisiblePara } from './alcance.js';
+import type { RespuestasSinLeerService } from './RespuestasSinLeerService.js';
 
 /** Caso de uso: agregar una nota (pública o interna) a un ticket. */
 export class RegistrarNotaService {
@@ -36,6 +37,8 @@ export class RegistrarNotaService {
     private readonly adjuntos?: IAdjuntoTicketRepository,
     /** URL pública del CRM: las imágenes del correo apuntan a `/adjunto/<id>`. */
     private readonly baseUrl = '',
+    /** Contestarle al cliente también quita su respuesta del buzón 🔔. */
+    private readonly respuestas?: RespuestasSinLeerService,
   ) {}
 
   /** Máximo de capturas por respuesta. */
@@ -88,6 +91,7 @@ export class RegistrarNotaService {
     if (input.actor.esStaff) {
       ticket.registrarPrimeraRespuesta(ahora);
       await this.tickets.save(ticket);
+      if (nota.tipo === 'publica') await this.respuestas?.marcarLeida(ticket.id);
     }
 
     if (nota.tipo === 'publica' && input.actor.esStaff) {

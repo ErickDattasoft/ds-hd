@@ -21,6 +21,7 @@ import {
 } from '../../core/entities/AdjuntoTicket.js';
 import { MAX_DATAURL_IMAGEN_PUBLICO, MAX_IMAGENES_PUBLICO } from '../../core/entities/TicketPublico.js';
 import { registrarEvento } from './efectos.js';
+import type { RespuestasSinLeerService } from './RespuestasSinLeerService.js';
 import type { SessionUser } from '../shared/SessionUser.js';
 
 /** Dependencias extra del correo entrante por webhook (CloudMailin). Opcionales en el sondeo. */
@@ -32,6 +33,8 @@ export interface DepsCorreoEntrante {
   usuarios?: IUsuarioRepository;
   /** Aviso al equipo de que llegó una respuesta. */
   email?: IEmailSender;
+  /** Buzón «🔔 Respuestas» del CRM: la respuesta de un cliente queda como sin leer. */
+  respuestas?: RespuestasSinLeerService;
   /**
    * Direcciones desde las que el CRM manda correo. Si llega algo DE ellas es nuestro propio aviso
    * reenviado: se ignora. Sin esta barrera el CRM viejo entró en bucle el 2026-10-02 (~20 correos
@@ -209,10 +212,7 @@ export class CorreoEntranteService {
         .map((e) => e.trim().toLowerCase())
         .filter(Boolean);
       // Un usuario activo del CRM (p. ej. un agente que venía en copia) también puede contestar.
-      const esDelEquipo = !permitidos.includes(correo.de) && this.deps.usuarios
-        ? await this.deps.usuarios.findByEmail(correo.de).then((u) => !!u?.activo && u.esStaff).catch(() => false)
-        : false;
-      if (!permitidos.includes(correo.de) && !esDelEquipo) {
+      if (!permitidos.includes(correo.de) && !(await this.esDelEquipo(correo.de))) {
         return `${correo.de} no es el contacto del ticket #${numero}`;
       }
     }
@@ -239,8 +239,18 @@ export class CorreoEntranteService {
       actor: null,
       at: this.clock.now(),
     });
+    // Lo que contesta el propio equipo (un agente en copia) no es una respuesta pendiente de leer.
+    if (this.deps.respuestas && !(await this.esDelEquipo(correo.de))) {
+      await this.deps.respuestas.registrar(ticket, nombre, cuerpo || '(imagen adjunta)', correo.recibidoEn);
+    }
     await this.avisarEquipo(ticket, nombre, cuerpo);
     return null;
+  }
+
+  /** ¿`correo` es de un usuario activo del equipo (staff) del CRM? */
+  private async esDelEquipo(correo: string): Promise<boolean> {
+    if (!this.deps.usuarios) return false;
+    return this.deps.usuarios.findByEmail(correo).then((u) => !!u?.activo && u.esStaff).catch(() => false);
   }
 
   /** Guarda las imágenes del correo como adjuntos del ticket (≤700 KB c/u, máx. 5). */

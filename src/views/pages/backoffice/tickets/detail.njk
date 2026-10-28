@@ -27,51 +27,70 @@
 
   <div class="ticket-grid">
     <section>
-      <div class="card">
-        <p><strong>Descripción</strong></p>
-        <div class="ticket-descripcion" style="white-space:pre-wrap">{{ descripcionHtml | safe }}</div>
-      </div>
+      {# Conversación tipo chat: la solicitud original es el primer mensaje, luego todo en orden
+         (lo más reciente abajo, junto a la caja para escribir). Cliente a la izquierda, equipo a la derecha. #}
+      <div class="card chat" id="conversacion" data-marcar-leida="/app/tickets/{{ ticket.id }}/leida">
+        <p class="chat__titulo"><strong>💬 Conversación</strong> <span class="muted">— cliente a la izquierda · equipo a la derecha · 🔒 notas internas en amarillo</span></p>
 
-      <div class="card">
-        <p><strong>💬 Conversación</strong> <span class="muted">— lo más reciente arriba · verde = recibido por correo, azul = enviado desde el CRM</span></p>
+        <div class="chat__hilo" data-chat-hilo>
+          <div class="chat__msg chat__msg--cliente">
+            <div class="chat__meta">
+              <span class="chat__autor">📝 {{ ticket.contactoNombre or ticket.solicitadoPor or 'Cliente' }}</span>
+              <span class="badge">solicitud original</span>
+            </div>
+            <div class="chat__cuerpo ticket-descripcion">{{ descripcionHtml | safe }}</div>
+            <div class="chat__hora">{{ (ticket.abiertoEn or ticket.createdAt) | fechahora }}</div>
+          </div>
+
+          {% for n in notas %}
+            {% set recibida = n.autorUid == 'correo-entrante' or n.correoDe %}
+            {# Los migrados del viejo no dicen quién escribió: si el autor es el contacto del ticket, es del cliente. #}
+            {% set deCliente = recibida or (ticket.solicitanteUid and n.autorUid == ticket.solicitanteUid)
+              or (n.autorUid == 'migracion' and ticket.contactoNombre and (n.autorNombre | lower | trim) == (ticket.contactoNombre | lower | trim)) %}
+            <div class="chat__msg {{ 'chat__msg--interna' if n.tipo == 'interna' else ('chat__msg--cliente' if deCliente else 'chat__msg--equipo') }}">
+              <div class="chat__meta">
+                <span class="chat__autor">{{ '🔒' if n.tipo == 'interna' else ('📥' if recibida else ('👤' if deCliente else '📤')) }} {{ n.autorNombre }}</span>
+                {% if n.correoDe and n.correoDe != n.autorNombre %}<span class="muted">&lt;{{ n.correoDe }}&gt;</span>{% endif %}
+                {% if n.tipo == 'interna' %}<span class="badge badge--warning">interna</span>{% endif %}
+              </div>
+              <div class="chat__cuerpo">{{ n.cuerpo }}</div>
+              {% if n.adjuntoIds and n.adjuntoIds.length %}
+                <div class="nota__imgs">
+                  {% for aid in n.adjuntoIds %}<a href="/app/tickets/{{ ticket.id }}/adjuntos/{{ aid }}" target="_blank" rel="noopener"><img src="/app/tickets/{{ ticket.id }}/adjuntos/{{ aid }}" alt="Captura {{ loop.index }}" class="adjunto-thumb" loading="lazy" /></a>{% endfor %}
+                </div>
+              {% endif %}
+              <div class="chat__hora">{{ n.createdAt | fechahora }}{% if recibida %} · por correo{% endif %}</div>
+            </div>
+          {% else %}
+            <p class="muted chat__vacio">Sin respuestas todavía.</p>
+          {% endfor %}
+        </div>
 
         {% if permisos.editar %}
-          <form method="post" action="/app/tickets/{{ ticket.id }}/nota" class="form" data-nota-form>
+          <form method="post" action="/app/tickets/{{ ticket.id }}/nota" class="form chat__escribir" data-nota-form>
             <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
             <input type="hidden" name="imagenesNota" value="" data-nota-imagenes-campo />
             {{ tk.editorToolbar(user, '#nota-cuerpo', config.respuestas) }}
-            <textarea name="cuerpo" id="nota-cuerpo" rows="4" required placeholder="Escribe una respuesta… (se manda por correo al cliente; puedes pegar capturas)"></textarea>
-            <label class="field"><span>Con copia (opcional, separados por coma)</span>
-              <input type="text" name="ccRespuesta" placeholder="otro@cliente.com, agente@dattasoft.mx" autocomplete="off" />
-            </label>
-            <label class="field"><span>🖼️ Capturas (solo imágenes)</span>
-              <input type="file" accept="image/png,image/jpeg,image/gif,image/webp" multiple data-nota-imagenes-file />
-            </label>
+            <textarea name="cuerpo" id="nota-cuerpo" rows="3" required placeholder="Escribe una respuesta… (se manda por correo al cliente; puedes pegar capturas)"></textarea>
             <div class="nota__imgs" data-nota-imagenes-preview></div>
-            <label class="field--check">
-              <input type="checkbox" name="tipo" value="interna" {{ 'disabled' if not permisos.notasInternas }} />
-              <span>Nota interna (no visible para el cliente, no manda correo)</span>
-            </label>
-            <button class="btn btn--sm" type="submit">Enviar respuesta</button>
+            <div class="chat__acciones">
+              <label class="field--check">
+                <input type="checkbox" name="tipo" value="interna" {{ 'disabled' if not permisos.notasInternas }} />
+                <span>🔒 Nota interna (no la ve el cliente, no manda correo)</span>
+              </label>
+              <button class="btn btn--sm" type="submit">Enviar ➤</button>
+            </div>
+            <details class="chat__mas">
+              <summary class="muted">Con copia y capturas</summary>
+              <label class="field"><span>Con copia (opcional, separados por coma)</span>
+                <input type="text" name="ccRespuesta" placeholder="otro@cliente.com, agente@dattasoft.mx" autocomplete="off" />
+              </label>
+              <label class="field"><span>🖼️ Capturas (solo imágenes)</span>
+                <input type="file" accept="image/png,image/jpeg,image/gif,image/webp" multiple data-nota-imagenes-file />
+              </label>
+            </details>
           </form>
         {% endif %}
-
-        {% for n in notas | reverse %}
-          {% set recibida = n.autorUid == 'correo-entrante' or n.correoDe %}
-          <div class="nota nota--{{ n.tipo }}{% if n.tipo == 'publica' %} {{ 'nota--recibida' if recibida else 'nota--enviada' }}{% endif %}">
-            <div class="nota__head">
-              <span>{{ '📥' if recibida else '📤' }} {{ n.autorNombre }}{% if n.correoDe and n.correoDe != n.autorNombre %} &lt;{{ n.correoDe }}&gt;{% endif %}</span>
-              <span>· {{ n.createdAt | fechahora }}</span>
-              {% if n.tipo == 'interna' %}<span class="badge badge--warning">interna</span>{% endif %}
-            </div>
-            <p style="white-space:pre-wrap">{{ n.cuerpo }}</p>
-            {% if n.adjuntoIds and n.adjuntoIds.length %}
-              <div class="nota__imgs">
-                {% for aid in n.adjuntoIds %}<a href="/app/tickets/{{ ticket.id }}/adjuntos/{{ aid }}" target="_blank" rel="noopener"><img src="/app/tickets/{{ ticket.id }}/adjuntos/{{ aid }}" alt="Captura {{ loop.index }}" class="adjunto-thumb" loading="lazy" /></a>{% endfor %}
-              </div>
-            {% endif %}
-          </div>
-        {% else %}<p class="muted">Sin respuestas todavía.</p>{% endfor %}
       </div>
 
       {% if permisos.editar %}

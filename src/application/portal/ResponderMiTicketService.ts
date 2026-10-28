@@ -8,6 +8,7 @@ import type { NotaTicket } from '../../core/entities/NotaTicket.js';
 import { NotFoundError, ValidationError } from '../../core/errors/DomainError.js';
 import { registrarEvento } from '../tickets/efectos.js';
 import { historialActividadHtml } from '../tickets/historialCorreo.js';
+import type { RespuestasSinLeerService } from '../tickets/RespuestasSinLeerService.js';
 import type { SessionUser } from '../shared/SessionUser.js';
 
 /** Caso de uso: el cliente responde en su propio ticket (siempre nota pública). */
@@ -19,6 +20,8 @@ export class ResponderMiTicketService {
     private readonly clock: IClock,
     private readonly email: IEmailSender,
     private readonly logger: ILogger,
+    /** Buzón «🔔 Respuestas» del back-office. */
+    private readonly respuestas?: RespuestasSinLeerService,
   ) {}
 
   async ejecutar(input: { actor: SessionUser; ticketId: string; cuerpo: string }): Promise<NotaTicket> {
@@ -46,6 +49,8 @@ export class ResponderMiTicketService {
       actor: input.actor,
       at: ahora,
     });
+
+    await this.respuestas?.registrar(ticket, input.actor.nombre, cuerpo, ahora);
 
     // Avisar al agente asignado (si lo hay) que el cliente respondió.
     if (ticket.agenteAsignadoUid) {

@@ -25,6 +25,10 @@ import { FirestoreAdjuntoTicketRepository } from '../infrastructure/firestore/Fi
 import { AdjuntoTicketService } from '../application/tickets/AdjuntoTicketService.js';
 import { FiltrosGuardadosService } from '../application/shared/FiltrosGuardadosService.js';
 import { FiltrosController } from '../interfaces/http/controllers/backoffice/FiltrosController.js';
+import { RespuestasController } from '../interfaces/http/controllers/backoffice/RespuestasController.js';
+import { RespuestasSinLeerService } from '../application/tickets/RespuestasSinLeerService.js';
+import { FirestoreRespuestaSinLeerRepository } from '../infrastructure/firestore/FirestoreRespuestaSinLeerRepository.js';
+import type { IRespuestaSinLeerRepository } from '../core/ports/repositories/IRespuestaSinLeerRepository.js';
 import { FirestoreConfiguracionRepository } from '../infrastructure/firestore/FirestoreConfiguracionRepository.js';
 import { FirestoreTicketPublicoRepository } from '../infrastructure/firestore/FirestoreTicketPublicoRepository.js';
 import { FirestoreEmpresaRepository } from '../infrastructure/firestore/FirestoreEmpresaRepository.js';
@@ -222,6 +226,9 @@ export interface Cradle {
   adjuntoTicketService: AdjuntoTicketService;
   filtrosGuardadosService: FiltrosGuardadosService;
   filtrosController: FiltrosController;
+  respuestaSinLeerRepo: IRespuestaSinLeerRepository;
+  respuestasSinLeerService: RespuestasSinLeerService;
+  respuestasController: RespuestasController;
   configuracionRepo: IConfiguracionRepository;
   ticketPublicoRepo: ITicketPublicoRepository;
   webhookPublisher: IWebhookPublisher;
@@ -490,6 +497,14 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
       (c: Cradle) => new FiltrosGuardadosService(c.filtroGuardadoRepo, c.idGenerator, c.clock),
     ).singleton(),
     filtrosController: asFunction((c: Cradle) => new FiltrosController(c.filtrosGuardadosService)).singleton(),
+    respuestaSinLeerRepo: asFunction(
+      ({ firestoreDb }: Cradle): IRespuestaSinLeerRepository =>
+        new FirestoreRespuestaSinLeerRepository(requireFirestore(firestoreDb)),
+    ).singleton(),
+    respuestasSinLeerService: asFunction(
+      (c: Cradle) => new RespuestasSinLeerService(c.respuestaSinLeerRepo, c.logger),
+    ).singleton(),
+    respuestasController: asFunction((c: Cradle) => new RespuestasController(c.respuestasSinLeerService)).singleton(),
     configuracionRepo: asFunction(
       ({ firestoreDb }: Cradle): IConfiguracionRepository =>
         new FirestoreConfiguracionRepository(requireFirestore(firestoreDb)),
@@ -591,6 +606,7 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
           solicitudes: c.ticketPublicoRepo,
           usuarios: c.usuarioRepo,
           email: c.emailSender,
+          respuestas: c.respuestasSinLeerService,
           // Desde aquí sale todo el correo del CRM: lo que llegue DE estas direcciones es un rebote propio.
           remitentesPropios: [c.config.brevo.senderEmail, c.config.smtp.user].filter(Boolean),
           secretoServidor: c.config.correoEntrante.secret,
@@ -674,6 +690,7 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
           c.clock,
           c.emailSender,
           c.logger,
+          c.respuestasSinLeerService,
         ),
     ).singleton(),
 
@@ -745,6 +762,7 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
           c.webhookPublisher,
           c.adjuntoTicketRepo,
           c.config.baseUrl,
+          c.respuestasSinLeerService,
         ),
     ).singleton(),
     reenviarCorreoTicketService: asFunction(

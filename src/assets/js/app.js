@@ -1747,6 +1747,54 @@
     });
     aviso.onclick = function () { window.focus(); location.href = '/app/tickets/buzon'; };
   }
+
+  // ── Conversación del ticket (chat) y buzón 🔔 de respuestas de clientes ─────
+  // El hilo arranca abajo, en lo más reciente. Marcar «leída» va aquí y no en el servidor al
+  // pintar la página: la lista precarga el detalle al pasar el mouse, y eso no es leerlo.
+  function initChat() {
+    var hilo = document.querySelector('[data-chat-hilo]');
+    if (hilo) hilo.scrollTop = hilo.scrollHeight;
+    var chat = document.querySelector('[data-marcar-leida]');
+    if (!chat || chat.hasAttribute('data-leida')) return;
+    chat.setAttribute('data-leida', '');
+    fetch(chat.getAttribute('data-marcar-leida'), {
+      method: 'POST',
+      headers: { 'x-csrf-token': cookie('x-csrf-token') },
+      credentials: 'same-origin',
+    }).then(function () { revisarRespuestas(false); }).catch(function () { /* se reintenta al volver a abrir */ });
+  }
+  function pintarCampana(n) {
+    var a = document.querySelector('[data-campana-respuestas]');
+    if (!a) return;
+    var badge = a.querySelector('[data-campana-n]');
+    badge.textContent = String(n);
+    badge.hidden = !n;
+    a.classList.toggle('campana--activa', n > 0);
+    a.setAttribute('aria-label', 'Respuestas de clientes sin leer: ' + n);
+  }
+  /** Pide el conteo al servidor; con `avisar`, una respuesta nueva da toast y aviso del navegador. */
+  function revisarRespuestas(avisar) {
+    if (!document.querySelector('[data-campana-respuestas]')) return;
+    fetch('/app/tickets/respuestas/contador', { headers: { accept: 'application/json' }, credentials: 'same-origin' })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) {
+        if (!d) return;
+        pintarCampana(d.n);
+        var previo = null;
+        try { previo = localStorage.getItem('crm_respuestas_vistas'); } catch { /* sin almacenamiento */ }
+        try { localStorage.setItem('crm_respuestas_vistas', String(d.n)); } catch { /* sin almacenamiento */ }
+        if (!avisar || previo === null || d.n <= Number(previo) || !d.ultima) return;
+        var titulo = '💬 ' + d.ultima.autorNombre + ' respondió en el ticket #' + d.ultima.numero;
+        toast(titulo, 'ok');
+        if (!('Notification' in window) || Notification.permission !== 'granted') return;
+        var aviso = new Notification(titulo, { body: d.ultima.extracto, icon: '/logo', tag: 'respuesta-' + d.ultima.ticketId });
+        aviso.onclick = function () { window.focus(); location.href = '/app/tickets/' + d.ultima.ticketId; };
+      })
+      .catch(function () { /* sin red: se reintenta en el siguiente minuto */ });
+  }
+  // Un solo intervalo por pestaña (sobrevive a las navegaciones con hx-boost).
+  setInterval(function () { revisarRespuestas(true); }, 60 * 1000);
+
   document.addEventListener('click', function (e) {
     var b = e.target.closest && e.target.closest('[data-activar-notificaciones]');
     if (!b || !('Notification' in window)) return;
@@ -2750,6 +2798,7 @@
     iniciarCompac();
     iniciarModoWhatsApp();
     revisarBuzonPublico();
+    initChat();
     pintarEstadoNotificaciones();
     kbPintarRecordadas();
   }

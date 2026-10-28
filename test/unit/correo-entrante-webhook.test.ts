@@ -15,6 +15,8 @@ import { InMemoryAdjuntoTicketRepository } from '../fakes/InMemoryAdjuntoTicketR
 import { InMemoryUsuarioRepository } from '../fakes/InMemoryUsuarioRepository.js';
 import { FakeEmailSender } from '../fakes/FakeEmailSender.js';
 import { FixedClock, silentLogger } from '../fakes/support.js';
+import { InMemoryRespuestaSinLeerRepository } from '../fakes/InMemoryRespuestaSinLeerRepository.js';
+import { RespuestasSinLeerService } from '../../src/application/tickets/RespuestasSinLeerService.js';
 
 const PNG = Buffer.from('imagen-de-prueba').toString('base64');
 
@@ -61,6 +63,7 @@ describe('correo entrante por webhook (CloudMailin)', () => {
   let adjuntos: InMemoryAdjuntoTicketRepository;
   let solicitudes: InMemoryTicketPublicoRepository;
   let email: FakeEmailSender;
+  let respuestas: InMemoryRespuestaSinLeerRepository;
   let service: CorreoEntranteService;
 
   beforeEach(async () => {
@@ -69,6 +72,7 @@ describe('correo entrante por webhook (CloudMailin)', () => {
     adjuntos = new InMemoryAdjuntoTicketRepository();
     solicitudes = new InMemoryTicketPublicoRepository();
     email = new FakeEmailSender();
+    respuestas = new InMemoryRespuestaSinLeerRepository();
     const usuarios = new InMemoryUsuarioRepository([
       new Usuario({ uid: 'u1', email: 'arturo@dattasoft.mx', nombre: 'Arturo', rol: 'admin' }),
     ]);
@@ -80,7 +84,10 @@ describe('correo entrante por webhook (CloudMailin)', () => {
       { newId: () => `id-${++n}`, newToken: () => `t-${++n}` },
       new FixedClock(new Date('2026-10-02T16:00:00Z')),
       silentLogger,
-      { adjuntos, solicitudes, usuarios, email, remitentesPropios: ['soporte@dattasoft.mx'] },
+      {
+        adjuntos, solicitudes, usuarios, email, remitentesPropios: ['soporte@dattasoft.mx'],
+        respuestas: new RespuestasSinLeerService(respuestas, silentLogger),
+      },
     );
     await tickets.save(
       new Ticket({
@@ -116,6 +123,15 @@ describe('correo entrante por webhook (CloudMailin)', () => {
     expect(delEquipo.accion).toBe('nota');
     const tercero = await service.recibirWebhook(correoDeCloudMailin(payload({ headers: { from: 'x@ajeno.mx', subject: 'RE: [Ticket #7] No timbra' } })));
     expect(tercero).toMatchObject({ accion: 'ignorado' });
+  });
+
+  it('la respuesta del cliente queda en el buzón 🔔; la de alguien del equipo no', async () => {
+    await service.recibirWebhook(correoDeCloudMailin(payload({ headers: { from: 'Arturo <arturo@dattasoft.mx>', subject: 'RE: [Ticket #7] No timbra' } })));
+    expect(respuestas.items.size).toBe(0);
+
+    await service.recibirWebhook(correoDeCloudMailin(payload()));
+    const r = respuestas.items.get('t7')!;
+    expect(r).toMatchObject({ numero: 7, autorNombre: 'Luis Pérez', extracto: 'Ya quedó, gracias.' });
   });
 
   it('sin número de ticket → solicitud en el buzón (nunca un ticket solo)', async () => {

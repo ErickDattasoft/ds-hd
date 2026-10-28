@@ -98,11 +98,18 @@ export function backofficeRoutes(container: Container): Router {
     const permisos = req.method === 'GET' ? req.user!.permisos : [];
     if (permisos.includes('tickets:leer')) claves.push('ticketsCorreoSinLeer');
     if (permisos.includes('tickets:crear')) claves.push('ticketsPublicosPendientes');
-    const contadores = await contadoresDelMenu(container, claves, req.user!);
+    // El buzón 🔔 no pasa por el caché de 20 s: al abrir un ticket tiene que bajar de inmediato.
+    const [contadores, respuestasSinLeer] = await Promise.all([
+      contadoresDelMenu(container, claves, req.user!),
+      req.method === 'GET' && permisos.includes('tickets:leer')
+        ? container.resolve('respuestasSinLeerService').listarPara(req.user!).then((l) => l.length).catch(() => 0)
+        : Promise.resolve(null),
+    ]);
     res.locals.navSecciones = conContadores(secciones, contadores);
     res.locals.avisosGlobales = {
       buzonPendientes: contadores.ticketsPublicosPendientes ?? null,
       correoSinLeer: contadores.ticketsCorreoSinLeer ?? 0,
+      respuestasSinLeer,
     };
     res.locals.area = 'backoffice';
     next();
@@ -159,6 +166,11 @@ export function backofficeRoutes(container: Container): Router {
   r.get('/tickets/carga-agentes', requirePermission('tickets:asignar'), (req, res) =>
     tickets().cargaAgentesView(req, res),
   );
+  const respuestas = () => container.resolve('respuestasController');
+  r.get('/tickets/respuestas', leerTickets, (req, res) => respuestas().listarView(req, res));
+  r.get('/tickets/respuestas/contador', leerTickets, (req, res) => respuestas().contadorJson(req, res));
+  r.post('/tickets/respuestas/leidas', leerTickets, (req, res) => respuestas().todasLeidasPost(req, res));
+  r.post('/tickets/:id/leida', leerTickets, (req, res) => respuestas().leidaPost(req, res));
   r.get('/tickets/buzon', requirePermission('tickets:crear'), (req, res) => tickets().buzonView(req, res));
   r.post('/tickets/buzon/:id/aceptar', requirePermission('tickets:crear'), (req, res) =>
     tickets().aceptarPublicoPost(req, res),

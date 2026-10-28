@@ -1,0 +1,31 @@
+{% extends "layouts/backoffice.njk" %}
+{% block title %}Respuestas de clientes{% endblock %}
+{% block content %}
+  <div class="page-head">
+    <h1>🔔 Respuestas de clientes <span class="muted">({{ respuestas | length }} sin leer)</span></h1>
+    {% if respuestas | length %}
+      <div class="page-head__actions">
+        <form method="post" action="/app/tickets/respuestas/leidas" class="inline">
+          <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+          <button class="btn btn--sm btn--ghost" type="submit">✓ Marcar todas como leídas</button>
+        </form>
+      </div>
+    {% endif %}
+  </div>
+  <p class="muted">Tickets en los que el cliente contestó (por correo o desde su portal) y nadie del equipo lo ha abierto todavía. Al abrir el ticket sale de aquí.</p>
+
+  <div class="buzon-respuestas">
+    {% for r in respuestas %}
+      <a class="buzon-respuestas__item" href="/app/tickets/{{ r.ticketId }}">
+        <span class="buzon-respuestas__head">
+          <strong>#{{ r.numero }} — {{ r.asunto }}</strong>
+          <span class="muted">{{ r.at | fechahora }}</span>
+        </span>
+        <span class="muted">💬 {{ r.autorNombre }}{% if r.empresaNombre %} · {{ r.empresaNombre }}{% endif %}{% if r.agenteAsignadoNombre %} · agente: {{ r.agenteAsignadoNombre }}{% endif %}</span>
+        <span class="buzon-respuestas__extracto">{{ r.extracto }}</span>
+      </a>
+    {% else %}
+      <p class="muted">✅ No hay respuestas pendientes de leer.</p>
+    {% endfor %}
+  </div>
+{% endblock %}

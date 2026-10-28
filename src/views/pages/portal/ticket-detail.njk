@@ -12,28 +12,33 @@
     <span class="muted">Prioridad</span> <span class="{{ ticket.prioridad | prioridadClase }}">{{ ticket.prioridad }}</span>
   </p>
 
-  <div class="card">
-    <p><strong>Tu solicitud</strong></p>
-    <div style="white-space:pre-wrap">{{ descripcionHtml | safe }}</div>
-  </div>
-
-  <div class="card">
-    <p><strong>Conversación</strong></p>
-    {% for n in notas %}
-      <div class="nota">
-        <div class="nota__head"><span>{{ n.autorNombre }}</span></div>
-        <p style="white-space:pre-wrap">{{ n.cuerpo }}</p>
+  {# Conversación tipo chat: lo tuyo a la derecha, el equipo de soporte a la izquierda. #}
+  <div class="card chat">
+    <p class="chat__titulo"><strong>💬 Conversación</strong></p>
+    <div class="chat__hilo" data-chat-hilo>
+      <div class="chat__msg chat__msg--equipo">
+        <div class="chat__meta"><span class="chat__autor">Tú</span> <span class="badge">tu solicitud</span></div>
+        <div class="chat__cuerpo">{{ descripcionHtml | safe }}</div>
+        <div class="chat__hora">{{ (ticket.abiertoEn or ticket.createdAt) | fechahora }}</div>
       </div>
-    {% else %}
-      <p class="muted">Aún no hay respuestas. El equipo de soporte te contactará pronto.</p>
-    {% endfor %}
+      {% for n in notas %}
+        {% set mio = n.autorUid == user.uid or n.correoDe %}
+        <div class="chat__msg {{ 'chat__msg--equipo' if mio else 'chat__msg--cliente' }}">
+          <div class="chat__meta"><span class="chat__autor">{{ 'Tú' if mio else n.autorNombre }}</span></div>
+          <div class="chat__cuerpo">{{ n.cuerpo }}</div>
+          <div class="chat__hora">{{ n.createdAt | fechahora }}</div>
+        </div>
+      {% else %}
+        <p class="muted chat__vacio">Aún no hay respuestas. El equipo de soporte te contactará pronto.</p>
+      {% endfor %}
+    </div>
 
     {% if not ticket.esCerrado %}
       {% if errores.cuerpo %}<p class="alert alert--error">{{ errores.cuerpo }}</p>{% endif %}
-      <form method="post" action="/portal/tickets/{{ ticket.id }}/responder" class="form">
+      <form method="post" action="/portal/tickets/{{ ticket.id }}/responder" class="form chat__escribir">
         <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
         <textarea name="cuerpo" rows="3" required placeholder="Escribe una respuesta…"></textarea>
-        <button class="btn btn--sm" type="submit">Responder</button>
+        <div class="chat__acciones"><span></span><button class="btn btn--sm" type="submit">Enviar ➤</button></div>
       </form>
     {% else %}
       <p class="muted">Este ticket está cerrado. Si necesitas más ayuda, crea uno nuevo.</p>
