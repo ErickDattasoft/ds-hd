@@ -31,6 +31,15 @@
           <td>{% if v.linkCartaTecnica %}<a href="{{ v.linkCartaTecnica }}" rel="noopener">carta</a>{% else %}—{% endif %}</td>
           <td>{% if can('versiones:editar') %}<a href="/app/versiones/{{ v.id }}/editar">Editar</a>{% endif %}</td>
         </tr>
+        {% for sp in v.servicePacks %}
+          <tr class="muted">
+            <td style="padding-left: var(--space-6)">↳ Service pack</td>
+            <td>SP {{ sp.numero }}</td>
+            <td>{{ sp.fecha or '—' }}</td>
+            <td>{% if sp.linkDescarga %}<a href="{{ sp.linkDescarga }}" rel="noopener">enlace</a>{% else %}—{% endif %}</td>
+            <td colspan="2"></td>
+          </tr>
+        {% endfor %}
       {% else %}<tr><td colspan="6" class="muted">Sin versiones registradas.</td></tr>{% endfor %}
     </tbody>
   </table>

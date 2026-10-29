@@ -2,7 +2,8 @@ import type { Request, Response } from 'express';
 import type { VersionService, FilaMercado } from '../../../../application/versiones/VersionService.js';
 import type { ReporteVersionesService } from '../../../../application/versiones/ReporteVersionesService.js';
 import type { VersionesContpaqiService } from '../../../../application/versiones/VersionesContpaqiService.js';
-import { URL_DESCARGAS_CONTPAQI, type EstadoVersionesContpaqi } from '../../../../core/entities/DescargasContpaqi.js';
+import { URL_DESCARGAS_CONTPAQI, sistemasDelMercado, type EstadoVersionesContpaqi, type UltimaVersionContpaqi } from '../../../../core/entities/DescargasContpaqi.js';
+import { componerVersion } from '../../../../core/entities/VersionSistema.js';
 import { compararVersiones } from '../../../../core/entities/value-objects/version.js';
 import type { EmpresaService } from '../../../../application/empresas/EmpresaService.js';
 import type { IConfiguracionRepository } from '../../../../core/ports/repositories/IConfiguracionRepository.js';
@@ -115,7 +116,7 @@ export class VersionController {
    */
   mercadoView = async (req: Request, res: Response): Promise<void> => {
     const { sistemas } = await this.configuracion.obtenerTickets();
-    const filas = await this.versiones.gridMercado(sistemas);
+    const filas = await this.versiones.gridMercado(sistemasDelMercado(sistemas));
     let estado: EstadoVersionesContpaqi | null = null;
     let errorTraer = '';
     const traer = str(req.query.traer) === '1' && Boolean(this.contpaqi);
@@ -136,36 +137,46 @@ export class VersionController {
       : filas;
     const filasVista = deContpaqi.map((f) => {
       const u = estado?.ultimas[f.sistema];
-      const masNueva = Boolean(u && compararVersiones(f.versionActual, u.version) < 0);
-      // Misma versión pero con huecos: se completan fecha y links sin tocar lo ya capturado.
-      const faltan = !f.fechaLiberacion || !f.linkDescarga || !f.linkCartaTecnica;
-      if (traer && u && !masNueva && faltan && compararVersiones(f.versionActual, u.version) === 0) {
+      const registrada = componerVersion(f.versionActual, f.servicePacks.map((p) => p.numero));
+      const comparacion = u ? compararVersiones(registrada, u.version) : 1;
+      const spsDe = (lista: UltimaVersionContpaqi['servicePacks']) =>
+        lista.map((p) => ({ numero: p.numero, fecha: p.fecha || null, linkDescarga: p.linkDescarga || null, nota: p.titulo || null }));
+      if (traer && u && comparacion < 0) {
         traidas.push(f.sistema);
         return {
+          ...f,
+          versionActual: u.base,
+          fechaLiberacion: u.fecha || '',
+          linkDescarga: u.linkDescarga || '',
+          linkCartaTecnica: u.linkCartaTecnica || '',
+          servicePacks: spsDe(u.servicePacks),
+          traida: true,
+          anterior: registrada,
+          origen: u.titulo,
+        };
+      }
+      if (traer && u && comparacion === 0) {
+        // Misma versión: se completa lo que falte (fecha, links, SP sin descarga) sin tocar lo capturado.
+        const sps = f.servicePacks.map((p) => {
+          const pub = u.servicePacks.find((x) => x.numero === p.numero);
+          return pub ? { ...p, fecha: p.fecha || pub.fecha || null, linkDescarga: p.linkDescarga || pub.linkDescarga || null, nota: p.nota || pub.titulo } : p;
+        });
+        for (const pub of spsDe(u.servicePacks)) if (!sps.some((p) => p.numero === pub.numero)) sps.push(pub);
+        sps.sort((a, b) => a.numero - b.numero);
+        const completa = {
           ...f,
           fechaLiberacion: f.fechaLiberacion || u.fecha,
           linkDescarga: f.linkDescarga || u.linkDescarga,
           linkCartaTecnica: f.linkCartaTecnica || u.linkCartaTecnica,
-          traida: true,
-          completada: true,
-          origen: u.titulo,
+          servicePacks: sps,
         };
-      }
-      if (traer && u && masNueva) {
-        traidas.push(f.sistema);
-        return {
-          ...f,
-          versionActual: u.version,
-          fechaLiberacion: u.fecha || f.fechaLiberacion,
-          linkDescarga: u.linkDescarga || f.linkDescarga,
-          linkCartaTecnica: u.linkCartaTecnica || f.linkCartaTecnica,
-          traida: true,
-          anterior: f.versionActual,
-          origen: u.titulo,
-        };
+        if (JSON.stringify(completa) !== JSON.stringify(f)) {
+          traidas.push(f.sistema);
+          return { ...completa, traida: true, completada: true, origen: u.titulo };
+        }
       }
       // Sin traer: solo se avisa (la fila no cambia).
-      return { ...f, sugerida: !traer && masNueva && f.versionActual ? u!.version : '', origen: u?.titulo ?? '' };
+      return { ...f, sugerida: !traer && u && comparacion < 0 && f.versionActual ? u.version : '', origen: u?.titulo ?? '' };
     });
     res.render('pages/backoffice/versiones/mercado', {
       titulo: 'Versiones del mercado',
@@ -187,12 +198,33 @@ export class VersionController {
     const fecha = arr(b.fechaLiberacion);
     const descarga = arr(b.linkDescarga);
     const carta = arr(b.linkCartaTecnica);
+    // Renglones de SP: van en arreglos paralelos con el sistema al que pertenecen.
+    const spSistema = arr(b.spSistema);
+    const spNumero = arr(b.spNumero);
+    const spFecha = arr(b.spFecha);
+    const spDescarga = arr(b.spDescarga);
+    const spNota = arr(b.spNota);
+    const conSp = str(b.conSp) === '1';
     const filas: FilaMercado[] = sistemas.map((s, i) => ({
       sistema: s,
       versionActual: version[i] ?? '',
       fechaLiberacion: fecha[i] ?? '',
       linkDescarga: descarga[i] ?? '',
       linkCartaTecnica: carta[i] ?? '',
+      ...(conSp
+        ? {
+            servicePacks: spSistema
+              .map((sis, j) => ({ sis, j }))
+              .filter(({ sis }) => sis === s)
+              .map(({ j }) => ({
+                numero: Number.parseInt(spNumero[j] ?? '', 10),
+                fecha: spFecha[j] || null,
+                linkDescarga: spDescarga[j] || null,
+                nota: spNota[j] || null,
+              }))
+              .filter((p) => p.numero > 0),
+          }
+        : {}),
     }));
     await this.versiones.guardarMercado(req.user!, filas);
     res.redirect('/app/versiones/mercado?guardado=1');

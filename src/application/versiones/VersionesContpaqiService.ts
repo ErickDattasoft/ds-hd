@@ -1,5 +1,6 @@
 import {
   leerPaginaDescargas,
+  sistemasDelMercado,
   ultimaVersionDe,
   type EstadoVersionesContpaqi,
   type UltimaVersionContpaqi,
@@ -50,7 +51,7 @@ export class VersionesContpaqiService {
         throw new Error('La página de descargas de CONTPAQi cambió de formato: no se encontró ninguna publicación');
       }
       const [{ sistemas }, registradas] = await Promise.all([this.configuracion.obtenerTickets(), this.versiones.list()]);
-      const nombres = new Set([...sistemas, ...registradas.map((v) => v.sistema)].map((s) => s.trim()).filter(Boolean));
+      const nombres = new Set([...sistemasDelMercado(sistemas), ...registradas.map((v) => v.sistema)].map((s) => s.trim()).filter(Boolean));
       const ultimas: Record<string, UltimaVersionContpaqi> = {};
       for (const sistema of nombres) {
         const u = ultimaVersionDe(sistema, publicaciones);

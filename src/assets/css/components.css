@@ -507,6 +507,8 @@ fieldset.field {
   z-index: 2;
 }
 .data-table th .col-ajuste:hover { background: var(--color-brand, currentColor); opacity: 0.35; }
+/* Que se note dónde arrastrar: al pasar por un encabezado se marca su orilla. */
+.data-table th:hover .col-ajuste { border-right: 2px solid color-mix(in srgb, var(--brand) 55%, transparent); }
 
 @media (max-width: 640px) {
   .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
@@ -1309,8 +1311,16 @@ tr.fila--sla-vencido > td { background: color-mix(in srgb, var(--danger) 6%, tra
 .form.mercado { max-width: none; }
 .mercado .data-table td { max-width: none; overflow: visible; }
 .mercado .data-table td:first-child { min-width: 16rem; }
+.mercado .data-table td { vertical-align: middle; }
 .mercado input[name="versionActual"] { width: 9rem; }
-.mercado__link { width: 28%; }
-.mercado__link input { width: 100%; min-width: 14rem; }
+.mercado .data-table input[type="date"] { width: 100%; min-width: 9.5rem; }
+th.mercado__link { width: 28%; }
+.mercado__link input { width: 100%; min-width: 10rem; }
+/* Cada SP en su renglón, debajo de su versión y más discreto. */
+.mercado__version > td { border-top: 2px solid var(--color-border); }
+.mercado__sp > td { padding-block: var(--space-1); background: var(--color-surface-2, transparent); }
+.mercado__sp-etiqueta { padding-left: var(--space-4); color: var(--color-text-muted); font-size: var(--text-sm); }
+.mercado__sp-numero { display: inline-flex; align-items: center; gap: var(--space-1); font-size: var(--text-sm); }
+.mercado__sp-numero input { width: 4.5rem; }
 /* Versiones del mercado: filas llenadas con «Traer de CONTPAQi» (aún sin guardar). */
 .fila--traida > td { background: var(--warning-weak); }

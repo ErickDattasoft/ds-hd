@@ -22,22 +22,39 @@
     {% endif %}
   {% endif %}
   <p class="muted">
-    Una fila por sistema de CONTPAQi. Deja la versión vacía para no registrar ese sistema.
+    Una fila por sistema de CONTPAQi con su versión, y debajo un renglón por cada service pack con su propia descarga. Deja la versión vacía para no registrar ese sistema; borra el número de un SP para quitarlo.
     Las «Soluciones fuera de versión» se toman como service pack de la versión anterior; si un SP no trae carta técnica, se usa la de su versión.
     {% if estadoContpaqi and estadoContpaqi.revisado %}Última lectura de <a href="{{ urlContpaqi }}" target="_blank" rel="noopener">CONTPAQi</a>: {{ estadoContpaqi.revisado | fechahora }}.{% endif %}
     {% if estadoContpaqi and estadoContpaqi.error and not traer %}<span style="color: var(--danger)">La última lectura automática falló: {{ estadoContpaqi.error }}.</span>{% endif %}
   </p>
 
+  {% macro filaSp(sistema, sp, clase) %}
+    <tr class="mercado__sp {{ clase }}" data-sp-de="{{ sistema }}">
+      <td>
+        <input type="hidden" name="spSistema" value="{{ sistema }}" />
+        <input type="hidden" name="spNota" value="{{ sp.nota or '' }}" />
+        <span class="mercado__sp-etiqueta" title="{{ sp.nota or '' }}">↳ Service pack</span>
+      </td>
+      <td><label class="mercado__sp-numero">SP <input name="spNumero" type="number" min="1" value="{{ sp.numero or '' }}" title="Número de SP (vacío = quitarlo)" /></label></td>
+      <td><input type="date" name="spFecha" value="{{ sp.fecha or '' }}" /></td>
+      <td class="mercado__link"><input name="spDescarga" value="{{ sp.linkDescarga or '' }}" title="{{ sp.linkDescarga or '' }}" placeholder="https://… (descarga del SP)" /></td>
+      <td class="muted" style="font-size: 0.8rem">{{ sp.nota or 'Usa la carta técnica de la versión' }}</td>
+    </tr>
+  {% endmacro %}
+
   <form method="post" action="/app/versiones/mercado" class="form mercado">
     <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+    <input type="hidden" name="conSp" value="1" />
+    <p class="muted" style="margin: 0">Arrastra la orilla derecha de un encabezado para cambiar el ancho de esa columna; con doble clic se ajusta al contenido, como en Excel.</p>
     <table class="data-table">
-      <thead><tr><th>Sistema</th><th>Versión oficial</th><th>Liberación</th><th>Link descarga</th><th>Link carta técnica</th></tr></thead>
+      <thead><tr><th data-no-ordenar>Sistema</th><th data-no-ordenar>Versión oficial</th><th data-no-ordenar>Liberación</th><th data-no-ordenar class="mercado__link">Link descarga</th><th data-no-ordenar class="mercado__link">Link carta técnica</th></tr></thead>
       <tbody>
         {% for f in filas %}
-          <tr{% if f.traida %} class="fila--traida"{% endif %}>
+          <tr class="mercado__version{{ ' fila--traida' if f.traida }}">
             <td>
               <input type="hidden" name="sistema" value="{{ f.sistema }}" />
-              {{ f.sistema }}
+              <strong>{{ f.sistema }}</strong>
+              <button type="button" class="btn btn--ghost btn--sm" data-agregar-sp="{{ f.sistema }}" title="Agregar un service pack a este sistema">＋ SP</button>
               {% if f.completada %}
                 <div class="muted" style="font-size: 0.8rem" title="{{ f.origen }}">📥 se completó lo que faltaba</div>
               {% elif f.traida %}
@@ -46,16 +63,18 @@
                 <div title="{{ f.origen }}"><span class="badge badge--warning badge--sm">🆕 {{ f.sugerida }}</span></div>
               {% endif %}
             </td>
-            <td><input name="versionActual" value="{{ f.versionActual }}" /></td>
+            <td><input name="versionActual" value="{{ f.versionActual }}" placeholder="Ej. 12.1.0" /></td>
             <td><input type="date" name="fechaLiberacion" value="{{ f.fechaLiberacion }}" /></td>
-            <td class="mercado__link"><input name="linkDescarga" value="{{ f.linkDescarga }}" title="{{ f.linkDescarga }}" placeholder="https://…" /></td>
+            <td class="mercado__link"><input name="linkDescarga" value="{{ f.linkDescarga }}" title="{{ f.linkDescarga }}" placeholder="https://… (descarga de la versión)" /></td>
             <td class="mercado__link"><input name="linkCartaTecnica" value="{{ f.linkCartaTecnica }}" title="{{ f.linkCartaTecnica }}" placeholder="https://…" /></td>
           </tr>
+          {% for sp in f.servicePacks %}{{ filaSp(f.sistema, sp, 'fila--traida' if f.traida else '') }}{% endfor %}
         {% else %}
           <tr><td colspan="5" class="muted">No hay sistemas en el catálogo. Agrégalos en Configuración → Tickets.</td></tr>
         {% endfor %}
       </tbody>
     </table>
+    <template data-plantilla-sp>{{ filaSp('__SISTEMA__', {}, '') }}</template>
     <div class="page-head__actions">
       <button class="btn" type="submit">Guardar todo</button>
     </div>

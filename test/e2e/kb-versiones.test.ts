@@ -49,6 +49,48 @@ describe('versiones de sistemas', () => {
     expect(registradas.find((v) => v.sistema === 'Contabilidad')?.linkCartaTecnica).toBe('https://ct/cont');
   });
 
+  it('cada SP se guarda en su renglón con su descarga; la versión que se compara es versión + SP más alto', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    t.configuracionRepo.config.sistemas = ['COMERCIAL PREMIUM', 'NOMINAS'];
+    const { VersionSistema } = await import('../../src/core/entities/VersionSistema.js');
+    await t.versionRepo.save(new VersionSistema({ id: 'v1', sistema: 'NOMINAS', versionActual: '19.2.1 Sp 1' }));
+    const { agent, csrf } = await login(t.app, ADMIN.email, ADMIN.password);
+
+    // Lo registrado a mano como "19.2.1 Sp 1" se ve separado: versión 19.2.1 y un renglón SP 1.
+    const vista = await agent.get('/app/versiones/mercado');
+    expect(vista.text).toContain('value="19.2.1"');
+    expect(vista.text).toContain('name="spNumero" type="number" min="1" value="1"');
+
+    const res = await agent.post('/app/versiones/mercado').type('form').send({
+      _csrf: csrf,
+      conSp: '1',
+      sistema: ['COMERCIAL PREMIUM', 'NOMINAS'],
+      versionActual: ['12.1.0', '19.2.1'],
+      fechaLiberacion: ['2026-04-20', ''],
+      linkDescarga: ['https://d/1210.zip', ''],
+      linkCartaTecnica: ['', ''],
+      spSistema: ['COMERCIAL PREMIUM', 'COMERCIAL PREMIUM', 'NOMINAS'],
+      spNumero: ['1', '2', ''],
+      spFecha: ['2026-06-22', '2026-08-11', ''],
+      spDescarga: ['https://d/sp1.zip', 'https://d/sp2.zip', ''],
+      spNota: ['', '', ''],
+    });
+    expect(res.status).toBe(302);
+    const [premium, nominas] = await t.versionRepo.list();
+    expect(premium!.versionActual).toBe('12.1.0 Sp 2');
+    expect(premium!.linkDescarga).toBe('https://d/1210.zip');
+    expect(premium!.servicePacks.map((p) => [p.numero, p.linkDescarga])).toEqual([
+      [1, 'https://d/sp1.zip'],
+      [2, 'https://d/sp2.zip'],
+    ]);
+    // Borrarle el número al SP lo quita.
+    expect(nominas!.versionActual).toBe('19.2.1');
+    expect(nominas!.servicePacks).toEqual([]);
+
+    const lista = await agent.get('/app/versiones');
+    expect(lista.text).toContain('https://d/sp2.zip');
+  });
+
   it('«Traer de CONTPAQi» llena la tabla sin guardar; el menú y la lista avisan de la versión nueva', async () => {
     const t = makeTestApp({ usuarios: [ADMIN] });
     t.configuracionRepo.config.sistemas = ['NOMINAS', 'BANCOS', 'Varios'];
@@ -66,7 +108,10 @@ describe('versiones de sistemas', () => {
 
     const traida = await agent.get('/app/versiones/mercado?traer=1');
     expect(traida.status).toBe(200);
-    expect(traida.text).toContain('value="19.4.2 Sp 1"');
+    // La versión en su cuadro y la SFV como SP 1 en su propio renglón, con su descarga.
+    expect(traida.text).toContain('value="19.4.2"');
+    expect(traida.text).toContain('name="spNumero" type="number" min="1" value="1"');
+    expect(traida.text).toContain('CTi_NOMINAS_1942.zip');
     expect(traida.text).toContain('SFV_Nominas_v1943.zip');
     expect(traida.text).toContain('CT_Nominas_1942');
     expect(traida.text).toContain('Todavía no se guarda');
@@ -94,7 +139,7 @@ describe('versiones de sistemas', () => {
     const falla = await agent.get('/app/versiones/mercado?traer=1');
     expect(falla.status).toBe(200);
     expect(falla.text).toContain('cambió de formato');
-    expect(falla.text).toContain('value="19.2.1 Sp 1"');
+    expect(falla.text).toContain('value="19.2.1"');
   });
 
   it('reporte de desactualizadas: pantalla, Excel y filtro por empresa', async () => {

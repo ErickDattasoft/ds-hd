@@ -11,6 +11,19 @@ import { compararVersiones } from './value-objects/version.js';
 
 export const URL_DESCARGAS_CONTPAQI = 'https://old.contpaqi.com/descargas';
 
+/**
+ * Sistemas de CONTPAQi que se siguen en "Versiones del mercado" aunque no estén en el catálogo
+ * de sistemas de tickets (no se les abren tickets por separado, pero se instalan).
+ */
+export const SISTEMAS_CONTPAQI_ADICIONALES: readonly string[] = ['ANTICIPA', 'SERVIDOR DE LICENCIAS COMUN'];
+
+/** El catálogo + los adicionales que no estén ya (sin distinguir mayúsculas ni acentos). */
+export function sistemasDelMercado(catalogo: string[]): string[] {
+  const clave = (x: string) => palabras(x).join(' ');
+  const ya = new Set(catalogo.map(clave));
+  return [...catalogo, ...SISTEMAS_CONTPAQI_ADICIONALES.filter((x) => !ya.has(clave(x)))];
+}
+
 /** Una publicación de la página, ya interpretada. */
 export interface PublicacionContpaqi {
   /** Título tal cual (sin etiquetas): "Service Pack 2 CONTPAQi Comercial Premium® 12.1.0". */
@@ -28,13 +41,26 @@ export interface PublicacionContpaqi {
 
 /** Lo más nuevo publicado para un sistema del catálogo, en el formato con el que se registra. */
 export interface UltimaVersionContpaqi {
-  /** "12.1.0 Sp 2" — mismo formato que se captura a mano. */
+  /** "12.1.0 Sp 2" — mismo formato que se captura a mano (versión + el SP más alto). */
   version: string;
+  /** La versión sin SP: "12.1.0". */
+  base: string;
+  /** Fecha y descarga de la versión (sin SP); si la página no la trae, las de lo más nuevo. */
   fecha: string;
   linkDescarga: string;
-  /** La del SP si trae; si no, la de su versión base (los SP casi nunca traen carta). */
+  /** La carta técnica de la versión (los SP casi nunca traen; su *nota* técnica no se usa). */
   linkCartaTecnica: string;
-  /** Título de la publicación en la página, para que se vea de dónde salió. */
+  /** Título de la publicación más nueva, para que se vea de dónde salió. */
+  titulo: string;
+  /** Cada SP (o solución fuera de versión) de esa versión, de menor a mayor. */
+  servicePacks: SpContpaqi[];
+}
+
+/** Un SP publicado de la versión, con su propia descarga. */
+export interface SpContpaqi {
+  numero: number;
+  fecha: string;
+  linkDescarga: string;
   titulo: string;
 }
 
@@ -65,11 +91,18 @@ function palabras(s: string): string[] {
     .filter(Boolean);
 }
 
-/** "2026-05-1" → "2026-05-01"; "2026-08" → "2026-08-01"; otra cosa → "". */
+/**
+ * "2026-05-1" → "2026-05-01"; "2026-08" → "2026-08-01"; "2024-18-06" (día y mes al revés,
+ * así viene Instalia) → "2024-06-18"; otra cosa → "".
+ */
 function normalizarFecha(s: string): string {
   const m = /^(\d{4})-(\d{1,2})(?:-(\d{1,2}))?$/.exec(s.trim());
   if (!m) return '';
-  return `${m[1]}-${m[2]!.padStart(2, '0')}-${(m[3] ?? '1').padStart(2, '0')}`;
+  let mes = Number(m[2]);
+  let dia = Number(m[3] ?? 1);
+  if (mes > 12 && dia <= 12) [mes, dia] = [dia, mes];
+  if (mes < 1 || mes > 12 || dia < 1 || dia > 31) return '';
+  return `${m[1]}-${String(mes).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
 }
 
 /**
@@ -188,14 +221,30 @@ export function ultimaVersionDe(sistema: string, publicaciones: PublicacionContp
 
   candidatas.sort((a, b) => compararVersiones(b.version, a.version) || b.p.fecha.localeCompare(a.p.fecha));
   const mejor = candidatas[0]!;
-  const cartaBase = normales.find((n) => compararVersiones(n.base, mejor.base) === 0 && n.linkCartaTecnica)?.linkCartaTecnica;
+  const deLaVersion = normales.filter((n) => compararVersiones(n.base, mejor.base) === 0);
+  const pubBase = deLaVersion.find((n) => n.linkDescarga) ?? deLaVersion[0];
+  const cartaBase = deLaVersion.find((n) => n.linkCartaTecnica)?.linkCartaTecnica;
+  // Los SP de esa misma versión; si un número sale dos veces, el más reciente.
+  const sps = new Map<number, SpContpaqi>();
+  for (const c of candidatas) {
+    const sp = separarSp(c.version);
+    if (!sp || compararVersiones(c.base, mejor.base) !== 0 || sps.has(sp)) continue;
+    sps.set(sp, { numero: sp, fecha: c.p.fecha, linkDescarga: c.p.linkDescarga, titulo: c.p.titulo });
+  }
   return {
     version: mejor.version,
-    fecha: mejor.p.fecha,
-    linkDescarga: mejor.p.linkDescarga,
-    linkCartaTecnica: mejor.p.linkCartaTecnica || cartaBase || '',
+    base: mejor.base,
+    fecha: (pubBase ?? mejor.p).fecha,
+    linkDescarga: (pubBase ?? mejor.p).linkDescarga,
+    linkCartaTecnica: cartaBase || mejor.p.linkCartaTecnica || '',
     titulo: mejor.p.titulo,
+    servicePacks: [...sps.values()].sort((a, b) => a.numero - b.numero),
   };
+}
+
+/** "19.4.2 Sp 1" → 1; sin SP → 0. */
+function separarSp(version: string): number {
+  return Number.parseInt(/\bSp (\d+)$/.exec(version)?.[1] ?? '0', 10);
 }
 
 /** Lo último leído de la página (documento `configuracion/versionesContpaqi`). */
@@ -218,12 +267,22 @@ export function sanearEstadoVersionesContpaqi(v: unknown): EstadoVersionesContpa
   if (d.ultimas && typeof d.ultimas === 'object') {
     for (const [sistema, u] of Object.entries(d.ultimas as Record<string, Record<string, unknown>>)) {
       if (!u || typeof u.version !== 'string' || !u.version) continue;
+      const sps = Array.isArray(u.servicePacks) ? (u.servicePacks as Array<Record<string, unknown>>) : [];
       ultimas[sistema] = {
         version: u.version,
+        base: String(u.base ?? u.version.replace(/\s*Sp \d+$/, '')),
         fecha: String(u.fecha ?? ''),
         linkDescarga: String(u.linkDescarga ?? ''),
         linkCartaTecnica: String(u.linkCartaTecnica ?? ''),
         titulo: String(u.titulo ?? ''),
+        servicePacks: sps
+          .filter((x) => Number(x.numero) > 0)
+          .map((x) => ({
+            numero: Number(x.numero),
+            fecha: String(x.fecha ?? ''),
+            linkDescarga: String(x.linkDescarga ?? ''),
+            titulo: String(x.titulo ?? ''),
+          })),
       };
     }
   }

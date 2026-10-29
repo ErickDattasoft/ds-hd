@@ -1458,6 +1458,34 @@
     cc.value = ya.join(', ');
   });
 
+  // Versiones del mercado: «＋ SP» agrega un renglón de service pack debajo de los de ese sistema.
+  document.addEventListener('click', function (e) {
+    var btn = e.target.closest && e.target.closest('[data-agregar-sp]');
+    if (!btn) return;
+    var form = btn.closest('form');
+    var plantilla = form && form.querySelector('template[data-plantilla-sp]');
+    if (!plantilla) return;
+    var sistema = btn.getAttribute('data-agregar-sp');
+    var fila = btn.closest('tr');
+    var ultima = fila;
+    while (ultima.nextElementSibling && ultima.nextElementSibling.getAttribute('data-sp-de') === sistema) ultima = ultima.nextElementSibling;
+    var tmp = document.createElement('tbody');
+    tmp.innerHTML = plantilla.innerHTML.trim();
+    var nueva = tmp.firstElementChild;
+    nueva.setAttribute('data-sp-de', sistema);
+    nueva.querySelector('[name="spSistema"]').value = sistema;
+    // Siguiente número: uno más que el SP más alto que ya tenga el sistema.
+    var max = 0;
+    form.querySelectorAll('tr[data-sp-de]').forEach(function (tr) {
+      if (tr.getAttribute('data-sp-de') !== sistema) return;
+      var n = parseInt((tr.querySelector('[name="spNumero"]') || {}).value, 10);
+      if (n > max) max = n;
+    });
+    nueva.querySelector('[name="spNumero"]').value = String(max + 1);
+    ultima.parentNode.insertBefore(nueva, ultima.nextSibling);
+    nueva.querySelector('[name="spDescarga"]').focus();
+  });
+
   // Filtro de una lista larga de casillas (p. ej. empresas adicionales de un cliente).
   document.addEventListener('input', function (e) {
     var f = e.target.closest('[data-filtro-casillas]');
@@ -2067,6 +2095,59 @@
     filas.forEach(function (f) { tb.appendChild(f); });
   }
 
+  // Al ajustar a mano, todas las columnas se quedan en su ancho actual y la tabla mide la suma:
+  // así ensanchar una ya no encoge a las demás (antes, con la tabla al 100 %, casi no se movía).
+  function congelarAnchos(tabla) {
+    var ths = tabla.tHead.rows[0].cells;
+    if (tabla.style.tableLayout !== 'fixed') {
+      var anchos = Array.prototype.map.call(ths, function (th) { return th.offsetWidth; });
+      Array.prototype.forEach.call(ths, function (th, i) { if (!th.style.width) th.style.width = anchos[i] + 'px'; });
+      tabla.style.tableLayout = 'fixed';
+    }
+    anchoTablaFijo(tabla);
+  }
+  function anchoTablaFijo(tabla) {
+    var total = 0;
+    Array.prototype.forEach.call(tabla.tHead.rows[0].cells, function (th) { total += parseInt(th.style.width, 10) || th.offsetWidth; });
+    tabla.style.width = total + 'px';
+    tabla.style.minWidth = '100%';
+  }
+  // Ancho para que quepa lo más largo de la columna: en los cuadros de texto cuenta lo escrito
+  // (o el texto de ayuda), que scrollWidth no ve porque el cuadro lo recorta.
+  var lienzoMedir;
+  function anchoAlContenido(tabla, i) {
+    lienzoMedir = lienzoMedir || document.createElement('canvas');
+    var ctx = lienzoMedir.getContext('2d');
+    var max = 0;
+    Array.prototype.forEach.call(tabla.rows, function (tr) {
+      if (tr.hidden || tr.style.display === 'none') return;
+      var celda = tr.cells[i];
+      if (!celda || celda.colSpan > 1) return;
+      var cc = getComputedStyle(celda);
+      var relleno = parseFloat(cc.paddingLeft) + parseFloat(cc.paddingRight) + 6;
+      var campo = celda.querySelector('input:not([type="hidden"]):not([type="checkbox"]):not([type="date"]):not([type="number"]), textarea');
+      var ancho;
+      if (campo) {
+        var cs = getComputedStyle(campo);
+        ctx.font = cs.font;
+        ancho = ctx.measureText(campo.value || campo.placeholder || '').width + relleno +
+          parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight) + parseFloat(cs.borderLeftWidth) + parseFloat(cs.borderRightWidth);
+      } else {
+        // El contenido sin cortes de línea, medido fuera de la tabla.
+        var copia = document.createElement('div');
+        copia.style.cssText = 'position:absolute;visibility:hidden;white-space:nowrap;left:-9999px;top:0';
+        copia.className = celda.className;
+        copia.innerHTML = celda.innerHTML;
+        Array.prototype.forEach.call(copia.querySelectorAll('.col-ajuste'), function (x) { x.remove(); });
+        celda.appendChild(copia);
+        ancho = copia.getBoundingClientRect().width + relleno;
+        copia.remove();
+      }
+      if (ancho > max) max = ancho;
+    });
+    return Math.max(48, Math.ceil(max));
+  }
+
   function initTablas(scope) {
     (scope || document).querySelectorAll('table.data-table').forEach(function (tabla) {
       // Tablas con encabezado de dos filas (la matriz de permisos): sin ordenar ni ajustar columnas.
@@ -2086,10 +2167,10 @@
 
       // Anchos guardados
       if (estado.anchos) {
-        tabla.style.tableLayout = 'fixed';
         Array.prototype.forEach.call(thead.rows[0].cells, function (th, i) {
           if (estado.anchos[i]) th.style.width = estado.anchos[i] + 'px';
         });
+        congelarAnchos(tabla);
       }
 
       Array.prototype.forEach.call(thead.rows[0].cells, function (th, idx) {
@@ -2104,32 +2185,49 @@
             ordenarPor(tabla, idx, dir);
           });
         }
-        // Handle de ajuste de ancho
+        // Asa de ajuste de ancho: arrastrar cambia el ancho; doble clic lo ajusta al contenido
+        // (como en Excel). El doble clic se cuenta aquí: el preventDefault del mousedown, que
+        // evita seleccionar texto al arrastrar, también se come el dblclick del navegador.
         var h = document.createElement('span');
         h.className = 'col-ajuste';
+        h.title = 'Arrastra para cambiar el ancho · doble clic: se ajusta al contenido';
         th.appendChild(h);
+        var ultimoClic = 0;
         h.addEventListener('mousedown', function (e) {
           e.preventDefault();
           e.stopPropagation();
-          tabla.style.tableLayout = 'fixed';
+          congelarAnchos(tabla);
+          if (e.timeStamp - ultimoClic < 400) {
+            ultimoClic = 0;
+            th.style.width = anchoAlContenido(tabla, idx) + 'px';
+            anchoTablaFijo(tabla);
+            guardarAnchos();
+            return;
+          }
+          ultimoClic = e.timeStamp;
           var x0 = e.pageX, w0 = th.offsetWidth;
           function mover(ev) {
             var w = Math.max(48, w0 + (ev.pageX - x0));
             th.style.width = w + 'px';
+            anchoTablaFijo(tabla);
           }
           function soltar() {
             document.removeEventListener('mousemove', mover);
             document.removeEventListener('mouseup', soltar);
-            estado.anchos = estado.anchos || {};
-            Array.prototype.forEach.call(thead.rows[0].cells, function (c, i) {
-              estado.anchos[i] = c.offsetWidth;
-            });
-            guarda(clave, estado);
+            guardarAnchos();
           }
           document.addEventListener('mousemove', mover);
           document.addEventListener('mouseup', soltar);
         });
+        h.addEventListener('click', function (e) { e.stopPropagation(); });
       });
+      function guardarAnchos() {
+        estado.anchos = {};
+        Array.prototype.forEach.call(thead.rows[0].cells, function (c, i) {
+          estado.anchos[i] = c.offsetWidth;
+        });
+        guarda(clave, estado);
+      }
 
       if (estado.orden) {
         marcarFlechas(thead.rows[0], estado.orden.idx, estado.orden.dir);

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { leerPaginaDescargas, ultimaVersionDe, esDelSistema } from '../../src/core/entities/DescargasContpaqi.js';
+import { leerPaginaDescargas, ultimaVersionDe, esDelSistema, sistemasDelMercado } from '../../src/core/entities/DescargasContpaqi.js';
 import { VersionesContpaqiService } from '../../src/application/versiones/VersionesContpaqiService.js';
 import { VersionSistema } from '../../src/core/entities/VersionSistema.js';
 import type { IDescargasContpaqi } from '../../src/core/ports/services/IDescargasContpaqi.js';
@@ -64,6 +64,20 @@ describe('leerPaginaDescargas', () => {
   });
 });
 
+describe('sistemasDelMercado', () => {
+  it('suma Anticipa y Servidor de Licencias Común al catálogo, sin repetirlos', () => {
+    expect(sistemasDelMercado(['NOMINAS'])).toEqual(['NOMINAS', 'ANTICIPA', 'SERVIDOR DE LICENCIAS COMUN']);
+    expect(sistemasDelMercado(['Anticipa', 'Servidor de Licencias Común'])).toEqual(['Anticipa', 'Servidor de Licencias Común']);
+  });
+});
+
+describe('fechas de la página', () => {
+  it('voltea día y mes cuando vienen al revés (Instalia: 2024-18-06)', () => {
+    const [p] = leerPaginaDescargas(`<h2>CONTPAQi Instalia® 3.1.0</h2><p>Versión: 3.1.0</p><p>Publicado: 2024-18-06</p>`);
+    expect(p!.fecha).toBe('2024-06-18');
+  });
+});
+
 describe('esDelSistema', () => {
   it('empareja por palabras, sin acentos ni ®, con alias para Componentes y Start/Pro', () => {
     expect(esDelSistema('NOMINAS', 'CONTPAQi Nóminas® 19.4.2')).toBe(true);
@@ -81,21 +95,32 @@ describe('ultimaVersionDe', () => {
   const pubs = leerPaginaDescargas(PAGINA);
 
   it('una solución fuera de versión es SP de la versión normal anterior y hereda su carta técnica', () => {
+    // La versión trae su propia fecha y descarga; la SFV queda como SP 1 con la suya.
     expect(ultimaVersionDe('NOMINAS', pubs)).toEqual({
       version: '19.4.2 Sp 1',
-      fecha: '2026-10-21',
-      linkDescarga: `${D}/Nominas/SFV_Nominas_v1943.zip`,
+      base: '19.4.2',
+      fecha: '2026-10-19',
+      linkDescarga: `${D}/Nominas/CTi_NOMINAS_1942.zip`,
       linkCartaTecnica: `${CT}/CT_Nominas_1942/portada.html`,
       titulo: 'Solución Fuera de Versión CONTPAQi Nóminas® 19.4.3',
+      servicePacks: [
+        { numero: 1, fecha: '2026-10-21', linkDescarga: `${D}/Nominas/SFV_Nominas_v1943.zip`, titulo: 'Solución Fuera de Versión CONTPAQi Nóminas® 19.4.3' },
+      ],
     });
   });
 
   it('el service pack más alto gana y toma la carta de su versión', () => {
-    expect(ultimaVersionDe('Comercial Pro', pubs)).toMatchObject({
+    const u = ultimaVersionDe('Comercial Pro', pubs)!;
+    expect(u).toMatchObject({
       version: '11.0.0 Sp 2',
-      linkDescarga: `${D}/StartPro/1100SP2.zip`,
+      base: '11.0.0',
+      linkDescarga: `${D}/StartPro/1100.zip`,
       linkCartaTecnica: `${CT}/CT_StartPro_1100/portada.html`,
     });
+    expect(u.servicePacks.map((p) => [p.numero, p.linkDescarga])).toEqual([
+      [1, `${D}/StartPro/1100SP1.zip`],
+      [2, `${D}/StartPro/1100SP2.zip`],
+    ]);
   });
 
   it('una versión normal más alta le gana a un SP de una anterior; sin coincidencias → null', () => {
