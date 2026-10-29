@@ -150,7 +150,13 @@
 
   {# La tendencia va arriba, a lo ancho y grande; la lista de recientes al final. #}
   <div class="card">
-    <h2>📊 Tickets por mes <span class="muted">(últimos 12 meses)</span></h2>
+    <div class="card__head-flex">
+      <h2>📊 Tickets por mes <span class="muted">(últimos {{ meses }} meses)</span></h2>
+      <nav class="segmentado" aria-label="Meses de la gráfica">
+        {% for n in mesesOpciones %}<a href="/app?meses={{ n }}" class="segmentado__op{{ ' is-activo' if n == meses }}"{% if n == meses %} aria-current="true"{% endif %}>{{ n }}</a>{% endfor %}
+        <span class="muted" style="font-size: var(--text-xs)">meses</span>
+      </nav>
+    </div>
     {{ columnas(m.tickets.porMes, true) }}
   </div>
 

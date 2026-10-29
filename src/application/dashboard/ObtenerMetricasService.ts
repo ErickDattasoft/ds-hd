@@ -18,8 +18,15 @@ import { ticketSinNadieAsignado } from '../../core/entities/Ticket.js';
 /** Orden de las tarjetas por estado (como las del CRM viejo); los demás van después. */
 const ORDEN_ESTADOS = ['Abierto', 'En proceso', 'Pendiente', 'Resuelto', 'Cerrado'];
 
-/** Meses hacia atrás (incluido el actual) que cubre la gráfica de tickets por mes. */
-const MESES_GRAFICA = 12;
+/** Meses hacia atrás (incluido el actual) que puede cubrir la gráfica de tickets por mes. */
+export const MESES_GRAFICA_OPCIONES = [3, 6, 12, 18, 24] as const;
+export const MESES_GRAFICA_DEFAULT = 12;
+
+/** Lo que llega de la pantalla → uno de los valores permitidos (si no, 12). */
+export function mesesGrafica(v: unknown): number {
+  const n = Number(v);
+  return (MESES_GRAFICA_OPCIONES as readonly number[]).includes(n) ? n : MESES_GRAFICA_DEFAULT;
+}
 
 /** Resumen de licencias en riesgo para el banner y la tarjeta de "avisos pendientes". */
 export interface MetricasLicencias {
@@ -79,10 +86,10 @@ export interface Metricas {
   licencias: MetricasLicencias | null;
 }
 
-/** Cuenta tickets por mes de creación, últimos {@link MESES_GRAFICA} meses. */
-function agruparPorMes(fechas: Date[], ahora: Date): { etiqueta: string; valor: number }[] {
+/** Cuenta tickets por mes de creación, los últimos `meses` meses (incluido el actual). */
+function agruparPorMes(fechas: Date[], ahora: Date, meses: number): { etiqueta: string; valor: number }[] {
   const buckets: { clave: string; etiqueta: string; valor: number }[] = [];
-  for (let i = MESES_GRAFICA - 1; i >= 0; i--) {
+  for (let i = meses - 1; i >= 0; i--) {
     const d = new Date(ahora.getFullYear(), ahora.getMonth() - i, 1);
     // El año solo se escribe cuando aporta algo (enero, y el primer mes de la serie): en las
     // doce columnas de la gráfica repetirlo en todas no distingue nada y hace que la etiqueta
@@ -91,7 +98,7 @@ function agruparPorMes(fechas: Date[], ahora: Date): { etiqueta: string; valor: 
     buckets.push({
       clave: `${d.getFullYear()}-${d.getMonth()}`,
       etiqueta:
-        d.getMonth() === 0 || i === MESES_GRAFICA - 1
+        d.getMonth() === 0 || i === meses - 1
           ? `${mes} ${String(d.getFullYear()).slice(2)}`
           : mes,
       valor: 0,
@@ -141,7 +148,7 @@ export class ObtenerMetricasService {
     private readonly avisar?: AvisarEmpresasService,
   ) {}
 
-  async ejecutar(actor: SessionUser): Promise<Metricas> {
+  async ejecutar(actor: SessionUser, opciones: { mesesGrafica?: number } = {}): Promise<Metricas> {
     const ahora = this.clock.now();
     const haceUnaSemana = new Date(ahora.getTime() - 7 * 86_400_000);
     const alcance = alcanceTickets(actor);
@@ -197,6 +204,7 @@ export class ObtenerMetricasService {
         porMes: agruparPorMes(
           todos.map((t) => t.abiertoEn),
           ahora,
+          mesesGrafica(opciones.mesesGrafica),
         ),
         total: todos.length,
         porEstadoTodos,

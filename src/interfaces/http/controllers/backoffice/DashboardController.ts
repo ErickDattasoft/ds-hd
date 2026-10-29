@@ -1,3 +1,4 @@
+import { MESES_GRAFICA_OPCIONES, mesesGrafica } from '../../../../application/dashboard/ObtenerMetricasService.js';
 import type { BackupService } from '../../../../application/configuracion/BackupService.js';
 import type { Request, Response } from 'express';
 import type { ObtenerMetricasService } from '../../../../application/dashboard/ObtenerMetricasService.js';
@@ -16,13 +17,21 @@ export class DashboardController {
   ver = async (req: Request, res: Response): Promise<void> => {
     // El aviso de backup atrasado (7+ días) solo a quien puede descargarlo, como el viejo.
     const verBackup = this.backup && req.user!.permisos.includes('configuracion:integraciones');
+    // Meses de la gráfica «Tickets por mes»: lo elegido se recuerda en una cookie.
+    const pedido = typeof req.query.meses === 'string' ? req.query.meses : req.cookies?.dash_meses;
+    const meses = mesesGrafica(pedido);
+    if (typeof req.query.meses === 'string') {
+      res.cookie('dash_meses', String(meses), { maxAge: 365 * 86_400_000, sameSite: 'lax', httpOnly: true });
+    }
     const [m, backup] = await Promise.all([
-      this.metricas.ejecutar(req.user!),
+      this.metricas.ejecutar(req.user!, { mesesGrafica: meses }),
       verBackup ? this.backup!.estado().catch(() => null) : Promise.resolve(null),
     ]);
     res.render('pages/backoffice/dashboard', {
       titulo: 'Dashboard',
       m,
+      meses,
+      mesesOpciones: MESES_GRAFICA_OPCIONES,
       backupAtrasado: backup?.atrasado ? backup : null,
       hoyIso: new Date().toLocaleDateString('en-CA', { timeZone: 'America/Mexico_City' }),
     });

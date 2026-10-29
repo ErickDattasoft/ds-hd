@@ -88,6 +88,19 @@ describe('ObtenerMetricasService', () => {
     expect(m.tickets.porMes.reduce((s, b) => s + b.valor, 0)).toBe(3); // septiembre del año pasado no cuenta
   });
 
+  it('la gráfica cubre los meses elegidos (3, 6, 12, 18, 24); otro valor → 12', async () => {
+    ticketEn('t1', '2026-09-01T09:00:00Z');
+    ticketEn('t4', '2025-09-15T09:00:00Z'); // hace 12 meses: entra con 18 o 24
+
+    const tres = await service.ejecutar(actor(['tickets:leer_todos']), { mesesGrafica: 3 });
+    expect(tres.tickets.porMes).toHaveLength(3);
+    const dieciocho = await service.ejecutar(actor(['tickets:leer_todos']), { mesesGrafica: 18 });
+    expect(dieciocho.tickets.porMes).toHaveLength(18);
+    expect(dieciocho.tickets.porMes.reduce((s, b) => s + b.valor, 0)).toBe(2);
+    const raro = await service.ejecutar(actor(['tickets:leer_todos']), { mesesGrafica: 7 });
+    expect(raro.tickets.porMes).toHaveLength(12);
+  });
+
   it('sin permiso de empresas: licencias es null', async () => {
     const m = await service.ejecutar(actor(['tickets:leer_todos']));
     expect(m.licencias).toBeNull();

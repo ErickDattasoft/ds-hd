@@ -1339,3 +1339,15 @@ th.mercado__link { width: 28%; }
 .mercado__sp-numero input { width: 4.5rem; }
 /* Versiones del mercado: filas llenadas con «Traer de CONTPAQi» (aún sin guardar). */
 .fila--traida > td { background: var(--warning-weak); }
+
+/* Encabezado de tarjeta con título a la izquierda y controles a la derecha. */
+.card__head-flex { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); flex-wrap: wrap; }
+.card__head-flex h2 { margin: 0; }
+/* Botones de opción pegados (p. ej. meses de la gráfica del dashboard). */
+.segmentado { display: inline-flex; align-items: center; gap: 2px; }
+.segmentado__op {
+  padding: 0.15rem 0.6rem; border: 1px solid var(--color-border); border-radius: var(--radius-sm);
+  font-size: var(--text-sm); color: var(--color-text-muted); text-decoration: none;
+}
+.segmentado__op:hover { color: var(--color-text); border-color: var(--brand); }
+.segmentado__op.is-activo { background: var(--brand); border-color: var(--brand); color: #fff; font-weight: 600; }
