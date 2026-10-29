@@ -24,3 +24,8 @@ export interface EventoTicket {
   actorNombre: string | null;
   at: Date;
 }
+
+/** Cuenta como plática con el cliente: lo que él ve (las notas internas no). */
+export function esPlatica(nota: Pick<NotaTicket, 'tipo'>): boolean {
+  return nota.tipo === 'publica';
+}

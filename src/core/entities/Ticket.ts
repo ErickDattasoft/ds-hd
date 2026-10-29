@@ -113,6 +113,11 @@ export interface TicketProps {
   updatedAt?: Date;
   historialEstados?: CambioEstado[];
   archivado?: boolean;
+  /**
+   * Ya hubo plática con el cliente (al menos un mensaje público además de la solicitud). Lo marca
+   * el repositorio al guardar la nota — nunca `save()`, para que un ticket cargado antes no lo borre.
+   */
+  conPlatica?: boolean;
   /** Folio de un ticket que se eliminó: se conserva para que la numeración siga consecutiva. */
   eliminadoPorAdmin?: boolean;
 }
@@ -176,6 +181,8 @@ export class Ticket {
   updatedAt: Date;
   historialEstados: CambioEstado[];
   archivado: boolean;
+  /** Solo lectura en la práctica: ver `TicketProps.conPlatica`. */
+  conPlatica: boolean;
   eliminadoPorAdmin: boolean;
 
   constructor(props: TicketProps) {
@@ -240,6 +247,7 @@ export class Ticket {
     };
     this.agenda = sanearAgenda(props.agenda);
     this.archivado = props.archivado ?? false;
+    this.conPlatica = props.conPlatica ?? false;
     this.eliminadoPorAdmin = props.eliminadoPorAdmin ?? false;
   }
 

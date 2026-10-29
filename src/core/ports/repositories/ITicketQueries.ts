@@ -32,6 +32,8 @@ export interface FiltroTickets {
   /** Estado de facturación (`no_facturado`, `facturado`…). */
   facturacion?: string;
   limite?: number;
+  /** `true` = solo los que tienen o tuvieron plática con el cliente (ver `Ticket.conPlatica`). */
+  conPlatica?: boolean;
   /** `false` (por defecto en las vistas normales) excluye tickets en la papelera. */
   archivado?: boolean;
 }

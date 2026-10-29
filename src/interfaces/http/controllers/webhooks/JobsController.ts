@@ -94,6 +94,15 @@ export class JobsController {
    * listas del staff la empresa salía vacía. Se completa aquí; los que ya lo tienen no se tocan,
    * así que correrlo de nuevo no hace nada.
    */
+  /**
+   * Relleno de una vez para el 💬 del menú: marca `conPlatica` en los tickets que ya tenían
+   * mensajes públicos antes de que existiera el campo (los nuevos se marcan solos). Repetible.
+   */
+  marcarTicketsConPlatica = async (req: Request, res: Response): Promise<void> => {
+    if (!this.autorizado(req)) return void res.status(401).json({ error: 'no autorizado' });
+    res.json({ ok: true, marcados: await this.ticketRepo.marcarConPlatica() });
+  };
+
   completarEmpresaTickets = async (req: Request, res: Response): Promise<void> => {
     if (!this.autorizado(req)) return void res.status(401).json({ error: 'no autorizado' });
     const pendientes = (await this.ticketQueries.listar({ canal: 'portal' })).filter(

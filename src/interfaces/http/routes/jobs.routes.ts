@@ -15,6 +15,8 @@ export function jobsRoutes(container: Container): Router {
   r.get('/recalcular-sla', (req, res) => jobs().recalcularSla(req, res));
   r.post('/completar-empresa-tickets', (req, res) => jobs().completarEmpresaTickets(req, res));
   r.get('/completar-empresa-tickets', (req, res) => jobs().completarEmpresaTickets(req, res));
+  r.post('/marcar-tickets-con-platica', (req, res) => jobs().marcarTicketsConPlatica(req, res));
+  r.get('/marcar-tickets-con-platica', (req, res) => jobs().marcarTicketsConPlatica(req, res));
   r.post('/purgar-bitacora', (req, res) => jobs().purgarBitacora(req, res));
   r.get('/purgar-bitacora', (req, res) => jobs().purgarBitacora(req, res));
   r.post('/resumen-diario', (req, res) => jobs().resumenDiario(req, res));

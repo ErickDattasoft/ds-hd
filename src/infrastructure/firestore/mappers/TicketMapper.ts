@@ -75,6 +75,7 @@ export const TicketMapper = {
       updatedAt: fecha(d.updatedAt) ?? new Date(),
       historialEstados: historial,
       archivado: Boolean(d.archivado),
+      conPlatica: d.conPlatica === true,
       eliminadoPorAdmin: d.eliminadoPorAdmin === true,
     });
   },

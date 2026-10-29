@@ -33,7 +33,8 @@ async function contadoresDelMenu(
   const sufijoCache = alcance.alcanceAgente ? `|${user.uid}` : '';
   const calcular: Record<string, () => Promise<number>> = {
     ticketsAbiertos: () => container.resolve('ticketQueries').contar({ soloAbiertos: true, archivado: false, ...alcance }),
-    ticketsTotal: () => container.resolve('ticketQueries').contar({ archivado: false, ...alcance }),
+    ticketsConPlatica: () =>
+      container.resolve('ticketQueries').contar({ conPlatica: true, archivado: false, ...alcance }),
     // Conteo del servidor: antes se descargaban TODAS las cotizaciones solo para contar borradores.
     cotizacionesBorrador: () => container.resolve('cotizacionRepo').contarEnEstado('borrador'),
     empresasTotal: () => container.resolve('empresaRepo').contar(),

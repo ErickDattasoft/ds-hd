@@ -1,7 +1,7 @@
 import type { DocumentData, DocumentReference, Firestore, WriteBatch } from 'firebase-admin/firestore';
 import type { ITicketRepository } from '../../core/ports/repositories/ITicketRepository.js';
 import type { Ticket } from '../../core/entities/Ticket.js';
-import type { EventoTicket, NotaTicket } from '../../core/entities/NotaTicket.js';
+import { esPlatica, type EventoTicket, type NotaTicket } from '../../core/entities/NotaTicket.js';
 import { TicketMapper } from './mappers/TicketMapper.js';
 
 const COL = 'tickets';
@@ -103,7 +103,8 @@ export class FirestoreTicketRepository implements ITicketRepository {
     const escrituras: { ref: DocumentReference; datos: DocumentData; merge: boolean }[] = [];
     for (const { ticket, notas, eventos } of items) {
       const ref = this.db.collection(COL).doc(ticket.id);
-      escrituras.push({ ref, datos: TicketMapper.toDocument(ticket), merge: true });
+      const datos = TicketMapper.toDocument(ticket);
+      escrituras.push({ ref, datos: notas.some(esPlatica) ? { ...datos, conPlatica: true } : datos, merge: true });
       for (const n of notas) {
         escrituras.push({ ref: ref.collection('notas').doc(n.id), datos: TicketMapper.notaToDoc(n), merge: false });
       }
@@ -124,12 +125,34 @@ export class FirestoreTicketRepository implements ITicketRepository {
   }
 
   async agregarNota(ticketId: string, nota: NotaTicket): Promise<void> {
-    await this.db
-      .collection(COL)
-      .doc(ticketId)
-      .collection('notas')
-      .doc(nota.id)
-      .set(TicketMapper.notaToDoc(nota));
+    const ref = this.db.collection(COL).doc(ticketId);
+    if (!esPlatica(nota)) {
+      await ref.collection('notas').doc(nota.id).set(TicketMapper.notaToDoc(nota));
+      return;
+    }
+    const batch = this.db.batch();
+    batch.set(ref.collection('notas').doc(nota.id), TicketMapper.notaToDoc(nota));
+    batch.set(ref, { conPlatica: true }, { merge: true });
+    await batch.commit();
+  }
+
+  async marcarConPlatica(): Promise<number> {
+    const [notas, yaMarcados] = await Promise.all([
+      this.db.collectionGroup('notas').get(),
+      this.db.collection(COL).where('conPlatica', '==', true).get(),
+    ]);
+    const marcados = new Set(yaMarcados.docs.map((d) => d.id));
+    const pendientes = new Set<string>();
+    for (const h of notas.docs) {
+      const ticket = h.ref.parent.parent;
+      if (ticket?.parent.id === COL && !marcados.has(ticket.id) && esPlatica(TicketMapper.notaToDomain(h.id, h.data()))) {
+        pendientes.add(ticket.id);
+      }
+    }
+    await this.enTandas([...pendientes], (batch, id) =>
+      batch.set(this.db.collection(COL).doc(id), { conPlatica: true }, { merge: true }),
+    );
+    return pendientes.size;
   }
 
   async listarNotas(ticketId: string): Promise<NotaTicket[]> {

@@ -27,6 +27,7 @@ export class FirestoreTicketQueries implements ITicketQueries {
     if (filtro.solicitanteUid) q = q.where('solicitanteUid', '==', filtro.solicitanteUid);
     if (filtro.canal) q = q.where('canal', '==', filtro.canal);
     if (filtro.soloAbiertos) q = q.where('abierto', '==', true);
+    if (filtro.conPlatica) q = q.where('conPlatica', '==', true);
     return q;
   }
 

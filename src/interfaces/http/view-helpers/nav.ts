@@ -16,7 +16,7 @@ const ORDEN_GRUPOS: readonly NavGrupo[] = ['principal', 'soporte', 'comercial', 
 /** Claves de los contadores de la barra lateral (ver `ContadoresNav`). */
 export type ContadorNavKey =
   | 'ticketsAbiertos'
-  | 'ticketsTotal'
+  | 'ticketsConPlatica'
   | 'cotizacionesBorrador'
   | 'solicitudesAccesoPendientes'
   | 'empresasTotal'
@@ -40,6 +40,8 @@ export interface NavItem {
   /** Segundo badge opcional, que va antes del principal (p. ej. total junto a pendientes). */
   contadorTotalKey?: ContadorNavKey;
   contadorTotalTitulo?: string;
+  /** Emoji antes del número del segundo badge, para no confundirlo con el principal. */
+  contadorTotalIcono?: string;
   /** Valores de los badges para esta request — los llena `conContadores`, nunca el catálogo estático. */
   contador?: number;
   contadorTotal?: number;
@@ -65,7 +67,9 @@ export const NAV_BACKOFFICE: readonly NavItem[] = [
 
   { etiqueta: 'Tickets', href: '/app/tickets', icono: '🎫', permiso: 'tickets:leer', grupo: 'soporte',
     contadorKey: 'ticketsAbiertos', contadorTitulo: '{n} tickets sin cerrar (ni resueltos ni cerrados)',
-    contadorTotalKey: 'ticketsTotal', contadorTotalTitulo: '{n} tickets en total (sin contar la papelera)' },
+    // El total ya está en el recuadro «Total tickets» de la lista; aquí, cuántos tuvieron plática.
+    contadorTotalKey: 'ticketsConPlatica', contadorTotalIcono: '💬',
+    contadorTotalTitulo: '{n} tickets con plática con el cliente (tienen o tuvieron mensajes, sin contar la papelera)' },
   { etiqueta: 'Reportes', href: '/app/reportes', icono: '📈', permiso: 'tickets:leer_todos', grupo: 'soporte' },
 
   { etiqueta: 'Empresas', href: '/app/empresas', icono: '🏢', permiso: 'empresas:leer', grupo: 'comercial', contadorKey: 'empresasTotal', contadorTitulo: '{n} empresas' },

@@ -15,7 +15,10 @@ export interface ITicketRepository {
   /** Borrado permanente, incluidas notas y eventos (solo desde la papelera). */
   eliminar(id: string): Promise<void>;
 
+  /** Guarda la nota; si es pública, marca el ticket `conPlatica`. */
   agregarNota(ticketId: string, nota: NotaTicket): Promise<void>;
+  /** Relleno de una vez: marca `conPlatica` en los tickets que ya tenían mensajes públicos. Devuelve cuántos. */
+  marcarConPlatica(): Promise<number>;
   listarNotas(ticketId: string): Promise<NotaTicket[]>;
 
   registrarEvento(ticketId: string, evento: EventoTicket): Promise<void>;

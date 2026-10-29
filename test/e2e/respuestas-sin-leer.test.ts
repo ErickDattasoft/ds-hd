@@ -36,6 +36,9 @@ describe('buzón 🔔 de respuestas de clientes', () => {
     expect(tickets.text).toContain(`💬 Respondió ${CLI.nombre}`);
     expect((await sup.agent.get('/app/tickets/tablero')).text).toContain('kanban__card--respondio');
 
+    // El 💬 del menú cuenta los tickets que tienen o tuvieron plática.
+    expect(t.ticketStore.tickets.get(id)!.conPlatica).toBe(true);
+
     const lista = await sup.agent.get('/app/tickets/respuestas');
     expect(lista.text).toContain('Sigue fallando');
     expect(lista.text).toContain('data-campana-respuestas');
@@ -49,6 +52,22 @@ describe('buzón 🔔 de respuestas de clientes', () => {
     expect((await sup.agent.post(`/app/tickets/${id}/leida`).set('x-csrf-token', sup.csrf)).status).toBe(204);
     expect((await sup.agent.get('/app/tickets/respuestas/contador')).body.n).toBe(0);
     expect((await sup.agent.get('/app/tickets')).text).not.toContain('fila--respondio');
+  });
+
+  it('el relleno marca 💬 los tickets que ya tenían plática antes del campo', async () => {
+    const t = makeTestApp({ usuarios: [SUP, CLI] });
+    const cli = await login(t.app, CLI.email, CLI.password);
+    const crear = await cli.agent
+      .post('/portal/tickets')
+      .type('form')
+      .send({ _csrf: cli.csrf, asunto: 'Viejo', descripcion: 'Falla al timbrar', tipo: 'General', prioridad: 'Media' });
+    const id = String(crear.headers.location).split('/').pop()!;
+    await cli.agent.post(`/portal/tickets/${id}/responder`).type('form').send({ _csrf: cli.csrf, cuerpo: 'hola' });
+    t.ticketStore.tickets.get(id)!.conPlatica = false; // como los migrados, sin el campo
+
+    const r = await request(t.app).post('/jobs/marcar-tickets-con-platica').set('authorization', 'Bearer dev-jobs-secret');
+    expect(r.body).toEqual({ ok: true, marcados: 1 });
+    expect(t.ticketStore.tickets.get(id)!.conPlatica).toBe(true);
   });
 
   it('contestarle al cliente también lo quita; «marcar todas» vacía el buzón', async () => {

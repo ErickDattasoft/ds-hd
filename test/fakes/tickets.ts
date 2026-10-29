@@ -18,7 +18,7 @@ import type { ITicketPublicoRepository } from '../../src/core/ports/repositories
 import type { ICaptchaVerifier } from '../../src/core/ports/services/ICaptchaVerifier.js';
 import type { IWebhookPublisher, EventoWebhook } from '../../src/core/ports/services/IWebhookPublisher.js';
 import type { Ticket } from '../../src/core/entities/Ticket.js';
-import type { EventoTicket, NotaTicket } from '../../src/core/entities/NotaTicket.js';
+import { esPlatica, type EventoTicket, type NotaTicket } from '../../src/core/entities/NotaTicket.js';
 import type { TicketPublico } from '../../src/core/entities/TicketPublico.js';
 import {
   CONFIG_TICKETS_POR_DEFECTO,
@@ -91,6 +91,8 @@ export class InMemoryTicketRepository implements ITicketRepository {
     for (const e of eventos) await this.registrarEvento(ticket.id, e);
   }
   async agregarNota(ticketId: string, nota: NotaTicket): Promise<void> {
+    const ticket = this.store.tickets.get(ticketId);
+    if (ticket && esPlatica(nota)) ticket.conPlatica = true;
     const lista = this.store.notas.get(ticketId) ?? [];
     lista.push(nota);
     this.store.notas.set(ticketId, lista);
@@ -107,6 +109,17 @@ export class InMemoryTicketRepository implements ITicketRepository {
   }
   async listarEventos(ticketId: string): Promise<EventoTicket[]> {
     return [...(this.store.eventos.get(ticketId) ?? [])].sort((a, b) => a.at.getTime() - b.at.getTime());
+  }
+  async marcarConPlatica(): Promise<number> {
+    let n = 0;
+    for (const [id, notas] of this.store.notas) {
+      const ticket = this.store.tickets.get(id);
+      if (ticket && !ticket.conPlatica && notas.some(esPlatica)) {
+        ticket.conPlatica = true;
+        n++;
+      }
+    }
+    return n;
   }
   async listarDetalleTodos(): Promise<Map<string, { notas: NotaTicket[]; eventos: EventoTicket[] }>> {
     const ids = new Set([...this.store.notas.keys(), ...this.store.eventos.keys()]);
@@ -133,6 +146,7 @@ export class InMemoryTicketQueries implements ITicketQueries {
     if (f.soloAbiertos && esEstadoFinal(t.estado)) return false;
     if (f.soloProgramados && t.fechaHoraProgramada === null) return false;
     if (f.archivado !== undefined && t.archivado !== f.archivado) return false;
+    if (f.conPlatica && !t.conPlatica) return false;
     if (f.texto && !coincideTexto(t, f.texto)) return false;
     if (f.tipo && t.tipo !== f.tipo) return false;
     if (f.facturacion && t.facturacion.estado !== f.facturacion) return false;
