@@ -11,7 +11,7 @@
     {% if area == 'backoffice' and avisosGlobales and avisosGlobales.respuestasSinLeer !== null %}
       {% set nResp = avisosGlobales.respuestasSinLeer %}
       <a class="btn btn--ghost btn--sm campana{{ ' campana--activa' if nResp }}" href="/app/tickets/respuestas" data-campana-respuestas
-         title="Respuestas de clientes sin leer" aria-label="Respuestas de clientes sin leer: {{ nResp }}">🔔<span class="campana__n" data-campana-n{{ ' hidden' if not nResp }}>{{ nResp }}</span></a>
+         title="Respuestas de clientes sin leer" aria-label="Respuestas de clientes sin leer: {{ nResp }}">🔔<span class="campana__n" data-campana-n>{{ nResp }}</span></a>
     {% endif %}
     {% if can('tickets:crear') %}<a class="btn btn--sm" href="/app/tickets/nuevo" title="Crear un ticket nuevo — funciona desde cualquier sección">➕ Ticket</a>{% endif %}
     {% if can('configuracion:integraciones') %}<a class="btn btn--ghost btn--sm" href="/app/configuracion/backup/descargar" data-respaldar hx-boost="false" title="Descargar backup completo — funciona desde cualquier sección">🛡️ Respaldar</a>{% endif %}

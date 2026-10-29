@@ -22,6 +22,8 @@ function duracionCorta(ms: number): string {
 
 export interface TicketVM {
   id: string;
+  /** Respuesta del cliente que nadie del equipo ha visto (buzón 🔔); resalta la fila. */
+  respuestaSinLeer?: { autorNombre: string; extracto: string } | null;
   numero: number;
   asunto: string;
   estado: string;

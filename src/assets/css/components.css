@@ -523,6 +523,11 @@ fieldset.field {
 .badge--info { background: var(--info-weak); color: var(--info); border-color: transparent; }
 .badge--sm { font-size: 0.68rem; padding: 0.1em 0.5em; margin-top: 3px; }
 /* Ticket con SLA vencido: fila teñida, como el CRM viejo. */
+/* Fila con respuesta del cliente sin leer: franja azul a la izquierda y fondo suave. */
+tr.fila--respondio > td { background: color-mix(in srgb, var(--info, #3b82f6) 9%, transparent); font-weight: 600; }
+tr.fila--respondio > td:first-child { box-shadow: inset 4px 0 0 var(--info, #3b82f6); }
+.badge--respondio { background: var(--info, #3b82f6); color: #fff; font-weight: 600; max-width: 22rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: middle; }
+.kanban__card--respondio { border-left: 4px solid var(--info, #3b82f6); }
 tr.fila--sla-vencido > td { background: color-mix(in srgb, var(--danger) 6%, transparent); }
 .badge--pulse { animation: badge-pulse 1.6s ease-in-out infinite; }
 @keyframes badge-pulse {
@@ -729,12 +734,12 @@ tr.fila--sla-vencido > td { background: color-mix(in srgb, var(--danger) 6%, tra
 .campana__n {
   position: absolute; top: -6px; right: -6px;
   min-width: 1.2rem; height: 1.2rem; padding: 0 .3rem;
-  border-radius: var(--radius-full); background: var(--danger-solid); color: #fff;
+  border-radius: var(--radius-full); background: var(--color-text-muted); color: #fff;
   border: 2px solid var(--color-surface); box-shadow: var(--shadow-sm);
   font-size: 0.68rem; font-weight: 700; line-height: calc(1.2rem - 4px); text-align: center;
   pointer-events: none;
 }
-.campana__n[hidden] { display: none; }
+.campana--activa .campana__n { background: var(--danger-solid); }
 .campana--activa .campana__n { animation: campana-pulso 2s ease-out infinite; }
 @keyframes campana-pulso {
   0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--danger-solid) 60%, transparent); }

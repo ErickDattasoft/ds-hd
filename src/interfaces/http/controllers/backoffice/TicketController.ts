@@ -38,7 +38,8 @@ import {
 } from '../../../../core/entities/value-objects/EstadoFacturacion.js';
 import { parseAgenda } from '../../../../core/entities/value-objects/AgendaTicket.js';
 import { sanitizarDescripcionHtml } from '../../../../core/entities/value-objects/descripcionHtml.js';
-import { ticketVM } from '../../presenters/TicketPresenter.js';
+import { ticketVM, type TicketVM } from '../../presenters/TicketPresenter.js';
+import type { RespuestasSinLeerService } from '../../../../application/tickets/RespuestasSinLeerService.js';
 import { camposDeError } from '../../support/errores.js';
 import { ValidationError } from '../../../../core/errors/DomainError.js';
 
@@ -78,7 +79,24 @@ export class TicketController {
     private readonly contadores: IContadorRepository,
     private readonly editar: EditarTicketService,
     private readonly cotizacionesRepo?: ICotizacionRepository,
+    private readonly respuestas?: RespuestasSinLeerService,
   ) {}
+
+  /**
+   * Convierte tickets a VM marcando los que tienen respuesta del cliente sin leer (buzón 🔔).
+   * Una sola lectura del buzón por página, aunque sean varias listas (columnas del tablero).
+   */
+  private async vmsConRespuestas(req: Request, ...listas: Ticket[][]): Promise<TicketVM[][]> {
+    const ahora = this.clock.now();
+    const sinLeer = this.respuestas ? await this.respuestas.listarPara(req.user!).catch(() => []) : [];
+    const porTicket = new Map(sinLeer.map((r) => [r.ticketId, r]));
+    return listas.map((tickets) =>
+      tickets.map((t) => {
+        const r = porTicket.get(t.id);
+        return { ...ticketVM(t, ahora), respuestaSinLeer: r ? { autorNombre: r.autorNombre, extracto: r.extracto } : null };
+      }),
+    );
+  }
 
   /**
    * Filtro de la URL. El agente se busca por uid **o por nombre** ("Agente"/"Canalizado a"): los
@@ -118,10 +136,9 @@ export class TicketController {
       puedePapelera ? this.listar.contarEnPapelera(req.user!).catch(() => 0) : 0,
       puedeBuzon ? this.buzon.contarPendientes().catch(() => 0) : 0,
     ]);
-    const ahora = this.clock.now();
     res.render('pages/backoffice/tickets/list', {
       titulo: 'Tickets',
-      tickets: tickets.map((t) => ticketVM(t, ahora)),
+      tickets: (await this.vmsConRespuestas(req, tickets))[0],
       total,
       resumen,
       config,
@@ -142,10 +159,10 @@ export class TicketController {
 
   tableroView = async (req: Request, res: Response): Promise<void> => {
     const { columnas, config } = await this.listar.tablero(req.user!, await this.filtroDeQuery(req));
-    const ahora = this.clock.now();
+    const porColumna = await this.vmsConRespuestas(req, ...columnas.map((c) => c.tickets));
     res.render('pages/backoffice/tickets/kanban', {
       titulo: 'Tablero de tickets',
-      columnas: columnas.map((c) => ({ estado: c.estado, tickets: c.tickets.map((t) => ticketVM(t, ahora)) })),
+      columnas: columnas.map((c, i) => ({ estado: c.estado, tickets: porColumna[i] })),
       config,
     });
   };
@@ -156,10 +173,9 @@ export class TicketController {
       soloAbiertos: req.query.abiertos !== '0',
       archivado: false,
     });
-    const ahora = this.clock.now();
     res.render('pages/backoffice/tickets/mis-asignados', {
       titulo: 'Mis tickets asignados',
-      tickets: tickets.map((t) => ticketVM(t, ahora)),
+      tickets: (await this.vmsConRespuestas(req, tickets))[0],
       config,
     });
   };

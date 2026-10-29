@@ -14,8 +14,9 @@
       <section class="kanban__col" data-col-estado="{{ col.estado }}" aria-label="Columna {{ col.estado }}">
         <h2 class="kanban__title">{{ col.estado }} <span class="muted">({{ col.tickets | length }})</span></h2>
         {% for vm in col.tickets %}
-          <a class="kanban__card" href="/app/tickets/{{ vm.id }}" data-ticket-id="{{ vm.id }}">
+          <a class="kanban__card{{ ' kanban__card--respondio' if vm.respuestaSinLeer }}" href="/app/tickets/{{ vm.id }}" data-ticket-id="{{ vm.id }}">
             <strong>#{{ vm.numero }}</strong> {{ vm.asunto }}
+            {% if vm.respuestaSinLeer %}<br>{{ tk.respondioBadge(vm) }}{% endif %}
             <div class="kanban__meta">
               <span class="{{ vm.prioridad | prioridadClase }}">{{ vm.prioridad }}</span>
               <span>{{ vm.agenteAsignadoNombre or 'sin asignar' }}</span>

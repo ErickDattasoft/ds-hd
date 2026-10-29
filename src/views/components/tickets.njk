@@ -15,10 +15,13 @@
   {% else %}<span class="muted">{{ vm.facturacion.etiqueta }}</span>{% endif %}
 {% endmacro %}
 
+{# El cliente contestó y nadie del equipo lo ha visto (mismo buzón que la campana 🔔). #}
+{% macro respondioBadge(vm) %}<span class="badge badge--respondio" title="{{ vm.respuestaSinLeer.extracto }}">💬 Respondió {{ vm.respuestaSinLeer.autorNombre }}</span>{% endmacro %}
+
 {% macro filaTicket(vm, csrfToken, puedeEliminar, puedeEditar) %}
-  <tr{% if vm.slaEstado == 'vencido' %} class="fila--sla-vencido"{% endif %}>
+  <tr class="{{ 'fila--respondio' if vm.respuestaSinLeer }}{{ ' fila--sla-vencido' if vm.slaEstado == 'vencido' }}">
     <td><a href="/app/tickets/{{ vm.id }}">#{{ vm.numero }}</a></td>
-    <td>{{ vm.asunto }}{% if vm.agenda %}<br>{{ agendaBadge(vm) }}{% endif %}</td>
+    <td>{{ vm.asunto }}{% if vm.respuestaSinLeer %}<br>{{ respondioBadge(vm) }}{% endif %}{% if vm.agenda %}<br>{{ agendaBadge(vm) }}{% endif %}</td>
     <td>{{ vm.empresaNombre or '—' }}{% if vm.contactoNombre %}<br><span class="muted">{{ vm.contactoNombre }}</span>{% endif %}</td>
     <td>{{ vm.tipo }}{% if vm.sistema %}<br><span class="muted">{{ vm.sistema }}</span>{% endif %}</td>
     <td><span class="{{ vm.prioridad | prioridadClase }}">{{ vm.prioridad }}</span>{% if vm.slaCorto %}<br><span class="badge badge--sm {{ 'badge--danger' if vm.slaEstado == 'vencido' else ('badge--warning' if vm.slaEstado == 'por-vencer' else 'badge--ok') }}" title="{{ vm.slaTexto }}">{{ vm.slaCorto }}</span>{% endif %}</td>

@@ -1768,7 +1768,6 @@
     if (!a) return;
     var badge = a.querySelector('[data-campana-n]');
     badge.textContent = String(n);
-    badge.hidden = !n;
     a.classList.toggle('campana--activa', n > 0);
     a.setAttribute('aria-label', 'Respuestas de clientes sin leer: ' + n);
   }

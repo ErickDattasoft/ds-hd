@@ -30,6 +30,12 @@ describe('buzón 🔔 de respuestas de clientes', () => {
 
     const contador = await sup.agent.get('/app/tickets/respuestas/contador');
     expect(contador.body).toMatchObject({ n: 1, ultima: { ticketId: id, autorNombre: CLI.nombre, extracto: 'Sigue fallando' } });
+    // La lista y el tablero resaltan el ticket donde el cliente contestó.
+    const tickets = await sup.agent.get('/app/tickets');
+    expect(tickets.text).toContain('fila--respondio');
+    expect(tickets.text).toContain(`💬 Respondió ${CLI.nombre}`);
+    expect((await sup.agent.get('/app/tickets/tablero')).text).toContain('kanban__card--respondio');
+
     const lista = await sup.agent.get('/app/tickets/respuestas');
     expect(lista.text).toContain('Sigue fallando');
     expect(lista.text).toContain('data-campana-respuestas');
@@ -42,6 +48,7 @@ describe('buzón 🔔 de respuestas de clientes', () => {
 
     expect((await sup.agent.post(`/app/tickets/${id}/leida`).set('x-csrf-token', sup.csrf)).status).toBe(204);
     expect((await sup.agent.get('/app/tickets/respuestas/contador')).body.n).toBe(0);
+    expect((await sup.agent.get('/app/tickets')).text).not.toContain('fila--respondio');
   });
 
   it('contestarle al cliente también lo quita; «marcar todas» vacía el buzón', async () => {
