@@ -51,6 +51,8 @@ import {
 } from '../infrastructure/firestore/FirestoreEventoRepository.js';
 import { N8nWebhookPublisher } from '../infrastructure/webhooks/N8nWebhookPublisher.js';
 import { HttpIntegracionesGateway } from '../infrastructure/integraciones/HttpIntegracionesGateway.js';
+import { HttpDescargasContpaqi } from '../infrastructure/integraciones/HttpDescargasContpaqi.js';
+import type { IDescargasContpaqi } from '../core/ports/services/IDescargasContpaqi.js';
 import { ExceljsExcelIO } from '../infrastructure/excel/ExceljsExcelIO.js';
 import { TurnstileVerifier, NullCaptchaVerifier } from '../infrastructure/captcha/TurnstileVerifier.js';
 import { LoginService } from '../application/auth/LoginService.js';
@@ -113,6 +115,7 @@ import { ContactoExcelService } from '../application/contactos/ContactoExcelServ
 import { TicketExcelService } from '../application/tickets/TicketExcelService.js';
 import { ExcelUnificadoService } from '../application/excel/ExcelUnificadoService.js';
 import { VersionService } from '../application/versiones/VersionService.js';
+import { VersionesContpaqiService } from '../application/versiones/VersionesContpaqiService.js';
 import { ReporteVersionesService } from '../application/versiones/ReporteVersionesService.js';
 import { KnowledgeService } from '../application/knowledge/KnowledgeService.js';
 import { PizarraKBService } from '../application/knowledge/PizarraKBService.js';
@@ -233,6 +236,7 @@ export interface Cradle {
   ticketPublicoRepo: ITicketPublicoRepository;
   webhookPublisher: IWebhookPublisher;
   integracionesGateway: IIntegracionesGateway;
+  descargasContpaqi: IDescargasContpaqi;
   excelIO: IExcelIO;
   captchaVerifier: ICaptchaVerifier;
   empresaRepo: IEmpresaRepository;
@@ -296,6 +300,7 @@ export interface Cradle {
   ticketExcelService: TicketExcelService;
   excelUnificadoService: ExcelUnificadoService;
   versionService: VersionService;
+  versionesContpaqiService: VersionesContpaqiService;
   reporteVersionesService: ReporteVersionesService;
   knowledgeService: KnowledgeService;
   pizarraKBService: PizarraKBService;
@@ -514,6 +519,7 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
         new FirestoreTicketPublicoRepository(requireFirestore(firestoreDb)),
     ).singleton(),
     integracionesGateway: asFunction((): IIntegracionesGateway => new HttpIntegracionesGateway()).singleton(),
+    descargasContpaqi: asFunction((): IDescargasContpaqi => new HttpDescargasContpaqi()).singleton(),
     excelIO: asFunction((): IExcelIO => new ExceljsExcelIO()).singleton(),
     webhookPublisher: asFunction(
       ({ config: c, configuracionRepo, integracionesGateway, logger: l }: Cradle): IWebhookPublisher =>
@@ -901,6 +907,10 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
     versionService: asFunction(
       (c: Cradle) => new VersionService(c.versionRepo, c.idGenerator, c.clock, c.bitacoraService),
     ).singleton(),
+    versionesContpaqiService: asFunction(
+      (c: Cradle) =>
+        new VersionesContpaqiService(c.configuracionRepo, c.versionRepo, c.descargasContpaqi, c.clock, c.logger),
+    ).singleton(),
     reporteVersionesService: asFunction(
       (c: Cradle) =>
         new ReporteVersionesService(
@@ -1169,6 +1179,7 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
           c.avisoRepo,
           c.excelIO,
           c.usuarioRepo,
+          c.versionesContpaqiService,
         ),
     ).singleton(),
     knowledgeController: asFunction(
@@ -1239,6 +1250,7 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
           c.empresaRepo,
           c.backupService,
           c.contadorRepo,
+          c.versionesContpaqiService,
         ),
     ).singleton(),
   });

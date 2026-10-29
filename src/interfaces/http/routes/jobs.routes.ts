@@ -23,5 +23,7 @@ export function jobsRoutes(container: Container): Router {
   r.get('/resumen-diario', (req, res) => jobs().resumenDiario(req, res));
   r.post('/revisar-correo', (req, res) => jobs().revisarCorreo(req, res));
   r.get('/revisar-correo', (req, res) => jobs().revisarCorreo(req, res));
+  r.post('/revisar-versiones-contpaqi', (req, res) => jobs().revisarVersionesContpaqi(req, res));
+  r.get('/revisar-versiones-contpaqi', (req, res) => jobs().revisarVersionesContpaqi(req, res));
   return r;
 }

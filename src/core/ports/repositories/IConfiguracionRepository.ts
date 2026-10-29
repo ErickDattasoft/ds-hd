@@ -1,3 +1,4 @@
+import type { EstadoVersionesContpaqi } from '../../entities/DescargasContpaqi.js';
 import type { ConfiguracionCorreoEntrante } from '../../entities/ConfiguracionCorreoEntrante.js';
 import type { ConfiguracionTickets } from '../../entities/ConfiguracionTickets.js';
 import type { ConfiguracionCalculadora } from '../../entities/CalculadoraCompac.js';
@@ -34,4 +35,7 @@ export interface IConfiguracionRepository {
   guardarEstadoBackup(estado: EstadoBackup): Promise<void>;
   obtenerKB(): Promise<ConfiguracionKB>;
   guardarKB(config: ConfiguracionKB): Promise<void>;
+  /** Lo último leído de la página de descargas de CONTPAQi (`configuracion/versionesContpaqi`). */
+  obtenerVersionesContpaqi(): Promise<EstadoVersionesContpaqi>;
+  guardarVersionesContpaqi(estado: EstadoVersionesContpaqi): Promise<void>;
 }

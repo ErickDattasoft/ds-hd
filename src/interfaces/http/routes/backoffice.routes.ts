@@ -45,6 +45,7 @@ async function contadoresDelMenu(
       (await container.resolve('ticketQueries').listar({ soloAbiertos: true, archivado: false, ...alcance })).filter((t) =>
         (t.tipo ?? '').toLowerCase().includes('correo'),
       ).length,
+    versionesNuevas: async () => (await container.resolve('versionesContpaqiService').novedades()).length,
     solicitudesAccesoPendientes: async () =>
       (await container.resolve('solicitudAccesoService').listarPendientes(user)).length,
   };

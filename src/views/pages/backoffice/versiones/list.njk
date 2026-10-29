@@ -11,6 +11,13 @@
       {% if can('versiones:editar') %}<a class="btn btn--sm" href="/app/versiones/nueva">Nueva versión</a>{% endif %}
     </div>
   </div>
+  {% if novedades and novedades.length %}
+    <p class="alert alert--warn">
+      🆕 CONTPAQi publicó versión nueva de <strong>{{ novedades.length }}</strong> {{ 'sistema' if novedades.length == 1 else 'sistemas' }}:
+      {% for n in novedades %}{{ n.sistema }} {{ n.actual }} → <strong>{{ n.nueva.version }}</strong>{{ ', ' if not loop.last }}{% endfor %}.
+      {% if can('versiones:editar') %}<a href="/app/versiones/mercado?traer=1">📥 Traer y revisar</a>{% endif %}
+    </p>
+  {% endif %}
   <table class="data-table">
     <thead><tr><th>Sistema</th><th>Versión actual</th><th>Liberación</th><th>Descarga</th><th>Carta técnica</th><th></th></tr></thead>
     <tbody>

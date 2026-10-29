@@ -1,6 +1,9 @@
 import type { Request, Response } from 'express';
 import type { VersionService, FilaMercado } from '../../../../application/versiones/VersionService.js';
 import type { ReporteVersionesService } from '../../../../application/versiones/ReporteVersionesService.js';
+import type { VersionesContpaqiService } from '../../../../application/versiones/VersionesContpaqiService.js';
+import { URL_DESCARGAS_CONTPAQI, type EstadoVersionesContpaqi } from '../../../../core/entities/DescargasContpaqi.js';
+import { compararVersiones } from '../../../../core/entities/value-objects/version.js';
 import type { EmpresaService } from '../../../../application/empresas/EmpresaService.js';
 import type { IConfiguracionRepository } from '../../../../core/ports/repositories/IConfiguracionRepository.js';
 import type { IAvisoRepository } from '../../../../core/ports/repositories/IAvisoRepository.js';
@@ -42,6 +45,7 @@ export class VersionController {
     private readonly avisos: IAvisoRepository,
     private readonly excel: IExcelIO,
     private readonly usuarios: IUsuarioRepository,
+    private readonly contpaqi?: VersionesContpaqiService,
   ) {}
 
   /** Filtros del historial: `desde`/`hasta` abarcan el día completo en hora local. */
@@ -105,12 +109,55 @@ export class VersionController {
   };
 
   // ── Grid "versiones del mercado" (edición masiva) ─────────────────────────
-  mercadoView = async (_req: Request, res: Response): Promise<void> => {
+  /**
+   * Con `?traer=1` lee la página de descargas de CONTPAQi y pone en la tabla, sin guardar, lo
+   * publicado que sea más nuevo que lo registrado. Quien lo revisa le da "Guardar todo".
+   */
+  mercadoView = async (req: Request, res: Response): Promise<void> => {
     const { sistemas } = await this.configuracion.obtenerTickets();
+    const filas = await this.versiones.gridMercado(sistemas);
+    let estado: EstadoVersionesContpaqi | null = null;
+    let errorTraer = '';
+    const traer = str(req.query.traer) === '1' && Boolean(this.contpaqi);
+    if (traer) {
+      try {
+        estado = await this.contpaqi!.consultar();
+      } catch (err) {
+        errorTraer = err instanceof Error ? err.message : 'No se pudo leer la página de CONTPAQi';
+      }
+    } else if (this.contpaqi) {
+      estado = await this.contpaqi.estado();
+    }
+    const traidas: string[] = [];
+    const filasVista = filas.map((f) => {
+      const u = estado?.ultimas[f.sistema];
+      const masNueva = Boolean(u && compararVersiones(f.versionActual, u.version) < 0);
+      if (traer && u && masNueva) {
+        traidas.push(f.sistema);
+        return {
+          ...f,
+          versionActual: u.version,
+          fechaLiberacion: u.fecha || f.fechaLiberacion,
+          linkDescarga: u.linkDescarga || f.linkDescarga,
+          linkCartaTecnica: u.linkCartaTecnica || f.linkCartaTecnica,
+          traida: true,
+          anterior: f.versionActual,
+          origen: u.titulo,
+        };
+      }
+      // Sin traer: solo se avisa (la fila no cambia).
+      return { ...f, sugerida: !traer && masNueva && f.versionActual ? u!.version : '', origen: u?.titulo ?? '' };
+    });
     res.render('pages/backoffice/versiones/mercado', {
       titulo: 'Versiones del mercado',
-      filas: await this.versiones.gridMercado(sistemas),
+      filas: filasVista,
       guardado: false,
+      traer,
+      traidas,
+      errorTraer,
+      estadoContpaqi: estado,
+      urlContpaqi: URL_DESCARGAS_CONTPAQI,
+      puedeTraer: Boolean(this.contpaqi),
     });
   };
 
@@ -134,6 +181,8 @@ export class VersionController {
       titulo: 'Versiones del mercado',
       filas: await this.versiones.gridMercado(cat),
       guardado: true,
+      urlContpaqi: URL_DESCARGAS_CONTPAQI,
+      puedeTraer: Boolean(this.contpaqi),
     });
   };
 
@@ -230,7 +279,8 @@ export class VersionController {
 
   listar = async (_req: Request, res: Response): Promise<void> => {
     const versiones = await this.versiones.listar();
-    res.render('pages/backoffice/versiones/list', { titulo: 'Versiones de sistemas', versiones });
+    const novedades = this.contpaqi ? await this.contpaqi.novedades().catch(() => []) : [];
+    res.render('pages/backoffice/versiones/list', { titulo: 'Versiones de sistemas', versiones, novedades });
   };
 
   nuevo = (_req: Request, res: Response): void => {

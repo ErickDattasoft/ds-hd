@@ -11,6 +11,7 @@ import type { BitacoraService } from '../../../../application/shared/BitacoraSer
 import type { CorreoEntranteService } from '../../../../application/tickets/CorreoEntranteService.js';
 import type { BackupService } from '../../../../application/configuracion/BackupService.js';
 import type { ResumenDiarioService } from '../../../../application/dashboard/ResumenDiarioService.js';
+import type { VersionesContpaqiService } from '../../../../application/versiones/VersionesContpaqiService.js';
 
 /**
  * Endpoints invocados por el cron (GitHub Actions). Protegidos por bearer `JOBS_SECRET`.
@@ -33,7 +34,16 @@ export class JobsController {
     private readonly empresas: IEmpresaRepository,
     private readonly backup?: BackupService,
     private readonly contadores?: IContadorRepository,
+    private readonly versionesContpaqi?: VersionesContpaqiService,
   ) {}
+
+  /** Lee la página de descargas de CONTPAQi (una vez al día) para el aviso 🆕 del menú Versiones. */
+  revisarVersionesContpaqi = async (req: Request, res: Response): Promise<void> => {
+    if (!this.autorizado(req)) return void res.status(401).json({ error: 'no autorizado' });
+    if (!this.versionesContpaqi) return void res.json({ ok: true, revisado: false });
+    const r = await this.versionesContpaqi.revisarSiToca();
+    res.status(r.error ? 502 : 200).json({ ok: !r.error, ...r });
+  };
 
   /** Aviso «backup no realizado» (n8n/WhatsApp) si pasaron 7+ días; una vez al día. */
   backupPendiente = async (req: Request, res: Response): Promise<void> => {

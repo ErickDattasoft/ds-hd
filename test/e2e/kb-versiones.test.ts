@@ -49,6 +49,49 @@ describe('versiones de sistemas', () => {
     expect(registradas.find((v) => v.sistema === 'Contabilidad')?.linkCartaTecnica).toBe('https://ct/cont');
   });
 
+  it('«Traer de CONTPAQi» llena la tabla sin guardar; el menú y la lista avisan de la versión nueva', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    t.configuracionRepo.config.sistemas = ['NOMINAS', 'BANCOS'];
+    const { VersionSistema } = await import('../../src/core/entities/VersionSistema.js');
+    await t.versionRepo.save(new VersionSistema({ id: 'v1', sistema: 'NOMINAS', versionActual: '19.2.1 Sp 1' }));
+    await t.versionRepo.save(new VersionSistema({ id: 'v2', sistema: 'BANCOS', versionActual: '19.3.1' }));
+    t.descargasContpaqi.html = `
+      <h2><span>Solución Fuera de Versión CONTPAQi Nóminas® 19.4.3</span></h2>
+      <p>Versión: 19.4.3</p><p>Publicado: 2026-10-21</p><a href="https://descargas.contpaqi.com/SFV_Nominas_v1943.zip">Descargar</a>
+      <h2><span>CONTPAQi Nóminas® 19.4.2</span></h2>
+      <a href="https://conocimiento.blob.core.windows.net/CartasTecnicas/CT_Nominas_1942/portada.html">Carta</a>
+      <p>Versión: 19.4.2</p><p>Publicado: 2026-10-19</p><a href="https://descargas.contpaqi.com/CTi_NOMINAS_1942.zip">Descargar</a>
+      <h2><span>CONTPAQi® Contabilidad-Bancos 19.3.1</span></h2><p>Versión: 19.3.1</p><p>Publicado: 2026-08</p>`;
+    const { agent } = await login(t.app, ADMIN.email, ADMIN.password);
+
+    const traida = await agent.get('/app/versiones/mercado?traer=1');
+    expect(traida.status).toBe(200);
+    expect(traida.text).toContain('value="19.4.2 Sp 1"');
+    expect(traida.text).toContain('SFV_Nominas_v1943.zip');
+    expect(traida.text).toContain('CT_Nominas_1942');
+    expect(traida.text).toContain('Todavía no se guarda');
+    expect(traida.text).toContain('fila--traida');
+    // Nada se guardó.
+    expect((await t.versionRepo.findById('v1'))!.versionActual).toBe('19.2.1 Sp 1');
+
+    const lista = await agent.get('/app/versiones');
+    expect(lista.text).toContain('NOMINAS 19.2.1 Sp 1 → <strong>19.4.2 Sp 1</strong>');
+
+    // El globo del menú (sus contadores se guardan 20 s, por eso en una app recién abierta).
+    const t2 = makeTestApp({ usuarios: [ADMIN] });
+    t2.configuracionRepo.versionesContpaqi = await t.configuracionRepo.obtenerVersionesContpaqi();
+    await t2.versionRepo.save(new VersionSistema({ id: 'v1', sistema: 'NOMINAS', versionActual: '19.2.1 Sp 1' }));
+    const { agent: agent2 } = await login(t2.app, ADMIN.email, ADMIN.password);
+    expect((await agent2.get('/app/versiones')).text).toContain('title="Versión nueva publicada por CONTPAQi en 1 de tus sistemas"');
+
+    // Si la página no se puede leer, la tabla queda como estaba y lo dice.
+    t.descargasContpaqi.html = '<html>mantenimiento</html>';
+    const falla = await agent.get('/app/versiones/mercado?traer=1');
+    expect(falla.status).toBe(200);
+    expect(falla.text).toContain('cambió de formato');
+    expect(falla.text).toContain('value="19.2.1 Sp 1"');
+  });
+
   it('reporte de desactualizadas: pantalla, Excel y filtro por empresa', async () => {
     const t = makeTestApp({ usuarios: [ADMIN] });
     await t.versionRepo.save(

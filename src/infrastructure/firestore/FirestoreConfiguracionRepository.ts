@@ -1,3 +1,4 @@
+import { sanearEstadoVersionesContpaqi, type EstadoVersionesContpaqi } from '../../core/entities/DescargasContpaqi.js';
 import { sanearEstadoBackup, type EstadoBackup } from '../../core/entities/EstadoBackup.js';
 import {
   sanearConfigCorreoEntrante,
@@ -173,6 +174,15 @@ export class FirestoreConfiguracionRepository implements IConfiguracionRepositor
 
   async guardarEstadoBackup(estado: EstadoBackup): Promise<void> {
     await this.db.collection(COL).doc('backup').set(estado);
+  }
+
+  async obtenerVersionesContpaqi(): Promise<EstadoVersionesContpaqi> {
+    const snap = await this.db.collection(COL).doc('versionesContpaqi').get();
+    return sanearEstadoVersionesContpaqi(snap.exists ? snap.data() : null);
+  }
+
+  async guardarVersionesContpaqi(estado: EstadoVersionesContpaqi): Promise<void> {
+    await this.db.collection(COL).doc('versionesContpaqi').set(estado);
   }
 
   async obtenerKB(): Promise<ConfiguracionKB> {

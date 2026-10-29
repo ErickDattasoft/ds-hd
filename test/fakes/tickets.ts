@@ -1,3 +1,4 @@
+import { sanearEstadoVersionesContpaqi, type EstadoVersionesContpaqi } from '../../src/core/entities/DescargasContpaqi.js';
 import { sanearConfigKB, type ConfiguracionKB } from '../../src/core/entities/ConfiguracionKB.js';
 import { sanearEstadoBackup, type EstadoBackup } from '../../src/core/entities/EstadoBackup.js';
 import { coincideTexto, ticketDisponibleParaEquipo, ticketEsDeAgente, ticketSinNadieAsignado } from '../../src/core/entities/Ticket.js';
@@ -281,6 +282,13 @@ export class InMemoryConfiguracionRepository implements IConfiguracionRepository
   }
   async guardarEstadoBackup(estado: EstadoBackup): Promise<void> {
     this.estadoBackup = estado;
+  }
+  versionesContpaqi: EstadoVersionesContpaqi = sanearEstadoVersionesContpaqi(null);
+  async obtenerVersionesContpaqi(): Promise<EstadoVersionesContpaqi> {
+    return this.versionesContpaqi;
+  }
+  async guardarVersionesContpaqi(estado: EstadoVersionesContpaqi): Promise<void> {
+    this.versionesContpaqi = estado;
   }
   kb: ConfiguracionKB = sanearConfigKB(null);
   async obtenerKB(): Promise<ConfiguracionKB> {

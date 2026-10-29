@@ -50,6 +50,11 @@ jobs:
         run: |
           curl -fsS -X POST "${{ secrets.APP_BASE_URL }}/jobs/backup-pendiente" \
             -H "Authorization: Bearer ${{ secrets.JOBS_SECRET }}"
+      - name: Versiones nuevas en la página de descargas de CONTPAQi (una vez al día)
+        if: ${{ !cancelled() }}
+        run: |
+          curl -fsS -X POST "${{ secrets.APP_BASE_URL }}/jobs/revisar-versiones-contpaqi" \
+            -H "Authorization: Bearer ${{ secrets.JOBS_SECRET }}"
       - name: Resumen diario (solo envía si está habilitado y es la hora configurada)
         if: ${{ !cancelled() }}
         run: |

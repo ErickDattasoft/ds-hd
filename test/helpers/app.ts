@@ -76,6 +76,8 @@ export interface TestApp {
   oportunidadRepo: InMemoryOportunidadRepository;
   adjuntoTicketRepo: InMemoryAdjuntoTicketRepository;
   solicitudAccesoRepo: InMemorySolicitudAccesoRepository;
+  /** La página de descargas de CONTPAQi que «se lee» (nunca se sale a internet en tests). */
+  descargasContpaqi: { html: string; leerPagina(): Promise<string> };
 }
 
 /**
@@ -121,7 +123,15 @@ export function makeTestApp(opts: { usuarios?: { uid: string; email: string; pas
   const listaNegraRepo = new InMemoryListaNegraRepository();
   const adjuntoTicketRepo = new InMemoryAdjuntoTicketRepository();
 
+  const descargasContpaqi = {
+    html: '',
+    async leerPagina(): Promise<string> {
+      return this.html;
+    },
+  };
+
   const overrides: ContainerOverrides = {
+    descargasContpaqi,
     usuarioRepo,
     authProvider,
     emailSender,
@@ -195,6 +205,7 @@ export function makeTestApp(opts: { usuarios?: { uid: string; email: string; pas
     oportunidadRepo: overrides.oportunidadRepo as InMemoryOportunidadRepository,
     adjuntoTicketRepo,
     solicitudAccesoRepo: overrides.solicitudAccesoRepo as InMemorySolicitudAccesoRepository,
+    descargasContpaqi,
   };
 }
 

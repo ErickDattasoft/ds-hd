@@ -1293,3 +1293,6 @@ tr.fila--sla-vencido > td { background: color-mix(in srgb, var(--danger) 6%, tra
 .sugerencias li { padding: 6px 12px; cursor: pointer; font-size: var(--text-sm); }
 .sugerencias li:hover, .sugerencias li.is-activo { background: var(--brand-weak); }
 .sugerencias li[aria-disabled] { cursor: default; background: none; }
+
+/* Versiones del mercado: filas llenadas con «Traer de CONTPAQi» (aún sin guardar). */
+.fila--traida > td { background: var(--warning-weak); }
