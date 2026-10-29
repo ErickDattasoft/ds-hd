@@ -4,11 +4,12 @@
   <div class="page-head">
     <h1>Versiones de sistemas</h1>
     <div class="page-head__actions">
+      {% if can('versiones:editar') %}<a class="btn btn--sm" href="/app/versiones/mercado?traer=1" hx-boost="false" title="Lee la página de descargas de CONTPAQi y llena la tabla con lo más nuevo. No guarda hasta que le das «Guardar todo».">📥 Traer de CONTPAQi</a>{% endif %}
       <a class="btn btn--sm btn--secondary" href="/app/versiones/reporte">Reporte de desactualizadas</a>
       <a class="btn btn--sm btn--secondary" href="/app/versiones/historial">Historial de avisos</a>
       {% if can('versiones:editar') %}<a class="btn btn--sm btn--secondary" href="/app/versiones/mercado">Versiones del mercado</a>{% endif %}
       {% if can('versiones:editar') %}<a class="btn btn--sm btn--secondary" href="/app/versiones/avisos">Avisos a empresas</a>{% endif %}
-      {% if can('versiones:editar') %}<a class="btn btn--sm" href="/app/versiones/nueva">Nueva versión</a>{% endif %}
+      {% if can('versiones:editar') %}<a class="btn btn--sm btn--secondary" href="/app/versiones/nueva">Nueva versión</a>{% endif %}
     </div>
   </div>
   {% if novedades and novedades.length %}
