@@ -275,6 +275,16 @@
 .topbar__name { font-size: var(--text-sm); color: var(--color-text-muted); text-decoration: none; }
 a.topbar__name:hover { color: var(--color-text); text-decoration: underline; }
 .nav-toggle { display: none; }
+/* En celular no caben todos: «➕ Ticket» y «🛡️ Respaldar» quedan solo con su ícono (como el
+   viejo, siempre a la vista) y el nombre y rol se esconden — siguen en Mi perfil. */
+@media (max-width: 860px) {
+  .topbar { padding-inline: var(--space-3); }
+  .topbar__user { gap: var(--space-2); }
+  .topbar .topbar__etiqueta, .topbar .topbar__name, .topbar .topbar__rol, .topbar .busqueda-global__atajo { display: none; }
+  .topbar > .topbar__user:first-child { min-width: 0; flex: 1; }
+  .topbar__title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .topbar > .topbar__user:last-child { flex-shrink: 0; }
+}
 
 /* Menú lateral colapsado (solo escritorio): solo íconos. Se recuerda con la cookie "sidebar". */
 @media (min-width: 861px) {
