@@ -195,7 +195,7 @@ export class KnowledgeService {
         modulo: 'kb',
         entidadTipo: 'ArticuloKB',
         entidadId: carpeta,
-        resumen: `Indexado ${carpeta === 'empresas' ? 'Empresas' : 'Soporte y licencias'}: ${resultado.creados} nuevo(s), ${resultado.actualizados} actualizado(s)`,
+        resumen: `Indexado ${carpeta === 'empresas' ? 'Empresas' : 'Soporte'}: ${resultado.creados} nuevo(s), ${resultado.actualizados} actualizado(s)`,
       });
     }
     return resultado;

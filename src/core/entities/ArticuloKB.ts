@@ -9,7 +9,7 @@ export type CarpetaKB = (typeof CARPETAS_KB)[number];
 
 export const CARPETA_KB_ETIQUETA: Record<CarpetaKB, string> = {
   empresas: '🏢 Empresas',
-  soporte: '🛠 Soporte y licencias',
+  soporte: '🛠 Soporte',
 };
 
 /** ¿Es una de las dos carpetas válidas? */
@@ -19,7 +19,7 @@ export function esCarpetaKB(v: unknown): v is CarpetaKB {
 
 /**
  * Carpeta guardada; los artículos de antes de que existiera el campo se reparten por su
- * categoría (`empresa` → Empresas, todo lo demás → Soporte y licencias), sin reescribir datos.
+ * categoría (`empresa` → Empresas, todo lo demás → Soporte), sin reescribir datos.
  */
 export function sanearCarpetaKB(v: unknown, categoria?: string | null): CarpetaKB {
   if (esCarpetaKB(v)) return v;
