@@ -43,7 +43,7 @@ describe('versiones de sistemas', () => {
       linkDescarga: ['', '', ''],
       linkCartaTecnica: ['', 'https://ct/cont', ''],
     });
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(302);
     const registradas = await t.versionRepo.list();
     expect(registradas.map((v) => v.sistema).sort()).toEqual(['Bancos', 'Contabilidad']); // Nóminas vacío → no se crea
     expect(registradas.find((v) => v.sistema === 'Contabilidad')?.linkCartaTecnica).toBe('https://ct/cont');
@@ -51,7 +51,7 @@ describe('versiones de sistemas', () => {
 
   it('«Traer de CONTPAQi» llena la tabla sin guardar; el menú y la lista avisan de la versión nueva', async () => {
     const t = makeTestApp({ usuarios: [ADMIN] });
-    t.configuracionRepo.config.sistemas = ['NOMINAS', 'BANCOS'];
+    t.configuracionRepo.config.sistemas = ['NOMINAS', 'BANCOS', 'Varios'];
     const { VersionSistema } = await import('../../src/core/entities/VersionSistema.js');
     await t.versionRepo.save(new VersionSistema({ id: 'v1', sistema: 'NOMINAS', versionActual: '19.2.1 Sp 1' }));
     await t.versionRepo.save(new VersionSistema({ id: 'v2', sistema: 'BANCOS', versionActual: '19.3.1' }));
@@ -71,6 +71,11 @@ describe('versiones de sistemas', () => {
     expect(traida.text).toContain('CT_Nominas_1942');
     expect(traida.text).toContain('Todavía no se guarda');
     expect(traida.text).toContain('fila--traida');
+    // Lo que no es de CONTPAQi (y no tiene versión registrada) no sale en la tabla.
+    expect(traida.text).not.toContain('value="Varios"');
+    // BANCOS ya estaba en 19.3.1: solo se le completa la fecha que faltaba.
+    expect(traida.text).toContain('value="2026-08-01"');
+    expect(traida.text).toContain('se completó lo que faltaba');
     // Nada se guardó.
     expect((await t.versionRepo.findById('v1'))!.versionActual).toBe('19.2.1 Sp 1');
 

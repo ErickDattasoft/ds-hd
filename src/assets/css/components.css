@@ -1304,5 +1304,13 @@ tr.fila--sla-vencido > td { background: color-mix(in srgb, var(--danger) 6%, tra
 .sugerencias li:hover, .sugerencias li.is-activo { background: var(--brand-weak); }
 .sugerencias li[aria-disabled] { cursor: default; background: none; }
 
+/* Versiones del mercado: a todo lo ancho; los links se llevan el espacio que sobra (antes la
+   tabla se quedaba en 44rem y los links se veían como "https://desc"). */
+.form.mercado { max-width: none; }
+.mercado .data-table td { max-width: none; overflow: visible; }
+.mercado .data-table td:first-child { min-width: 16rem; }
+.mercado input[name="versionActual"] { width: 9rem; }
+.mercado__link { width: 28%; }
+.mercado__link input { width: 100%; min-width: 14rem; }
 /* Versiones del mercado: filas llenadas con «Traer de CONTPAQi» (aún sin guardar). */
 .fila--traida > td { background: var(--warning-weak); }

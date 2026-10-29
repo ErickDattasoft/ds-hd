@@ -129,9 +129,28 @@ export class VersionController {
       estado = await this.contpaqi.estado();
     }
     const traidas: string[] = [];
-    const filasVista = filas.map((f) => {
+    // Ya leída la página, solo los sistemas de CONTPAQi (y los que ya tengan versión registrada):
+    // el catálogo de tickets trae también "Varios", "Correo / OneDrive", etc.
+    const deContpaqi = estado?.revisado
+      ? filas.filter((f) => estado!.ultimas[f.sistema] || f.versionActual)
+      : filas;
+    const filasVista = deContpaqi.map((f) => {
       const u = estado?.ultimas[f.sistema];
       const masNueva = Boolean(u && compararVersiones(f.versionActual, u.version) < 0);
+      // Misma versión pero con huecos: se completan fecha y links sin tocar lo ya capturado.
+      const faltan = !f.fechaLiberacion || !f.linkDescarga || !f.linkCartaTecnica;
+      if (traer && u && !masNueva && faltan && compararVersiones(f.versionActual, u.version) === 0) {
+        traidas.push(f.sistema);
+        return {
+          ...f,
+          fechaLiberacion: f.fechaLiberacion || u.fecha,
+          linkDescarga: f.linkDescarga || u.linkDescarga,
+          linkCartaTecnica: f.linkCartaTecnica || u.linkCartaTecnica,
+          traida: true,
+          completada: true,
+          origen: u.titulo,
+        };
+      }
       if (traer && u && masNueva) {
         traidas.push(f.sistema);
         return {
@@ -151,7 +170,7 @@ export class VersionController {
     res.render('pages/backoffice/versiones/mercado', {
       titulo: 'Versiones del mercado',
       filas: filasVista,
-      guardado: false,
+      guardado: str(req.query.guardado) === '1',
       traer,
       traidas,
       errorTraer,
@@ -176,14 +195,7 @@ export class VersionController {
       linkCartaTecnica: carta[i] ?? '',
     }));
     await this.versiones.guardarMercado(req.user!, filas);
-    const { sistemas: cat } = await this.configuracion.obtenerTickets();
-    res.render('pages/backoffice/versiones/mercado', {
-      titulo: 'Versiones del mercado',
-      filas: await this.versiones.gridMercado(cat),
-      guardado: true,
-      urlContpaqi: URL_DESCARGAS_CONTPAQI,
-      puedeTraer: Boolean(this.contpaqi),
-    });
+    res.redirect('/app/versiones/mercado?guardado=1');
   };
 
   // ── Reporte de desactualizadas ───────────────────────────────────────────

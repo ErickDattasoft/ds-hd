@@ -16,19 +16,19 @@
     <p class="alert alert--error">{{ errorTraer }}. La tabla quedó como estaba; puedes capturar a mano desde <a href="{{ urlContpaqi }}" target="_blank" rel="noopener">la página de descargas</a>.</p>
   {% elif traer %}
     {% if traidas.length %}
-      <p class="alert alert--warn">Se llenaron <strong>{{ traidas.length }}</strong> sistemas con lo publicado en CONTPAQi (resaltados en la tabla): {{ traidas | join(', ') }}. <strong>Todavía no se guarda</strong> — revisa y dale «Guardar todo».</p>
+      <p class="alert alert--warn">Se llenaron o completaron <strong>{{ traidas.length }}</strong> sistemas con lo publicado en CONTPAQi (resaltados en la tabla): {{ traidas | join(', ') }}. <strong>Todavía no se guarda</strong> — revisa y dale «Guardar todo».</p>
     {% else %}
       <p class="alert alert--ok">Todo está al día: CONTPAQi no ha publicado nada más nuevo que lo registrado.</p>
     {% endif %}
   {% endif %}
   <p class="muted">
-    Una fila por sistema del catálogo. Deja la versión vacía para no registrar ese sistema.
+    Una fila por sistema de CONTPAQi. Deja la versión vacía para no registrar ese sistema.
     Las «Soluciones fuera de versión» se toman como service pack de la versión anterior; si un SP no trae carta técnica, se usa la de su versión.
     {% if estadoContpaqi and estadoContpaqi.revisado %}Última lectura de <a href="{{ urlContpaqi }}" target="_blank" rel="noopener">CONTPAQi</a>: {{ estadoContpaqi.revisado | fechahora }}.{% endif %}
     {% if estadoContpaqi and estadoContpaqi.error and not traer %}<span style="color: var(--danger)">La última lectura automática falló: {{ estadoContpaqi.error }}.</span>{% endif %}
   </p>
 
-  <form method="post" action="/app/versiones/mercado" class="form form--wide">
+  <form method="post" action="/app/versiones/mercado" class="form mercado">
     <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
     <table class="data-table">
       <thead><tr><th>Sistema</th><th>Versión oficial</th><th>Liberación</th><th>Link descarga</th><th>Link carta técnica</th></tr></thead>
@@ -38,16 +38,18 @@
             <td>
               <input type="hidden" name="sistema" value="{{ f.sistema }}" />
               {{ f.sistema }}
-              {% if f.traida %}
+              {% if f.completada %}
+                <div class="muted" style="font-size: 0.8rem" title="{{ f.origen }}">📥 se completó lo que faltaba</div>
+              {% elif f.traida %}
                 <div class="muted" style="font-size: 0.8rem" title="{{ f.origen }}">antes: {{ f.anterior or '—' }} · 📥 {{ f.origen }}</div>
               {% elif f.sugerida %}
                 <div title="{{ f.origen }}"><span class="badge badge--warning badge--sm">🆕 {{ f.sugerida }}</span></div>
               {% endif %}
             </td>
-            <td><input name="versionActual" value="{{ f.versionActual }}" style="width:9rem" /></td>
+            <td><input name="versionActual" value="{{ f.versionActual }}" /></td>
             <td><input type="date" name="fechaLiberacion" value="{{ f.fechaLiberacion }}" /></td>
-            <td><input name="linkDescarga" value="{{ f.linkDescarga }}" style="width:100%" placeholder="https://…" /></td>
-            <td><input name="linkCartaTecnica" value="{{ f.linkCartaTecnica }}" style="width:100%" placeholder="https://…" /></td>
+            <td class="mercado__link"><input name="linkDescarga" value="{{ f.linkDescarga }}" title="{{ f.linkDescarga }}" placeholder="https://…" /></td>
+            <td class="mercado__link"><input name="linkCartaTecnica" value="{{ f.linkCartaTecnica }}" title="{{ f.linkCartaTecnica }}" placeholder="https://…" /></td>
           </tr>
         {% else %}
           <tr><td colspan="5" class="muted">No hay sistemas en el catálogo. Agrégalos en Configuración → Tickets.</td></tr>
