@@ -72,6 +72,15 @@ function normalizarFecha(s: string): string {
   return `${m[1]}-${m[2]!.padStart(2, '0')}-${(m[3] ?? '1').padStart(2, '0')}`;
 }
 
+/**
+ * "Etiqueta: valor" directo del HTML, aunque haya etiquetas o &nbsp; de por medio. Se busca
+ * sobre el HTML crudo a propósito: quitarle las etiquetas a los ~3 MB de la página costaba
+ * más CPU de la que conviene gastar en el Worker.
+ */
+function campo(html: string, etiqueta: string, valor: string): string | undefined {
+  return new RegExp(`${etiqueta}:(?:\\s|&nbsp;|<[^>]*>)*(${valor})`, 'i').exec(html)?.[1];
+}
+
 /** Interpreta el HTML de la página de descargas. Bloques sin versión reconocible se saltan. */
 export function leerPaginaDescargas(html: string): PublicacionContpaqi[] {
   const limpio = html.replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>/gi, '');
@@ -83,11 +92,10 @@ export function leerPaginaDescargas(html: string): PublicacionContpaqi[] {
     const titulo = textoPlano(parte.slice(0, fin));
     if (!titulo) continue;
     const cuerpo = parte.slice(fin);
-    const texto = textoPlano(cuerpo);
 
     // La versión del título manda (el campo "Versión:" a veces trae la del sistema que la contiene).
     const enTitulo = [...titulo.matchAll(/\d+(?:\.\d+)+/g)].pop()?.[0];
-    const enCampo = /Versi[oó]n:\s*(\d+(?:\.\d+)*)/i.exec(texto)?.[1];
+    const enCampo = campo(cuerpo, 'Versi(?:ó|&oacute;|o)n', '\\d+(?:\\.\\d+)*');
     const base = enTitulo ?? /\b(\d{1,2})\s*$/.exec(titulo)?.[1] ?? enCampo;
     if (!base) continue;
 
@@ -105,13 +113,28 @@ export function leerPaginaDescargas(html: string): PublicacionContpaqi[] {
       base,
       tipo,
       sp: tipo === 'service_pack' ? Number.parseInt(sp?.[1] ?? '1', 10) : 0,
-      fecha: normalizarFecha(/Publicado:\s*([\d-]+)/i.exec(texto)?.[1] ?? ''),
+      fecha: normalizarFecha(campo(cuerpo, 'Publicado', '[\\d-]+') ?? ''),
       linkDescarga: links.find((l) => /descargas\.contpaqi\.com/i.test(l)) ?? '',
       // Solo cartas técnicas: los SP traen una *nota* técnica (NotasTecnicas/NT_…), que no se usa.
       linkCartaTecnica: links.find((l) => /carta/i.test(l)) ?? '',
     });
   }
   return out;
+}
+
+/**
+ * Palabras de un título, calculadas una sola vez: cada sistema del catálogo recorre los ~560
+ * títulos y normalizarlos en cada vuelta era lo que más CPU gastaba en el Worker.
+ */
+const cachePalabras = new Map<string, Set<string>>();
+function palabrasDeTitulo(titulo: string): Set<string> {
+  let p = cachePalabras.get(titulo);
+  if (!p) {
+    if (cachePalabras.size > 5000) cachePalabras.clear();
+    p = new Set(palabras(titulo));
+    cachePalabras.set(titulo, p);
+  }
+  return p;
 }
 
 /** Cómo se llama cada sistema en la página cuando no basta con su propio nombre. */
@@ -128,7 +151,7 @@ const ALIAS: Record<string, string[][]> = {
 export function esDelSistema(sistema: string, titulo: string): boolean {
   const nombre = palabras(sistema).filter((p) => p !== 'contpaqi');
   if (!nombre.length) return false;
-  const enTitulo = new Set(palabras(titulo));
+  const enTitulo = palabrasDeTitulo(titulo);
   const opciones = ALIAS[nombre.join(' ')] ?? [nombre];
   return opciones.some((op) => op.every((p) => enTitulo.has(p)));
 }
