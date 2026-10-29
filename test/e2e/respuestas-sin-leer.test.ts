@@ -68,6 +68,10 @@ describe('buzón 🔔 de respuestas de clientes', () => {
     const r = await request(t.app).post('/jobs/marcar-tickets-con-platica').set('authorization', 'Bearer dev-jobs-secret');
     expect(r.body).toEqual({ ok: true, marcados: 1 });
     expect(t.ticketStore.tickets.get(id)!.conPlatica).toBe(true);
+
+    // Ya corrió: las siguientes pasadas del cron no vuelven a leer todo.
+    const otra = await request(t.app).post('/jobs/marcar-tickets-con-platica').set('authorization', 'Bearer dev-jobs-secret');
+    expect(otra.body).toEqual({ ok: true, marcados: 0, yaHecho: true });
   });
 
   it('contestarle al cliente también lo quita; «marcar todas» vacía el buzón', async () => {

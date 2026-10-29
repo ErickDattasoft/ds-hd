@@ -30,6 +30,11 @@ jobs:
         run: |
           curl -fsS -X POST "${{ secrets.APP_BASE_URL }}/jobs/completar-empresa-tickets" \
             -H "Authorization: Bearer ${{ secrets.JOBS_SECRET }}"
+      - name: Marcar 💬 los tickets que ya tenían plática (solo trabaja la primera vez)
+        if: ${{ !cancelled() }}
+        run: |
+          curl -fsS -X POST "${{ secrets.APP_BASE_URL }}/jobs/marcar-tickets-con-platica" \
+            -H "Authorization: Bearer ${{ secrets.JOBS_SECRET }}"
       - name: Retención de bitácora (60 días)
         if: ${{ !cancelled() }}
         run: |

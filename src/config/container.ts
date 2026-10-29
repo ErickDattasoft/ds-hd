@@ -1238,6 +1238,7 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
           c.correoEntranteService,
           c.empresaRepo,
           c.backupService,
+          c.contadorRepo,
         ),
     ).singleton(),
   });

@@ -1,3 +1,4 @@
+import type { IContadorRepository } from '../../../../core/ports/repositories/IContadorRepository.js';
 import type { IEmpresaRepository } from '../../../../core/ports/repositories/IEmpresaRepository.js';
 import type { Request, Response } from 'express';
 import type { EventoService } from '../../../../application/eventos/EventoService.js';
@@ -14,6 +15,9 @@ import type { ResumenDiarioService } from '../../../../application/dashboard/Res
 /**
  * Endpoints invocados por el cron (GitHub Actions). Protegidos por bearer `JOBS_SECRET`.
  */
+/** Marca (en `contadores`) de que el relleno de `conPlatica` ya corrió. */
+const RELLENO_CON_PLATICA = 'relleno-con-platica';
+
 export class JobsController {
   constructor(
     private readonly eventos: EventoService,
@@ -28,6 +32,7 @@ export class JobsController {
     private readonly correoEntrante: CorreoEntranteService,
     private readonly empresas: IEmpresaRepository,
     private readonly backup?: BackupService,
+    private readonly contadores?: IContadorRepository,
   ) {}
 
   /** Aviso «backup no realizado» (n8n/WhatsApp) si pasaron 7+ días; una vez al día. */
@@ -96,11 +101,16 @@ export class JobsController {
    */
   /**
    * Relleno de una vez para el 💬 del menú: marca `conPlatica` en los tickets que ya tenían
-   * mensajes públicos antes de que existiera el campo (los nuevos se marcan solos). Repetible.
+   * mensajes públicos antes de que existiera el campo (los nuevos se marcan solos). Va en el
+   * cron, pero solo trabaja la primera vez (lee todas las notas); `?forzar=1` lo repite.
    */
   marcarTicketsConPlatica = async (req: Request, res: Response): Promise<void> => {
     if (!this.autorizado(req)) return void res.status(401).json({ error: 'no autorizado' });
-    res.json({ ok: true, marcados: await this.ticketRepo.marcarConPlatica() });
+    const hecho = (await this.contadores?.actual(RELLENO_CON_PLATICA)) ?? 0;
+    if (hecho && req.query.forzar !== '1') return void res.json({ ok: true, marcados: 0, yaHecho: true });
+    const marcados = await this.ticketRepo.marcarConPlatica();
+    await this.contadores?.fijar(RELLENO_CON_PLATICA, 1);
+    res.json({ ok: true, marcados });
   };
 
   completarEmpresaTickets = async (req: Request, res: Response): Promise<void> => {
