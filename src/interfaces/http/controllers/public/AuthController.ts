@@ -53,6 +53,9 @@ export class AuthController {
       }
       this.entrar(res, r.token!, r.usuario, destino);
     } catch (err) {
+      // Un error que no es de negocio (Firestore, Firebase Auth caídos…) se anota: antes se
+      // veía solo «No se pudo iniciar sesión» y no quedaba rastro de la causa.
+      if (!(err instanceof DomainError)) console.error('Login falló por un error inesperado', err);
       const mensaje = err instanceof DomainError ? err.message : 'No se pudo iniciar sesión';
       res.status(401).render('pages/public/login', {
         titulo: 'Iniciar sesión',
