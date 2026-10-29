@@ -1309,13 +1309,14 @@ tr.fila--sla-vencido > td { background: color-mix(in srgb, var(--danger) 6%, tra
 /* Versiones del mercado: a todo lo ancho; los links se llevan el espacio que sobra (antes la
    tabla se quedaba en 44rem y los links se veían como "https://desc"). */
 .form.mercado { max-width: none; }
-.mercado .data-table td { max-width: none; overflow: visible; }
+.mercado .data-table td { max-width: none; }
 .mercado .data-table td:first-child { min-width: 16rem; }
 .mercado .data-table td { vertical-align: middle; }
 .mercado input[name="versionActual"] { width: 9rem; }
 .mercado .data-table input[type="date"] { width: 100%; min-width: 9.5rem; }
 th.mercado__link { width: 28%; }
-.mercado__link input { width: 100%; min-width: 10rem; }
+.mercado__link input { width: 100%; }
+.mercado .data-table td { overflow: hidden; }
 /* Cada SP en su renglón, debajo de su versión y más discreto. */
 .mercado__version > td { border-top: 2px solid var(--color-border); }
 .mercado__sp > td { padding-block: var(--space-1); background: var(--color-surface-2, transparent); }

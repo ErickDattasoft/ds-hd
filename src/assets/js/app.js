@@ -2229,6 +2229,12 @@
         guarda(clave, estado);
       }
 
+      // Un orden guardado de antes de que la columna se marcara «no ordenar» ya no se aplica.
+      var thOrden = estado.orden && thead.rows[0].cells[estado.orden.idx];
+      if (estado.orden && (!thOrden || thOrden.hasAttribute('data-no-ordenar'))) {
+        delete estado.orden;
+        guarda(clave, estado);
+      }
       if (estado.orden) {
         marcarFlechas(thead.rows[0], estado.orden.idx, estado.orden.dir);
         ordenarPor(tabla, estado.orden.idx, estado.orden.dir);

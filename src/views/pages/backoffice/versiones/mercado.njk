@@ -46,7 +46,8 @@
     <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
     <input type="hidden" name="conSp" value="1" />
     <p class="muted" style="margin: 0">Arrastra la orilla derecha de un encabezado para cambiar el ancho de esa columna; con doble clic se ajusta al contenido, como en Excel.</p>
-    <table class="data-table">
+    {# data-tabla: clave propia para los anchos guardados (los de antes de los SP ya no sirven). #}
+    <table class="data-table" data-tabla="versiones-mercado">
       <thead><tr><th data-no-ordenar>Sistema</th><th data-no-ordenar>Versión oficial</th><th data-no-ordenar>Liberación</th><th data-no-ordenar class="mercado__link">Link descarga</th><th data-no-ordenar class="mercado__link">Link carta técnica</th></tr></thead>
       <tbody>
         {% for f in filas %}
