@@ -16,6 +16,7 @@ import {
   InMemoryConfiguracionRepository,
 } from '../fakes/tickets.js';
 import { InMemoryVersionRepository, InMemoryKnowledgeRepository } from '../fakes/kb.js';
+import { ArticuloKB } from '../../src/core/entities/ArticuloKB.js';
 import { InMemoryUsuarioRepository } from '../fakes/InMemoryUsuarioRepository.js';
 import { InMemoryCotizacionRepository } from '../fakes/cotizaciones.js';
 import { InMemoryEventoRepository } from '../fakes/eventos.js';
@@ -219,6 +220,26 @@ describe('MigracionCrmViejoService', () => {
     await expect(
       servicio.importar(actor(), respaldo(), { modo: 'actualizar', simulacro: false, secciones: [] }),
     ).rejects.toBeInstanceOf(ValidationError);
+  });
+
+  it('sustituir nunca toca la base de conocimiento: se arma indexando, no del viejo', async () => {
+    const kb = repos.knowledgeRepo as InMemoryKnowledgeRepository;
+    await kb.save(new ArticuloKB({ id: 'a1', titulo: 'Indexado', carpeta: 'empresas', cuerpoMarkdown: 'x' }));
+    // Aunque llegue 'kb' en la petición (pantalla vieja en caché), se ignora.
+    const secciones = [...TODO, 'kb'] as SeccionImportacion[];
+    await servicio.importar(actor(), respaldo(), { modo: 'sustituir', simulacro: false, secciones });
+    expect(await kb.list()).toHaveLength(1);
+  });
+
+  it('sustituir no borra una sección que el archivo trae vacía', async () => {
+    await servicio.importar(actor(), respaldo(), { modo: 'actualizar', simulacro: false, secciones: TODO });
+    const otro = respaldo();
+    (otro.datos as Record<string, unknown>).tickets = [];
+    (otro.datos as Record<string, unknown>).papelera = [];
+    const r = await servicio.importar(actor(), otro, { modo: 'sustituir', simulacro: false, secciones: ['tickets'] });
+    expect(r.borrado?.tickets).toBeUndefined();
+    expect(await ticketQueries.listar({})).toHaveLength(1);
+    expect(r.lineas.join('\n')).toContain('el archivo no trae nada');
   });
 
   it('sustituir borra solo lo marcado: traer tickets no se lleva las empresas', async () => {

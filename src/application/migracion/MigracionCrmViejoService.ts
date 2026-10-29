@@ -8,7 +8,10 @@ import { pareceRespaldoViejo, seccionDatos } from './lib.js';
 export type ModoImportacion =
   /** Upsert: agrega y actualiza por id, no borra nada. El modo seguro y el de por defecto. */
   | 'actualizar'
-  /** Borra empresas, contactos, tickets, KB, versiones y bitácora antes de cargar. */
+  /**
+   * Borra empresas, contactos, tickets, versiones y bitácora antes de cargar (solo las secciones
+   * marcadas que el archivo sí trae). La base de conocimiento nunca: se arma indexando.
+   */
   | 'sustituir';
 
 /**
@@ -35,7 +38,8 @@ export const SECCIONES_IMPORTACION: readonly SeccionImportacion[] = [
   'tickets',
   'eventos',
   'cotizaciones',
-  'kb',
+  // Sin 'kb': la base de conocimiento de ds-hd se arma indexando las carpetas de Windows y la
+  // del viejo viene vacía. Importarla en "sustituir" borraba todo lo indexado (29-oct-2026).
   'versiones',
   'bitacora',
   'configuracion',
@@ -55,6 +59,25 @@ export const SECCION_ETIQUETA: Record<SeccionImportacion, string> = {
   configuracion: 'Configuración (tickets, avisos, "Acerca de")',
   usuarios: 'Usuarios (solo reporta cuáles faltan)',
 };
+
+/** De qué claves del respaldo viejo sale cada sección que "sustituir" puede borrar. */
+const CLAVES_VIEJO: Partial<Record<SeccionImportacion, string[]>> = {
+  empresas: ['clientes'],
+  contactos: ['contactos', 'clientes'],
+  tickets: ['tickets', 'papelera'],
+  eventos: ['eventos'],
+  cotizaciones: ['cotizaciones'],
+  versiones: ['versionesMercado'],
+  bitacora: ['bitacora'],
+};
+
+/** Cuántos registros trae el archivo para la sección (listas o mapas, como los guarda el viejo). */
+function cuantosEnArchivo(datos: Record<string, unknown>, s: SeccionImportacion): number {
+  return (CLAVES_VIEJO[s] ?? []).reduce((n, k) => {
+    const v = datos[k];
+    return n + (Array.isArray(v) ? v.length : v && typeof v === 'object' ? Object.keys(v).length : 0);
+  }, 0);
+}
 
 /** Cómo correr la importación. */
 export interface OpcionesImportarCrmViejo {
@@ -146,7 +169,7 @@ export class MigracionCrmViejoService {
           'exista en ds-hd quedará en "Sin empresa (revisar tras migración)".',
       );
     }
-    const borrado = modo === 'sustituir' ? await this.borrar(pedidas, simulacro, log) : null;
+    const borrado = modo === 'sustituir' ? await this.borrar(pedidas, datos, simulacro, log) : null;
 
     // Mismo orden que run-all.ts: usuarios primero (solo reporta), tickets al final (necesita
     // el contador de folios ya calculado contra lo que exista).
@@ -154,7 +177,6 @@ export class MigracionCrmViejoService {
     const empresas = trae('empresas') ? await imp.importarEmpresas(this.c, datos) : null;
     const contactos = trae('contactos') ? await imp.importarContactos(this.c, datos) : null;
     const versiones = trae('versiones') ? await imp.importarVersiones(this.c, datos) : 0;
-    const kb = trae('kb') ? await imp.importarKB(this.c, datos) : 0;
     const bitacora = trae('bitacora') ? await imp.importarBitacora(this.c, datos) : 0;
     if (trae('configuracion')) {
       await imp.importarConfiguracionTickets(this.c, datos);
@@ -178,7 +200,7 @@ export class MigracionCrmViejoService {
       eventos: eventos?.ok ?? 0,
       cotizaciones: cotizaciones?.ok ?? 0,
       versiones,
-      kb,
+      kb: 0,
       bitacora,
       usuariosFaltantes,
       contactosSinEmpresa: contactos?.sinEmpresa ?? [],
@@ -201,10 +223,21 @@ export class MigracionCrmViejoService {
    * misma trampa que advierte `scripts/migrate/reset-and-import.ts`).
    */
   private async borrar(
-    secciones: SeccionImportacion[],
+    marcadas: SeccionImportacion[],
+    datos: Record<string, unknown>,
     simulacro: boolean,
     log: (paso: string, msg: string) => void,
   ): Promise<Record<string, number>> {
+    // Una sección que el archivo trae vacía no se borra aunque esté marcada: borrar y cargar
+    // cero dejaría ds-hd sin nada de eso, sin manera de volver.
+    const vacias = marcadas.filter((s) => s in CLAVES_VIEJO && cuantosEnArchivo(datos, s) === 0);
+    if (vacias.length) {
+      log(
+        'sustituir',
+        `${vacias.map((s) => SECCION_ETIQUETA[s]).join(', ')}: el archivo no trae nada, así que no se borra lo que ya hay.`,
+      );
+    }
+    const secciones = marcadas.filter((s) => !vacias.includes(s));
     const trae = (s: SeccionImportacion): boolean => secciones.includes(s);
     // Todos los borrados van agrupados: uno por documento eran cientos de peticiones HTTP
     // —120 empresas, 135 contactos, la bitácora entera— y se comían el presupuesto de
@@ -264,12 +297,6 @@ export class MigracionCrmViejoService {
       const empresas = await repo.list();
       conteo.empresas = empresas.length;
       if (!simulacro) await repo.eliminarVarias(empresas.map((e) => e.id));
-    }
-    if (trae('kb')) {
-      const repo = this.c.resolve('knowledgeRepo');
-      const articulos = await repo.list();
-      conteo.kb = articulos.length;
-      if (!simulacro) await repo.eliminarVarios(articulos.map((a) => a.id));
     }
     if (trae('versiones')) {
       const repo = this.c.resolve('versionRepo');

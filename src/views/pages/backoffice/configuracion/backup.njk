@@ -89,8 +89,9 @@
     Para el JSON que descarga el botón <strong>"Respaldar"</strong> del CRM DATTASOFT original
     (el de arriba, "Restaurar", solo acepta respaldos de este mismo sistema). Traduce clientes,
     contactos, tickets con sus notas y actividad, eventos con sus invitaciones, cotizaciones,
-    base de conocimiento, bitácora, versiones de sistemas y la configuración de
-    tickets/avisos/"Acerca de" al modelo de ds-hd.
+    bitácora, versiones de sistemas y la configuración de tickets/avisos/"Acerca de" al modelo
+    de ds-hd. La <strong>base de conocimiento no se toca</strong>: aquí se arma indexando las
+    carpetas de Windows.
   </p>
   <p class="muted">
     Los ids se generan de forma determinista, así que <strong>importar el mismo respaldo dos
@@ -137,7 +138,7 @@
         <input type="radio" name="modo" value="sustituir" />
         <strong>Sustituir</strong> — borra <em>solo lo que marcaste arriba</em> y lo deja como
         venga en el archivo. Lo no marcado no se toca. Usuarios y configuración nunca se borran
-        (el respaldo viejo no puede restituirlos).
+        (el respaldo viejo no puede restituirlos), y tampoco lo que el archivo traiga vacío.
       </label>
     </fieldset>
     <label class="field--check">
