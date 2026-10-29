@@ -127,6 +127,7 @@ export function leerPaginaDescargas(html: string): PublicacionContpaqi[] {
  * títulos y normalizarlos en cada vuelta era lo que más CPU gastaba en el Worker.
  */
 const cachePalabras = new Map<string, Set<string>>();
+/** Palabras de un título, de la caché de arriba. */
 function palabrasDeTitulo(titulo: string): Set<string> {
   let p = cachePalabras.get(titulo);
   if (!p) {
