@@ -1082,6 +1082,19 @@ tr.fila--sla-vencido > td { background: color-mix(in srgb, var(--danger) 6%, tra
   border-radius: 4px 4px 0 0;
 }
 .chart-cols__bar--cero { height: 2px; background: var(--chart-grid); }
+/* Versión grande (Tickets por mes del dashboard, a lo ancho): barras anchas y cifras legibles;
+   el mes en curso con la barra llena y los anteriores un poco más tenues. */
+.chart-cols--grande .chart-cols__plot { height: 18rem; gap: var(--space-3); }
+/* El eje mide su relleno de arriba dentro de la altura y el área de barras no: se compensa. */
+.chart-cols--grande .chart-cols__y { height: calc(18rem + 1.25rem); margin-bottom: -1.25rem; }
+.chart-cols--grande .chart-cols__y { font-size: var(--text-sm); }
+.chart-cols--grande .chart-cols__bar { max-width: 64px; border-radius: 6px 6px 0 0; opacity: .72; transition: opacity .15s; }
+.chart-cols--grande .chart-cols__col:hover .chart-cols__bar,
+.chart-cols--grande .chart-cols__col--actual .chart-cols__bar { opacity: 1; }
+.chart-cols--grande .chart-cols__val { font-size: var(--text-sm); font-weight: 700; }
+.chart-cols--grande .chart-cols__x { gap: var(--space-3); }
+.chart-cols--grande .chart-cols__x span { font-size: var(--text-sm); }
+.chart-cols--grande .chart-cols__x .chart-cols__x-actual { font-weight: 700; color: var(--color-text); }
 .chart-cols__x { grid-column: 2; display: flex; gap: var(--space-2); margin-top: 0.35rem; }
 .chart-cols__x span {
   flex: 1;

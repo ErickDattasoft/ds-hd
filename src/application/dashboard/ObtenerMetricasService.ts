@@ -19,7 +19,7 @@ import { ticketSinNadieAsignado } from '../../core/entities/Ticket.js';
 const ORDEN_ESTADOS = ['Abierto', 'En proceso', 'Pendiente', 'Resuelto', 'Cerrado'];
 
 /** Meses hacia atrás (incluido el actual) que cubre la gráfica de tickets por mes. */
-const MESES_GRAFICA = 6;
+const MESES_GRAFICA = 12;
 
 /** Resumen de licencias en riesgo para el banner y la tarjeta de "avisos pendientes". */
 export interface MetricasLicencias {
@@ -85,7 +85,7 @@ function agruparPorMes(fechas: Date[], ahora: Date): { etiqueta: string; valor: 
   for (let i = MESES_GRAFICA - 1; i >= 0; i--) {
     const d = new Date(ahora.getFullYear(), ahora.getMonth() - i, 1);
     // El año solo se escribe cuando aporta algo (enero, y el primer mes de la serie): en las
-    // seis columnas de la gráfica repetirlo en todas no distingue nada y hace que la etiqueta
+    // doce columnas de la gráfica repetirlo en todas no distingue nada y hace que la etiqueta
     // no quepa en la columna.
     const mes = d.toLocaleDateString('es-MX', { month: 'short' }).replace('.', '');
     buckets.push({

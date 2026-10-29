@@ -9,17 +9,17 @@
 {# Columnas: una serie sobre el tiempo, de una sola tinta — los meses no son identidades
    distintas, así que darle un color a cada uno sería ruido. El eje se redondea a un múltiplo
    de 4 para que las cuatro marcas caigan en números enteros. #}
-{% macro columnas(datos) %}
+{% macro columnas(datos, grande) %}
   {% set max = (datos | sort(true, false, 'valor') | first).valor or 0 %}
   {% set tope = (((max / 4) | round(0, 'ceil')) * 4) if max else 4 %}
-  <div class="chart chart-cols">
+  <div class="chart chart-cols{{ ' chart-cols--grande' if grande }}">
     <div class="chart-cols__y" aria-hidden="true">
       {% for i in [4, 3, 2, 1, 0] %}<span>{{ (tope * i / 4) | round }}</span>{% endfor %}
     </div>
     <div class="chart-cols__plot">
       <span class="chart-cols__rejilla"></span>
       {% for d in datos %}
-        <div class="chart-cols__col">
+        <div class="chart-cols__col{{ ' chart-cols__col--actual' if loop.last }}" title="{{ d.etiqueta }}: {{ d.valor }} ticket(s)">
           <span class="chart-cols__medida" style="height: {{ (d.valor / tope * 100) | round(2) }}%">
             <span class="chart-cols__val">{{ d.valor }}</span>
             <span class="chart-cols__bar{{ ' chart-cols__bar--cero' if not d.valor }}"></span>
@@ -28,7 +28,7 @@
       {% endfor %}
     </div>
     <div class="chart-cols__x">
-      {% for d in datos %}<span>{{ d.etiqueta }}</span>{% endfor %}
+      {% for d in datos %}<span{{ ' class="chart-cols__x-actual"' | safe if loop.last }}>{{ d.etiqueta }}</span>{% endfor %}
     </div>
   </div>
 {% endmacro %}
@@ -148,30 +148,13 @@
     <div class="stat"><span class="stat__num">{{ m.cotizaciones.totalAbiertas }}</span><span class="stat__lbl">Cotizaciones abiertas</span></div>
   </div>
 
+  {# La tendencia va arriba, a lo ancho y grande; la lista de recientes al final. #}
   <div class="card">
-    <h2>🕑 Tickets recientes</h2>
-    <table class="data-table">
-      <thead><tr><th>#</th><th>Asunto</th><th>Empresa</th><th>Prioridad</th><th>Estado</th><th>Fecha</th></tr></thead>
-      <tbody>
-        {% for t in m.tickets.recientes %}
-          <tr>
-            <td><a href="/app/tickets/{{ t.id }}">#{{ t.numero }}</a></td>
-            <td>{{ t.asunto }}</td>
-            <td>{{ t.empresa or '—' }}</td>
-            <td><span class="{{ t.prioridad | prioridadClase }}">{{ t.prioridad }}</span></td>
-            <td><span class="{{ t.estado | estadoClase }}">{{ t.estado }}</span></td>
-            <td>{{ t.abiertoEn | fecha }}</td>
-          </tr>
-        {% else %}<tr><td colspan="6" class="muted">Sin tickets todavía.</td></tr>{% endfor %}
-      </tbody>
-    </table>
+    <h2>📊 Tickets por mes <span class="muted">(últimos 12 meses)</span></h2>
+    {{ columnas(m.tickets.porMes, true) }}
   </div>
 
   <div class="dash-grid">
-    <div class="card">
-      <h2>Tickets por mes <span class="muted">(últimos 6 meses)</span></h2>
-      {{ columnas(m.tickets.porMes) }}
-    </div>
     <div class="card">
       <h2>Tickets abiertos por estado</h2>
       {{ reparto(m.tickets.porEstado) }}
@@ -247,6 +230,25 @@
       </ul>
     </div>
     {% endif %}
+  </div>
+
+  <div class="card">
+    <h2>🕑 Tickets recientes</h2>
+    <table class="data-table">
+      <thead><tr><th>#</th><th>Asunto</th><th>Empresa</th><th>Prioridad</th><th>Estado</th><th>Fecha</th></tr></thead>
+      <tbody>
+        {% for t in m.tickets.recientes %}
+          <tr>
+            <td><a href="/app/tickets/{{ t.id }}">#{{ t.numero }}</a></td>
+            <td>{{ t.asunto }}</td>
+            <td>{{ t.empresa or '—' }}</td>
+            <td><span class="{{ t.prioridad | prioridadClase }}">{{ t.prioridad }}</span></td>
+            <td><span class="{{ t.estado | estadoClase }}">{{ t.estado }}</span></td>
+            <td>{{ t.abiertoEn | fecha }}</td>
+          </tr>
+        {% else %}<tr><td colspan="6" class="muted">Sin tickets todavía.</td></tr>{% endfor %}
+      </tbody>
+    </table>
   </div>
   {% else %}
     <p class="muted">Sin métricas disponibles.</p>

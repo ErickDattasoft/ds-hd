@@ -75,17 +75,17 @@ describe('ObtenerMetricasService', () => {
     return t;
   };
 
-  it('agrupa tickets por mes (últimos 6, incluido el actual)', async () => {
+  it('agrupa tickets por mes (últimos 12, incluido el actual)', async () => {
     ticketEn('t1', '2026-09-01T09:00:00Z');
     ticketEn('t2', '2026-09-05T09:00:00Z');
     ticketEn('t3', '2026-08-15T09:00:00Z');
-    ticketEn('t4', '2026-01-15T09:00:00Z'); // fuera de la ventana
+    ticketEn('t4', '2025-09-15T09:00:00Z'); // hace 12 meses: fuera de la ventana
 
     const m = await service.ejecutar(actor(['tickets:leer_todos']));
-    expect(m.tickets.porMes).toHaveLength(6);
+    expect(m.tickets.porMes).toHaveLength(12);
     expect(m.tickets.porMes.at(-1)!.valor).toBe(2); // septiembre
     expect(m.tickets.porMes.at(-2)!.valor).toBe(1); // agosto
-    expect(m.tickets.porMes.reduce((s, b) => s + b.valor, 0)).toBe(3); // enero no cuenta
+    expect(m.tickets.porMes.reduce((s, b) => s + b.valor, 0)).toBe(3); // septiembre del año pasado no cuenta
   });
 
   it('sin permiso de empresas: licencias es null', async () => {
