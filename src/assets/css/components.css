@@ -167,8 +167,9 @@
    quedaba media pantalla vacía a la derecha mientras las tablas partían columnas
    ("FACTURACIÓ…") y los recuadros de totales se apretaban a la izquierda.
    El techo de 120rem (1920px) es para los monitores ultraanchos: pasado eso se centra en vez
-   de seguir estirando, porque una fila de tabla de 3000px ya no se sigue con la vista. Lo que
-   necesita medirse para leerse trae su propio tope (.form, .kb-article, .prose). */
+   de seguir estirando, porque una fila de tabla de 3000px ya no se sigue con la vista. Solo
+   el texto corrido para leer trae su propio tope (.kb-article, .prose); los formularios no
+   (ver .app-content .form). */
 .app-content {
   padding: var(--space-5) var(--space-6);
   flex: 1;
@@ -366,6 +367,19 @@ a.topbar__name:hover { color: var(--color-text); text-decoration: underline; }
 /* ── Formularios ───────────────────────────────────────────────────────── */
 .form { display: flex; flex-direction: column; gap: var(--space-4); max-width: 34rem; }
 .form--wide { max-width: 44rem; }
+/* Dentro de la app los formularios usan todo el ancho, como las tablas: con el tope de 34/44rem
+   quedaba media pantalla vacía (lo pidió el usuario el 29-oct-2026). Las rejillas de campos
+   (.form-grid) se reparten solas: en pantalla ancha caben más campos por renglón. */
+.app-content .form { max-width: none; }
+/* Los campos sueltos de un formulario se acomodan en columnas (un teléfono de 1600px de ancho
+   no ayuda); lo demás —tarjetas, tablas, textos largos, botones, títulos— va a todo lo ancho. */
+.app-content .form:not(.chat__escribir) {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr));
+  column-gap: var(--space-4);
+}
+.app-content .form > :not(.field),
+.app-content .form > .field:has(textarea, .rte, [contenteditable], table, .form-grid) { grid-column: 1 / -1; }
 .field { display: flex; flex-direction: column; gap: var(--space-1); }
 .field > span,
 .field > legend {
