@@ -82,10 +82,28 @@ export function numeroTicketDeAsunto(asunto: string): number | null {
  * Deja solo lo que el cliente escribió: corta en la primera línea de cita ("El ... escribió:",
  * "-----Original Message-----", "> …") para no repetir el hilo completo en cada nota.
  */
+/**
+ * Gmail parte la línea de cita en dos o tres renglones ("El vie, 30 oct …, Soporte <" /
+ * "correo@x> escribió:"). Cuenta solo si junta un correo y ningún renglón intermedio vacío o que
+ * empiece otra frase con "El"/"On" (para no comerse lo que el cliente escribió justo antes).
+ */
+function citaPartida(lineas: string[], i: number): boolean {
+  if (!/^\s*(el|on)\s/i.test(lineas[i] ?? '')) return false;
+  for (let fin = i + 1; fin <= i + 2 && fin < lineas.length; fin++) {
+    const siguiente = lineas[fin] ?? '';
+    if (!siguiente.trim() || /^\s*(el|on)\s/i.test(siguiente)) return false;
+    const junta = lineas.slice(i, fin + 1).join(' ');
+    if (/@/.test(junta) && /(escribió|wrote):\s*$/i.test(junta)) return true;
+  }
+  return false;
+}
+
 export function cuerpoSinCita(texto: string): string {
   const lineas = (texto ?? '').replace(/\r\n/g, '\n').split('\n');
-  const corte = lineas.findIndex((l) =>
-    /^\s*(>|-{2,}\s*(mensaje|original)|de:|from:|el .+ escribió:|on .+ wrote:|_{5,})/i.test(l),
+  const corte = lineas.findIndex(
+    (l, i) =>
+      /^\s*(>|-{2,}\s*(mensaje|original)|de:|from:|el .+ escribió:|on .+ wrote:|_{5,})/i.test(l) ||
+      citaPartida(lineas, i),
   );
   return (corte >= 0 ? lineas.slice(0, corte) : lineas).join('\n').trim();
 }

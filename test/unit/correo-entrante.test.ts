@@ -128,3 +128,14 @@ describe('utilidades de correo entrante', () => {
     expect(extraerCorreo('Ana <ANA@x.mx>')).toBe('ana@x.mx');
   });
 });
+
+describe('cuerpoSinCita con la cita de Gmail partida en renglones', () => {
+  it('corta «El … <» + «correo> escribió:»', () => {
+    const texto = 'O2\n\nEl El vie, 30 de oct de 2026 a la(s) 10:30 am, DATTASOFT Soporte <\nerick.casas@dattasoft.mx> escribió:\n\n> viejo';
+    expect(cuerpoSinCita(texto)).toBe('O2');
+  });
+  it('no se come lo que el cliente escribió con «El …» justo antes de la cita', () => {
+    const texto = 'El sistema no abre desde el 30\nEl vie, 30 oct 2026, Soporte <s@x.mx> escribió:\n> viejo';
+    expect(cuerpoSinCita(texto)).toBe('El sistema no abre desde el 30');
+  });
+});

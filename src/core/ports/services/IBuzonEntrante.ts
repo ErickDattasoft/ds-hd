@@ -13,8 +13,13 @@ export interface CorreoRecibido {
   /** Texto plano ya sin HTML (la cita del hilo se recorta después, con `cuerpoSinCita`). */
   cuerpo: string;
   recibidoEn: Date;
-  /** Imágenes adjuntas (solo las que alguien adjuntó a propósito, no las incrustadas). */
-  adjuntos?: { nombre: string; contentType: string; base64: string }[];
+  /**
+   * Imágenes adjuntas (solo las que alguien adjuntó a propósito, no las incrustadas). Si el
+   * proveedor no manda el contenido sino un enlace a su almacén, viene `url` y `base64` vacío.
+   */
+  adjuntos?: { nombre: string; contentType: string; base64: string; url?: string }[];
+  /** Adjuntos que no se guardan (no son imagen), para avisarlo en la nota en vez de perderlos sin decir nada. */
+  omitidos?: { nombre: string; motivo: string }[];
 }
 
 /**

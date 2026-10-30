@@ -16,7 +16,6 @@ import type { IUsuarioRepository } from '../../core/ports/repositories/IUsuarioR
 import type { IEmailSender } from '../../core/ports/services/IEmailSender.js';
 import type { Ticket } from '../../core/entities/Ticket.js';
 import {
-  MAX_ADJUNTO_BYTES,
   sanearNombreArchivo,
 } from '../../core/entities/AdjuntoTicket.js';
 import { MAX_DATAURL_IMAGEN_PUBLICO, MAX_IMAGENES_PUBLICO } from '../../core/entities/TicketPublico.js';
@@ -58,8 +57,15 @@ export type ResultadoWebhookCorreo =
   | { accion: 'solicitud'; folio: string }
   | { accion: 'ignorado'; motivo: string };
 
-/** Tope de imágenes por respuesta: cada una es un doc de hasta ~1 MiB. */
+/** Tope de imágenes por respuesta. */
 const MAX_IMAGENES_RESPUESTA = 5;
+/**
+ * Tope por imagen que llega por correo: una foto del celular pesa 2–4 MB. Más que el de los
+ * adjuntos subidos en el CRM (que el navegador reduce antes): se guarda en trozos.
+ */
+const MAX_IMAGEN_CORREO_BYTES = 5 * 1024 * 1024;
+
+const megas = (bytes: number): string => `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 
 const e = (s: string): string =>
   s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -217,8 +223,13 @@ export class CorreoEntranteService {
       }
     }
     // Si el recorte dejó todo vacío (todo era cita), mejor guardar el texto completo que perderlo.
-    const cuerpo = cuerpoSinCita(correo.cuerpo) || correo.cuerpo.trim();
-    const adjuntoIds = await this.guardarImagenes(ticket, correo);
+    const texto = cuerpoSinCita(correo.cuerpo) || correo.cuerpo.trim();
+    const { ids: adjuntoIds, omitidos } = await this.guardarImagenes(ticket, correo);
+    // Lo que no se pudo guardar se dice en la nota: si no, la imagen "desaparece" sin aviso.
+    const noGuardados = [...(correo.omitidos ?? []), ...omitidos];
+    const cuerpo = [texto, ...noGuardados.map((o) => `📎 No se guardó «${o.nombre}»: ${o.motivo}.`)]
+      .filter(Boolean)
+      .join('\n\n');
     if (!cuerpo && !adjuntoIds.length) return 'el correo llegó vacío';
 
     const nombre = correo.nombreDe && correo.nombreDe !== correo.de ? correo.nombreDe : correo.de;
@@ -253,15 +264,29 @@ export class CorreoEntranteService {
     return this.deps.usuarios.findByEmail(correo).then((u) => !!u?.activo && u.esStaff).catch(() => false);
   }
 
-  /** Guarda las imágenes del correo como adjuntos del ticket (≤700 KB c/u, máx. 5). */
-  private async guardarImagenes(ticket: Ticket, correo: CorreoRecibido): Promise<string[]> {
+  /** Guarda las imágenes del correo como adjuntos del ticket (≤5 MB c/u, máx. 5) y dice cuáles no. */
+  private async guardarImagenes(
+    ticket: Ticket,
+    correo: CorreoRecibido,
+  ): Promise<{ ids: string[]; omitidos: { nombre: string; motivo: string }[] }> {
     const repo = this.deps.adjuntos;
-    if (!repo || !correo.adjuntos?.length) return [];
     const ids: string[] = [];
-    for (const a of correo.adjuntos.slice(0, MAX_IMAGENES_RESPUESTA)) {
-      const tamano = Math.floor((a.base64.length * 3) / 4);
-      if (tamano > MAX_ADJUNTO_BYTES) {
+    const omitidos: { nombre: string; motivo: string }[] = [];
+    if (!repo || !correo.adjuntos?.length) return { ids, omitidos };
+    for (const [i, a] of correo.adjuntos.entries()) {
+      if (i >= MAX_IMAGENES_RESPUESTA) {
+        omitidos.push({ nombre: a.nombre, motivo: `solo se guardan ${MAX_IMAGENES_RESPUESTA} imágenes por correo` });
+        continue;
+      }
+      const base64 = a.base64 || (a.url ? await this.descargar(a.url).catch(() => '') : '');
+      if (!base64) {
+        omitidos.push({ nombre: a.nombre, motivo: 'no se pudo descargar' });
+        continue;
+      }
+      const tamano = Math.floor((base64.length * 3) / 4);
+      if (tamano > MAX_IMAGEN_CORREO_BYTES) {
         this.logger.warn('Imagen de correo omitida por tamaño', { ticket: ticket.numero, nombre: a.nombre, tamano });
+        omitidos.push({ nombre: a.nombre, motivo: `pesa ${megas(tamano)} (máximo ${megas(MAX_IMAGEN_CORREO_BYTES)})` });
         continue;
       }
       const id = this.ids.newId();
@@ -272,7 +297,7 @@ export class CorreoEntranteService {
           nombre: sanearNombreArchivo(a.nombre),
           contentType: a.contentType,
           tamano,
-          data: `data:${a.contentType};base64,${a.base64}`,
+          data: `data:${a.contentType};base64,${base64}`,
           subidoPorUid: null,
           subidoPorNombre: correo.nombreDe || correo.de,
           createdAt: this.clock.now(),
@@ -280,9 +305,17 @@ export class CorreoEntranteService {
         ids.push(id);
       } catch (err) {
         this.logger.warn('No se pudo guardar imagen de correo', { ticket: ticket.numero, err: String(err) });
+        omitidos.push({ nombre: a.nombre, motivo: 'no se pudo guardar' });
       }
     }
-    return ids;
+    return { ids, omitidos };
+  }
+
+  /** Contenido (base64) de un adjunto que el proveedor dejó en su almacén. */
+  private async descargar(url: string): Promise<string> {
+    const r = await fetch(url, { signal: AbortSignal.timeout(15_000) });
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    return Buffer.from(await r.arrayBuffer()).toString('base64');
   }
 
   /**

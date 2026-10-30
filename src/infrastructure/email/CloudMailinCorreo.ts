@@ -37,16 +37,24 @@ export function correoDeCloudMailin(payload: unknown): CorreoRecibido {
   const cuerpo = replyPlain.trim() || (html ? textoDeHtmlCorreo(html) : '') || plain.trim();
   const fecha = new Date(header(headers, 'date'));
 
-  const adjuntos = (Array.isArray(p.attachments) ? p.attachments : [])
+  const todos = (Array.isArray(p.attachments) ? p.attachments : [])
     .map((a) => (a ?? {}) as Record<string, unknown>)
     // Las "inline" son logos/firmas incrustados en el cuerpo, no algo que alguien adjuntó.
     .filter((a) => a.disposition !== 'inline')
     .map((a) => ({
       nombre: String(a.file_name ?? 'captura'),
-      contentType: String(a.content_type ?? '').toLowerCase(),
+      // "image/jpg" y "image/pjpeg" no son tipos estándar: el navegador los muestra como JPEG.
+      contentType: String(a.content_type ?? '').toLowerCase().replace(/^image\/(jpg|pjpeg)$/, 'image/jpeg'),
       base64: String(a.content ?? '').replace(/\s/g, ''),
-    }))
-    .filter((a) => IMAGENES.includes(a.contentType) && a.base64);
+      // Con almacén de adjuntos, CloudMailin manda un enlace en vez del contenido.
+      url: typeof a.url === 'string' ? a.url : '',
+    }));
+  const adjuntos = todos
+    .filter((a) => IMAGENES.includes(a.contentType) && (a.base64 || a.url))
+    .map(({ url, ...a }) => (a.base64 || !url ? a : { ...a, url }));
+  const omitidos = todos
+    .filter((a) => !IMAGENES.includes(a.contentType))
+    .map((a) => ({ nombre: a.nombre, motivo: 'solo se guardan imágenes' }));
 
   return {
     id: header(headers, 'message_id') || `cm-${Date.now()}`,
@@ -57,5 +65,6 @@ export function correoDeCloudMailin(payload: unknown): CorreoRecibido {
     cuerpo,
     recibidoEn: Number.isNaN(fecha.getTime()) ? new Date() : fecha,
     ...(adjuntos.length ? { adjuntos } : {}),
+    ...(omitidos.length ? { omitidos } : {}),
   };
 }

@@ -102,7 +102,7 @@ describe('correo entrante por webhook (CloudMailin)', () => {
     const r = await service.recibirWebhook(correoDeCloudMailin(payload()));
     expect(r).toEqual({ accion: 'nota', ticket: 7 });
     const [nota] = await tickets.listarNotas('t7');
-    expect(nota).toMatchObject({ cuerpo: 'Ya quedó, gracias.', autorNombre: 'Luis Pérez', correoDe: 'luis@cliente.mx', tipo: 'publica' });
+    expect(nota).toMatchObject({ cuerpo: 'Ya quedó, gracias.\n\n📎 No se guardó «factura.pdf»: solo se guardan imágenes.', autorNombre: 'Luis Pérez', correoDe: 'luis@cliente.mx', tipo: 'publica' });
     expect(nota!.adjuntoIds).toHaveLength(1);
     expect(adjuntos.docs.get(nota!.adjuntoIds![0]!)).toMatchObject({ ticketId: 't7', contentType: 'image/png' });
     expect(email.ultimo?.asunto).toContain('[Ticket #7]');
@@ -131,7 +131,7 @@ describe('correo entrante por webhook (CloudMailin)', () => {
 
     await service.recibirWebhook(correoDeCloudMailin(payload()));
     const r = respuestas.items.get('t7')!;
-    expect(r).toMatchObject({ numero: 7, autorNombre: 'Luis Pérez', extracto: 'Ya quedó, gracias.' });
+    expect(r).toMatchObject({ numero: 7, autorNombre: 'Luis Pérez', extracto: expect.stringContaining('Ya quedó, gracias.') });
   });
 
   it('sin número de ticket → solicitud en el buzón (nunca un ticket solo)', async () => {
