@@ -1165,6 +1165,8 @@ tr.fila--sla-vencido > td { background: color-mix(in srgb, var(--danger) 6%, tra
 .acciones-lote { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); margin-block: var(--space-3); }
 .acciones-lote__conteos { display: inline-flex; flex-wrap: wrap; gap: var(--space-2); margin-left: auto; }
 .acciones-lote__conteos a { text-decoration: none; }
+/* Cada par: «avisadas» arriba y «sin avisar» abajo. */
+.acciones-lote__par { display: inline-flex; flex-direction: column; align-items: stretch; gap: var(--space-1); }
 
 /* Barra de acciones del formulario de ticket: siempre visible al pie de la ventana */
 .form-acciones-fijas {

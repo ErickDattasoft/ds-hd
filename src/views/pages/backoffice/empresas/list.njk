@@ -24,6 +24,8 @@
       <option value="1" {{ 'selected' if pendientes == '1' }}>Con pendientes (licencia o versión)</option>
       <option value="versiones" {{ 'selected' if pendientes == 'versiones' }}>🔔 Sistemas desactualizados sin avisar</option>
       <option value="licencias" {{ 'selected' if pendientes == 'licencias' }}>⏰ Licencias por vencer sin avisar</option>
+      <option value="versiones-avisadas" {{ 'selected' if pendientes == 'versiones-avisadas' }}>✅ Sistemas desactualizados ya avisados</option>
+      <option value="licencias-avisadas" {{ 'selected' if pendientes == 'licencias-avisadas' }}>✅ Licencias por vencer ya avisadas</option>
     </select>
     <button class="btn btn--sm" type="submit">Buscar</button>
   </form>
@@ -66,8 +68,14 @@
       {# Cuántas hay con algo pendiente, como en el CRM viejo: se ve si vale la pena abrirlos
          sin tener que filtrar primero, y cada uno lleva al listado ya filtrado. #}
       <span class="acciones-lote__conteos">
-        <a href="/app/empresas?pendientes=licencias" class="badge {{ 'badge--danger' if conLicencias else '' }}" title="Empresas con licencias vencidas o por vencer que aún no se les ha avisado">⏰ {{ conLicencias }} con licencias por vencer sin avisar</a>
-        <a href="/app/empresas?pendientes=versiones" class="badge {{ 'badge--warning' if conVersiones else '' }}" title="Empresas con sistemas desactualizados que aún no se les ha avisado">🔔 {{ conVersiones }} con sistemas desactualizados sin avisar</a>
+        <span class="acciones-lote__par">
+          <a href="/app/empresas?pendientes=licencias-avisadas" class="badge {{ 'badge--ok' if avisadasLicencias else '' }}" title="Empresas con licencias vencidas o por vencer a las que ya se les avisó">✅ {{ avisadasLicencias }} con licencias por vencer avisadas</a>
+          <a href="/app/empresas?pendientes=licencias" class="badge {{ 'badge--danger' if conLicencias else '' }}" title="Empresas con licencias vencidas o por vencer que aún no se les ha avisado">⏰ {{ conLicencias }} con licencias por vencer sin avisar</a>
+        </span>
+        <span class="acciones-lote__par">
+          <a href="/app/empresas?pendientes=versiones-avisadas" class="badge {{ 'badge--ok' if avisadasVersiones else '' }}" title="Empresas con sistemas desactualizados a las que ya se les avisó">✅ {{ avisadasVersiones }} con sistemas desactualizados avisados</a>
+          <a href="/app/empresas?pendientes=versiones" class="badge {{ 'badge--warning' if conVersiones else '' }}" title="Empresas con sistemas desactualizados que aún no se les ha avisado">🔔 {{ conVersiones }} con sistemas desactualizados sin avisar</a>
+        </span>
       </span>
     </form>
   {% elif can('empresas:editar') %}
@@ -90,7 +98,7 @@
           {% if can('empresas:editar') %}
             {# Con el filtro de "sin avisar" (al que lleva la tarjeta del Dashboard) llegan ya
                marcadas, como en el CRM viejo: solo falta elegir correo o WhatsApp. #}
-            <td><input type="checkbox" form="avisar-form" name="empresaIds" value="{{ e.id }}" aria-label="Seleccionar {{ e.nombre }}" {{ 'checked' if pendientes == 'versiones' or pendientes == 'licencias' }} /></td>
+            <td><input type="checkbox" form="avisar-form" name="empresaIds" value="{{ e.id }}" aria-label="Seleccionar {{ e.nombre }}" {{ 'checked' if pendientes in ['versiones', 'licencias', 'versiones-avisadas', 'licencias-avisadas'] }} /></td>
             <td>
               <button type="submit" form="fav-{{ e.id }}" class="star-btn" title="{{ 'Quitar de favoritas' if e.favorita else 'Marcar como favorita' }}"
                       aria-pressed="{{ 'true' if e.favorita else 'false' }}">{{ '⭐' if e.favorita else '☆' }}</button>

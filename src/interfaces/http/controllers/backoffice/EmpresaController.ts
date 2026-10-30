@@ -28,6 +28,12 @@ interface ItemHistorial {
 }
 
 /** `YYYY-MM-DD` de hoy en hora de México (valor por defecto de la fecha de una interacción). */
+/** Fila con sistemas desactualizados a la que ya se le avisó de todos. */
+const versionesAvisadas = (f: { desactualizadas: number; sinAvisar: { versiones: number } }): boolean =>
+  f.desactualizadas > 0 && f.sinAvisar.versiones === 0;
+/** Fila con licencias vencidas o por vencer a la que ya se le avisó de todas. */
+const licenciasAvisadas = (f: { vencidas: number; porVencer: number; sinAvisar: { licencias: number } }): boolean =>
+  f.vencidas + f.porVencer > 0 && f.sinAvisar.licencias === 0;
 const hoyIso = (): string => new Date().toLocaleDateString('en-CA', { timeZone: 'America/Mexico_City' });
 const str = (v: unknown): string => (typeof v === 'string' ? v : '');
 const lista = (v: unknown): string[] =>
@@ -67,7 +73,7 @@ export class EmpresaController {
     const incluirArchivadas = req.query.archivadas === '1';
     // `1`: cualquier pendiente (licencia o versión). `versiones` / `licencias`: los dos botones
     // del CRM viejo, que además dejaban fuera lo que ya se había avisado.
-    const pendientes = ['1', 'versiones', 'licencias'].includes(str(req.query.pendientes))
+    const pendientes = ['1', 'versiones', 'licencias', 'versiones-avisadas', 'licencias-avisadas'].includes(str(req.query.pendientes))
       ? str(req.query.pendientes)
       : '';
     const soloFavoritas = req.query.favoritas === '1';
@@ -118,6 +124,8 @@ export class EmpresaController {
     if (pendientes === '1') filas = filas.filter((f) => f.vencidas || f.porVencer || f.desactualizadas);
     else if (pendientes === 'versiones') filas = filas.filter((f) => f.sinAvisar.versiones);
     else if (pendientes === 'licencias') filas = filas.filter((f) => f.sinAvisar.licencias);
+    else if (pendientes === 'versiones-avisadas') filas = filas.filter(versionesAvisadas);
+    else if (pendientes === 'licencias-avisadas') filas = filas.filter(licenciasAvisadas);
     // Las favoritas van arriba, como en el CRM viejo: marcar una empresa es justamente decir
     // "a esta la quiero a la mano". Dentro de cada grupo se mantiene el orden que ya traía el
     // repositorio, para que la lista no cambie de criterio a media tabla.
@@ -131,11 +139,16 @@ export class EmpresaController {
     // pendiente que aún no se les ha avisado, para saber si vale la pena abrirlos.
     const conLicencias = conOrden.filter((f) => f.sinAvisar.licencias).length;
     const conVersiones = conOrden.filter((f) => f.sinAvisar.versiones).length;
+    // Y las que tienen pendientes pero ya se les avisó de todo (para reintentar si no les llegó).
+    const avisadasLicencias = conOrden.filter(licenciasAvisadas).length;
+    const avisadasVersiones = conOrden.filter(versionesAvisadas).length;
     res.render('pages/backoffice/empresas/list', {
       titulo: 'Empresas',
       filas: conOrden,
       conLicencias,
       conVersiones,
+      avisadasLicencias,
+      avisadasVersiones,
       q: texto,
       incluirArchivadas,
       pendientes,
