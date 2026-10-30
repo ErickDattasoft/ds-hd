@@ -1351,3 +1351,21 @@ th.mercado__link { width: 28%; }
 }
 .segmentado__op:hover { color: var(--color-text); border-color: var(--brand); }
 .segmentado__op.is-activo { background: var(--brand); border-color: var(--brand); color: #fff; font-weight: 600; }
+
+/* Ficha de datos (detalle de empresa): etiqueta chica arriba, valor abajo, en columnas. */
+.ficha-datos {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+  gap: var(--space-4) var(--space-5);
+  margin: 0;
+}
+.ficha-datos > div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.ficha-datos__ancho { grid-column: 1 / -1; }
+.ficha-datos dt {
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-subtle);
+}
+.ficha-datos dd { margin: 0; font-weight: 600; overflow-wrap: anywhere; }
+.ficha-datos dd.ficha-datos__notas { font-weight: 400; color: var(--color-text-muted); white-space: pre-line; }

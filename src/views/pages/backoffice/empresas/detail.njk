@@ -29,9 +29,19 @@
   {% endif %}
 
   <div class="card">
-    <p><strong>RFC:</strong> {{ empresa.rfc or '—' }} · <strong>Tel:</strong> {{ empresa.telefono or '—' }}{% if empresa.telefonoAlternativo %} / {{ empresa.telefonoAlternativo }}{% endif %} · <strong>Correo:</strong> {{ empresa.email or '—' }}{% if empresa.emailAlternativo %} / {{ empresa.emailAlternativo }}{% endif %}</p>
-    {% if empresa.direccion %}<p>{{ empresa.direccion }}</p>{% endif %}
-    {% if empresa.notas %}<p class="muted">{{ empresa.notas }}</p>{% endif %}
+    <dl class="ficha-datos">
+      <div><dt>RFC</dt><dd>{{ empresa.rfc or '—' }}</dd></div>
+      <div><dt>Teléfono</dt><dd>{% if empresa.telefono %}<a href="tel:{{ empresa.telefono }}">{{ empresa.telefono }}</a>{% else %}—{% endif %}</dd></div>
+      {% if empresa.telefonoAlternativo and empresa.telefonoAlternativo != empresa.telefono %}
+        <div><dt>Teléfono alternativo</dt><dd><a href="tel:{{ empresa.telefonoAlternativo }}">{{ empresa.telefonoAlternativo }}</a></dd></div>
+      {% endif %}
+      <div><dt>Correo</dt><dd>{% if empresa.email %}<a href="mailto:{{ empresa.email }}">{{ empresa.email }}</a>{% else %}—{% endif %}</dd></div>
+      {% if empresa.emailAlternativo and empresa.emailAlternativo != empresa.email %}
+        <div><dt>Correo alternativo</dt><dd><a href="mailto:{{ empresa.emailAlternativo }}">{{ empresa.emailAlternativo }}</a></dd></div>
+      {% endif %}
+      {% if empresa.direccion %}<div class="ficha-datos__ancho"><dt>Dirección</dt><dd>{{ empresa.direccion }}</dd></div>{% endif %}
+      {% if empresa.notas %}<div class="ficha-datos__ancho"><dt>Notas</dt><dd class="ficha-datos__notas">{{ empresa.notas }}</dd></div>{% endif %}
+    </dl>
   </div>
 
   {% if sistemas | length %}
