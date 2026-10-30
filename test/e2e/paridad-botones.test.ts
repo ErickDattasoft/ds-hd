@@ -106,7 +106,7 @@ describe('configuración → predeterminados del ticket nuevo', () => {
     const { agent, csrf } = await login(t.app, ADMIN.email, ADMIN.password);
     const cfg = await t.configuracionRepo.obtenerTickets();
     const vista = await agent.get('/app/configuracion/tickets');
-    expect(vista.text).toContain('Predeterminados');
+    expect(vista.text).toContain('name="predTipo"');
     await agent.post('/app/configuracion/tickets').type('form').send({
       _csrf: csrf,
       tipos: cfg.tipos.join('\n'),
@@ -340,7 +340,8 @@ describe('avisar al cliente al cambiar de estado', () => {
     expect(t.emailSender.enviados).toHaveLength(1); // "Pendiente" no está marcado
 
     const vista = await agent.get('/app/configuracion/tickets');
-    expect(vista.text).toContain('Avisar al cliente al cambiar de estado');
+    expect(vista.text).toContain('Avisar al cliente por correo al pasar a este estado');
+    expect(vista.text).toContain('name="avisarClienteEstados" value="En proceso"');
   });
 });
 

@@ -544,7 +544,7 @@ describe('avisos globales (título de pestaña y buzón público, como el viejo)
     });
     const adm = await login(t.app, ADMIN.email, ADMIN.password);
     const vista = await adm.agent.get('/app/configuracion/tickets');
-    expect(vista.text).toMatch(new RegExp(`<option value="${SUP.uid}" selected>`));
+    expect(vista.text).toContain(`name="predAgenteUid" value="${SUP.uid}"`);
     const form = await adm.agent.get('/app/tickets/nuevo');
     expect(form.text).toMatch(new RegExp(`<option value="${SUP.uid}" selected>`));
     expect(form.text).toMatch(/<option value="Alta" selected|<option selected>Alta|value="Alta"\s+selected/);

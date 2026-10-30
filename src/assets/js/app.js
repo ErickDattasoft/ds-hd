@@ -1540,6 +1540,159 @@
     });
   });
 
+  // ── Configuración de tickets: catálogos en tarjetas (como el CRM viejo) ──────────────
+  // Cada tarjeta [data-cat] tiene renglones [data-cat-fila]; tras cada cambio se reescriben
+  // los campos ocultos (un valor por línea), que es lo que recibe el servidor.
+  function catSincronizar(card) {
+    var filas = Array.prototype.slice.call(card.querySelectorAll('[data-cat-lista] > [data-cat-fila]'));
+    var vistos = {};
+    var valores = [];
+    var marcados = [];
+    filas.forEach(function (f) {
+      var inp = f.querySelector('[data-cat-valor]');
+      var v = inp.value.trim();
+      var clave = v.toLowerCase();
+      var repetido = !!(v && vistos[clave]);
+      inp.classList.toggle('is-repetido', repetido);
+      inp.title = repetido ? 'Repetido: solo se guarda una vez' : v;
+      if (v && !repetido) { vistos[clave] = true; valores.push(v); }
+      var sla = f.querySelector('[data-cat-sla]');
+      if (sla) sla.name = 'sla_' + v;
+      var m = f.querySelector('[data-cat-marca]');
+      if (m && v && !repetido && m.classList.contains('is-on')) marcados.push(v);
+    });
+    var salida = card.querySelector('[data-cat-salida]');
+    if (salida) salida.value = valores.join('\n');
+    var n = card.querySelector('[data-cat-n]');
+    if (n) n.textContent = valores.length;
+    var pred = card.querySelector('[data-cat-pred]');
+    var on = card.querySelector('[data-cat-lista] [data-cat-estrella].is-on');
+    if (pred) pred.value = on ? on.closest('[data-cat-fila]').querySelector('[data-cat-valor]').value.trim() : '';
+    var ms = card.querySelector('[data-cat-marca-salida]');
+    if (ms && ms.hasAttribute('data-multi')) {
+      var nombre = ms.getAttribute('data-nombre');
+      ms.innerHTML = '';
+      marcados.forEach(function (v) {
+        var h = document.createElement('input');
+        h.type = 'hidden'; h.name = nombre; h.value = v;
+        ms.appendChild(h);
+      });
+    } else if (ms) ms.value = marcados.join('\n');
+  }
+  function catCambio(card) {
+    if (!card.hasAttribute('data-cat-fija')) catSincronizar(card);
+    var aviso = document.querySelector('[data-cat-pendiente]');
+    if (aviso) aviso.hidden = false;
+  }
+  document.addEventListener('click', function (e) {
+    var card = e.target.closest('[data-cat]');
+    if (!card) return;
+    var fila = e.target.closest('[data-cat-fila]');
+    var b;
+    if ((b = e.target.closest('[data-cat-mover]')) && fila) {
+      var lista = fila.parentNode;
+      if (b.getAttribute('data-cat-mover') === '-1') {
+        if (fila.previousElementSibling) lista.insertBefore(fila, fila.previousElementSibling);
+      } else if (fila.nextElementSibling) lista.insertBefore(fila.nextElementSibling, fila);
+      b.focus();
+      catCambio(card);
+    } else if ((b = e.target.closest('[data-cat-estrella]')) && fila) {
+      var yaEstaba = b.classList.contains('is-on');
+      Array.prototype.forEach.call(card.querySelectorAll('[data-cat-estrella].is-on'), function (x) { x.classList.remove('is-on'); });
+      // El estado inicial no puede quedar vacío; los demás se pueden desmarcar.
+      if (!yaEstaba || card.hasAttribute('data-cat-obligatoria')) b.classList.add('is-on');
+      if (card.hasAttribute('data-cat-fija')) {
+        var p = card.querySelector('[data-cat-pred]');
+        var elegido = card.querySelector('[data-cat-estrella].is-on');
+        if (p) p.value = elegido ? elegido.getAttribute('data-valor') : '';
+      }
+      catCambio(card);
+    } else if ((b = e.target.closest('[data-cat-marca]'))) {
+      b.classList.toggle('is-on');
+      catCambio(card);
+    } else if (e.target.closest('[data-cat-quitar]') && fila) {
+      var nombre = fila.querySelector('[data-cat-valor]').value.trim();
+      if (nombre && !confirm('¿Quitar «' + nombre + '»? Los tickets que ya lo tienen lo conservan.')) return;
+      var eraEstrella = fila.querySelector('[data-cat-estrella].is-on');
+      fila.remove();
+      if (eraEstrella && card.hasAttribute('data-cat-obligatoria')) {
+        var primera = card.querySelector('[data-cat-lista] [data-cat-estrella]');
+        if (primera) primera.classList.add('is-on');
+      }
+      catCambio(card);
+    } else if (e.target.closest('[data-cat-agregar]')) {
+      var molde = card.querySelector('template[data-cat-molde]');
+      var lst = card.querySelector('[data-cat-lista]');
+      if (!molde || !lst) return;
+      lst.appendChild(molde.content.cloneNode(true));
+      var nueva = lst.lastElementChild;
+      nueva.scrollIntoView({ block: 'nearest' });
+      nueva.querySelector('[data-cat-valor]').focus();
+      catCambio(card);
+    }
+  });
+  document.addEventListener('input', function (e) {
+    if (!e.target.closest('[data-cat-valor], [data-cat-sla]')) return;
+    catCambio(e.target.closest('[data-cat]'));
+  });
+  // Enter en un nombre agrega otro renglón abajo (no manda el formulario).
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Enter' || !e.target.matches('[data-cat-valor]')) return;
+    e.preventDefault();
+    var btn = e.target.closest('[data-cat]').querySelector('[data-cat-agregar]');
+    if (btn && e.target.value.trim()) btn.click();
+  });
+  // Arrastrar por el asa ⠿ (solo el asa activa el arrastre; así el texto se puede seleccionar).
+  var catArrastrada = null;
+  document.addEventListener('pointerdown', function (e) {
+    var asa = e.target.closest('[data-cat-asa]');
+    if (asa) asa.closest('[data-cat-fila]').draggable = true;
+  });
+  document.addEventListener('dragstart', function (e) {
+    var fila = e.target.closest && e.target.closest('[data-cat-fila]');
+    if (!fila || !fila.draggable) return;
+    catArrastrada = fila;
+    fila.classList.add('is-arrastrando');
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', '');
+  });
+  document.addEventListener('dragover', function (e) {
+    if (!catArrastrada) return;
+    var sobre = e.target.closest('[data-cat-fila]');
+    if (!sobre || sobre === catArrastrada || sobre.parentNode !== catArrastrada.parentNode) return;
+    e.preventDefault();
+    var r = sobre.getBoundingClientRect();
+    var antes = e.clientY < r.top + r.height / 2;
+    sobre.parentNode.insertBefore(catArrastrada, antes ? sobre : sobre.nextElementSibling);
+  });
+  document.addEventListener('drop', function (e) { if (catArrastrada) e.preventDefault(); });
+  document.addEventListener('dragend', function () {
+    if (!catArrastrada) return;
+    var fila = catArrastrada;
+    catArrastrada = null;
+    fila.classList.remove('is-arrastrando');
+    fila.draggable = false;
+    catCambio(fila.closest('[data-cat]'));
+  });
+  // Salir con cambios sin guardar pregunta antes: links del menú (htmx) y cerrar/recargar la pestaña.
+  document.addEventListener('submit', function (e) {
+    if (e.target.matches('[data-cat-form]')) {
+      var aviso = document.querySelector('[data-cat-pendiente]');
+      if (aviso) aviso.hidden = true;
+    }
+  });
+  // htmx:confirm solo sale con un clic real (la precarga al pasar el mouse no trae triggerEvent).
+  document.addEventListener('htmx:confirm', function (e) {
+    var aviso = document.querySelector('[data-cat-pendiente]');
+    if (!aviso || aviso.hidden || !e.detail.triggerEvent || e.detail.elt.closest('[data-cat-form]')) return;
+    if (!confirm('Hay cambios sin guardar en la configuración. ¿Salir sin guardar?')) e.preventDefault();
+    else aviso.hidden = true;
+  });
+  window.addEventListener('beforeunload', function (e) {
+    var aviso = document.querySelector('[data-cat-pendiente]');
+    if (aviso && !aviso.hidden) { e.preventDefault(); e.returnValue = ''; }
+  });
+
   // ── Form de ticket: "Otro" sistema + "Guardar y crear otro" ──────────────
   document.addEventListener('change', function (e) {
     var sel = e.target.closest('[data-sistema-select]');

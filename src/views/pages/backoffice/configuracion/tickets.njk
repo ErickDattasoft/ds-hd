@@ -1,6 +1,70 @@
 {% extends "layouts/backoffice.njk" %}
 {% import "components/configuracion.njk" as cfgnav %}
 {% block title %}Configuración de tickets{% endblock %}
+
+{#- Tarjeta de un catálogo editable: ▲▼ (o arrastrar) para ordenar, ⭐ predeterminado, renombrar en
+    su lugar, 🗑 y + Agregar. El JS (data-cat*) reescribe los <textarea hidden> de abajo con un valor
+    por línea, que es lo mismo que mandaba el formulario de cajas de texto; sin JS se guarda igual. -#}
+{% macro fila(v, titulo, pred, predValor, marca, sla) %}
+<li class="cat-fila" data-cat-fila draggable="false">
+          <span class="cat-fila__asa" data-cat-asa title="Arrastra para reordenar">⠿</span>
+          <span class="cat-fila__orden">
+            <button type="button" data-cat-mover="-1" title="Subir" aria-label="Subir">▲</button>
+            <button type="button" data-cat-mover="1" title="Bajar" aria-label="Bajar">▼</button>
+          </span>
+          {% if pred %}<button type="button" class="cat-btn cat-estrella{{ ' is-on' if predValor == v }}" data-cat-estrella title="Predeterminado" aria-label="Predeterminado">★</button>{% endif %}
+          <input class="cat-fila__valor" value="{{ v }}" title="{{ v }}" data-cat-valor aria-label="{{ titulo }}" />
+          {% if sla %}<label class="cat-fila__sla" title="Horas de SLA"><input type="number" min="1" name="sla_{{ v }}" value="{{ sla[v] or 24 }}" data-cat-sla /><span>h</span></label>{% endif %}
+          {% if marca %}<button type="button" class="cat-btn cat-marca{{ ' is-on' if v in marca.lista }}" data-cat-marca title="{{ marca.titulo }}" aria-label="{{ marca.titulo }}">{{ marca.icono }}</button>{% endif %}
+          <button type="button" class="cat-btn cat-quitar" data-cat-quitar title="Quitar" aria-label="Quitar">🗑</button>
+        </li>
+{% endmacro %}
+
+{% macro catalogo(icono, titulo, campo, items, pred = none, predValor = '', obligatoria = false, marca = none, sla = none, ayuda = '') %}
+  <section class="card cat-card" data-cat {{ 'data-cat-obligatoria' if obligatoria }}>
+    <h2 class="cat-card__titulo">{{ icono }} {{ titulo }} <span class="cat-card__n" data-cat-n>{{ items | length }}</span></h2>
+    {% if ayuda %}<p class="cat-card__ayuda muted">{{ ayuda | safe }}</p>{% endif %}
+    <ul class="cat-lista" data-cat-lista>
+      {% for v in items %}
+        {{ fila(v, titulo, pred, predValor, marca, sla) }}
+      {% endfor %}
+    </ul>
+    <template data-cat-molde>{{ fila('', titulo, pred, '-', marca, sla) }}</template>
+    <button type="button" class="btn btn--ghost btn--sm cat-agregar" data-cat-agregar>＋ Agregar</button>
+    <textarea name="{{ campo }}" hidden data-cat-salida>{{ items | join('\n') }}</textarea>
+    {% if pred %}<input type="hidden" name="{{ pred }}" value="{{ predValor }}" data-cat-pred />{% endif %}
+    {% if marca %}
+      {% if marca.multi %}
+        <span data-cat-marca-salida data-nombre="{{ marca.campo }}" data-multi>{% for v in marca.lista %}{% if v in items %}<input type="hidden" name="{{ marca.campo }}" value="{{ v }}" />{% endif %}{% endfor %}</span>
+      {% else %}
+        <textarea name="{{ marca.campo }}" hidden data-cat-marca-salida>{{ marca.lista | join('\n') }}</textarea>
+      {% endif %}
+    {% endif %}
+    {{ caller() if caller }}
+  </section>
+{% endmacro %}
+
+{#- Tarjeta de solo elegir el predeterminado (agentes = usuarios, facturación = catálogo fijo). -#}
+{% macro eleccion(icono, titulo, pred, predValor, vacio, opciones, kValor, kEtiqueta) %}
+  <section class="card cat-card" data-cat data-cat-fija>
+    <h2 class="cat-card__titulo">{{ icono }} {{ titulo }} <span class="cat-card__n">{{ opciones | length }}</span></h2>
+    <ul class="cat-lista">
+      <li class="cat-fila cat-fila--fija" data-cat-fila>
+        <button type="button" class="cat-btn cat-estrella{{ ' is-on' if not predValor }}" data-cat-estrella data-valor="" title="Predeterminado" aria-label="Predeterminado">★</button>
+        <span class="cat-fila__texto muted">{{ vacio }}</span>
+      </li>
+      {% for o in opciones %}
+        <li class="cat-fila cat-fila--fija" data-cat-fila>
+          <button type="button" class="cat-btn cat-estrella{{ ' is-on' if predValor == o[kValor] }}" data-cat-estrella data-valor="{{ o[kValor] }}" title="Predeterminado" aria-label="Predeterminado">★</button>
+          <span class="cat-fila__texto">{{ o[kEtiqueta] }}</span>
+        </li>
+      {% endfor %}
+    </ul>
+    <input type="hidden" name="{{ pred }}" value="{{ predValor }}" data-cat-pred />
+    {{ caller() if caller }}
+  </section>
+{% endmacro %}
+
 {% block content %}
   <div class="page-head">
     <h1>Configuración de tickets</h1>
@@ -8,72 +72,43 @@
   </div>
   {% if guardado %}<p class="alert alert--ok">Configuración guardada.</p>{% endif %}
   {% if errores.general %}<p class="alert alert--error">{{ errores.general }}</p>{% endif %}
+  {% if errores.estados %}<p class="alert alert--error">Estados: {{ errores.estados }}</p>{% endif %}
+  {% if errores.estadoInicial %}<p class="alert alert--error">Estado inicial: {{ errores.estadoInicial }}</p>{% endif %}
 
-  <form method="post" action="/app/configuracion/tickets" class="form form--wide">
+  <form method="post" action="/app/configuracion/tickets" class="cat-form" data-cat-form>
     <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
-    <p class="muted">Un valor por línea.</p>
+    <p class="muted cat-leyenda">
+      <strong>▲▼</strong> o arrastra <strong>⠿</strong> para ordenar · <strong>★</strong> lo que trae marcado un ticket nuevo ·
+      escribe sobre un nombre para renombrarlo · <strong>🗑</strong> quita. Nada se guarda hasta que oprimas <strong>Guardar</strong>.
+    </p>
 
-    <details class="disclosure" open>
-      <summary class="disclosure__summary">📋 Catálogos</summary>
-      <div class="disclosure__body form">
-        <label class="field"><span>Tipos</span><textarea name="tipos" rows="6">{{ config.tipos | join('\n') }}</textarea></label>
-        <label class="field"><span>Sistemas</span><textarea name="sistemas" rows="6">{{ config.sistemas | join('\n') }}</textarea></label>
-        <label class="field"><span>Grupos</span><textarea name="grupos" rows="4">{{ config.grupos | join('\n') }}</textarea></label>
-        <label class="field"><span>Distribuidores</span><textarea name="distribuidores" rows="4">{{ (config.distribuidores or ['DATTASOFT']) | join('\n') }}</textarea>
-          <em class="field__hint">Quién atiende el ticket (se elige en cada uno). DATTASOFT siempre está y es el que se usa si no se elige otro.</em></label>
-      </div>
-    </details>
-
-    <details class="disclosure"{{ ' open' if errores.estados or errores.estadoInicial }}>
-      <summary class="disclosure__summary">🔀 Flujo de estados</summary>
-      <div class="disclosure__body form">
-        <label class="field"><span>Estados (en orden del flujo)</span><textarea name="estados" rows="5">{{ config.estados | join('\n') }}</textarea>
-          {% if errores.estados %}<em class="field__error">{{ errores.estados }}</em>{% endif %}
-        </label>
-        <label class="field"><span>Estado inicial</span><input name="estadoInicial" value="{{ config.estadoInicial }}" />
-          {% if errores.estadoInicial %}<em class="field__error">{{ errores.estadoInicial }}</em>{% endif %}
-        </label>
-        <label class="field"><span>Prioridades</span><textarea name="prioridades" rows="4">{{ config.prioridades | join('\n') }}</textarea></label>
-      </div>
-    </details>
-
-    <details class="disclosure">
-      <summary class="disclosure__summary">⏱️ SLA por prioridad</summary>
-      <fieldset class="field disclosure__body">
-        <legend>Horas de SLA por prioridad</legend>
-        {% for p in config.prioridades %}
-          <label class="field">{{ p }}
-            <input type="number" name="sla_{{ p }}" min="1" value="{{ config.slaHoras[p] or 24 }}" />
-          </label>
-        {% endfor %}
-      </fieldset>
-    </details>
+    {% set pred = config.predeterminados or {} %}
+    <div class="cat-grid">
+      {{ catalogo('🏷️', 'Tipos de Ticket', 'tipos', config.tipos, 'predTipo', pred.tipo,
+           marca = { campo: 'tiposFacturables', lista: config.tiposFacturables, icono: '💲', titulo: 'Se factura (encendido = facturable)' },
+           ayuda = '<strong>💲</strong> = se factura') }}
+      {{ catalogo('🔀', 'Estados', 'estados', config.estados, 'estadoInicial', config.estadoInicial, obligatoria = true,
+           marca = { campo: 'avisarClienteEstados', lista: config.avisarClienteEstados, icono: '📧', titulo: 'Avisar al cliente por correo al pasar a este estado', multi: true },
+           ayuda = 'En orden del flujo. <strong>★</strong> = estado inicial · <strong>📧</strong> = avisa al cliente (Resuelto y Cerrado siempre avisan, con encuesta)') }}
+      {{ catalogo('⚡', 'Prioridades', 'prioridades', config.prioridades, 'predPrioridad', pred.prioridad, sla = config.slaHoras,
+           ayuda = 'Con sus <strong>horas de SLA</strong>') }}
+      {{ catalogo('👥', 'Grupos', 'grupos', config.grupos, 'predGrupo', pred.grupo) }}
+      {{ catalogo('💻', 'Sistemas', 'sistemas', config.sistemas, 'predSistema', pred.sistema) }}
+      {% call eleccion('🧑‍💻', 'Agentes', 'predAgenteUid', pred.agenteUid or '', '— Sin asignar —', agentesPred, 'uid', 'nombre') %}
+        <label class="field--check cat-card__extra"><input type="checkbox" name="predAsignarAlCreador" {{ 'checked' if pred.asignarAlCreador }} />
+          <span>Mejor asignar a quien lo crea (técnicos) — gana sobre la ★</span></label>
+        <p class="cat-card__ayuda muted">Los agentes se dan de alta en Usuarios.</p>
+      {% endcall %}
+      {{ eleccion('🧾', 'Facturación', 'predFacturacion', pred.estadoFacturacion or '', '— Sin preselección —', estadosFacturacion, 'valor', 'etiqueta') }}
+      {{ catalogo('🤝', 'Distribuidores', 'distribuidores', config.distribuidores or ['DATTASOFT'],
+           ayuda = 'Quién atiende el ticket. DATTASOFT siempre está y es el que se usa si no se elige otro.') }}
+    </div>
 
     <details class="disclosure">
-      <summary class="disclosure__summary">🧾 Facturación y avisos</summary>
+      <summary class="disclosure__summary">📨 Correos de notificación de tickets</summary>
       <div class="disclosure__body form">
-        <label class="field"><span>Tipos facturables</span><textarea name="tiposFacturables" rows="3">{{ config.tiposFacturables | join('\n') }}</textarea></label>
-        <label class="field"><span>Correos de notificación de tickets</span><textarea name="correosNotificacion" rows="3">{{ config.correosNotificacion | join('\n') }}</textarea></label>
-        <p class="muted">Uno por línea. Reciben copia de todos los correos de tickets (nuevo del portal, nota pública al cliente, resuelto/cerrado, reenvíos). El primero es la dirección de respuesta.</p>
-      </div>
-    </details>
-
-    <details class="disclosure"{{ ' open' if config.avisarClienteEstados | length }}>
-      <summary class="disclosure__summary">📧 Avisar al cliente al cambiar de estado</summary>
-      <div class="disclosure__body form">
-        <p class="muted">Marca los estados en los que quieres que al cliente le llegue un correo con el avance de su ticket.</p>
-        <fieldset class="field">
-          <legend>Estados que avisan</legend>
-          {% for e in config.estados %}
-            {% set esFinal = e | lower in ['resuelto', 'cerrado'] %}
-            <label class="field--check">
-              <input type="checkbox" name="avisarClienteEstados" value="{{ e }}"
-                     {{ 'checked' if e in config.avisarClienteEstados }} {{ 'disabled' if esFinal }} />
-              <span>{{ e }}{% if esFinal %} <span class="muted">— siempre avisa (incluye la encuesta)</span>{% endif %}</span>
-            </label>
-          {% endfor %}
-        </fieldset>
-        <p class="muted">El correo lleva el estado nuevo y la actividad del ticket; nunca incluye notas internas.</p>
+        <label class="field"><span>Correos (uno por línea)</span><textarea name="correosNotificacion" rows="3">{{ config.correosNotificacion | join('\n') }}</textarea>
+          <em class="field__hint">Reciben copia de todos los correos de tickets (nuevo del portal, nota pública al cliente, resuelto/cerrado, reenvíos). El primero es la dirección de respuesta.</em></label>
       </div>
     </details>
 
@@ -87,33 +122,9 @@
       </div>
     </details>
 
-    <details class="disclosure" open>
-      <summary class="disclosure__summary">⭐ Predeterminados del ticket nuevo</summary>
-      <div class="disclosure__body form">
-        <p class="muted">Con estos valores nace el formulario de <strong>Crear ticket</strong> para todos. Vacío = sin preselección. Guarda primero si acabas de agregar opciones a un catálogo.</p>
-        {% set pred = config.predeterminados or {} %}
-        {% macro sel(nombre, etiqueta, lista, actual) %}
-          <label class="field"><span>{{ etiqueta }}</span>
-            <select name="{{ nombre }}"><option value="">—</option>{% for v in lista %}<option {{ 'selected' if actual == v }}>{{ v }}</option>{% endfor %}</select>
-          </label>
-        {% endmacro %}
-        <div class="form-grid">
-          {{ sel('predTipo', 'Tipo', config.tipos, pred.tipo) }}
-          {{ sel('predPrioridad', 'Prioridad', config.prioridades, pred.prioridad) }}
-          {{ sel('predSistema', 'Sistema', config.sistemas, pred.sistema) }}
-          {{ sel('predGrupo', 'Grupo', config.grupos, pred.grupo) }}
-          <label class="field"><span>Agente</span>
-            <select name="predAgenteUid"><option value="">— Sin asignar —</option>{% for a in agentesPred %}<option value="{{ a.uid }}" {{ 'selected' if pred.agenteUid == a.uid }}>{{ a.nombre }}</option>{% endfor %}</select>
-          </label>
-          <label class="field"><span>Facturación</span>
-            <select name="predFacturacion"><option value="">—</option>{% for ef in estadosFacturacion %}<option value="{{ ef.valor }}" {{ 'selected' if pred.estadoFacturacion == ef.valor }}>{{ ef.etiqueta }}</option>{% endfor %}</select>
-          </label>
-        </div>
-        <label class="field--check"><input type="checkbox" name="predAsignarAlCreador" {{ 'checked' if pred.asignarAlCreador }} /> <span>Mejor asignar el ticket a quien lo crea (técnicos) — gana sobre el agente de arriba</span></label>
-        <p class="muted">El estado inicial se elige en "Flujo de estados".</p>
-      </div>
-    </details>
-
-    <button class="btn" type="submit">Guardar</button>
+    <div class="cat-guardar">
+      <button class="btn" type="submit">💾 Guardar configuración</button>
+      <span class="cat-guardar__estado muted" data-cat-pendiente hidden>● Hay cambios sin guardar</span>
+    </div>
   </form>
 {% endblock %}
