@@ -438,7 +438,7 @@ export class ConfiguracionController {
   private async renderCorreoEntrante(
     req: Request,
     res: Response,
-    extra: { guardado?: boolean; aviso?: string; error?: string } = {},
+    extra: { guardado?: boolean; aviso?: string; error?: string; donde?: 'probar' } = {},
   ): Promise<void> {
     const cfg = await this.correoEntrante.configuracion(req.user!);
     res.render('pages/backoffice/configuracion/correo-entrante', {
@@ -500,10 +500,11 @@ export class ConfiguracionController {
     try {
       const datos = await this.correoEntrante.verificar(req.user!);
       await this.renderCorreoEntrante(req, res, {
+        donde: 'probar',
         aviso: `Conexión correcta con ${datos.correo || 'la cuenta'} (accountId ${datos.accountId}, guardado).`,
       });
     } catch (err) {
-      await this.renderCorreoEntrante(req, res, { error: err instanceof Error ? err.message : 'No se pudo conectar' });
+      await this.renderCorreoEntrante(req, res, { donde: 'probar', error: err instanceof Error ? err.message : 'No se pudo conectar' });
     }
   };
 
@@ -512,10 +513,11 @@ export class ConfiguracionController {
       const r = await this.correoEntrante.revisarManual(req.user!);
       const detalle = r.omitidos.map((o) => `• ${o.asunto || '(sin asunto)'} de ${o.de}: ${o.motivo}`).join(' ');
       await this.renderCorreoEntrante(req, res, {
+        donde: 'probar',
         aviso: `Revisados ${r.revisados}, agregados ${r.agregados}.${detalle ? ` Sin ligar: ${detalle}` : ''}`,
       });
     } catch (err) {
-      await this.renderCorreoEntrante(req, res, { error: err instanceof Error ? err.message : 'No se pudo revisar' });
+      await this.renderCorreoEntrante(req, res, { donde: 'probar', error: err instanceof Error ? err.message : 'No se pudo revisar' });
     }
   };
 

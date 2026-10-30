@@ -136,14 +136,19 @@
       <span>Aceptar la respuesta solo si viene del contacto del ticket (recomendado)</span>
     </label>
     <p class="muted">Un correo que no se pueda ligar a un ticket se queda en el buzón para que lo atiendas a mano.</p>
+    {# El resultado también aquí, junto al botón: arriba de la página quedaba fuera de la vista. #}
+    {% if error and donde != 'probar' %}<p class="alert alert--error">❌ {{ error }}</p>{% elif guardado %}<p class="alert alert--ok">✅ Configuración guardada.{{ ' Ya hay acceso a Zoho: usa «Probar conexión».' if cfg.refreshToken }}</p>{% endif %}
     <button class="btn" type="submit">Guardar</button>
   </form>
 
   <div class="card">
     <h2>Probar</h2>
     <p class="muted">
-      Última revisión: {{ cfg.ultimaRevision or '—' }}{% if cfg.ultimoResultado %} · {{ cfg.ultimoResultado }}{% endif %}
+      Última revisión: {{ cfg.ultimaRevision | fechahora if cfg.ultimaRevision else '—' }}{% if cfg.ultimoResultado %} · {{ cfg.ultimoResultado }}{% endif %}
     </p>
+    {% if donde == 'probar' %}
+      {% if error %}<p class="alert alert--error">❌ {{ error }}</p>{% elif aviso %}<p class="alert alert--ok">✅ {{ aviso }}</p>{% endif %}
+    {% endif %}
     <div class="page-head__actions">
       <form method="post" action="/app/configuracion/correo-entrante/probar" class="inline">
         <input type="hidden" name="_csrf" value="{{ csrfToken }}" />

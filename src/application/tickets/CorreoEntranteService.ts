@@ -406,8 +406,12 @@ export class CorreoEntranteService {
       refreshToken: datos.refreshToken.trim() || previa.refreshToken,
       region: datos.region.trim() || 'com',
     };
-    if (codigo?.trim()) nueva.refreshToken = await this.buzon.canjearCodigo(nueva, codigo.trim());
+    // Lo demás se guarda aunque el código falle: así no hay que volver a escribir el Client ID/Secret.
     await this.config.guardarCorreoEntrante(nueva);
+    if (codigo?.trim()) {
+      const refreshToken = await this.buzon.canjearCodigo(nueva, codigo.trim());
+      await this.config.guardarCorreoEntrante({ ...nueva, refreshToken });
+    }
   }
 
   /**
