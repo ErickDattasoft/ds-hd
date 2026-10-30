@@ -175,6 +175,8 @@ function palabrasDeTitulo(titulo: string): Set<string> {
 const ALIAS: Record<string, string[][]> = {
   componentes: [['herramientas', 'complementarias'], ['componentes']],
   'comercial pro': [['comercial', 'pro']],
+  // Bancos viene en el instalador de Contabilidad: sus SP solo dicen "Contabilidad".
+  bancos: [['bancos'], ['contabilidad']],
 };
 
 /**

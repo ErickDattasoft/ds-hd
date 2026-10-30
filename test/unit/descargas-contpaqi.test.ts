@@ -83,6 +83,8 @@ describe('esDelSistema', () => {
     expect(esDelSistema('NOMINAS', 'CONTPAQi Nóminas® 19.4.2')).toBe(true);
     expect(esDelSistema('CONTABILIDAD', 'CONTPAQi® Contabilidad-Bancos 19.3.1')).toBe(true);
     expect(esDelSistema('BANCOS', 'CONTPAQi® Contabilidad-Bancos 19.3.1')).toBe(true);
+    expect(esDelSistema('BANCOS', 'Service Pack Contabilidad 1841 a 1931 Reportes_Formato_A29')).toBe(true);
+    expect(esDelSistema('CONTABILIDAD', 'C ONTPAQi Bancos® 19.1.2')).toBe(false);
     expect(esDelSistema('COMPONENTES', 'CONTPAQi® Herramientas complementarias 9.1.0')).toBe(true);
     expect(esDelSistema('COMERCIAL PRO', 'CONTPAQi Comercial® Start/Pro 11.0.0')).toBe(true);
     expect(esDelSistema('COMERCIAL PRO', 'CONTPAQi Comercial Premium® 12.2.1')).toBe(false);
