@@ -355,7 +355,7 @@ export class EventoService {
       usaSistema: i.usaSistema ?? '',
       canalWsp: si(i.deseaCanalWhatsapp),
       contactadoWsp: i.telefono ? si(i.contactadoWsp) : '',
-      fecha: i.createdAt.toLocaleDateString('es-MX'),
+      fecha: i.createdAt.toLocaleDateString('es-MX', { timeZone: 'America/Mexico_City' }),
     }));
     const buffer = await this.excel.escribir('Inscritos', columnas, filas);
     const slug = evento.titulo.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || eventoId;

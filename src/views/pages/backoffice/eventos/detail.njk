@@ -18,7 +18,7 @@
       {% endif %}
     </div>
   </div>
-  <p class="muted">{{ evento.fechaHora | fechahora }} · {{ inscritos | length }} inscritos{% if evento.cupo %} / {{ evento.cupo }}{% endif %} · límite {{ evento.limiteIpEfectivo }}/IP</p>
+  <p class="muted">{{ evento.fechaHora | fechahora('UTC') }} · {{ inscritos | length }} inscritos{% if evento.cupo %} / {{ evento.cupo }}{% endif %} · límite {{ evento.limiteIpEfectivo }}/IP</p>
 
   {% set puedeGestionar = can('eventos:gestionar') %}
 

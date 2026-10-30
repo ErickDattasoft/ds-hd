@@ -100,7 +100,7 @@ export class VersionController {
             : `${a.versionInstalada ?? 'sin dato'} → ${a.versionOficial ?? '—'}`,
         canal: a.canal === 'whatsapp' ? 'WhatsApp' : 'Correo',
         destino: a.destino ?? '',
-        fecha: a.createdAt.toLocaleString('es-MX'),
+        fecha: a.createdAt.toLocaleString('es-MX', { timeZone: 'America/Mexico_City' }),
         por: a.enviadoPorNombre,
       })),
     );

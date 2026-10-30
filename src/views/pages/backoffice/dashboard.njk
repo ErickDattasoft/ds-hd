@@ -224,7 +224,7 @@
     <div class="card">
       <h2>Próximos eventos</h2>
       <ul>
-        {% for e in m.proximosEventos %}<li><a href="/app/eventos/{{ e.id }}">{{ e.titulo }}</a> <span class="muted">{{ e.fechaHora | fechahora }}</span></li>
+        {% for e in m.proximosEventos %}<li><a href="/app/eventos/{{ e.id }}">{{ e.titulo }}</a> <span class="muted">{{ e.fechaHora | fechahora('UTC') }}</span></li>
         {% else %}<li class="muted">Ninguno programado.</li>{% endfor %}
       </ul>
     </div>

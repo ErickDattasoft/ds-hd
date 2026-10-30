@@ -56,35 +56,35 @@ function installViewEngine(app: Express, config: AppConfig, precompiled: boolean
   env.addGlobal('APP_VERSION', APP_VERSION);
   env.addFilter('json', (value: unknown) => JSON.stringify(value, null, 2));
 
-  const fmtFecha = new Intl.DateTimeFormat('es-MX', { dateStyle: 'medium' });
-  const fmtFechaHora = new Intl.DateTimeFormat('es-MX', { dateStyle: 'medium', timeStyle: 'short' });
-  // Fecha en palabras ("29 de octubre de 2026") para las páginas públicas, donde el mes
-  // abreviado del formato `medium` se lee informal.
-  const fmtFechaLarga = new Intl.DateTimeFormat('es-MX', { dateStyle: 'long' });
-  const fmtHora = new Intl.DateTimeFormat('es-MX', { timeStyle: 'short' });
+  // El Worker corre en UTC: sin zona, toda hora salía 6 h adelantada. Los eventos son la
+  // excepción: su hora se guarda tal cual se capturó (10:00 → 10:00 UTC), así que sus
+  // plantillas piden `'UTC'` para mostrarla igual que se escribió.
+  const ZONA = 'America/Mexico_City';
+  const formatos = new Map<string, Intl.DateTimeFormat>();
+  const fmt = (opciones: Intl.DateTimeFormatOptions, zona: unknown): Intl.DateTimeFormat => {
+    const timeZone = zona === 'UTC' ? 'UTC' : ZONA;
+    const clave = JSON.stringify(opciones) + timeZone;
+    let f = formatos.get(clave);
+    if (!f) formatos.set(clave, (f = new Intl.DateTimeFormat('es-MX', { ...opciones, timeZone })));
+    return f;
+  };
   const asDate = (v: unknown): Date | null => {
-    // Una fecha ISO sin hora ("2026-10-15") se interpreta como mediodía local para que no
+    // Una fecha ISO sin hora ("2026-10-15") se interpreta como mediodía UTC para que no
     // "retroceda" un día al formatearse en la zona horaria de México.
-    const raw = typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v) ? `${v}T12:00:00` : v;
+    const raw = typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v) ? `${v}T12:00:00Z` : v;
     const d = raw instanceof Date ? raw : typeof raw === 'string' || typeof raw === 'number' ? new Date(raw) : null;
     return d && !Number.isNaN(d.getTime()) ? d : null;
   };
-  env.addFilter('fecha', (v: unknown) => {
+  const filtroFecha = (opciones: Intl.DateTimeFormatOptions) => (v: unknown, zona?: unknown) => {
     const d = asDate(v);
-    return d ? fmtFecha.format(d) : '—';
-  });
-  env.addFilter('fechahora', (v: unknown) => {
-    const d = asDate(v);
-    return d ? fmtFechaHora.format(d) : '—';
-  });
-  env.addFilter('fechalarga', (v: unknown) => {
-    const d = asDate(v);
-    return d ? fmtFechaLarga.format(d) : '—';
-  });
-  env.addFilter('hora', (v: unknown) => {
-    const d = asDate(v);
-    return d ? fmtHora.format(d) : '—';
-  });
+    return d ? fmt(opciones, zona).format(d) : '—';
+  };
+  env.addFilter('fecha', filtroFecha({ dateStyle: 'medium' }));
+  env.addFilter('fechahora', filtroFecha({ dateStyle: 'medium', timeStyle: 'short' }));
+  // Fecha en palabras ("29 de octubre de 2026") para las páginas públicas, donde el mes
+  // abreviado del formato `medium` se lee informal.
+  env.addFilter('fechalarga', filtroFecha({ dateStyle: 'long' }));
+  env.addFilter('hora', filtroFecha({ timeStyle: 'short' }));
   env.addFilter('textoOHtmlSeguro', (v: unknown) => textoOHtmlASeguro(typeof v === 'string' ? v : ''));
   env.addFilter('moneda', (v: unknown, moneda = 'MXN') =>
     new Intl.NumberFormat('es-MX', { style: 'currency', currency: String(moneda) }).format(Number(v) || 0),

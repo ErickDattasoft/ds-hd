@@ -23,8 +23,8 @@
       <p class="evento-encabezado__antetitulo">Registro al evento</p>
       <h1>{{ evento.titulo }}</h1>
       <dl class="evento-datos">
-        <div><dt>Fecha</dt><dd>{{ evento.fechaHora | fechalarga }}</dd></div>
-        <div><dt>Hora</dt><dd>{{ evento.fechaHora | hora }}</dd></div>
+        <div><dt>Fecha</dt><dd>{{ evento.fechaHora | fechalarga('UTC') }}</dd></div>
+        <div><dt>Hora</dt><dd>{{ evento.fechaHora | hora('UTC') }}</dd></div>
         {% if evento.sistema %}<div><dt>Tema</dt><dd>{{ evento.sistema }}</dd></div>{% endif %}
         {% if evento.contactoNombre %}<div><dt>Imparte</dt><dd>{{ evento.contactoNombre }}</dd></div>{% endif %}
       </dl>

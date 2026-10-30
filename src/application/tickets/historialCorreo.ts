@@ -1,6 +1,6 @@
 import type { EventoTicket } from '../../core/entities/NotaTicket.js';
 
-const FMT = new Intl.DateTimeFormat('es-MX', { dateStyle: 'medium', timeStyle: 'short' });
+const FMT = new Intl.DateTimeFormat('es-MX', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'America/Mexico_City' });
 
 /** Eventos que puede ver el cliente en un correo: nunca revelan que existen notas internas. */
 const VISIBLE_CLIENTE: ReadonlySet<EventoTicket['tipo']> = new Set(['creacion', 'cambio_estado', 'asignacion']);
