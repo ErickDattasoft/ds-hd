@@ -533,6 +533,14 @@ export class ConfiguracionController {
     }
   };
 
+  entregasCorreoPost = async (req: Request, res: Response): Promise<void> => {
+    try {
+      res.json(await this.configIntegraciones.entregasCorreo(req.user!, str(req.body?.email)));
+    } catch (err) {
+      res.status(422).json({ ok: false, detalle: err instanceof Error ? err.message : 'No se pudo consultar', eventos: [] });
+    }
+  };
+
   probarCorreoPost = async (req: Request, res: Response): Promise<void> => {
     try {
       const resultado = await this.configIntegraciones.probarCorreo(req.user!, str(req.body?.email));

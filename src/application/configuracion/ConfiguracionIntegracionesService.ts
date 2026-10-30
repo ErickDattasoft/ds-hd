@@ -49,7 +49,34 @@ export interface InfoCorreo {
   readonly modo: 'brevo' | 'smtp' | 'log';
   /** Dirección `From` con la que sale el correo. */
   readonly remitente: string;
+  /** Clave de la API de Brevo (vacía si no hay), para consultar qué pasó con lo enviado. */
+  readonly brevoApiKey?: string;
 }
+
+/** Lo que Brevo registró de un correo enviado (entregado, rebotado, bloqueado…). */
+export interface EntregaCorreo {
+  fecha: string;
+  evento: string;
+  asunto: string;
+  motivo: string;
+}
+
+/** Nombre en español de cada evento de Brevo. */
+const EVENTOS_BREVO: Record<string, string> = {
+  requests: '📤 Recibido por Brevo',
+  delivered: '✅ Entregado',
+  deferred: '⏳ Diferido (Brevo reintenta)',
+  softBounces: '⚠️ Rebote temporal',
+  hardBounces: '❌ Rebotó (dirección no existe)',
+  blocked: '⛔ Bloqueado por Brevo',
+  invalid: '❌ Dirección inválida',
+  spam: '🚫 Marcado como spam',
+  error: '❌ Error',
+  opened: '👁️ Abierto',
+  loadedByProxy: '👁️ Abierto (vista previa)',
+  clicks: '🔗 Clic en un enlace',
+  unsubscribed: '🔕 Se dio de baja',
+};
 
 /** Casos de uso: leer/actualizar la config de n8n + WhatsApp (CallMeBot) y probar conexión. */
 export class ConfiguracionIntegracionesService {
@@ -183,6 +210,45 @@ export class ConfiguracionIntegracionesService {
   }
 
   /** Manda un correo de prueba a `destino` para verificar que el envío funciona de verdad. */
+  /**
+   * Qué registró Brevo de lo enviado a `destino` en los últimos días: si se entregó, rebotó o
+   * quedó bloqueado. "Enviado" en el CRM solo dice que Brevo lo aceptó.
+   */
+  async entregasCorreo(actor: SessionUser, destino: string): Promise<{ ok: boolean; detalle: string; eventos: EntregaCorreo[] }> {
+    if (!actor.permisos.includes('configuracion:integraciones')) {
+      throw new ForbiddenError('No puedes probar integraciones');
+    }
+    const email = Email.tryCreate(destino);
+    if (!email) return { ok: false, detalle: 'Escribe un correo válido', eventos: [] };
+    if (!this.correo.brevoApiKey) {
+      return { ok: false, detalle: 'Solo se puede consultar cuando el correo sale por Brevo', eventos: [] };
+    }
+    const url = `https://api.brevo.com/v3/smtp/statistics/events?email=${encodeURIComponent(email.value)}&days=7&limit=50&sort=desc`;
+    try {
+      const r = await fetch(url, {
+        headers: { 'api-key': this.correo.brevoApiKey, accept: 'application/json' },
+        signal: AbortSignal.timeout(10_000),
+      });
+      if (!r.ok) return { ok: false, detalle: `Brevo respondió ${r.status}`, eventos: [] };
+      const { events = [] } = (await r.json()) as {
+        events?: { date?: string; event?: string; subject?: string; reason?: string }[];
+      };
+      const eventos = events.map((e) => ({
+        fecha: e.date ?? '',
+        evento: EVENTOS_BREVO[e.event ?? ''] ?? e.event ?? '',
+        asunto: e.subject ?? '',
+        motivo: e.reason ?? '',
+      }));
+      return {
+        ok: true,
+        detalle: eventos.length ? `${eventos.length} movimientos en los últimos 7 días` : 'Brevo no tiene nada enviado a esa dirección en los últimos 7 días',
+        eventos,
+      };
+    } catch (err) {
+      return { ok: false, detalle: `No se pudo consultar Brevo: ${err instanceof Error ? err.message : String(err)}`, eventos: [] };
+    }
+  }
+
   async probarCorreo(actor: SessionUser, destino: string): Promise<ResultadoPrueba> {
     if (!actor.permisos.includes('configuracion:integraciones')) {
       throw new ForbiddenError('No puedes probar integraciones');

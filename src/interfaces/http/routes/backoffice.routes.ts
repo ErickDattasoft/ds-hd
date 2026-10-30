@@ -427,6 +427,11 @@ export function backofficeRoutes(container: Container): Router {
     requirePermission('configuracion:integraciones'),
     (req, res) => configuracion().probarCorreoPost(req, res),
   );
+  r.post(
+    '/configuracion/integraciones/entregas-correo',
+    requirePermission('configuracion:integraciones'),
+    (req, res) => configuracion().entregasCorreoPost(req, res),
+  );
   r.get('/configuracion/correo-entrante', requirePermission('configuracion:integraciones'), (req, res) =>
     configuracion().correoEntranteView(req, res),
   );

@@ -921,6 +921,50 @@
         });
     }
   });
+  // ¿Le llegó? Lo que Brevo registró de lo enviado a una dirección.
+  document.addEventListener('click', function (e) {
+    var btn = e.target.closest && e.target.closest('[data-revisar-entregas]');
+    if (!btn) return;
+    var dest = document.querySelector('[data-entregas-correo]');
+    var salida = document.querySelector('[data-resultado-entregas]');
+    if (!dest || !salida) return;
+    if (!dest.value || dest.value.indexOf('@') === -1) { salida.textContent = 'Escribe un correo primero.'; return; }
+    btn.disabled = true;
+    btn.classList.add('is-loading');
+    salida.textContent = 'Consultando…';
+    fetch('/app/configuracion/integraciones/entregas-correo', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'x-csrf-token': cookie('x-csrf-token') },
+      body: JSON.stringify({ email: dest.value }),
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        salida.textContent = '';
+        var p = document.createElement('p');
+        p.className = 'muted';
+        p.textContent = (data.ok ? '' : '❌ ') + data.detalle;
+        salida.appendChild(p);
+        if (!data.eventos || !data.eventos.length) return;
+        var tabla = document.createElement('table');
+        tabla.className = 'data-table';
+        tabla.innerHTML = '<thead><tr><th>Fecha</th><th>Qué pasó</th><th>Asunto</th><th>Motivo</th></tr></thead>';
+        var cuerpo = document.createElement('tbody');
+        data.eventos.forEach(function (ev) {
+          var tr = document.createElement('tr');
+          var fecha = ev.fecha ? new Date(ev.fecha).toLocaleString('es-MX') : '';
+          [fecha, ev.evento, ev.asunto, ev.motivo].forEach(function (v) {
+            var td = document.createElement('td');
+            td.textContent = v || '—';
+            tr.appendChild(td);
+          });
+          cuerpo.appendChild(tr);
+        });
+        tabla.appendChild(cuerpo);
+        salida.appendChild(tabla);
+      })
+      .catch(function () { salida.textContent = '❌ No se pudo consultar. Revisa tu conexión.'; })
+      .finally(function () { btn.disabled = false; btn.classList.remove('is-loading'); });
+  });
 
   // ── Adjuntos de ticket ──────────────────────────────────────────────────
   // Modo "detalle": sube al instante contra el ticket. Modo "crear": acumula en un

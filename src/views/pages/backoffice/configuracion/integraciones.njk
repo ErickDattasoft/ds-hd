@@ -136,6 +136,14 @@
         </label>
         <button type="button" class="btn btn--ghost btn--sm" data-probar-correo>Enviar prueba</button>
         <span class="muted" data-resultado-correo></span>
+        {% if infoCorreo.modo == 'brevo' %}
+          <label class="field" style="margin-top:var(--space-4)"><span>¿Le llegó? Revisar entregas a</span>
+            <input type="email" placeholder="cliente@correo.com" data-entregas-correo />
+          </label>
+          <button type="button" class="btn btn--ghost btn--sm" data-revisar-entregas>Revisar en Brevo</button>
+          <p class="muted">«Enviado» en el CRM solo dice que Brevo lo aceptó; aquí se ve si llegó, rebotó o lo bloquearon (últimos 7 días).</p>
+          <div data-resultado-entregas></div>
+        {% endif %}
       </div>
     </details>
 

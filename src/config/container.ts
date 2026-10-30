@@ -848,6 +848,7 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
         new ConfiguracionIntegracionesService(c.configuracionRepo, c.integracionesGateway, c.emailSender, {
           modo: c.config.smtp.host ? 'smtp' : c.config.brevo.apiKey ? 'brevo' : 'log',
           remitente: c.config.brevo.senderEmail,
+          brevoApiKey: c.config.smtp.host ? '' : c.config.brevo.apiKey,
         }, c.logger),
     ).singleton(),
     configuracionCalculadoraService: asFunction(
