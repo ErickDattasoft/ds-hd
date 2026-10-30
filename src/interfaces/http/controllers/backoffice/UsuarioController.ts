@@ -124,6 +124,7 @@ export class UsuarioController {
       const usuario = await this.usuarios.findByUid(uid);
       if (!usuario) throw err;
       res.status(422).render('pages/backoffice/usuarios/form', {
+      distribuidores: (await this.configTickets.obtener()).distribuidores,
         titulo: `Editar ${usuario.nombre}`,
         modo: 'editar',
         usuario,
@@ -278,6 +279,7 @@ export class UsuarioController {
     const usuario = await this.usuarios.findByUid(uid);
     if (!usuario) throw new NotFoundError('Usuario', uid);
     res.render('pages/backoffice/usuarios/form', {
+      distribuidores: (await this.configTickets.obtener()).distribuidores,
       titulo: `Editar ${usuario.nombre}`,
       modo: 'editar',
       usuario,
@@ -329,6 +331,7 @@ export class UsuarioController {
               aArreglo(body.seccionVisible) ?? [],
             )
           : aArreglo(body.permisosRevocados),
+        distribuidor: body.distribuidorEnviado ? String(body.distribuidor ?? '') : undefined,
         agente: {
           grupo: body.agenteGrupo || null,
           capacidadMax: Number(body.agenteCapacidad ?? 0),
@@ -347,6 +350,7 @@ export class UsuarioController {
           ? (err.campos as Record<string, string>)
           : { general: err instanceof DomainError ? err.message : 'No se pudo guardar' };
       res.status(422).render('pages/backoffice/usuarios/form', {
+      distribuidores: (await this.configTickets.obtener()).distribuidores,
         titulo: 'Editar usuario',
         modo: 'editar',
         usuario,

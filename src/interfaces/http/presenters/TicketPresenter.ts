@@ -32,6 +32,7 @@ export interface TicketVM {
   sistema: string | null;
   grupo: string | null;
   empresaNombre: string | null;
+  distribuidor: string;
   contactoNombre: string | null;
   agenteAsignadoNombre: string | null;
   agenteAsignadoUid: string | null;
@@ -104,6 +105,7 @@ export function ticketVM(t: Ticket, ahora: Date): TicketVM {
     sistema: t.sistema,
     grupo: t.grupo,
     empresaNombre: t.empresaNombre,
+    distribuidor: t.distribuidor,
     contactoNombre: t.contactoNombre,
     agenteAsignadoNombre: t.agenteAsignadoNombre,
     agenteAsignadoUid: t.agenteAsignadoUid,

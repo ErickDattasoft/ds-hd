@@ -5,6 +5,7 @@ import { ETIQUETAS_FACTURACION } from '../../core/entities/value-objects/EstadoF
 export const COLUMNAS_TICKETS: ColumnaExcel[] = [
   { header: 'Número', key: 'numero' },
   { header: 'Asunto', key: 'asunto', width: 34 },
+  { header: 'Distribuidor', key: 'distribuidor', width: 14 },
   { header: 'Empresa', key: 'empresa', width: 26 },
   { header: 'Contacto', key: 'contacto', width: 22 },
   { header: 'Tipo', key: 'tipo' },
@@ -35,6 +36,7 @@ export class TicketExcelService {
     return tickets.map((t) => ({
       numero: String(t.numero),
       asunto: t.asunto,
+      distribuidor: t.distribuidor,
       empresa: t.empresaNombre ?? '',
       contacto: t.contactoNombre ?? '',
       tipo: t.tipo,

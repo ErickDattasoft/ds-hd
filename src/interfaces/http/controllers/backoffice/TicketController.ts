@@ -115,6 +115,7 @@ export class TicketController {
       ...(q.sinAsignar === '1' ? { sinAsignar: true } : {}),
       ...(str(q.texto) ? { texto: str(q.texto) } : {}),
       ...(str(q.tipo) ? { tipo: str(q.tipo) } : {}),
+      ...(str(q.distribuidor) ? { distribuidor: str(q.distribuidor) } : {}),
       ...(str(q.facturacion) ? { facturacion: str(q.facturacion) } : {}),
       // "Incluir cerrados" viene marcado de fábrica: al abrir Tickets se ve el historial
       // completo, que es lo que se quiere al buscar algo. Solo se acota a abiertos cuando se
@@ -292,6 +293,7 @@ export class TicketController {
         tipo: str(b.tipo),
         prioridad: parsePrioridad(b.prioridad || 'Media'),
         sistema: (str(b.sistema) === '__otro__' ? str(b.sistemaOtro) : str(b.sistema)) || null,
+        ...(b.distribuidor !== undefined ? { distribuidor: str(b.distribuidor) || null } : {}),
         grupo: str(b.grupo) || null,
         estado: str(b.estado) || null,
         empresaId: empresaNombre ? await this.resolverEmpresaId(empresaNombre) : null,
@@ -348,6 +350,7 @@ export class TicketController {
       descripcion: descripcionHtml,
       tipo: t.tipo,
       sistema: t.sistema ?? '',
+      distribuidor: t.distribuidor,
       prioridad: t.prioridad,
       estado: t.estado,
       grupo: t.grupo ?? '',
@@ -402,6 +405,7 @@ export class TicketController {
         tipo: str(b.tipo),
         prioridad: str(b.prioridad) || 'Media',
         sistema: (str(b.sistema) === '__otro__' ? str(b.sistemaOtro) : str(b.sistema)) || null,
+        ...(b.distribuidor !== undefined ? { distribuidor: str(b.distribuidor) || null } : {}),
         grupo: str(b.grupo) || null,
         empresaId: empresaNombre ? await this.resolverEmpresaId(empresaNombre) : null,
         empresaNombre,

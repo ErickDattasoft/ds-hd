@@ -22,7 +22,7 @@
   <tr class="{{ 'fila--respondio' if vm.respuestaSinLeer }}{{ ' fila--sla-vencido' if vm.slaEstado == 'vencido' }}">
     <td><a href="/app/tickets/{{ vm.id }}">#{{ vm.numero }}</a></td>
     <td>{{ vm.asunto }}{% if vm.respuestaSinLeer %}<br>{{ respondioBadge(vm) }}{% endif %}{% if vm.agenda %}<br>{{ agendaBadge(vm) }}{% endif %}</td>
-    <td>{{ vm.empresaNombre or '—' }}{% if vm.contactoNombre %}<br><span class="muted">{{ vm.contactoNombre }}</span>{% endif %}</td>
+    <td><span class="distribuidor-tag distribuidor-tag--{{ 'propio' if vm.distribuidor == 'DATTASOFT' else 'otro' }}">{{ vm.distribuidor }}</span><br>{{ vm.empresaNombre or '—' }}{% if vm.contactoNombre %}<br><span class="muted">{{ vm.contactoNombre }}</span>{% endif %}</td>
     <td>{{ vm.tipo }}{% if vm.sistema %}<br><span class="muted">{{ vm.sistema }}</span>{% endif %}</td>
     <td><span class="{{ vm.prioridad | prioridadClase }}">{{ vm.prioridad }}</span>{% if vm.slaCorto %}<br><span class="badge badge--sm {{ 'badge--danger' if vm.slaEstado == 'vencido' else ('badge--warning' if vm.slaEstado == 'por-vencer' else 'badge--ok') }}" title="{{ vm.slaTexto }}">{{ vm.slaCorto }}</span>{% endif %}</td>
     <td><span class="{{ vm.estado | estadoClase }}">{{ vm.estado }}</span></td>
@@ -132,7 +132,7 @@
   <table class="data-table">
     <thead>
       <tr>
-        <th>#</th><th>Asunto</th><th>Empresa</th><th>Tipo</th><th>Prioridad</th><th>Estado</th>
+        <th>#</th><th>Asunto</th><th>Distribuidor / Empresa</th><th>Tipo</th><th>Prioridad</th><th>Estado</th>
         <th>Facturación</th><th>Agente</th><th>Creado</th><th>SLA</th><th data-no-ordenar></th>
       </tr>
     </thead>

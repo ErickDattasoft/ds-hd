@@ -81,7 +81,8 @@ export class ReportesService {
   async generar(actor: SessionUser, desde: Date, hasta: Date): Promise<Reporte> {
     if (!actor.permisos.includes('tickets:leer_todos')) throw new ForbiddenError('No puedes ver reportes');
     const ahora = this.clock.now();
-    const todos = await this.tickets.listar({ archivado: false });
+    // Gente de otro distribuidor: el reporte es solo de lo suyo.
+    const todos = await this.tickets.listar({ archivado: false, ...(actor.distribuidor ? { distribuidor: actor.distribuidor } : {}) });
     const enRango = todos.filter((t) => t.createdAt >= desde && t.createdAt <= hasta);
     return {
       desde,

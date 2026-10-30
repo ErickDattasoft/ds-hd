@@ -37,6 +37,7 @@ export class RespuestasSinLeerService {
         agenteAsignadoUid: ticket.agenteAsignadoUid ?? null,
         agenteAsignadoNombre: ticket.agenteAsignadoNombre ?? null,
         canalizadoA: ticket.canalizadoA ?? null,
+        distribuidor: ticket.distribuidor,
       });
     } catch (err) {
       this.logger.warn('No se pudo marcar la respuesta como sin leer', { ticket: ticket.numero, err: String(err) });

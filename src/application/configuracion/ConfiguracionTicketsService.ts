@@ -2,7 +2,7 @@ import type { IConfiguracionRepository } from '../../core/ports/repositories/ICo
 import type { ILogger } from '../../core/ports/services/ILogger.js';
 import type { ConfiguracionTickets } from '../../core/entities/ConfiguracionTickets.js';
 import type { PredeterminadosTicket } from '../../core/entities/ConfiguracionTickets.js';
-import { CONFIG_TICKETS_POR_DEFECTO, parsearRespuestas } from '../../core/entities/ConfiguracionTickets.js';
+import { CONFIG_TICKETS_POR_DEFECTO, distribuidoresDe, parsearRespuestas } from '../../core/entities/ConfiguracionTickets.js';
 import { ForbiddenError, ValidationError } from '../../core/errors/DomainError.js';
 import type { SessionUser } from '../shared/SessionUser.js';
 import type { IUsuarioRepository } from '../../core/ports/repositories/IUsuarioRepository.js';
@@ -38,6 +38,8 @@ export class ConfiguracionTicketsService {
     tipos: string;
     sistemas: string;
     grupos: string;
+    /** Un distribuidor por línea; DATTASOFT se agrega solo si falta. */
+    distribuidores?: string;
     estados: string;
     prioridades: string;
     tiposFacturables: string;
@@ -81,6 +83,10 @@ export class ConfiguracionTicketsService {
       // Solo estados que existan en el flujo; resuelto/cerrado ya avisan por su cuenta.
       avisarClienteEstados: (input.avisarClienteEstados ?? []).filter((e) => estados.includes(e)),
     };
+    config.distribuidores =
+      input.distribuidores !== undefined
+        ? distribuidoresDe({ distribuidores: listaLimpia(input.distribuidores) })
+        : distribuidoresDe(await this.repo.obtenerTickets());
     if (input.respuestas !== undefined) config.respuestas = parsearRespuestas(input.respuestas);
     else config.respuestas = (await this.repo.obtenerTickets()).respuestas ?? [];
     if (input.predeterminados) {

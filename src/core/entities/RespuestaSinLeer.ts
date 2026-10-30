@@ -19,6 +19,8 @@ export interface RespuestaSinLeer {
   agenteAsignadoUid: string | null;
   agenteAsignadoNombre: string | null;
   canalizadoA: string | null;
+  /** Distribuidor del ticket (para que la gente de otro distribuidor solo vea las suyas). */
+  distribuidor: string;
 }
 
 /** Largo máximo del extracto del mensaje. */

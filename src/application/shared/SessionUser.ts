@@ -34,6 +34,8 @@ export interface SessionUser {
    * con un admin en "Agente" y sin canalizar es visible para todos (ver `ticketDisponibleParaEquipo`).
    */
   readonly adminsDelEquipo?: readonly { uid: string; nombre: string }[];
+  /** Si lo tiene, solo ve y crea tickets de este distribuidor (ver `alcanceTickets`). */
+  readonly distribuidor?: string | null;
 }
 
 /** Empresas a las que el actor puede levantar tickets o ver en el portal. */

@@ -5,7 +5,7 @@ import type {
   FiltroTickets,
   ITicketQueries,
 } from '../../core/ports/repositories/ITicketQueries.js';
-import { coincideTexto, ticketDisponibleParaEquipo, ticketEsDeAgente, ticketSinNadieAsignado, type Ticket } from '../../core/entities/Ticket.js';
+import { coincideTexto, DISTRIBUIDOR_POR_DEFECTO, ticketDisponibleParaEquipo, ticketEsDeAgente, ticketSinNadieAsignado, type Ticket } from '../../core/entities/Ticket.js';
 import { esEstadoFinal, slugEstado } from '../../core/entities/value-objects/EstadoTicket.js';
 import { TicketMapper } from './mappers/TicketMapper.js';
 
@@ -28,6 +28,11 @@ export class FirestoreTicketQueries implements ITicketQueries {
     if (filtro.canal) q = q.where('canal', '==', filtro.canal);
     if (filtro.soloAbiertos) q = q.where('abierto', '==', true);
     if (filtro.conPlatica) q = q.where('conPlatica', '==', true);
+    // Otro distribuidor sí va al servidor (sus tickets ya nacen con el campo); DATTASOFT no,
+    // porque los tickets de antes del campo no lo traen y se perderían (ver `postFiltro`).
+    if (filtro.distribuidor && filtro.distribuidor !== DISTRIBUIDOR_POR_DEFECTO) {
+      q = q.where('distribuidor', '==', filtro.distribuidor);
+    }
     return q;
   }
 
@@ -40,6 +45,7 @@ export class FirestoreTicketQueries implements ITicketQueries {
       out = out.filter((x) => x.archivado === filtro.archivado);
     }
     if (filtro.texto) out = out.filter((x) => coincideTexto(x, filtro.texto!));
+    if (filtro.distribuidor) out = out.filter((x) => x.distribuidor === filtro.distribuidor);
     // Agente por uid o por nombre ("Agente" / "Canalizado a"): los migrados del viejo no traen uid.
     if (filtro.deAgente) out = out.filter((x) => ticketEsDeAgente(x, filtro.deAgente!));
     if (filtro.alcanceAgente) {
@@ -72,7 +78,8 @@ export class FirestoreTicketQueries implements ITicketQueries {
     // Con soloAbiertos ya es una query indexable; texto/archivado se filtran en memoria.
     const enMemoria =
       filtro.texto || filtro.tipo || filtro.facturacion || filtro.soloProgramados ||
-      filtro.deAgente || filtro.alcanceAgente || filtro.sinAsignar;
+      filtro.deAgente || filtro.alcanceAgente || filtro.sinAsignar ||
+      filtro.distribuidor === DISTRIBUIDOR_POR_DEFECTO;
     if (!enMemoria && filtro.archivado === undefined) {
       const agg = await this.aplicar(filtro).count().get();
       return agg.data().count;

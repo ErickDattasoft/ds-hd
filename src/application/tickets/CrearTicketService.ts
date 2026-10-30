@@ -64,6 +64,7 @@ export class CrearTicketService {
       estadoInicial,
       canal: input.canal ?? 'interno',
       sistema: input.sistema ?? null,
+      distribuidor: input.actor.distribuidor || input.distribuidor || null,
       grupo: input.grupo ?? null,
       empresaId: input.empresaId ?? null,
       empresaNombre: input.empresaNombre ?? null,

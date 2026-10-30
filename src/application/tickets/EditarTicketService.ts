@@ -21,6 +21,8 @@ export interface EditarTicketInput {
   descripcion: string;
   tipo: string;
   sistema: string | null;
+  /** Ausente = no se toca. */
+  distribuidor?: string | null;
   prioridad: string;
   grupo: string | null;
   empresaId: string | null;
@@ -39,6 +41,7 @@ const ETIQUETAS: Record<string, string> = {
   descripcion: 'descripción',
   tipo: 'tipo',
   sistema: 'sistema',
+  distribuidor: 'distribuidor',
   prioridad: 'prioridad',
   grupo: 'grupo',
   empresaNombre: 'empresa',
@@ -101,6 +104,8 @@ export class EditarTicketService {
         descripcion,
         tipo: input.tipo,
         sistema: input.sistema,
+        // Quien es de otro distribuidor no puede pasar el ticket a otro.
+        ...(input.actor.distribuidor ? {} : { distribuidor: input.distribuidor }),
         prioridad,
         grupo: input.grupo,
         empresaId: input.empresaId,
@@ -146,6 +151,7 @@ export class EditarTicketService {
       descripcion: t.descripcion,
       tipo: t.tipo,
       sistema: t.sistema ?? '',
+      distribuidor: t.distribuidor,
       prioridad: t.prioridad,
       grupo: t.grupo ?? '',
       empresaNombre: t.empresaNombre ?? '',

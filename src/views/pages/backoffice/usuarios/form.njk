@@ -84,6 +84,22 @@
         </details>
       {% endif %}
 
+      {% if modo == 'editar' %}
+        <details class="disclosure"{{ ' open' if usuario.distribuidor }}>
+          <summary class="disclosure__summary">🏷️ Distribuidor <span class="disclosure__hint">— {{ usuario.distribuidor or 've todos' }}</span></summary>
+          <div class="disclosure__body form">
+            <input type="hidden" name="distribuidorEnviado" value="1" />
+            <label class="field"><span>Solo ve y crea tickets de</span>
+              <select name="distribuidor">
+                <option value="">— Todos (sin restricción) —</option>
+                {% for d in (distribuidores or ['DATTASOFT']) %}<option value="{{ d }}"{{ ' selected' if usuario.distribuidor == d }}>{{ d }}</option>{% endfor %}
+              </select>
+              <em class="field__hint">Para la gente de otro distribuidor (ALFONSO, TONY…). Los distribuidores se dan de alta en Configuración → Tickets.</em>
+            </label>
+          </div>
+        </details>
+      {% endif %}
+
       <details class="disclosure"{{ ' open' if usuario.agente.grupo or usuario.agente.capacidadMax or usuario.agente.disponibleAsignacion }}>
         <summary class="disclosure__summary">Configuración de agente <span class="disclosure__hint">— solo para roles de soporte</span></summary>
         <div class="disclosure__body form">

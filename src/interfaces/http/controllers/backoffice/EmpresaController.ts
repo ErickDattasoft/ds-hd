@@ -28,6 +28,9 @@ interface ItemHistorial {
 }
 
 /** `YYYY-MM-DD` de hoy en hora de México (valor por defecto de la fecha de una interacción). */
+/** Quien es de otro distribuidor solo ve los tickets de ese distribuidor (ver `alcanceTickets`). */
+const soloSuDistribuidor = (u: { distribuidor?: string | null }): { distribuidor?: string } =>
+  u.distribuidor ? { distribuidor: u.distribuidor } : {};
 /** Fila con sistemas desactualizados a la que ya se le avisó de todos. */
 const versionesAvisadas = (f: { desactualizadas: number; sinAvisar: { versiones: number } }): boolean =>
   f.desactualizadas > 0 && f.sinAvisar.versiones === 0;
@@ -264,8 +267,8 @@ export class EmpresaController {
     const puedeVerCotizaciones = req.user!.permisos.includes('cotizaciones:leer');
     const [contactos, tickets, todosLosTickets, interacciones, versiones, tareasPendientes, cotizaciones, usuarios] = await Promise.all([
       this.contactos.listar({ empresaId: id }),
-      this.ticketQueries.listar({ empresaId: id, limite: 20, archivado: false }),
-      this.ticketQueries.listar({ empresaId: id }),
+      this.ticketQueries.listar({ empresaId: id, limite: 20, archivado: false, ...soloSuDistribuidor(req.user!) }),
+      this.ticketQueries.listar({ empresaId: id, ...soloSuDistribuidor(req.user!) }),
       this.seguimiento.interaccionesDe(id),
       this.versiones.listar(),
       this.seguimiento.listarTareas({ empresaId: id, completada: false }),

@@ -19,6 +19,8 @@
         <label class="field"><span>Tipos</span><textarea name="tipos" rows="6">{{ config.tipos | join('\n') }}</textarea></label>
         <label class="field"><span>Sistemas</span><textarea name="sistemas" rows="6">{{ config.sistemas | join('\n') }}</textarea></label>
         <label class="field"><span>Grupos</span><textarea name="grupos" rows="4">{{ config.grupos | join('\n') }}</textarea></label>
+        <label class="field"><span>Distribuidores</span><textarea name="distribuidores" rows="4">{{ (config.distribuidores or ['DATTASOFT']) | join('\n') }}</textarea>
+          <em class="field__hint">Quién atiende el ticket (se elige en cada uno). DATTASOFT siempre está y es el que se usa si no se elige otro.</em></label>
       </div>
     </details>
 

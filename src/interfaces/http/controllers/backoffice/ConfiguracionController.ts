@@ -323,6 +323,7 @@ export class ConfiguracionController {
         actor: req.user!,
         tipos: str(b.tipos),
         sistemas: str(b.sistemas),
+        distribuidores: str(b.distribuidores),
         grupos: str(b.grupos),
         estados: str(b.estados),
         prioridades: str(b.prioridades),

@@ -8,6 +8,8 @@ import type { Firestore } from 'firebase-admin/firestore';
 import type { IConfiguracionRepository } from '../../core/ports/repositories/IConfiguracionRepository.js';
 import {
   CONFIG_TICKETS_POR_DEFECTO,
+  distribuidoresDe,
+  DISTRIBUIDORES_INICIALES,
   type ConfiguracionTickets,
 } from '../../core/entities/ConfiguracionTickets.js';
 import {
@@ -49,6 +51,7 @@ export class FirestoreConfiguracionRepository implements IConfiguracionRepositor
       tipos: arr(d.tipos, CONFIG_TICKETS_POR_DEFECTO.tipos),
       sistemas: arr(d.sistemas, CONFIG_TICKETS_POR_DEFECTO.sistemas),
       grupos: arr(d.grupos, CONFIG_TICKETS_POR_DEFECTO.grupos),
+      distribuidores: distribuidoresDe({ distribuidores: arr(d.distribuidores, [...DISTRIBUIDORES_INICIALES]) }),
       estados: arr(d.estados, CONFIG_TICKETS_POR_DEFECTO.estados),
       prioridades: arr(d.prioridades, CONFIG_TICKETS_POR_DEFECTO.prioridades),
       slaHoras: (d.slaHoras as Record<string, number>) ?? { ...CONFIG_TICKETS_POR_DEFECTO.slaHoras },

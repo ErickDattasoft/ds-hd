@@ -10,6 +10,7 @@ import {
 } from './value-objects/Rol.js';
 import { Email } from './value-objects/Email.js';
 import { ValidationError } from '../errors/DomainError.js';
+import { normalizarDistribuidor } from './Ticket.js';
 
 /** Datos de perfil de agente técnico (solo relevantes cuando `rol === 'agente'`). */
 export interface PerfilAgente {
@@ -40,6 +41,11 @@ export interface UsuarioProps {
   /** Otras empresas del cliente (p. ej. un administrador que lleva varias que se facturan aparte). */
   empresasAdicionales?: string[];
   agente?: Partial<PerfilAgente>;
+  /**
+   * Distribuidor del usuario (ALFONSO, TONY…): solo ve y crea tickets de ese distribuidor.
+   * `null` = sin restricción (ve todos los que su rol le deja ver).
+   */
+  distribuidor?: string | null;
   /** Firma que se agrega a las respuestas públicas de tickets, si la tiene configurada. */
   firma?: string | null;
   /** Encabezado/plantilla que el usuario inserta al redactar un ticket (con `[fecha]`). */
@@ -79,6 +85,7 @@ export class Usuario {
   empresaId: string | null;
   empresasAdicionales: string[];
   agente: PerfilAgente;
+  distribuidor: string | null;
   firma: string | null;
   encabezado: string | null;
   predeterminadosTicket: PredeterminadosTicket | null;
@@ -104,6 +111,7 @@ export class Usuario {
     this.empresaId = props.empresaId ?? null;
     this.empresasAdicionales = [...new Set(props.empresasAdicionales ?? [])].filter((id) => id && id !== this.empresaId);
     this.agente = { ...AGENTE_POR_DEFECTO, ...props.agente };
+    this.distribuidor = props.distribuidor?.trim() ? normalizarDistribuidor(props.distribuidor) : null;
     this.firma = props.firma?.trim() || null;
     this.encabezado = props.encabezado?.trim() || null;
     this.predeterminadosTicket = props.predeterminadosTicket ?? null;

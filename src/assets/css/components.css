@@ -1396,3 +1396,8 @@ dialog.card .field--check { display: flex; gap: var(--space-2); align-items: fle
 .banner-lic__item + .banner-lic__item { border-top: 1px solid var(--color-border); }
 .banner-lic__empresa { font-weight: 600; overflow-wrap: anywhere; }
 .banner-lic__detalle { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: var(--space-2); font-size: var(--text-sm); }
+
+/* Distribuidor en la lista de tickets (arriba de la empresa): DATTASOFT discreto, los demás resaltan. */
+.distribuidor-tag { display: inline-block; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.04em; padding: 0 0.4rem; border-radius: var(--radius-full); }
+.distribuidor-tag--propio { color: var(--color-text-muted); border: 1px solid var(--color-border); }
+.distribuidor-tag--otro { color: var(--color-primary, #4f46e5); background: color-mix(in srgb, var(--color-primary, #4f46e5) 15%, transparent); }

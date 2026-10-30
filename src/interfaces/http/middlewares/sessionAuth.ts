@@ -68,6 +68,7 @@ function aSessionUser(
     encabezado: u.encabezado,
     totpActivo: u.totpActivo,
     adminsDelEquipo,
+    distribuidor: u.distribuidor,
   };
 }
 

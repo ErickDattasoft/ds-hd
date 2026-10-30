@@ -62,6 +62,16 @@
         <label class="field"><span>{{ 'Estado' if editando else 'Estado inicial' }}</span>
           <select name="estado">{% if editando and valores.estado not in config.estados %}<option selected>{{ valores.estado }}</option>{% endif %}{% for e in config.estados %}<option {{ 'selected' if valores.estado == e or (not valores.estado and config.estadoInicial == e) }}>{{ e }}</option>{% endfor %}</select>
         </label>
+        {% if user.distribuidor %}
+          <label class="field"><span>Distribuidor</span><input value="{{ user.distribuidor }}" disabled /></label>
+        {% else %}
+          <label class="field"><span>Distribuidor</span>
+            <select name="distribuidor">
+              {% if valores.distribuidor and valores.distribuidor not in (config.distribuidores or []) %}<option selected>{{ valores.distribuidor }}</option>{% endif %}
+              {% for d in (config.distribuidores or ['DATTASOFT']) %}<option {{ 'selected' if valores.distribuidor == d or (not valores.distribuidor and loop.first) }}>{{ d }}</option>{% endfor %}
+            </select>
+          </label>
+        {% endif %}
         <label class="field"><span>Sistema</span>
           <select name="sistema" data-sistema-select>
             <option value="">—</option>

@@ -12,6 +12,8 @@ export interface CrearTicketInput {
   tipo: string;
   prioridad: Prioridad;
   sistema?: string | null;
+  /** Ausente = DATTASOFT; quien es de otro distribuidor siempre crea con el suyo. */
+  distribuidor?: string | null;
   grupo?: string | null;
   canal?: CanalTicket;
   empresaId?: string | null;

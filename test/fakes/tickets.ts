@@ -145,6 +145,7 @@ export class InMemoryTicketQueries implements ITicketQueries {
     if (f.deAgente && !ticketEsDeAgente(t, f.deAgente)) return false;
     if (f.alcanceAgente && !ticketEsDeAgente(t, f.alcanceAgente) && !ticketDisponibleParaEquipo(t, f.alcanceAgente.admins)) return false;
     if (f.empresaId && t.empresaId !== f.empresaId) return false;
+    if (f.distribuidor && t.distribuidor !== f.distribuidor) return false;
     if (f.solicitanteUid && t.solicitanteUid !== f.solicitanteUid) return false;
     if (f.canal && t.canal !== f.canal) return false;
     if (f.soloAbiertos && esEstadoFinal(t.estado)) return false;

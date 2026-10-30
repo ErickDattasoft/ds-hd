@@ -22,6 +22,17 @@ export interface SatisfaccionTicket {
 
 export type CanalTicket = 'interno' | 'publico' | 'portal' | 'correo';
 
+/**
+ * Distribuidor de todo lo que no diga otro: lo que había antes del campo y lo que trae el
+ * respaldo del CRM viejo es de DATTASOFT.
+ */
+export const DISTRIBUIDOR_POR_DEFECTO = 'DATTASOFT';
+
+/** Nombre de distribuidor normalizado (mayúsculas, sin espacios de sobra); vacío → DATTASOFT. */
+export function normalizarDistribuidor(v: string | null | undefined): string {
+  return (v ?? '').trim().replace(/\s+/g, ' ').toUpperCase() || DISTRIBUIDOR_POR_DEFECTO;
+}
+
 /** Un registro del historial de estados de un ticket. */
 export interface CambioEstado {
   estado: string;
@@ -65,6 +76,8 @@ export interface TicketProps {
   descripcion: string;
   tipo: string;
   sistema?: string | null;
+  /** Quién atiende/vendió (DATTASOFT, otro distribuidor…); ausente = DATTASOFT. */
+  distribuidor?: string | null;
   estado: string;
   prioridad: Prioridad;
   grupo?: string | null;
@@ -141,6 +154,7 @@ export class Ticket {
   descripcion: string;
   tipo: string;
   sistema: string | null;
+  distribuidor: string;
   estado: string;
   prioridad: Prioridad;
   grupo: string | null;
@@ -194,6 +208,7 @@ export class Ticket {
     this.descripcion = sanitizarDescripcionHtml(props.descripcion);
     this.tipo = props.tipo;
     this.sistema = props.sistema ?? null;
+    this.distribuidor = normalizarDistribuidor(props.distribuidor);
     this.estado = props.estado;
     this.prioridad = parsePrioridad(props.prioridad);
     this.grupo = props.grupo ?? null;
@@ -292,6 +307,7 @@ export class Ticket {
     estadoInicial: string;
     canal: CanalTicket;
     sistema?: string | null;
+    distribuidor?: string | null;
     grupo?: string | null;
     empresaId?: string | null;
     empresaNombre?: string | null;
@@ -414,6 +430,8 @@ export class Ticket {
       descripcion: string;
       tipo: string;
       sistema: string | null;
+      /** Ausente = no se toca (p. ej. quien solo puede ver su distribuidor no lo cambia). */
+      distribuidor?: string | null;
       prioridad: Prioridad;
       grupo: string | null;
       empresaId: string | null;
@@ -438,6 +456,7 @@ export class Ticket {
     this.descripcion = sanitizarDescripcionHtml(datos.descripcion);
     this.tipo = datos.tipo;
     this.sistema = datos.sistema?.trim() || null;
+    if (datos.distribuidor !== undefined) this.distribuidor = normalizarDistribuidor(datos.distribuidor);
     this.prioridad = datos.prioridad;
     this.grupo = datos.grupo?.trim() || null;
     this.empresaId = datos.empresaId;

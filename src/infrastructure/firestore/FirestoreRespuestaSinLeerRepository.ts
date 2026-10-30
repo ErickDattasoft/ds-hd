@@ -2,6 +2,7 @@ import type { Firestore } from 'firebase-admin/firestore';
 import { Timestamp } from '../../core/entities/value-objects/Timestamp.js';
 import type { IRespuestaSinLeerRepository } from '../../core/ports/repositories/IRespuestaSinLeerRepository.js';
 import type { RespuestaSinLeer } from '../../core/entities/RespuestaSinLeer.js';
+import { normalizarDistribuidor } from '../../core/entities/Ticket.js';
 
 const COL = 'respuestas_sin_leer';
 
@@ -15,6 +16,7 @@ interface Doc {
   agenteAsignadoUid?: string | null;
   agenteAsignadoNombre?: string | null;
   canalizadoA?: string | null;
+  distribuidor?: string | null;
 }
 
 const toDomain = (id: string, d: Doc): RespuestaSinLeer => ({
@@ -28,6 +30,7 @@ const toDomain = (id: string, d: Doc): RespuestaSinLeer => ({
   agenteAsignadoUid: d.agenteAsignadoUid ?? null,
   agenteAsignadoNombre: d.agenteAsignadoNombre ?? null,
   canalizadoA: d.canalizadoA ?? null,
+  distribuidor: normalizarDistribuidor(d.distribuidor),
 });
 
 /** Sirve para ambos drivers (Admin SDK y REST): solo get/set/delete por id y la colección entera. */
@@ -45,6 +48,7 @@ export class FirestoreRespuestaSinLeerRepository implements IRespuestaSinLeerRep
       agenteAsignadoUid: r.agenteAsignadoUid,
       agenteAsignadoNombre: r.agenteAsignadoNombre,
       canalizadoA: r.canalizadoA,
+      distribuidor: r.distribuidor,
     });
   }
 

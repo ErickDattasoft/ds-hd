@@ -34,6 +34,11 @@ export interface FiltroTickets {
   limite?: number;
   /** `true` = solo los que tienen o tuvieron plática con el cliente (ver `Ticket.conPlatica`). */
   conPlatica?: boolean;
+  /**
+   * Solo tickets de este distribuidor (filtro de la lista o restricción del usuario). Los
+   * tickets de antes del campo no lo traen y cuentan como DATTASOFT.
+   */
+  distribuidor?: string;
   /** `false` (por defecto en las vistas normales) excluye tickets en la papelera. */
   archivado?: boolean;
 }

@@ -10,7 +10,7 @@
  */
 import { Empresa } from '../../core/entities/Empresa.js';
 import { Contacto } from '../../core/entities/Contacto.js';
-import { Ticket } from '../../core/entities/Ticket.js';
+import { DISTRIBUIDOR_POR_DEFECTO, Ticket } from '../../core/entities/Ticket.js';
 import { VersionSistema } from '../../core/entities/VersionSistema.js';
 import { ArticuloKB } from '../../core/entities/ArticuloKB.js';
 import { Evento, type RespuestaInvitacion, RESPUESTAS_INVITACION } from '../../core/entities/Evento.js';
@@ -528,6 +528,8 @@ export function crearImportadores({ dryRun: DRY_RUN, log }: OpcionesImportacion)
           descripcion: s(d.descripcion) || '(sin descripción)',
           tipo: s(d.tipo) || 'General',
           sistema: s(d.sistema) || null,
+          // El CRM viejo es todo de DATTASOFT (no tiene el campo).
+          distribuidor: DISTRIBUIDOR_POR_DEFECTO,
           estado: s(d.estado) || 'Abierto',
           prioridad: prioridadDe(d.prioridad),
           grupo: s(d.grupo) || null,

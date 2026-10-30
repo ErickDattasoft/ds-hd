@@ -13,17 +13,22 @@ export function veTodosLosTickets(actor: SessionUser): boolean {
  * invisibles para todo el equipo hasta que un admin los repartiera (igual que el CRM viejo). Un
  * ticket con un admin en "Agente" y sin canalizar también cuenta como «de nadie todavía».
  */
-export function alcanceTickets(actor: SessionUser): Pick<FiltroTickets, 'alcanceAgente'> {
-  return veTodosLosTickets(actor)
-    ? {}
-    : { alcanceAgente: { uid: actor.uid, nombre: actor.nombre, admins: actor.adminsDelEquipo ?? [] } };
+export function alcanceTickets(actor: SessionUser): Pick<FiltroTickets, 'alcanceAgente' | 'distribuidor'> {
+  return {
+    ...(veTodosLosTickets(actor)
+      ? {}
+      : { alcanceAgente: { uid: actor.uid, nombre: actor.nombre, admins: actor.adminsDelEquipo ?? [] } }),
+    // Gente de otro distribuidor: solo lo suyo, aunque su rol vea todos los tickets.
+    ...(actor.distribuidor ? { distribuidor: actor.distribuidor } : {}),
+  };
 }
 
 /** Misma regla que {@link alcanceTickets}, para un ticket suelto (ver/editar/escribir). */
 export function ticketVisiblePara(
-  ticket: Pick<Ticket, 'agenteAsignadoUid' | 'agenteAsignadoNombre' | 'canalizadoA'>,
+  ticket: Pick<Ticket, 'agenteAsignadoUid' | 'agenteAsignadoNombre' | 'canalizadoA' | 'distribuidor'>,
   actor: SessionUser,
 ): boolean {
+  if (actor.distribuidor && ticket.distribuidor !== actor.distribuidor) return false;
   return (
     veTodosLosTickets(actor) ||
     ticketEsDeAgente(ticket, { uid: actor.uid, nombre: actor.nombre }) ||

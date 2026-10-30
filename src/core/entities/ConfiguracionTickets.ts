@@ -1,11 +1,14 @@
 import { PRIORIDADES, SLA_HORAS_POR_DEFECTO, type Prioridad } from './value-objects/Prioridad.js';
 import { ESTADOS_POR_DEFECTO } from './value-objects/EstadoTicket.js';
+import { DISTRIBUIDOR_POR_DEFECTO, normalizarDistribuidor } from './Ticket.js';
 
 /** Catálogos configurables del módulo de tickets (documento `configuracion/tickets`). */
 export interface ConfiguracionTickets {
   tipos: string[];
   sistemas: string[];
   grupos: string[];
+  /** Distribuidores que atienden tickets (DATTASOFT siempre va primero; ver `distribuidoresDe`). */
+  distribuidores?: string[];
   estados: string[];
   prioridades: string[];
   /** Horas objetivo de SLA por prioridad. */
@@ -69,6 +72,9 @@ export interface PredeterminadosTicket {
   agenteUid?: string;
 }
 
+/** Con los que arranca el catálogo mientras nadie lo haya editado en Configuración → Tickets. */
+export const DISTRIBUIDORES_INICIALES: readonly string[] = [DISTRIBUIDOR_POR_DEFECTO, 'ALFONSO', 'TONY', 'XELCRON'];
+
 export const CONFIG_TICKETS_POR_DEFECTO: ConfiguracionTickets = {
   tipos: [
     'General',
@@ -80,6 +86,7 @@ export const CONFIG_TICKETS_POR_DEFECTO: ConfiguracionTickets = {
   ],
   sistemas: ['Contabilidad', 'Bancos', 'Nóminas', 'Comercial Premium', 'Comercial Pro', 'Factura Electrónica'],
   grupos: ['Soporte', 'Ventas', 'Sistemas', 'Otros'],
+  distribuidores: [...DISTRIBUIDORES_INICIALES],
   estados: [...ESTADOS_POR_DEFECTO],
   prioridades: [...PRIORIDADES],
   slaHoras: { ...SLA_HORAS_POR_DEFECTO },
@@ -89,6 +96,12 @@ export const CONFIG_TICKETS_POR_DEFECTO: ConfiguracionTickets = {
   avisarClienteEstados: [],
   predeterminados: { prioridad: 'Media', estadoFacturacion: 'no_facturado' },
 };
+
+/** El catálogo de distribuidores, normalizado, sin repetidos y con DATTASOFT siempre primero. */
+export function distribuidoresDe(config: Pick<ConfiguracionTickets, 'distribuidores'>): string[] {
+  const lista = (config.distribuidores ?? []).map(normalizarDistribuidor);
+  return [...new Set([DISTRIBUIDOR_POR_DEFECTO, ...lista])];
+}
 
 /** Horas de SLA para una prioridad según la config (con fallback al valor por defecto). */
 export function horasSlaDe(config: ConfiguracionTickets, prioridad: Prioridad): number {

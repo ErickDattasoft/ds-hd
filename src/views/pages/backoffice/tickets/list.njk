@@ -44,6 +44,12 @@
       <option value="">Cualquier tipo</option>
       {% for t in config.tipos %}<option value="{{ t }}" {{ 'selected' if filtro.tipo == t }}>{{ t }}</option>{% endfor %}
     </select>
+    {% if not user.distribuidor %}
+    <select name="distribuidor">
+      <option value="">Cualquier distribuidor</option>
+      {% for d in (config.distribuidores or ['DATTASOFT']) %}<option value="{{ d }}" {{ 'selected' if filtro.distribuidor == d }}>{{ d }}</option>{% endfor %}
+    </select>
+    {% endif %}
     <select name="agente">
       <option value="">Cualquier agente</option>
       {% for a in agentes %}<option value="{{ a.uid }}" {{ 'selected' if filtro.agente == a.uid }}>{{ a.nombre }}</option>{% endfor %}
