@@ -379,7 +379,8 @@ export class ConfiguracionController {
       wa: { ...WHATSAPP_CLIENTES_POR_DEFECTO, ...config.whatsappClientes },
       eventosEtiquetas: ETIQUETAS_EVENTOS,
       equipoNombres: equipoWhatsApp(config).map((d) => d.nombre),
-      infoCorreo: await this.configIntegraciones.infoCorreo(),
+      // Sin la clave de Brevo: a la vista solo le hacen falta el modo y el remitente.
+      infoCorreo: await this.configIntegraciones.infoCorreo().then(({ modo, remitente }) => ({ modo, remitente })),
       errores: opts.errores ?? {},
       guardado: opts.guardado ?? false,
     });
