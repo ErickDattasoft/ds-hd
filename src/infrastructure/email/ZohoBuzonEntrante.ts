@@ -133,7 +133,8 @@ export class ZohoBuzonEntrante implements IBuzonEntrante {
       .filter((m) => m.messageId && m.folderId && m.receivedTime && NUM.test(m.receivedTime))
       .filter((m) => Number(m.receivedTime) > opts.desde.getTime())
       .filter((m) => numeroTicketDeAsunto(m.subject ?? '') !== null)
-      .filter((m) => !opts.soloConAdjuntos || m.hasAttachment === '1' || m.hasInline === '1')
+      // Zoho manda `hasAttachment: "0"|"1"` pero `hasInline: "true"|"false"`.
+      .filter((m) => !opts.soloConAdjuntos || conMarca(m.hasAttachment) || conMarca(m.hasInline))
       .sort((a, b) => Number(a.receivedTime) - Number(b.receivedTime))
       .slice(0, opts.limite);
 
@@ -226,6 +227,11 @@ export class ZohoBuzonEntrante implements IBuzonEntrante {
       return aTextoPlano(respaldo);
     }
   }
+}
+
+/** Las banderas de Zoho llegan como "1"/"0" o "true"/"false" según el campo. */
+function conMarca(v: string | undefined): boolean {
+  return v === '1' || v === 'true';
 }
 
 /** Imagen por la extensión del archivo (Zoho no manda el tipo); `null` si no es imagen. */
