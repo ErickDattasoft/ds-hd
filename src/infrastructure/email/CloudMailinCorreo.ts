@@ -8,6 +8,10 @@ import {
 /** Tipos de imagen que se guardan de un correo (SVG fuera: puede llevar scripts). */
 const IMAGENES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
 
+/** Una imagen incrustada de más de esto se guarda (logos y firmas pesan menos). */
+const MIN_INLINE_BYTES = 30 * 1024;
+const pesoBase64 = (b64: string): number => Math.floor((b64.replace(/\s/g, '').length * 3) / 4);
+
 /** Campo de `headers` sin importar mayúsculas (CloudMailin manda `subject`, otros `Subject`). */
 function header(headers: Record<string, unknown>, nombre: string): string {
   const clave = Object.keys(headers).find((k) => k.toLowerCase() === nombre);
@@ -39,8 +43,9 @@ export function correoDeCloudMailin(payload: unknown): CorreoRecibido {
 
   const todos = (Array.isArray(p.attachments) ? p.attachments : [])
     .map((a) => (a ?? {}) as Record<string, unknown>)
-    // Las "inline" son logos/firmas incrustados en el cuerpo, no algo que alguien adjuntó.
-    .filter((a) => a.disposition !== 'inline')
+    // Las "inline" suelen ser logos/firmas incrustados (pesan poco); una captura pegada en el
+    // cuerpo también llega "inline" pero pesa más: esa sí se guarda.
+    .filter((a) => a.disposition !== 'inline' || pesoBase64(String(a.content ?? '')) > MIN_INLINE_BYTES || Number(a.size) > MIN_INLINE_BYTES)
     .map((a) => ({
       nombre: String(a.file_name ?? 'captura'),
       // "image/jpg" y "image/pjpeg" no son tipos estándar: el navegador los muestra como JPEG.

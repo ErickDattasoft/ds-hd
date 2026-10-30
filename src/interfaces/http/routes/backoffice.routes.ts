@@ -184,6 +184,7 @@ export function backofficeRoutes(container: Container): Router {
   r.post('/tickets', requirePermission('tickets:crear'), (req, res) => tickets().crearPost(req, res));
   r.get('/tickets/exportar', leerTickets, (req, res) => tickets().exportarExcel(req, res));
   r.get('/tickets/:id', leerTickets, (req, res) => tickets().detalleView(req, res));
+  r.get('/tickets/:id/notas/conteo', leerTickets, (req, res) => tickets().notasConteoJson(req, res));
   r.get('/tickets/:id/imprimir', leerTickets, (req, res) => tickets().imprimirView(req, res));
   r.get('/tickets/:id/editar', requirePermission('tickets:editar'), (req, res) => tickets().editarForm(req, res));
   r.post('/tickets/:id/editar', requirePermission('tickets:editar'), (req, res) => tickets().editarPost(req, res));

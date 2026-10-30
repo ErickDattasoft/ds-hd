@@ -91,6 +91,9 @@ export class InMemoryTicketRepository implements ITicketRepository {
     for (const n of notas) await this.agregarNota(ticket.id, n);
     for (const e of eventos) await this.registrarEvento(ticket.id, e);
   }
+  async contarNotas(ticketId: string): Promise<number> {
+    return (this.store.notas.get(ticketId) ?? []).length;
+  }
   async agregarNota(ticketId: string, nota: NotaTicket): Promise<void> {
     const ticket = this.store.tickets.get(ticketId);
     if (ticket && esPlatica(nota)) ticket.conPlatica = true;

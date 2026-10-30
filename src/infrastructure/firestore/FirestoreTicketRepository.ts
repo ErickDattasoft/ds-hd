@@ -124,6 +124,10 @@ export class FirestoreTicketRepository implements ITicketRepository {
     }
   }
 
+  async contarNotas(ticketId: string): Promise<number> {
+    return (await this.db.collection(COL).doc(ticketId).collection('notas').count().get()).data().count;
+  }
+
   async agregarNota(ticketId: string, nota: NotaTicket): Promise<void> {
     const ref = this.db.collection(COL).doc(ticketId);
     if (!esPlatica(nota)) {

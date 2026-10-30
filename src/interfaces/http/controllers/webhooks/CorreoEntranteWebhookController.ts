@@ -22,7 +22,25 @@ export class CorreoEntranteWebhookController {
     try {
       const correo = correoDeCloudMailin(req.body);
       const r = await this.service.recibirWebhook(correo);
-      this.logger.info('Correo entrante (webhook)', { de: correo.de, asunto: correo.asunto, ...r });
+      // Qué adjuntos trajo (sin el contenido): para saber por qué una imagen no aparece en el chat.
+      const crudos = Array.isArray((req.body as { attachments?: unknown })?.attachments)
+        ? ((req.body as { attachments: Array<Record<string, unknown>> }).attachments ?? [])
+        : [];
+      const adjuntos = crudos.map((a) => ({
+        nombre: a?.file_name,
+        tipo: a?.content_type,
+        disposicion: a?.disposition,
+        bytes: a?.size ?? (typeof a?.content === 'string' ? Math.floor((a.content.length * 3) / 4) : null),
+        conContenido: typeof a?.content === 'string' && a.content.length > 0,
+        conUrl: typeof a?.url === 'string',
+      }));
+      this.logger.info('Correo entrante (webhook)', {
+        de: correo.de,
+        asunto: correo.asunto,
+        adjuntos,
+        guardables: correo.adjuntos?.length ?? 0,
+        ...r,
+      });
       res.status(200).json({ ok: true, ...r });
     } catch (err) {
       // 500 → CloudMailin reintenta más tarde; el correo no se pierde.

@@ -14,6 +14,8 @@ import { ticketVisiblePara } from './alcance.js';
 export interface DetalleTicket {
   ticket: Ticket;
   notas: NotaTicket[];
+  /** Todas las notas, internas incluidas (lo que cuenta `contarNotas`). */
+  notasTotal: number;
   eventos: EventoTicket[];
   adjuntos: AdjuntoTicketMeta[];
   config: ConfiguracionTickets;
@@ -31,6 +33,17 @@ export class VerTicketService {
     private readonly config: IConfiguracionRepository,
     private readonly adjuntos: IAdjuntoTicketRepository,
   ) {}
+
+  /**
+   * Cuántas notas tiene el ticket, para que el chat abierto se actualice solo: 2 lecturas
+   * (el ticket, para el permiso, y un conteo) en vez de todo el detalle.
+   */
+  async contarNotas(actor: SessionUser, ticketId: string): Promise<number> {
+    const ticket = await this.tickets.findById(ticketId);
+    if (!ticket) throw new NotFoundError('Ticket', ticketId);
+    if (!ticketVisiblePara(ticket, actor)) throw new ForbiddenError('Solo puedes ver tickets asignados a ti');
+    return this.tickets.contarNotas(ticketId);
+  }
 
   async ejecutar(actor: SessionUser, ticketId: string): Promise<DetalleTicket> {
     const ticket = await this.tickets.findById(ticketId);
@@ -52,6 +65,7 @@ export class VerTicketService {
     const descripcionHtml = await resolverImagenesDescripcion(ticket.descripcion, ticket.id, this.adjuntos);
 
     return {
+      notasTotal: notasTodas.length,
       ticket,
       notas,
       eventos,

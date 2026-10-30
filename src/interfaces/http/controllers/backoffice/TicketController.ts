@@ -459,6 +459,12 @@ export class TicketController {
     }
   };
 
+  /** Para el chat abierto: cuántas notas hay (si cambió, el navegador vuelve a pintar el hilo). */
+  notasConteoJson = async (req: Request, res: Response): Promise<void> => {
+    res.setHeader('Cache-Control', 'no-store');
+    res.json({ n: await this.ver.contarNotas(req.user!, str(req.params.id)) });
+  };
+
   detalleView = async (req: Request, res: Response): Promise<void> => {
     // La extensión `preload` de htmx precarga esta página al pasar el mouse por la fila de la
     // lista y se apoya en el caché del navegador para que el click abra al instante. Solo esa
@@ -479,6 +485,7 @@ export class TicketController {
       ticket: d.ticket,
       descripcionHtml: d.descripcionHtml,
       notas: d.notas,
+      notasTotal: d.notasTotal,
       eventos: d.eventos,
       adjuntos: d.adjuntos,
       config: d.config,
@@ -652,6 +659,7 @@ export class TicketController {
       ticket: d.ticket,
       descripcionHtml: d.descripcionHtml,
       notas: d.notas,
+      notasTotal: d.notasTotal,
       adjuntos: d.adjuntos,
       conLogo: req.query.logo !== '0',
       auto: req.query.auto === '1',

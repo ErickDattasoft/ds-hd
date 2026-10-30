@@ -1919,6 +1919,47 @@
   // Un solo intervalo por pestaña (sobrevive a las navegaciones con hx-boost).
   setInterval(function () { revisarRespuestas(true); }, 60 * 1000);
 
+  // ── Chat del ticket en vivo: si llegó un mensaje (por correo o de otro agente), se pinta solo ─
+  // Pregunta cuántas notas hay (1 conteo, barato) y solo si cambió vuelve a pedir la página y
+  // reemplaza el hilo; la caja de respuesta no se toca, así no se pierde lo que estés escribiendo.
+  var revisandoChat = false;
+  function revisarChat() {
+    var hilo = document.querySelector('[data-chat-hilo][data-chat-conteo]');
+    if (!hilo || revisandoChat || document.hidden) return;
+    revisandoChat = true;
+    fetch(hilo.getAttribute('data-chat-conteo'), { headers: { accept: 'application/json' }, credentials: 'same-origin' })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) {
+        if (!d || String(d.n) === hilo.getAttribute('data-chat-n')) return null;
+        return fetch(location.pathname, { credentials: 'same-origin' })
+          .then(function (r) { return r.ok ? r.text() : null; })
+          .then(function (html) {
+            if (!html) return;
+            var nuevo = new DOMParser().parseFromString(html, 'text/html').querySelector('[data-chat-hilo]');
+            var actual = document.querySelector('[data-chat-hilo]');
+            if (!nuevo || !actual) return;
+            var abajo = actual.scrollHeight - actual.scrollTop - actual.clientHeight < 80;
+            actual.innerHTML = nuevo.innerHTML;
+            actual.setAttribute('data-chat-n', nuevo.getAttribute('data-chat-n') || String(d.n));
+            if (abajo) actual.scrollTop = actual.scrollHeight;
+            toast('💬 Llegó un mensaje nuevo al chat');
+            // Ya lo viste aquí: que no quede pendiente en la campana.
+            var chat = document.querySelector('[data-marcar-leida]');
+            if (chat) {
+              fetch(chat.getAttribute('data-marcar-leida'), {
+                method: 'POST',
+                headers: { 'x-csrf-token': cookie('x-csrf-token') },
+                credentials: 'same-origin',
+              }).then(function () { revisarRespuestas(false); }).catch(function () { /* se reintenta */ });
+            }
+          });
+      })
+      .catch(function () { /* sin red: se reintenta en la siguiente vuelta */ })
+      .finally(function () { revisandoChat = false; });
+  }
+  setInterval(revisarChat, 20 * 1000);
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) revisarChat(); });
+
   document.addEventListener('click', function (e) {
     var b = e.target.closest && e.target.closest('[data-activar-notificaciones]');
     if (!b || !('Notification' in window)) return;

@@ -17,6 +17,8 @@ export interface ITicketRepository {
 
   /** Guarda la nota; si es pública, marca el ticket `conPlatica`. */
   agregarNota(ticketId: string, nota: NotaTicket): Promise<void>;
+  /** Cuántas notas tiene el ticket (para que el chat abierto sepa si llegó algo, a 1 lectura). */
+  contarNotas(ticketId: string): Promise<number>;
   /** Relleno de una vez: marca `conPlatica` en los tickets que ya tenían mensajes públicos. Devuelve cuántos. */
   marcarConPlatica(): Promise<number>;
   listarNotas(ticketId: string): Promise<NotaTicket[]>;

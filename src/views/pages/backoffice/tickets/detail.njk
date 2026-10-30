@@ -32,7 +32,7 @@
       <div class="card chat" id="conversacion" data-marcar-leida="/app/tickets/{{ ticket.id }}/leida">
         <p class="chat__titulo"><strong>💬 Conversación</strong> <span class="muted">— cliente a la izquierda · equipo a la derecha · 🔒 notas internas en amarillo</span></p>
 
-        <div class="chat__hilo" data-chat-hilo>
+        <div class="chat__hilo" data-chat-hilo data-chat-conteo="/app/tickets/{{ ticket.id }}/notas/conteo" data-chat-n="{{ notasTotal }}">
           <div class="chat__msg chat__msg--cliente">
             <div class="chat__meta">
               <span class="chat__autor">📝 {{ ticket.contactoNombre or ticket.solicitadoPor or 'Cliente' }}</span>

@@ -144,3 +144,18 @@ describe('correo entrante por webhook (CloudMailin)', () => {
     expect(s!.imagenes).toHaveLength(1);
   });
 });
+
+describe('adjuntos incrustados de CloudMailin', () => {
+  it('una captura pegada en el cuerpo (inline, pesada) se guarda; un logo inline chico no; image/jpg cuenta como JPEG', () => {
+    const grande = 'A'.repeat(60 * 1024);
+    const c = correoDeCloudMailin({
+      headers: { from: 'Luis <luis@cliente.mx>', subject: 'Re: Ticket #7' },
+      plain: 'Va la captura',
+      attachments: [
+        { file_name: 'captura.jpg', content_type: 'image/jpg', content: grande, disposition: 'inline' },
+        { file_name: 'logo.png', content_type: 'image/png', content: 'iVBORw0KGgo=', disposition: 'inline' },
+      ],
+    });
+    expect(c.adjuntos?.map((a) => [a.nombre, a.contentType])).toEqual([['captura.jpg', 'image/jpeg']]);
+  });
+});
