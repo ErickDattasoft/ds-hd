@@ -1655,28 +1655,81 @@
       });
   });
 
-  // ── WhatsApp: abrir en WhatsApp Web o en la app instalada (preferencia local, como el viejo) ─
+  // ── WhatsApp: abrir en WhatsApp Web o en la app instalada. Por defecto pregunta cada vez
+  // (unos usan la web y otros la app); "Recordar" lo deja fijo en esta computadora. ─
   function modoWhatsApp() {
-    try { return localStorage.getItem('crm_whatsapp_modo') || 'web'; } catch { return 'web'; }
+    try { return localStorage.getItem('crm_whatsapp_modo') || 'preguntar'; } catch { return 'preguntar'; }
   }
-  /** Un enlace wa.me → WhatsApp Web si esa es la preferencia; si no, igual. */
-  function urlWhatsApp(href) {
-    if (modoWhatsApp() !== 'web' || href.indexOf('https://wa.me/') !== 0) return href;
+  /** Un enlace wa.me → WhatsApp Web o la app (`whatsapp://`), con el mismo número y texto. */
+  function urlWhatsApp(href, modo) {
+    if (href.indexOf('https://wa.me/') !== 0) return href;
     var u;
     try { u = new URL(href); } catch { return href; }
     var tel = u.pathname.replace(/\D/g, '');
     if (!tel) return href;
     var texto = u.searchParams.get('text');
-    return 'https://web.whatsapp.com/send?phone=' + tel + (texto ? '&text=' + encodeURIComponent(texto) : '');
+    var qs = 'phone=' + tel + (texto ? '&text=' + encodeURIComponent(texto) : '');
+    return modo === 'app' ? 'whatsapp://send?' + qs : 'https://web.whatsapp.com/send?' + qs;
+  }
+  function abrirWhatsApp(href, modo) {
+    var url = urlWhatsApp(href, modo);
+    // La app se abre por su protocolo: con window.open quedaría una pestaña en blanco.
+    if (modo === 'app') window.location.href = url;
+    else window.open(url, '_blank', 'noopener');
+  }
+  /** Pregunta dónde abrir (si no hay preferencia guardada) y llama a `listo(modo)`. */
+  function elegirWhatsApp(listo) {
+    var modo = modoWhatsApp();
+    if (modo === 'web' || modo === 'app') { listo(modo); return; }
+    var dlg = document.createElement('dialog');
+    dlg.className = 'card';
+    dlg.style.maxWidth = '26rem';
+    var h = document.createElement('h3');
+    h.textContent = '💬 ¿Dónde abrir WhatsApp?';
+    var lbl = document.createElement('label');
+    lbl.className = 'field--check';
+    var chk = document.createElement('input');
+    chk.type = 'checkbox';
+    var span = document.createElement('span');
+    span.textContent = 'Recordar en esta computadora (se cambia en Mi perfil)';
+    lbl.appendChild(chk);
+    lbl.appendChild(span);
+    var acciones = document.createElement('div');
+    acciones.className = 'page-head__actions';
+    acciones.style.marginTop = '0.75rem';
+    function boton(texto, clase, valor) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'btn btn--sm ' + clase;
+      b.textContent = texto;
+      b.addEventListener('click', function () {
+        dlg.close();
+        if (!valor) return;
+        if (chk.checked) { try { localStorage.setItem('crm_whatsapp_modo', valor); } catch { /* sin almacenamiento */ } }
+        listo(valor);
+      });
+      acciones.appendChild(b);
+    }
+    boton('🌐 WhatsApp Web', '', 'web');
+    boton('📲 App instalada', 'btn--secondary', 'app');
+    boton('Cancelar', 'btn--ghost', null);
+    dlg.appendChild(h);
+    dlg.appendChild(lbl);
+    dlg.appendChild(acciones);
+    dlg.addEventListener('close', function () { dlg.remove(); });
+    document.body.appendChild(dlg);
+    dlg.showModal();
   }
   document.addEventListener('click', function (e) {
     var a = e.target.closest && e.target.closest('a[href^="https://wa.me/"]');
-    if (a) a.href = urlWhatsApp(a.href);
+    if (!a || e.defaultPrevented) return;
+    e.preventDefault();
+    elegirWhatsApp(function (modo) { abrirWhatsApp(a.href, modo); });
   }, true);
   document.addEventListener('change', function (e) {
     if (!e.target.matches || !e.target.matches('[data-whatsapp-modo]')) return;
     try { localStorage.setItem('crm_whatsapp_modo', e.target.value); } catch { /* sin almacenamiento */ }
-    toast('📱 WhatsApp se abrirá con: ' + (e.target.value === 'app' ? 'la app instalada' : 'el navegador'));
+    toast(e.target.value === 'preguntar' ? '📱 WhatsApp preguntará cada vez dónde abrir' : '📱 WhatsApp se abrirá con: ' + (e.target.value === 'app' ? 'la app instalada' : 'el navegador'));
   });
   // ── ✉️ Correo: Zoho Mail web (como el viejo, por defecto) o el programa de la computadora ─
   function modoCorreo() {
@@ -2695,16 +2748,18 @@
       });
     if (!pendientes.length) { toast('✅ No hay pendientes de contactar por WhatsApp'); return; }
     if (!window.confirm('¿Abrir WhatsApp para ' + pendientes.length + ' persona(s) que aún no están marcadas como contactadas? Se abren una por una — hay que darle Enviar en cada una.')) return;
-    btn.disabled = true;
-    // Espaciadas 500ms para que el navegador no las bloquee como spam de ventanas.
-    pendientes.forEach(function (a, idx) {
-      setTimeout(function () {
-        window.open(urlWhatsApp(a.href), '_blank', 'noopener');
-        var url = a.getAttribute('data-marcar');
-        var ultimo = idx === pendientes.length - 1;
-        var p = url ? marcarContactado(url) : Promise.resolve();
-        if (ultimo) p.then(function () { window.location.reload(); });
-      }, idx * 500);
+    elegirWhatsApp(function (modo) {
+      btn.disabled = true;
+      // Espaciadas 500ms para que el navegador no las bloquee como spam de ventanas.
+      pendientes.forEach(function (a, idx) {
+        setTimeout(function () {
+          abrirWhatsApp(a.href, modo);
+          var url = a.getAttribute('data-marcar');
+          var ultimo = idx === pendientes.length - 1;
+          var p = url ? marcarContactado(url) : Promise.resolve();
+          if (ultimo) p.then(function () { window.location.reload(); });
+        }, idx * 500);
+      });
     });
   });
 

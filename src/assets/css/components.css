@@ -1369,3 +1369,9 @@ th.mercado__link { width: 28%; }
 }
 .ficha-datos dd { margin: 0; font-weight: 600; overflow-wrap: anywhere; }
 .ficha-datos dd.ficha-datos__notas { font-weight: 400; color: var(--color-text-muted); white-space: pre-line; }
+
+/* Diálogos armados desde app.js (`<dialog class="card">`): el reset de márgenes les quita
+   el centrado del navegador y el color del tema. */
+dialog.card { margin: auto; color: var(--color-text); }
+dialog.card::backdrop { background: rgb(0 0 0 / 0.55); }
+dialog.card .field--check { display: flex; gap: var(--space-2); align-items: flex-start; margin-top: var(--space-2); }
