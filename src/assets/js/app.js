@@ -2933,8 +2933,10 @@
     if (!(form instanceof HTMLFormElement) || form.hasAttribute('data-no-loading')) return;
     var btn = e.submitter || form.querySelector('button[type="submit"], input[type="submit"]');
     if (!btn || btn.hasAttribute('data-no-loading')) return;
-    btn.disabled = true;
     btn.classList.add('is-loading');
+    // Se deshabilita en el siguiente turno: deshabilitado ya durante el submit, el navegador y
+    // htmx dejan fuera su name/value (los avisos llegaban sin `accion` y se iban por correo).
+    setTimeout(function () { btn.disabled = true; }, 0);
   });
 
   /**
