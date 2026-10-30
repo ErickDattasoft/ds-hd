@@ -3,7 +3,18 @@
 {% block content %}
   <div class="page-head">
     <h1>Resultado del aviso de {{ 'versiones' if tipo == 'versiones' else 'licencias' }} ({{ 'WhatsApp' if canal == 'whatsapp' else 'correo' }})</h1>
-    <a class="btn btn--sm btn--ghost" href="/app/empresas">Volver a empresas</a>
+    <div class="page-head__actions">
+      {% if resultados | length %}
+        {# Regresar a elegir qué avisar a estas mismas empresas (p. ej. reintentar o cambiar de canal). #}
+        <form method="post" action="/app/empresas/avisar" class="page-head__actions">
+          <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+          {% for r in resultados %}<input type="hidden" name="empresaIds" value="{{ r.empresaId }}" />{% endfor %}
+          <button class="btn btn--sm btn--secondary" type="submit" name="accion" value="{{ tipo }}-correo">↩️ Regresar · correo</button>
+          <button class="btn btn--sm btn--secondary" type="submit" name="accion" value="{{ tipo }}-whatsapp">↩️ Regresar · WhatsApp</button>
+        </form>
+      {% endif %}
+      <a class="btn btn--sm btn--ghost" href="/app/empresas">Volver a empresas</a>
+    </div>
   </div>
   {% if resultados | selectattr('whatsappManual') | list | length %}
     <p class="alert alert--warn">Estos mensajes no se mandaron solos: abre cada chat con el botón
