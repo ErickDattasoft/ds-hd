@@ -13,6 +13,7 @@ import { buildRouter } from './interfaces/http/routes/index.js';
 import { securityHeaders } from './interfaces/http/middlewares/securityHeaders.js';
 import { errorHandler, notFoundHandler } from './interfaces/http/middlewares/errorHandler.js';
 import { ZONA_MEXICO } from './core/entities/value-objects/horaMexico.js';
+import { conLecturas } from './infrastructure/firestore-rest/lecturas.js';
 
 /** Carpetas de assets/vistas, resueltas desde la raíz del proceso (igual en dev y en Docker). */
 const VIEWS_DIR = join(process.cwd(), 'src', 'views');
@@ -138,18 +139,18 @@ export function createApp(container: Container, options: CreateAppOptions = {}):
   // ── Middlewares base ────────────────────────────────────────────────────────
   if (runtime === 'workers') {
     app.use((req, res, next) => {
-      if (req.url !== '/healthz') {
-        const inicio = Date.now();
-        res.on('finish', () =>
-          logger.info('request', {
-            method: req.method,
-            url: req.url,
-            status: res.statusCode,
-            ms: Date.now() - inicio,
-          }),
-        );
-      }
-      next();
+      if (req.url === '/healthz') return next();
+      const inicio = Date.now();
+      const { lecturas } = conLecturas(() => next());
+      res.on('finish', () =>
+        logger.info('request', {
+          method: req.method,
+          url: req.url,
+          status: res.statusCode,
+          ms: Date.now() - inicio,
+          lecturas: lecturas(),
+        }),
+      );
     });
   } else {
     app.use(

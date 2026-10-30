@@ -1898,7 +1898,8 @@
   }
   /** Pide el conteo al servidor; con `avisar`, una respuesta nueva da toast y aviso del navegador. */
   function revisarRespuestas(avisar) {
-    if (!document.querySelector('[data-campana-respuestas]')) return;
+    // Pestaña oculta (o de noche) no consulta: cada vuelta gasta cuota de Firestore.
+    if (!document.querySelector('[data-campana-respuestas]') || (avisar && document.hidden)) return;
     fetch('/app/tickets/respuestas/contador', { headers: { accept: 'application/json' }, credentials: 'same-origin' })
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (d) {
@@ -1918,6 +1919,7 @@
   }
   // Un solo intervalo por pestaña (sobrevive a las navegaciones con hx-boost).
   setInterval(function () { revisarRespuestas(true); }, 60 * 1000);
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) revisarRespuestas(true); });
 
   // ── Chat del ticket en vivo: si llegó un mensaje (por correo o de otro agente), se pinta solo ─
   // Pregunta cuántas notas hay (1 conteo, barato) y solo si cambió vuelve a pedir la página y

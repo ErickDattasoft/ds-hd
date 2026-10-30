@@ -16,6 +16,7 @@ import { buildContainer } from './config/container.js';
 import { loadConfig } from './config/env.js';
 import { APP_VERSION } from './config/version.js';
 import { ConsoleLogger } from './infrastructure/system/ConsoleLogger.js';
+import { conLecturas } from './infrastructure/firestore-rest/lecturas.js';
 
 const PORT = 8787;
 
@@ -46,10 +47,13 @@ export default {
    */
   async scheduled(_evento: unknown, _env: unknown, ctx: { waitUntil(p: Promise<unknown>): void }): Promise<void> {
     const { correoEntranteService, logger } = container.cradle;
+    const { resultado, lecturas } = conLecturas(() => correoEntranteService.revisar());
     ctx.waitUntil(
-      correoEntranteService.revisar().catch((err: unknown) => {
-        logger.warn('Revisión de Zoho (cron) falló', { err: err instanceof Error ? err.message : String(err) });
-      }),
+      resultado
+        .catch((err: unknown) => {
+          logger.warn('Revisión de Zoho (cron) falló', { err: err instanceof Error ? err.message : String(err) });
+        })
+        .finally(() => logger.info('cron Zoho', { lecturas: lecturas() })),
     );
   },
 };

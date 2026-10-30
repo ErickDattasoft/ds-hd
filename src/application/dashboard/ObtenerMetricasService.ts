@@ -157,10 +157,10 @@ export class ObtenerMetricasService {
     const puedeVerBuzon = actor.permisos.includes('tickets:crear');
 
     const puedeVerTareas = actor.permisos.includes('seguimiento:leer');
-    const [abiertos, todos, contarPorEstado, proximos, misTareas, bita, licencias, publicos, contactosTotal, pendientesEquipo] =
+    const [conArchivados, contarPorEstado, proximos, misTareas, bita, licencias, publicos, contactosTotal, pendientesEquipo] =
       await Promise.all([
-        this.ticketQueries.listar({ ...alcance, soloAbiertos: true }),
-        this.ticketQueries.listar({ ...alcance, archivado: false }),
+        // Una sola lectura de los tickets (cuota de Firestore): abiertos y no archivados salen de aquí.
+        this.ticketQueries.listar({ ...alcance }),
         // Un conteo del servidor por estado (en paralelo) en vez de descargar todas las cotizaciones.
         Promise.all(
           (['borrador', 'enviada', 'aceptada', 'rechazada', 'vencida'] as const).map(async (e) => [e, await this.cotizaciones.contarEnEstado(e)] as const),
@@ -178,6 +178,8 @@ export class ObtenerMetricasService {
         puedeVerTareas ? this.tareas.list({ completada: false }) : Promise.resolve([]),
       ]);
 
+    const abiertos = conArchivados.filter((t) => !t.esResuelto && !t.esCerrado);
+    const todos = conArchivados.filter((t) => !t.archivado);
     const conteoEstados = new Map<string, number>();
     for (const t of todos) conteoEstados.set(t.estado, (conteoEstados.get(t.estado) ?? 0) + 1);
     const rango = (e: string): number => (ORDEN_ESTADOS.includes(e) ? ORDEN_ESTADOS.indexOf(e) : ORDEN_ESTADOS.length);

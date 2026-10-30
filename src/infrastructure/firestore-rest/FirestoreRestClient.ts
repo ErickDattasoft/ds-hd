@@ -17,6 +17,7 @@ import {
   type RestFields,
   type RestValue,
 } from './valueCodec.js';
+import { sumarLecturas } from './lecturas.js';
 
 const OP_REST: Record<string, string> = {
   '==': 'EQUAL',
@@ -315,6 +316,7 @@ export class FirestoreRestClient {
       ...(transaction ? { transaction } : {}),
     });
     const filas = (await res.json()) as Array<{ found?: RestDocument; missing?: string }>;
+    sumarLecturas(1);
     return new RestDocumentSnapshot(ref, filas.find((f) => f.found)?.found ?? null);
   }
 
@@ -377,6 +379,7 @@ export class FirestoreRestClient {
         const path = doc.name.slice(doc.name.indexOf('/documents/') + '/documents/'.length);
         return new RestDocumentSnapshot(new RestDocumentReference(this, path), doc);
       });
+    sumarLecturas(Math.max(1, docs.length));
     return new RestQuerySnapshot(docs);
   }
 
@@ -389,7 +392,9 @@ export class FirestoreRestClient {
     });
     const filas = (await res.json()) as Array<{ result?: { aggregateFields?: { c?: RestValue } } }>;
     const raw = filas[0]?.result?.aggregateFields?.c?.integerValue;
-    return raw ? Number(raw) : 0;
+    const n = raw ? Number(raw) : 0;
+    sumarLecturas(Math.max(1, Math.ceil(n / 1000)));
+    return n;
   }
 
   // ── HTTP ─────────────────────────────────────────────────────────────────

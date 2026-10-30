@@ -13,7 +13,7 @@ const uploadExcel = uploadSingleFile('archivo', 10 * 1024 * 1024);
  * iban uno tras otro: ~6 viajes a Firestore antes de empezar la página pedida) y guardados
  * unos segundos por instancia de la app, para que ir de un apartado a otro no los repita.
  */
-const CONTADORES_TTL_MS = 20_000;
+const CONTADORES_TTL_MS = 120_000;
 const cacheContadores = new WeakMap<object, Map<string, { valor: number; exp: number }>>();
 
 async function contadoresDelMenu(
