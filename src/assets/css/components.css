@@ -1377,3 +1377,22 @@ th.mercado__link { width: 28%; }
 dialog.card { margin: auto; color: var(--color-text); }
 dialog.card::backdrop { background: rgb(0 0 0 / 0.55); }
 dialog.card .field--check { display: flex; gap: var(--space-2); align-items: flex-start; margin-top: var(--space-2); }
+
+/* Aviso de licencias del dashboard: cabeza en un renglón (resumen + botones) y una tarjetita por empresa. */
+.banner-lic__cabeza { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-2) var(--space-4); }
+.banner-lic__cascada { margin-top: var(--space-2); }
+.banner-lic__cascada > summary { cursor: pointer; font-size: var(--text-sm); font-weight: 600; width: fit-content; }
+/* Con muchas empresas la lista no empuja el dashboard: un renglón por empresa, con su propio scroll. */
+.banner-lic__lista {
+  max-height: 18rem; overflow-y: auto;
+  list-style: none; margin: var(--space-2) 0 0; padding: 0;
+  border: 1px solid var(--color-border); border-radius: var(--radius-md, 8px);
+}
+.banner-lic__item {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-surface);
+}
+.banner-lic__item + .banner-lic__item { border-top: 1px solid var(--color-border); }
+.banner-lic__empresa { font-weight: 600; overflow-wrap: anywhere; }
+.banner-lic__detalle { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: var(--space-2); font-size: var(--text-sm); }

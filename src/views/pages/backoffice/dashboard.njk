@@ -104,24 +104,32 @@
   {% for e in m.licencias.banner %}{% set _ = firmas.push(e.empresaId + '|' + e.vencidas + '|' + e.porVencer + '|' + e.diasMin) %}{% endfor %}
   <div class="alert alert--warn" role="alert" id="banner-licencias"
        data-firma-alertas="{{ firmas | sort | join(';') }}">
-    <p><strong>Licencias por vencer</strong> — {{ m.licencias.empresasEnRiesgo }}
-    empresa{{ 's' if m.licencias.empresasEnRiesgo != 1 }} con
-    {{ m.licencias.vencidas }} vencida{{ 's' if m.licencias.vencidas != 1 }} y
-    {{ m.licencias.porVencer }} por vencer.</p>
-    <ul class="alert__list">
+    <div class="banner-lic__cabeza">
+      <div>
+        <strong>⏰ Licencias por vencer</strong>
+        <span class="muted">— {{ m.licencias.empresasEnRiesgo }} empresa{{ 's' if m.licencias.empresasEnRiesgo != 1 }}:
+          {{ m.licencias.vencidas }} vencida{{ 's' if m.licencias.vencidas != 1 }} · {{ m.licencias.porVencer }} por vencer</span>
+      </div>
+      <div class="page-head__actions">
+        <a class="btn btn--secondary btn--sm" href="/app/empresas?pendientes=licencias">Ver todas y avisar</a>
+        <button type="button" class="btn btn--ghost btn--sm" data-descartar-banner="#banner-licencias">✕ Descartar</button>
+      </div>
+    </div>
+    <details class="banner-lic__cascada">
+      <summary>Ver las {{ m.licencias.banner | length }} empresa{{ 's' if m.licencias.banner | length != 1 }}</summary>
+    <ul class="banner-lic__lista">
       {% for e in m.licencias.banner %}
-        <li>
-          <a href="/app/empresas/{{ e.empresaId }}">{{ e.nombre }}</a>
-          {% if e.vencidas %}<span class="badge badge--danger">{{ e.vencidas }} vencida{{ 's' if e.vencidas != 1 }}</span>{% endif %}
-          {% if e.porVencer %}<span class="badge badge--warning">{{ e.porVencer }} por vencer</span>{% endif %}
-          {% if e.diasMin >= 0 %}<span class="muted">en {{ e.diasMin }} d</span>{% else %}<span class="muted">hace {{ 0 - e.diasMin }} d</span>{% endif %}
+        <li class="banner-lic__item">
+          <a class="banner-lic__empresa" href="/app/empresas/{{ e.empresaId }}">{{ e.nombre }}</a>
+          <span class="banner-lic__detalle">
+            {% if e.vencidas %}<span class="badge badge--danger">{{ e.vencidas }} vencida{{ 's' if e.vencidas != 1 }}</span>{% endif %}
+            {% if e.porVencer %}<span class="badge badge--warning">{{ e.porVencer }} por vencer</span>{% endif %}
+            <span class="muted">{% if e.diasMin > 0 %}vence en {{ e.diasMin }} día{{ 's' if e.diasMin != 1 }}{% elif e.diasMin == 0 %}vence hoy{% else %}venció hace {{ 0 - e.diasMin }} día{{ 's' if e.diasMin != -1 }}{% endif %}</span>
+          </span>
         </li>
       {% endfor %}
     </ul>
-    <div class="page-head__actions">
-      <a class="btn btn--secondary btn--sm" href="/app/empresas?pendientes=licencias">Ver todas y avisar</a>
-      <button type="button" class="btn btn--ghost btn--sm" data-descartar-banner="#banner-licencias">✕ Descartar</button>
-    </div>
+    </details>
   </div>
   {% endif %}
 
