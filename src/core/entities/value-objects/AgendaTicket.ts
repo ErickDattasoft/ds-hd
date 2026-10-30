@@ -1,4 +1,5 @@
 import { ValidationError } from '../../errors/DomainError.js';
+import { instanteMexico } from './horaMexico.js';
 
 /**
  * Programación de atención de un ticket ("📅 Programar atención" del CRM viejo): una fecha y
@@ -56,7 +57,7 @@ export function sanearAgenda(v: unknown): AgendaTicket | null {
   return { fecha, hora, recordatorioWhatsapp: d.recordatorioWhatsapp === true, destinatarios: nombres(d.destinatarios) };
 }
 
-/** La fecha/hora programada como `Date` (hora local del proceso, igual que el CRM viejo). */
+/** La fecha/hora programada (capturada en hora de México) como instante. */
 export function fechaHoraAgenda(a: AgendaTicket): Date {
-  return new Date(`${a.fecha}T${a.hora}:00`);
+  return instanteMexico(a.fecha, a.hora);
 }

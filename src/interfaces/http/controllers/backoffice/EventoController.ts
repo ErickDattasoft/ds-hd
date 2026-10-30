@@ -10,6 +10,7 @@ import {
   type RespuestaInvitacion,
 } from '../../../../core/entities/Evento.js';
 import { camposDeError } from '../../support/errores.js';
+import { datetimeLocalMexico } from '../../../../core/entities/value-objects/horaMexico.js';
 
 const str = (v: unknown): string => (typeof v === 'string' ? v : '');
 const n = (v: unknown): number => (Number.isFinite(Number(v)) ? Number(v) : 0);
@@ -43,7 +44,7 @@ export class EventoController {
       titulo: `Editar ${evento.titulo}`,
       modo: 'editar',
       evento,
-      valores: { ...evento, fechaHora: evento.fechaHora.toISOString().slice(0, 16) },
+      valores: { ...evento, fechaHora: datetimeLocalMexico(evento.fechaHora) },
       plantillaPorDefecto: PLANTILLA_EVENTO_DEFAULT,
       errores: {},
     });

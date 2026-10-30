@@ -12,6 +12,7 @@ import { INFO_APP } from './core/entities/AcercaDe.js';
 import { buildRouter } from './interfaces/http/routes/index.js';
 import { securityHeaders } from './interfaces/http/middlewares/securityHeaders.js';
 import { errorHandler, notFoundHandler } from './interfaces/http/middlewares/errorHandler.js';
+import { ZONA_MEXICO } from './core/entities/value-objects/horaMexico.js';
 
 /** Carpetas de assets/vistas, resueltas desde la raíz del proceso (igual en dev y en Docker). */
 const VIEWS_DIR = join(process.cwd(), 'src', 'views');
@@ -56,18 +57,8 @@ function installViewEngine(app: Express, config: AppConfig, precompiled: boolean
   env.addGlobal('APP_VERSION', APP_VERSION);
   env.addFilter('json', (value: unknown) => JSON.stringify(value, null, 2));
 
-  // El Worker corre en UTC: sin zona, toda hora salía 6 h adelantada. Los eventos son la
-  // excepción: su hora se guarda tal cual se capturó (10:00 → 10:00 UTC), así que sus
-  // plantillas piden `'UTC'` para mostrarla igual que se escribió.
-  const ZONA = 'America/Mexico_City';
-  const formatos = new Map<string, Intl.DateTimeFormat>();
-  const fmt = (opciones: Intl.DateTimeFormatOptions, zona: unknown): Intl.DateTimeFormat => {
-    const timeZone = zona === 'UTC' ? 'UTC' : ZONA;
-    const clave = JSON.stringify(opciones) + timeZone;
-    let f = formatos.get(clave);
-    if (!f) formatos.set(clave, (f = new Intl.DateTimeFormat('es-MX', { ...opciones, timeZone })));
-    return f;
-  };
+  // El Worker corre en UTC: sin zona, toda hora salía 6 h adelantada.
+  const fmt = (opciones: Intl.DateTimeFormatOptions) => new Intl.DateTimeFormat('es-MX', { ...opciones, timeZone: ZONA_MEXICO });
   const asDate = (v: unknown): Date | null => {
     // Una fecha ISO sin hora ("2026-10-15") se interpreta como mediodía UTC para que no
     // "retroceda" un día al formatearse en la zona horaria de México.
@@ -75,9 +66,12 @@ function installViewEngine(app: Express, config: AppConfig, precompiled: boolean
     const d = raw instanceof Date ? raw : typeof raw === 'string' || typeof raw === 'number' ? new Date(raw) : null;
     return d && !Number.isNaN(d.getTime()) ? d : null;
   };
-  const filtroFecha = (opciones: Intl.DateTimeFormatOptions) => (v: unknown, zona?: unknown) => {
-    const d = asDate(v);
-    return d ? fmt(opciones, zona).format(d) : '—';
+  const filtroFecha = (opciones: Intl.DateTimeFormatOptions) => {
+    const f = fmt(opciones);
+    return (v: unknown) => {
+      const d = asDate(v);
+      return d ? f.format(d) : '—';
+    };
   };
   env.addFilter('fecha', filtroFecha({ dateStyle: 'medium' }));
   env.addFilter('fechahora', filtroFecha({ dateStyle: 'medium', timeStyle: 'short' }));

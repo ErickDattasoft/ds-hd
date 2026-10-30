@@ -26,6 +26,7 @@ import { CONFIG_AVISOS_POR_DEFECTO, type ConfiguracionAvisos, type ContactoSopor
 import { CONTADOR_TICKETS } from '../tickets/constantes.js';
 import { arr, hashId, slug, RE_DIACRITICOS } from './lib.js';
 import type { Container } from '../../config/container.js';
+import { instanteMexico } from '../../core/entities/value-objects/horaMexico.js';
 
 
 /** Cómo se reporta el avance y si se escribe de verdad. */
@@ -93,7 +94,7 @@ export function crearImportadores({ dryRun: DRY_RUN, log }: OpcionesImportacion)
   /** `fecha` (YYYY-MM-DD) + `hora` (HH:MM) del CRM viejo → un solo `Date`. */
   const fechaHoraDe = (dia: string, hora: string): Date => {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(dia)) return new Date();
-    const d = new Date(`${dia}T${/^\d{2}:\d{2}$/.test(hora) ? hora : '09:00'}:00`);
+    const d = instanteMexico(dia, /^\d{2}:\d{2}$/.test(hora) ? hora : '09:00');
     return Number.isNaN(d.getTime()) ? new Date() : d;
   };
 

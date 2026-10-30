@@ -4,6 +4,7 @@ import type { ITareaRepository } from '../../core/ports/repositories/ISeguimient
 import type { IClock } from '../../core/ports/services/IClock.js';
 import type { SessionUser } from '../shared/SessionUser.js';
 import { alcanceTickets } from '../tickets/alcance.js';
+import { relojMexico } from '../../core/entities/value-objects/horaMexico.js';
 
 /** Un elemento agendado en un día del calendario. */
 export interface ItemAgenda {
@@ -56,7 +57,7 @@ export class AgendaService {
   ) {}
 
   async mes(actor: SessionUser, anio: number, mes: number): Promise<CalendarioMes> {
-    const ahora = this.clock.now();
+    const ahora = relojMexico(this.clock.now());
     const inicioMes = new Date(anio, mes, 1);
     const finMes = new Date(anio, mes + 1, 0, 23, 59, 59);
 
@@ -89,8 +90,8 @@ export class AgendaService {
     const totales = { tickets: 0, eventos: 0, tareas: 0 };
 
     for (const t of ticketsProg) {
-      const cuando = t.fechaHoraProgramada;
-      if (!cuando) continue;
+      if (!t.fechaHoraProgramada) continue;
+      const cuando = relojMexico(t.fechaHoraProgramada);
       totales.tickets++;
       push(cuando, {
         tipo: 'ticket',
@@ -101,7 +102,8 @@ export class AgendaService {
         orden: cuando.getHours() * 60 + cuando.getMinutes(),
       });
     }
-    for (const e of todosEventos) {
+    for (const ev of todosEventos) {
+      const e = { ...ev, fechaHora: relojMexico(ev.fechaHora) };
       if (e.fechaHora < inicioMes || e.fechaHora > finMes) continue;
       totales.eventos++;
       push(e.fechaHora, {

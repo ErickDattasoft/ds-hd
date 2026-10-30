@@ -1,4 +1,5 @@
 import { ConflictError, NotFoundError, ValidationError } from '../errors/DomainError.js';
+import { ZONA_MEXICO } from './value-objects/horaMexico.js';
 
 export type EstadoEvento = 'borrador' | 'publicado' | 'finalizado' | 'cancelado';
 
@@ -25,8 +26,9 @@ export function resolverComodinesEvento(
     day: 'numeric',
     month: 'long',
     year: 'numeric',
+    timeZone: ZONA_MEXICO,
   });
-  const horaFmt = evento.fechaHora.toLocaleTimeString('es-MX', { hour: 'numeric', minute: '2-digit' });
+  const horaFmt = evento.fechaHora.toLocaleTimeString('es-MX', { hour: 'numeric', minute: '2-digit', timeZone: ZONA_MEXICO });
   return texto
     .replace(/\[nombre\]/g, inscrito.nombre || '')
     .replace(/\[evento\]/g, evento.titulo || '')

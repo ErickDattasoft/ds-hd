@@ -26,6 +26,7 @@ import { esTelefonoPlausible } from '../../core/entities/value-objects/Telefono.
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '../../core/errors/DomainError.js';
 import type { BitacoraService } from '../shared/BitacoraService.js';
 import type { SessionUser } from '../shared/SessionUser.js';
+import { ZONA_MEXICO, instanteDeDatetimeLocal } from '../../core/entities/value-objects/horaMexico.js';
 
 /** Datos editables de un evento (alta o edición, uso staff). */
 export interface DatosEvento {
@@ -118,7 +119,7 @@ export class EventoService {
       id: id ?? this.ids.newId(),
       titulo: datos.titulo,
       descripcion: datos.descripcion ?? null,
-      fechaHora: new Date(datos.fechaHora),
+      fechaHora: instanteDeDatetimeLocal(datos.fechaHora),
       cupo: datos.cupo ?? previo?.cupo ?? 0,
       estado: datos.estado ?? previo?.estado ?? 'borrador',
       urlWebinar: datos.urlWebinar ?? previo?.urlWebinar ?? null,
@@ -355,7 +356,7 @@ export class EventoService {
       usaSistema: i.usaSistema ?? '',
       canalWsp: si(i.deseaCanalWhatsapp),
       contactadoWsp: i.telefono ? si(i.contactadoWsp) : '',
-      fecha: i.createdAt.toLocaleDateString('es-MX', { timeZone: 'America/Mexico_City' }),
+      fecha: i.createdAt.toLocaleDateString('es-MX', { timeZone: ZONA_MEXICO }),
     }));
     const buffer = await this.excel.escribir('Inscritos', columnas, filas);
     const slug = evento.titulo.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || eventoId;
@@ -742,7 +743,7 @@ export class EventoService {
     await this.email.enviar({
       para: [{ email: ins.email, nombre: ins.nombre }],
       asunto: `Registro confirmado: ${evento.titulo}`,
-      html: `<p>Hola ${ins.nombre}, tu registro para <strong>${evento.titulo}</strong> (${evento.fechaHora.toLocaleString('es-MX')}) quedó confirmado.</p>
+      html: `<p>Hola ${ins.nombre}, tu registro para <strong>${evento.titulo}</strong> (${evento.fechaHora.toLocaleString('es-MX', { timeZone: ZONA_MEXICO })}) quedó confirmado.</p>
              ${mensajePersonalizado}
              <p>Detalles: ${this.baseUrl}/eventos/${evento.id}</p>`,
       tags: ['evento-confirmacion', `evento-${evento.id}`, `insc_${ins.id}`],
