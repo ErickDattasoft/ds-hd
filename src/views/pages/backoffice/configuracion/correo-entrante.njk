@@ -80,21 +80,23 @@
   </div>
 
   <div class="card">
-    <p><strong>Alternativa: revisar el buzón por la API de Zoho</strong> (requiere autorizar una aplicación en Zoho).</p>
-    <p>Cada hora el sistema revisa un buzón de <strong>Zoho Mail</strong>. Si un correo trae el número
-      de ticket en el asunto (<code>Ticket #123</code>), su texto se agrega como respuesta en ese ticket.
-      <strong>No hay que tocar nada del dominio</strong>: solo autorizar una vez la aplicación en Zoho.</p>
+    <p><strong>Respuestas con imágenes: revisar el buzón por la API de Zoho</strong> (requiere autorizar una aplicación en Zoho, una sola vez).</p>
+    <p>CloudMailin gratis <strong>rechaza los correos de más de 512 KB</strong>: una respuesta con una foto o captura nunca llega por ahí.
+      Con esto, cada <strong>5 minutos</strong> el sistema revisa el buzón de <strong>Zoho Mail</strong> y trae las respuestas
+      con número de ticket en el asunto (<code>Ticket #123</code>) <strong>que traen archivos</strong>, con sus imágenes
+      (hasta 5 MB c/u). Las de solo texto siguen llegando al instante por CloudMailin; si una llega por los dos caminos, no se duplica.
+      <strong>Solo lee</strong>: no marca nada como leído ni mueve correos de tu buzón.</p>
     <details class="disclosure">
       <summary class="disclosure__summary">❓ Cómo obtener los datos de Zoho (una sola vez)</summary>
       <div class="disclosure__body">
         <ol>
           <li>Entra a <a href="https://api-console.zoho.com" target="_blank" rel="noopener">api-console.zoho.com</a> con la cuenta de DATTASOFT y crea un cliente de tipo <strong>Self Client</strong>.</li>
           <li>Copia el <strong>Client ID</strong> y el <strong>Client Secret</strong> y pégalos aquí abajo.</li>
-          <li>En la pestaña "Generate Code" pide un código con el ámbito
-            <code>ZohoMail.messages.ALL,ZohoMail.accounts.READ</code>, duración 10 minutos.</li>
-          <li>Cambia ese código por un <strong>refresh token</strong> (el que no expira) y pégalo aquí.
-            Si no sabes cómo, dímelo y te paso el comando exacto.</li>
-          <li>Guarda, y luego usa <strong>Probar conexión</strong>: el sistema descubre solo el id de la cuenta.</li>
+          <li>En la pestaña <strong>Generate Code</strong> escribe en <em>Scope</em>
+            <code>ZohoMail.messages.READ,ZohoMail.accounts.READ</code>, elige <strong>10 minutes</strong>, una descripción cualquiera, y dale <strong>Create</strong>.</li>
+          <li>Copia el código que sale y pégalo abajo en <strong>Código de Zoho</strong> (junto con el Client ID y el Client Secret) y dale <strong>Guardar</strong>
+            antes de que pasen los 10 minutos: el sistema lo cambia solo por el refresh token, que ya no expira.</li>
+          <li>Usa <strong>Probar conexión</strong> (descubre solo el id de la cuenta), marca <strong>Revisar el buzón automáticamente</strong> y guarda otra vez.</li>
         </ol>
       </div>
     </details>
@@ -104,14 +106,18 @@
     <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
     <label class="field--check">
       <input type="checkbox" name="habilitado" {{ 'checked' if cfg.habilitado }} />
-      <span>Revisar el buzón automáticamente cada hora</span>
+      <span>Revisar el buzón automáticamente (cada 5 minutos)</span>
     </label>
     <div class="form-grid">
       <label class="field"><span>Client ID</span><input name="clientId" value="{{ cfg.clientId }}" autocomplete="off" /></label>
       <label class="field"><span>Client Secret</span>
         <input type="password" name="clientSecret" autocomplete="off" placeholder="{{ '•••••••• guardado — vacío para conservarlo' if cfg.clientSecret }}" />
       </label>
-      <label class="field"><span>Refresh token</span>
+      <label class="field"><span>Código de Zoho (Generate Code)</span>
+        <input name="codigo" autocomplete="off" placeholder="1000.xxxx… — dura 10 minutos" />
+        <em class="field__hint">Se cambia solo por el refresh token al guardar. {{ '✅ Ya hay refresh token guardado.' if cfg.refreshToken }}</em>
+      </label>
+      <label class="field"><span>Refresh token (si ya lo tienes)</span>
         <input type="password" name="refreshToken" autocomplete="off" placeholder="{{ '•••••••• guardado — vacío para conservarlo' if cfg.refreshToken }}" />
       </label>
       <label class="field"><span>Región de Zoho</span>
@@ -129,7 +135,7 @@
       <input type="checkbox" name="soloContactoDelTicket" {{ 'checked' if cfg.soloContactoDelTicket }} />
       <span>Aceptar la respuesta solo si viene del contacto del ticket (recomendado)</span>
     </label>
-    <p class="muted">Un correo que no se pueda ligar a un ticket se queda sin leer en el buzón para que lo atiendas a mano.</p>
+    <p class="muted">Un correo que no se pueda ligar a un ticket se queda en el buzón para que lo atiendas a mano.</p>
     <button class="btn" type="submit">Guardar</button>
   </form>
 

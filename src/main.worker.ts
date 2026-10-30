@@ -35,4 +35,21 @@ app.listen(PORT, () => {
   });
 });
 
-export default httpServerHandler({ port: PORT });
+const http = httpServerHandler({ port: PORT });
+
+export default {
+  fetch: (request: Request, env: unknown, ctx: unknown) => http.fetch(request, env, ctx),
+  /**
+   * Cron Trigger de Cloudflare (`triggers.crons` en wrangler.jsonc, cada 5 min): revisa el buzón
+   * de Zoho para traer las respuestas con imágenes, que CloudMailin gratis rechaza por tamaño.
+   * El resto de los jobs sigue en el cron horario de GitHub.
+   */
+  async scheduled(_evento: unknown, _env: unknown, ctx: { waitUntil(p: Promise<unknown>): void }): Promise<void> {
+    const { correoEntranteService, logger } = container.cradle;
+    ctx.waitUntil(
+      correoEntranteService.revisar().catch((err: unknown) => {
+        logger.warn('Revisión de Zoho (cron) falló', { err: err instanceof Error ? err.message : String(err) });
+      }),
+    );
+  },
+};

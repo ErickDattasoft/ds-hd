@@ -13,6 +13,8 @@
     "directory": "worker-dist/assets",
     "binding": "ASSETS"
   },
+  // Cada 5 min: respuestas de clientes con imágenes desde Zoho (ver `scheduled` en main.worker.ts).
+  "triggers": { "crons": ["*/5 * * * *"] },
   "observability": {
     "enabled": true
   },

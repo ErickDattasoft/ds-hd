@@ -455,16 +455,22 @@ export class ConfiguracionController {
 
   correoEntrantePost = async (req: Request, res: Response): Promise<void> => {
     const b = req.body ?? {};
-    await this.correoEntrante.guardar(req.user!, {
-      habilitado: b.habilitado === 'on',
-      region: str(b.region),
-      clientId: str(b.clientId),
-      clientSecret: str(b.clientSecret),
-      refreshToken: str(b.refreshToken),
-      accountId: str(b.accountId),
-      carpeta: str(b.carpeta),
-      soloContactoDelTicket: b.soloContactoDelTicket === 'on',
-    });
+    try {
+      await this.correoEntrante.guardar(req.user!, {
+        habilitado: b.habilitado === 'on',
+        region: str(b.region),
+        clientId: str(b.clientId),
+        clientSecret: str(b.clientSecret),
+        refreshToken: str(b.refreshToken),
+        codigo: str(b.codigo),
+        accountId: str(b.accountId),
+        carpeta: str(b.carpeta),
+        soloContactoDelTicket: b.soloContactoDelTicket === 'on',
+      });
+    } catch (err) {
+      await this.renderCorreoEntrante(req, res, { error: err instanceof Error ? err.message : 'No se pudo guardar' });
+      return;
+    }
     await this.auditar(req, 'Correo entrante (Zoho) actualizado');
     await this.renderCorreoEntrante(req, res, { guardado: true });
   };

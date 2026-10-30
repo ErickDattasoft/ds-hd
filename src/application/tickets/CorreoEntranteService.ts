@@ -79,6 +79,8 @@ export interface ResultadoCorreoEntrante {
 }
 
 const LIMITE = 25;
+/** `procesar` con este motivo = la respuesta ya estaba en el ticket (no es un error). */
+const YA_ESTABA = 'ya estaba en el ticket';
 
 /**
  * Convierte las respuestas que llegan al buzón de soporte en notas del ticket correspondiente.
@@ -171,39 +173,71 @@ export class CorreoEntranteService {
     return { accion: 'solicitud', folio };
   }
 
-  /** Revisa el buzón. `forzado` = lo pidió una persona desde Configuración (ignora "habilitado"). */
+  /**
+   * Revisa el buzón de Zoho: lo que llegó desde la última revisión con número de ticket en el
+   * asunto. Con CloudMailin activo solo toma los correos con adjuntos (los demás ya llegaron por
+   * ahí al instante, y CloudMailin gratis rechaza los de más de 512 KB). No marca nada como leído:
+   * recuerda hasta qué fecha revisó. `forzado` = lo pidió una persona desde Configuración.
+   */
   async revisar(opts: { forzado?: boolean } = {}): Promise<ResultadoCorreoEntrante> {
     const cfg = await this.config.obtenerCorreoEntrante();
     const resultado: ResultadoCorreoEntrante = { revisados: 0, agregados: 0, omitidos: [] };
     if (!cfg.habilitado && !opts.forzado) return resultado;
 
-    const correos = await this.buzon.listarNoLeidos(cfg, LIMITE);
+    const ahora = this.clock.now();
+    // La primera vez solo la última hora: no se trae el historial completo del buzón.
+    const desde = cfg.zohoRevisadoHasta ? new Date(cfg.zohoRevisadoHasta) : new Date(ahora.getTime() - 3_600_000);
+    const correos = await this.buzon.listarRecientes(cfg, {
+      desde,
+      soloConAdjuntos: this.webhookActivo(cfg),
+      limite: LIMITE,
+    });
+    let hasta = desde;
+    let repetidos = 0;
     for (const correo of correos) {
       resultado.revisados++;
+      if (correo.recibidoEn > hasta) hasta = correo.recibidoEn;
       const motivo = await this.procesar(correo, cfg);
+      if (motivo === YA_ESTABA) {
+        repetidos++;
+        continue;
+      }
       if (motivo) {
+        // Se queda en el buzón para atenderlo a mano; no se reintenta en cada vuelta.
         resultado.omitidos.push({ asunto: correo.asunto, de: correo.de, motivo });
-        // No se marca como leído: queda en el buzón para atenderlo a mano.
         continue;
       }
       resultado.agregados++;
-      try {
-        await this.buzon.marcarLeido(cfg, correo);
-      } catch (err) {
-        this.logger.warn('No se pudo marcar el correo como leído', { id: correo.id, err: String(err) });
-      }
     }
 
-    const ahora = this.clock.now();
     await this.config.guardarCorreoEntrante({
       ...cfg,
+      zohoRevisadoHasta: hasta.toISOString(),
       ultimaRevision: ahora.toISOString(),
       ultimoResultado: `${resultado.agregados} de ${resultado.revisados} agregados${
-        resultado.omitidos.length ? `, ${resultado.omitidos.length} sin ligar` : ''
-      }`,
+        repetidos ? `, ${repetidos} ya estaban` : ''
+      }${resultado.omitidos.length ? `, ${resultado.omitidos.length} sin ligar` : ''}`,
     });
     if (resultado.revisados) this.logger.info('Correo entrante revisado', { ...resultado, omitidos: resultado.omitidos.length });
     return resultado;
+  }
+
+  /**
+   * ¿Ya está esta respuesta en el ticket? Un correo chico con adjunto llega por CloudMailin y
+   * también lo encuentra la revisión de Zoho; CloudMailin además reintenta si algo falla.
+   * Mismo remitente, misma hora (±10 min) y mismo inicio de texto = el mismo correo.
+   */
+  private async yaEstaba(ticketId: string, correo: CorreoRecibido, texto: string): Promise<boolean> {
+    const clave = (s: string): string =>
+      s.normalize('NFD').replace(/[^a-z0-9]/gi, '').toLowerCase().slice(0, 40);
+    const buscada = clave(texto || '(imagen adjunta)');
+    const notas = await this.tickets.listarNotas(ticketId);
+    return notas.some(
+      (n) =>
+        n.correoDe === correo.de &&
+        Math.abs(n.createdAt.getTime() - correo.recibidoEn.getTime()) < 10 * 60_000 &&
+        clave(n.cuerpo).startsWith(buscada.slice(0, Math.min(buscada.length, 40))),
+    );
   }
 
   /** `null` si quedó agregado al ticket; si no, el motivo por el que se omitió. */
@@ -224,6 +258,7 @@ export class CorreoEntranteService {
     }
     // Si el recorte dejó todo vacío (todo era cita), mejor guardar el texto completo que perderlo.
     const texto = cuerpoSinCita(correo.cuerpo) || correo.cuerpo.trim();
+    if (await this.yaEstaba(ticket.id, correo, texto)) return YA_ESTABA;
     const { ids: adjuntoIds, omitidos } = await this.guardarImagenes(ticket, correo);
     // Lo que no se pudo guardar se dice en la nota: si no, la imagen "desaparece" sin aviso.
     const noGuardados = [...(correo.omitidos ?? []), ...omitidos];
@@ -356,17 +391,23 @@ export class CorreoEntranteService {
   /** Guarda la config; los secretos vacíos conservan el valor anterior. */
   async guardar(
     actor: SessionUser,
-    datos: Omit<ConfiguracionCorreoEntrante, 'ultimaRevision' | 'ultimoResultado' | 'remitenteEmail' | 'remitenteNombre' | 'webhookKey'>,
+    datos: Omit<ConfiguracionCorreoEntrante, 'ultimaRevision' | 'ultimoResultado' | 'remitenteEmail' | 'remitenteNombre' | 'webhookKey' | 'zohoRevisadoHasta'> & {
+      /** Código de un solo uso de la consola de Zoho: se cambia aquí mismo por el refresh token. */
+      codigo?: string;
+    },
   ): Promise<void> {
     this.permiso(actor);
     const previa = await this.config.obtenerCorreoEntrante();
-    await this.config.guardarCorreoEntrante({
+    const { codigo, ...resto } = datos;
+    const nueva: ConfiguracionCorreoEntrante = {
       ...previa,
-      ...datos,
+      ...resto,
       clientSecret: datos.clientSecret.trim() || previa.clientSecret,
       refreshToken: datos.refreshToken.trim() || previa.refreshToken,
       region: datos.region.trim() || 'com',
-    });
+    };
+    if (codigo?.trim()) nueva.refreshToken = await this.buzon.canjearCodigo(nueva, codigo.trim());
+    await this.config.guardarCorreoEntrante(nueva);
   }
 
   /**

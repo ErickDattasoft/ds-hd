@@ -31,6 +31,11 @@ export interface ConfiguracionCorreoEntrante {
    * secreto `CORREO_ENTRANTE_SECRET` (si existe), así el corte no depende de tocar Cloudflare.
    */
   webhookKey: string;
+  /**
+   * Hasta qué correo (fecha de llegada, ISO) ya se revisó el buzón de Zoho: la próxima revisión
+   * toma solo lo que llegó después. Así no hay que marcar nada como leído en el buzón.
+   */
+  zohoRevisadoHasta: string | null;
   /** Resultado de la última revisión, para verlo en Configuración. */
   ultimaRevision: string | null;
   ultimoResultado: string | null;
@@ -48,6 +53,7 @@ export const CONFIG_CORREO_ENTRANTE_POR_DEFECTO: ConfiguracionCorreoEntrante = {
   remitenteEmail: '',
   remitenteNombre: '',
   webhookKey: '',
+  zohoRevisadoHasta: null,
   ultimaRevision: null,
   ultimoResultado: null,
 };
@@ -64,6 +70,7 @@ export function sanearConfigCorreoEntrante(d: unknown): ConfiguracionCorreoEntra
     remitenteEmail: String(o.remitenteEmail ?? '').trim().toLowerCase(),
     remitenteNombre: String(o.remitenteNombre ?? '').trim(),
     webhookKey: String(o.webhookKey ?? ''),
+    zohoRevisadoHasta: typeof o.zohoRevisadoHasta === 'string' && !Number.isNaN(Date.parse(o.zohoRevisadoHasta)) ? o.zohoRevisadoHasta : null,
   };
 }
 

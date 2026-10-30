@@ -23,14 +23,22 @@ export interface CorreoRecibido {
 }
 
 /**
- * Buzón de correo entrante (hoy: Zoho Mail por API OAuth). Se lee cada hora desde el cron para
- * convertir las respuestas de los clientes en notas de su ticket.
+ * Buzón de correo entrante (hoy: Zoho Mail por API OAuth). Se lee cada pocos minutos para
+ * convertir las respuestas de los clientes en notas de su ticket. Es el buzón de una persona:
+ * solo se lee, nunca se marca nada como leído ni se mueve.
  */
 export interface IBuzonEntrante {
-  /** Correos sin leer de la carpeta configurada, del más viejo al más nuevo. */
-  listarNoLeidos(cfg: ConfiguracionCorreoEntrante, limite: number): Promise<CorreoRecibido[]>;
-  /** Marca uno como leído para no volver a procesarlo. */
-  marcarLeido(cfg: ConfiguracionCorreoEntrante, correo: CorreoRecibido): Promise<void>;
+  /**
+   * Correos que llegaron después de `desde` con número de ticket en el asunto, del más viejo al
+   * más nuevo (con su contenido y sus imágenes). Con `soloConAdjuntos`, solo los que traen
+   * archivos: los demás ya llegan al instante por CloudMailin.
+   */
+  listarRecientes(
+    cfg: ConfiguracionCorreoEntrante,
+    opts: { desde: Date; soloConAdjuntos: boolean; limite: number },
+  ): Promise<CorreoRecibido[]>;
+  /** Cambia el código de un solo uso de la consola de Zoho por un refresh token (no expira). */
+  canjearCodigo(cfg: ConfiguracionCorreoEntrante, codigo: string): Promise<string>;
   /** Comprueba credenciales y devuelve el `accountId` y la dirección del buzón. */
   verificar(cfg: ConfiguracionCorreoEntrante): Promise<{ accountId: string; correo: string }>;
 }

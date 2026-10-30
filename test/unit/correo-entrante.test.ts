@@ -10,12 +10,16 @@ import { FixedClock, silentLogger } from '../fakes/support.js';
 
 class FakeBuzon implements IBuzonEntrante {
   correos: CorreoRecibido[] = [];
-  leidos: string[] = [];
-  async listarNoLeidos(): Promise<CorreoRecibido[]> {
-    return this.correos;
+  pedidos: { desde: Date; soloConAdjuntos: boolean }[] = [];
+  async listarRecientes(
+    _cfg: ConfiguracionCorreoEntrante,
+    opts: { desde: Date; soloConAdjuntos: boolean; limite: number },
+  ): Promise<CorreoRecibido[]> {
+    this.pedidos.push({ desde: opts.desde, soloConAdjuntos: opts.soloConAdjuntos });
+    return this.correos.filter((c) => c.recibidoEn > opts.desde);
   }
-  async marcarLeido(_cfg: ConfiguracionCorreoEntrante, correo: CorreoRecibido): Promise<void> {
-    this.leidos.push(correo.id);
+  async canjearCodigo(): Promise<string> {
+    return 'refresh-de-prueba';
   }
   async verificar(): Promise<{ accountId: string; correo: string }> {
     return { accountId: 'acc1', correo: 'soporte@dattasoft.mx' };
@@ -64,10 +68,10 @@ describe('correo entrante (Zoho)', () => {
         canal: 'interno',
       }),
     );
-    config.correoEntrante = { ...config.correoEntrante, habilitado: true };
+    config.correoEntrante = { ...config.correoEntrante, habilitado: true, zohoRevisadoHasta: '2026-09-17T09:00:00Z' };
   });
 
-  it('agrega la respuesta como nota pública, sin el hilo citado, y marca el correo leído', async () => {
+  it('agrega la respuesta como nota pública, sin el hilo citado, y recuerda hasta dónde revisó', async () => {
     buzon.correos = [correo()];
     const r = await service.revisar();
     expect(r).toMatchObject({ revisados: 1, agregados: 1 });
@@ -76,11 +80,14 @@ describe('correo entrante (Zoho)', () => {
     expect(notas[0]!.cuerpo).toBe('Sigue igual, gracias.');
     expect(notas[0]!.tipo).toBe('publica');
     expect(notas[0]!.autorNombre).toContain('luis@cliente.mx');
-    expect(buzon.leidos).toEqual(['m1']);
-    expect((await config.obtenerCorreoEntrante()).ultimoResultado).toContain('1 de 1');
+    const cfg = await config.obtenerCorreoEntrante();
+    expect(cfg.ultimoResultado).toContain('1 de 1');
+    expect(cfg.zohoRevisadoHasta).toBe('2026-09-17T10:00:00.000Z');
+    // La siguiente vuelta no lo vuelve a tomar.
+    expect((await service.revisar()).revisados).toBe(0);
   });
 
-  it('omite (y deja sin leer) lo que no se puede ligar a un ticket', async () => {
+  it('omite lo que no se puede ligar a un ticket', async () => {
     buzon.correos = [
       correo({ id: 'a', asunto: 'Consulta general' }),
       correo({ id: 'b', asunto: 'Ticket #999' }),
@@ -95,7 +102,25 @@ describe('correo entrante (Zoho)', () => {
       'otro@ajeno.mx no es el contacto del ticket #7',
       'el correo llegó vacío',
     ]);
-    expect(buzon.leidos).toEqual([]);
+  });
+
+  it('la primera vez solo mira la última hora; con CloudMailin activo pide solo los correos con adjuntos', async () => {
+    config.correoEntrante = { ...config.correoEntrante, zohoRevisadoHasta: null };
+    await service.revisar();
+    expect(buzon.pedidos[0]).toEqual({ desde: new Date('2026-09-17T11:00:00Z'), soloConAdjuntos: false });
+    config.correoEntrante = { ...config.correoEntrante, webhookKey: 'clave', zohoRevisadoHasta: null };
+    await service.revisar();
+    expect(buzon.pedidos[1]!.soloConAdjuntos).toBe(true);
+  });
+
+  it('no duplica una respuesta que ya llegó por CloudMailin', async () => {
+    const c = correo({ recibidoEn: new Date('2026-09-17T10:00:00Z') });
+    expect(await service.recibirWebhook(c)).toMatchObject({ accion: 'nota' });
+    buzon.correos = [{ ...c, id: 'zoho-1', recibidoEn: new Date('2026-09-17T10:00:20Z') }];
+    const r = await service.revisar();
+    expect(r).toMatchObject({ revisados: 1, agregados: 0, omitidos: [] });
+    expect(await tickets.listarNotas('t7')).toHaveLength(1);
+    expect((await config.obtenerCorreoEntrante()).ultimoResultado).toContain('1 ya estaban');
   });
 
   it('con la revisión automática apagada no toca el buzón', async () => {
