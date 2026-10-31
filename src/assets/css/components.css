@@ -124,6 +124,7 @@
   max-width: none;
 }
 .disclosure__hint { color: var(--color-text-muted); font-size: var(--text-xs); font-weight: 400; }
+.cfg-cascada { margin-top: var(--space-5); }
 @media (prefers-reduced-motion: reduce) {
   .disclosure__summary::before { transition: none; }
 }

@@ -127,4 +127,29 @@
       <span class="cat-guardar__estado muted" data-cat-pendiente hidden>● Hay cambios sin guardar</span>
     </div>
   </form>
+
+  {#- El resto de Configuración en cascada, para no tener que salir de aquí: cada barra trae su
+      apartado la primera vez que se abre (sin su encabezado). Guardar ahí lleva a su página. -#}
+  <div class="cfg-cascada">
+    {% for p in [
+      ['cotizaciones', '💰 Cotizaciones', 'configuracion:catalogos'],
+      ['calculadora', '🧮 Calculadora', 'configuracion:catalogos'],
+      ['apariencia', '🎨 Apariencia', 'configuracion:catalogos'],
+      ['resumen', '📰 Resumen diario', 'configuracion:catalogos'],
+      ['correo-entrante', '📥 Correo entrante', 'configuracion:integraciones'],
+      ['integraciones', '🔌 Integraciones', 'configuracion:integraciones'],
+      ['backup', '💾 Backup', 'configuracion:integraciones'],
+      ['excel', '📊 Excel unificado', 'configuracion:integraciones']
+    ] %}
+      {% if can(p[2]) %}
+      <details class="disclosure">
+        <summary class="disclosure__summary">{{ p[1] }} <a class="disclosure__hint" href="/app/configuracion/{{ p[0] }}">— abrir en su página</a></summary>
+        <div class="disclosure__body" hx-get="/app/configuracion/{{ p[0] }}" hx-trigger="toggle from:closest details once"
+             hx-select="#contenido > :not(.page-head)" hx-target="this" hx-swap="innerHTML" hx-push-url="false">
+          <p class="muted">Cargando…</p>
+        </div>
+      </details>
+      {% endif %}
+    {% endfor %}
+  </div>
 {% endblock %}
