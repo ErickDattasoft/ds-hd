@@ -23,13 +23,13 @@
       {% for item in seccion.items %}
         {% set cls = _activo(item.href) | trim %}
         {% if item.hijos and item.hijos.length %}
-        {# Desplegable en cascada: abierto si se está dentro de alguno de sus subapartados. #}
+        {# Cascada: el link abre la página como siempre y, estando dentro, se despliegan sus subapartados. #}
         <li>
-          <details class="sidebar__grupo"{% if cls %} open{% endif %}>
-            <summary class="sidebar__link {{ cls }}" title="{{ item.etiqueta }}">
-              <span class="sidebar__icon" aria-hidden="true">{{ item.icono }}</span><span class="sidebar__text">{{ item.etiqueta }}</span>
-              <span class="sidebar__flecha" aria-hidden="true">▸</span>
-            </summary>
+          <a class="sidebar__link {{ cls }}" href="{{ item.href }}" title="{{ item.etiqueta }}"{% if cls %} aria-expanded="true"{% else %} aria-expanded="false"{% endif %}>
+            <span class="sidebar__icon" aria-hidden="true">{{ item.icono }}</span><span class="sidebar__text">{{ item.etiqueta }}</span>
+            <span class="sidebar__flecha{% if cls %} is-open{% endif %}" aria-hidden="true">▸</span>
+          </a>
+          {% if cls %}
             <ul class="sidebar__sublist">
               {% for h in item.hijos %}
                 {% set hcls = _activo(h.href) | trim %}
@@ -40,7 +40,7 @@
                 </li>
               {% endfor %}
             </ul>
-          </details>
+          {% endif %}
         </li>
         {% else %}
         <li>
