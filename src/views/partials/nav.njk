@@ -23,24 +23,24 @@
       {% for item in seccion.items %}
         {% set cls = _activo(item.href) | trim %}
         {% if item.hijos and item.hijos.length %}
-        {# Cascada: el link abre la página como siempre y, estando dentro, se despliegan sus subapartados. #}
-        <li>
-          <a class="sidebar__link {{ cls }}" href="{{ item.href }}" title="{{ item.etiqueta }}"{% if cls %} aria-expanded="true"{% else %} aria-expanded="false"{% endif %}>
+        {# Cascada: el nombre abre la página; la flechita despliega o recoge los subapartados
+           (se recuerda en este navegador, ver `initNavCascada` en app.js). #}
+        <li class="sidebar__padre">
+          <a class="sidebar__link {{ cls }}" href="{{ item.href }}" title="{{ item.etiqueta }}"{% if cls %} aria-current="page"{% endif %}>
             <span class="sidebar__icon" aria-hidden="true">{{ item.icono }}</span><span class="sidebar__text">{{ item.etiqueta }}</span>
-            <span class="sidebar__flecha{% if cls %} is-open{% endif %}" aria-hidden="true">▸</span>
           </a>
-          {% if cls %}
-            <ul class="sidebar__sublist">
-              {% for h in item.hijos %}
-                {% set hcls = _activo(h.href) | trim %}
-                <li>
-                  <a class="sidebar__link sidebar__link--sub {{ hcls }}" href="{{ h.href }}" title="{{ h.etiqueta }}"{% if hcls %} aria-current="page"{% endif %}>
-                    <span class="sidebar__icon" aria-hidden="true">{{ h.icono }}</span><span class="sidebar__text">{{ h.etiqueta }}</span>
-                  </a>
-                </li>
-              {% endfor %}
-            </ul>
-          {% endif %}
+          <button type="button" class="sidebar__flecha" data-nav-cascada="{{ item.href }}" aria-expanded="false"
+                  aria-controls="sub-{{ loop.index }}-{{ seccion.grupo }}" title="Ver u ocultar los apartados de {{ item.etiqueta }}">▸</button>
+          <ul class="sidebar__sublist" id="sub-{{ loop.index }}-{{ seccion.grupo }}" hidden>
+            {% for h in item.hijos %}
+              {% set hcls = _activo(h.href) | trim %}
+              <li>
+                <a class="sidebar__link sidebar__link--sub {{ hcls }}" href="{{ h.href }}" title="{{ h.etiqueta }}"{% if hcls %} aria-current="page"{% endif %}>
+                  <span class="sidebar__icon" aria-hidden="true">{{ h.icono }}</span><span class="sidebar__text">{{ h.etiqueta }}</span>
+                </a>
+              </li>
+            {% endfor %}
+          </ul>
         </li>
         {% else %}
         <li>

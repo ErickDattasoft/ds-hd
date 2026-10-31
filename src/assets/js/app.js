@@ -3184,7 +3184,38 @@
    * cada navegación con hx-boost (htmx reemplaza el <body> sin recargar, así que no hay un
    * DOMContentLoaded nuevo). Cada init es idempotente: volver a llamarlo no duplica nada.
    */
+  /**
+   * Cascada del menú lateral (Configuración): la flechita despliega o recoge los subapartados.
+   * Se recuerda en este navegador; como el <body> se repinta en cada navegación, se reaplica.
+   */
+  var NAV_CASCADA_KEY = 'navCascadaAbierta';
+  function navCascadaAbiertas() {
+    try { return JSON.parse(localStorage.getItem(NAV_CASCADA_KEY) || '[]'); } catch (e) { return []; }
+  }
+  function pintarNavCascada(btn, abierta) {
+    btn.setAttribute('aria-expanded', abierta ? 'true' : 'false');
+    var sub = document.getElementById(btn.getAttribute('aria-controls'));
+    if (sub) sub.hidden = !abierta;
+  }
+  function initNavCascada() {
+    var abiertas = navCascadaAbiertas();
+    document.querySelectorAll('[data-nav-cascada]').forEach(function (btn) {
+      pintarNavCascada(btn, abiertas.indexOf(btn.getAttribute('data-nav-cascada')) !== -1);
+    });
+  }
+  document.addEventListener('click', function (e) {
+    var btn = e.target.closest && e.target.closest('[data-nav-cascada]');
+    if (!btn) return;
+    var clave = btn.getAttribute('data-nav-cascada');
+    var abierta = btn.getAttribute('aria-expanded') !== 'true';
+    pintarNavCascada(btn, abierta);
+    var abiertas = navCascadaAbiertas().filter(function (k) { return k !== clave; });
+    if (abierta) abiertas.push(clave);
+    try { localStorage.setItem(NAV_CASCADA_KEY, JSON.stringify(abiertas)); } catch (e2) { /* sin storage: solo esta vez */ }
+  });
+
   function iniciarPagina() {
+    initNavCascada();
     updateToggle();
     pintarColapsar();
     initKanban();
