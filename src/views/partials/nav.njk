@@ -22,6 +22,27 @@
       {% endif %}
       {% for item in seccion.items %}
         {% set cls = _activo(item.href) | trim %}
+        {% if item.hijos and item.hijos.length %}
+        {# Desplegable en cascada: abierto si se está dentro de alguno de sus subapartados. #}
+        <li>
+          <details class="sidebar__grupo"{% if cls %} open{% endif %}>
+            <summary class="sidebar__link {{ cls }}" title="{{ item.etiqueta }}">
+              <span class="sidebar__icon" aria-hidden="true">{{ item.icono }}</span><span class="sidebar__text">{{ item.etiqueta }}</span>
+              <span class="sidebar__flecha" aria-hidden="true">▸</span>
+            </summary>
+            <ul class="sidebar__sublist">
+              {% for h in item.hijos %}
+                {% set hcls = _activo(h.href) | trim %}
+                <li>
+                  <a class="sidebar__link sidebar__link--sub {{ hcls }}" href="{{ h.href }}" title="{{ h.etiqueta }}"{% if hcls %} aria-current="page"{% endif %}>
+                    <span class="sidebar__icon" aria-hidden="true">{{ h.icono }}</span><span class="sidebar__text">{{ h.etiqueta }}</span>
+                  </a>
+                </li>
+              {% endfor %}
+            </ul>
+          </details>
+        </li>
+        {% else %}
         <li>
           <a class="sidebar__link {{ cls }}" href="{{ item.href }}" title="{{ item.etiqueta }}"{% if cls %} aria-current="page"{% endif %}>
             <span class="sidebar__icon" aria-hidden="true">{{ item.icono }}</span><span class="sidebar__text">{{ item.etiqueta }}</span>
@@ -29,6 +50,7 @@
             {% if item.contador %}<span class="badge sidebar__badge" title="{{ (item.contadorTitulo or '{n}') | replace('{n}', item.contador) }}">{{ item.contador }}</span>{% endif %}
           </a>
         </li>
+        {% endif %}
       {% endfor %}
     </ul>
   {% endfor %}

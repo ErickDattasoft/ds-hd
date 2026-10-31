@@ -1,12 +1,17 @@
-{# Links entre las subpáginas de Configuración. `activo` oculta el link a la página actual. #}
+{# Links entre las subpáginas de Configuración. Siempre se ven todos; `activo` resalta la página actual. #}
 {% macro nav(activo) %}
-  {% if activo != 'tickets' %}<a class="btn btn--ghost btn--sm" href="/app/configuracion/tickets">🎫 Tickets</a>{% endif %}
-  {% if activo != 'cotizaciones' %}<a class="btn btn--ghost btn--sm" href="/app/configuracion/cotizaciones">💰 Cotizaciones</a>{% endif %}
-  {% if activo != 'calculadora' %}<a class="btn btn--ghost btn--sm" href="/app/configuracion/calculadora">🧮 Calculadora</a>{% endif %}
-  {% if activo != 'apariencia' %}<a class="btn btn--ghost btn--sm" href="/app/configuracion/apariencia">🎨 Apariencia</a>{% endif %}
-  {% if activo != 'resumen' %}<a class="btn btn--ghost btn--sm" href="/app/configuracion/resumen">📰 Resumen diario</a>{% endif %}
-  {% if activo != 'correo-entrante' %}<a class="btn btn--ghost btn--sm" href="/app/configuracion/correo-entrante">📥 Correo entrante</a>{% endif %}
-  {% if activo != 'integraciones' %}<a class="btn btn--ghost btn--sm" href="/app/configuracion/integraciones">🔌 Integraciones</a>{% endif %}
-  {% if activo != 'backup' %}<a class="btn btn--ghost btn--sm" href="/app/configuracion/backup">💾 Backup</a>{% endif %}
-  {% if activo != 'excel' %}<a class="btn btn--ghost btn--sm" href="/app/configuracion/excel">📊 Excel unificado</a>{% endif %}
+  {% for p in [
+    ['tickets', '🎫 Tickets'],
+    ['cotizaciones', '💰 Cotizaciones'],
+    ['calculadora', '🧮 Calculadora'],
+    ['apariencia', '🎨 Apariencia'],
+    ['resumen', '📰 Resumen diario'],
+    ['correo-entrante', '📥 Correo entrante'],
+    ['integraciones', '🔌 Integraciones'],
+    ['backup', '💾 Backup'],
+    ['excel', '📊 Excel unificado']
+  ] %}
+  {% if activo == p[0] %}<a class="btn btn--secondary btn--sm" href="/app/configuracion/{{ p[0] }}" aria-current="page">{{ p[1] }}</a>
+  {% else %}<a class="btn btn--ghost btn--sm" href="/app/configuracion/{{ p[0] }}">{{ p[1] }}</a>{% endif %}
+  {% endfor %}
 {% endmacro %}

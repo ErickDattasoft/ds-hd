@@ -46,6 +46,16 @@ export interface NavItem {
   /** Valores de los badges para esta request — los llena `conContadores`, nunca el catálogo estático. */
   contador?: number;
   contadorTotal?: number;
+  /** Subapartados: el item se vuelve un desplegable en cascada. Cada uno con su permiso. */
+  hijos?: NavSubItem[];
+}
+
+/** Un subapartado de un desplegable del menú lateral. */
+export interface NavSubItem {
+  etiqueta: string;
+  href: string;
+  icono: string;
+  permiso: Permiso;
 }
 
 /** Conteos para los badges del sidebar, uno por `ContadorNavKey`. */
@@ -82,7 +92,18 @@ export const NAV_BACKOFFICE: readonly NavItem[] = [
 
   { etiqueta: 'Usuarios', href: '/app/usuarios', icono: '🔑', permiso: 'usuarios:gestionar', grupo: 'admin' },
   { etiqueta: 'Solicitudes de acceso', href: '/app/solicitudes-acceso', icono: '📨', permiso: 'usuarios:gestionar', grupo: 'admin', contadorKey: 'solicitudesAccesoPendientes' },
-  { etiqueta: 'Configuración', href: '/app/configuracion', icono: '⚙️', permiso: 'configuracion:catalogos', grupo: 'admin' },
+  { etiqueta: 'Configuración', href: '/app/configuracion', icono: '⚙️', permiso: 'configuracion:catalogos', grupo: 'admin',
+    hijos: [
+      { etiqueta: 'Tickets', href: '/app/configuracion/tickets', icono: '🎫', permiso: 'configuracion:catalogos' },
+      { etiqueta: 'Cotizaciones', href: '/app/configuracion/cotizaciones', icono: '💰', permiso: 'configuracion:catalogos' },
+      { etiqueta: 'Calculadora', href: '/app/configuracion/calculadora', icono: '🧮', permiso: 'configuracion:catalogos' },
+      { etiqueta: 'Apariencia', href: '/app/configuracion/apariencia', icono: '🎨', permiso: 'configuracion:catalogos' },
+      { etiqueta: 'Resumen diario', href: '/app/configuracion/resumen', icono: '📰', permiso: 'configuracion:catalogos' },
+      { etiqueta: 'Correo entrante', href: '/app/configuracion/correo-entrante', icono: '📥', permiso: 'configuracion:integraciones' },
+      { etiqueta: 'Integraciones', href: '/app/configuracion/integraciones', icono: '🔌', permiso: 'configuracion:integraciones' },
+      { etiqueta: 'Backup', href: '/app/configuracion/backup', icono: '💾', permiso: 'configuracion:integraciones' },
+      { etiqueta: 'Excel unificado', href: '/app/configuracion/excel', icono: '📊', permiso: 'configuracion:integraciones' },
+    ] },
   { etiqueta: 'Bitácora', href: '/app/bitacora', icono: '📓', permiso: 'bitacora:leer', grupo: 'admin' },
   { etiqueta: 'Papelera', href: '/app/papelera', icono: '🗑️', permiso: 'papelera:gestionar', grupo: 'admin' },
 ];
@@ -96,7 +117,11 @@ export const NAV_PORTAL: readonly NavItem[] = [
 /** Filtra la navegación al conjunto que el usuario puede ver (lista plana). */
 export function construirNav(user: SessionUser): NavItem[] {
   const fuente = user.esCliente ? NAV_PORTAL : NAV_BACKOFFICE;
-  return fuente.filter((item) => user.permisos.includes(item.permiso));
+  return fuente
+    .filter((item) => user.permisos.includes(item.permiso))
+    .map((item) =>
+      item.hijos ? { ...item, hijos: item.hijos.filter((h) => user.permisos.includes(h.permiso)) } : item,
+    );
 }
 
 /**

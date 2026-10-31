@@ -255,6 +255,14 @@
   color: var(--brand);
 }
 .sidebar__icon { width: 1.15rem; text-align: center; flex: none; }
+/* Desplegable en cascada (Configuración): el summary se ve como un link más. */
+.sidebar__grupo > summary { list-style: none; cursor: pointer; }
+.sidebar__grupo > summary::-webkit-details-marker { display: none; }
+.sidebar__grupo > summary.is-active { background: transparent; }
+.sidebar__flecha { margin-left: auto; font-size: 0.7rem; transition: transform var(--transition); }
+.sidebar__grupo[open] .sidebar__flecha { transform: rotate(90deg); }
+.sidebar__sublist { list-style: none; padding: 2px 0 0 0.9rem; margin: 0; display: flex; flex-direction: column; gap: 2px; border-left: 1px solid var(--color-border); margin-left: 1.2rem; }
+.sidebar__link--sub { padding-block: 0.35rem; font-size: var(--text-xs); }
 .sidebar__badge { margin-left: auto; }
 .sidebar__badge--total { background: transparent; border: 1px solid var(--color-border); color: var(--color-text-muted); }
 .sidebar__badge--total + .sidebar__badge { margin-left: 0.25rem; }
@@ -297,6 +305,8 @@ a.topbar__name:hover { color: var(--color-text); text-decoration: underline; }
   [data-sidebar="mini"] .sidebar__link { justify-content: center; position: relative; }
   [data-sidebar="mini"] .sidebar__badge { position: absolute; top: 0; right: 0; font-size: 0.65rem; }
   [data-sidebar="mini"] .sidebar__badge--total { display: none; }
+  [data-sidebar="mini"] .sidebar__flecha { display: none; }
+  [data-sidebar="mini"] .sidebar__sublist { margin-left: 0; padding-left: 0; border-left: 0; }
 }
 /* En escritorio el menú lateral se queda fijo al bajar por listas largas (tickets, empresas):
    así los demás apartados siguen a la mano sin volver arriba. Si el menú es más alto que la
