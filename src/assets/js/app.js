@@ -27,8 +27,10 @@
     var btn = document.querySelector('[data-theme-toggle]');
     if (!btn) return;
     var t = currentTheme();
-    btn.textContent = t === 'dark' ? '☾' : t === 'light' ? '☀' : '◐';
-    btn.setAttribute('aria-label', 'Tema: ' + t + ' (clic para cambiar)');
+    // El ícono (monitor / sol / luna) lo elige el CSS según data-theme; aquí solo el texto.
+    var nombre = t === 'dark' ? 'oscuro' : t === 'light' ? 'claro' : 'automático (como el equipo)';
+    btn.setAttribute('aria-label', 'Tema: ' + nombre + ' (clic para cambiar)');
+    btn.setAttribute('title', 'Tema: ' + nombre + ' (clic para cambiar)');
   }
   document.addEventListener('click', function (e) {
     var toggle = e.target.closest('[data-theme-toggle]');
@@ -41,27 +43,85 @@
   // ── Modo privacidad: difumina datos sensibles (.sensible, correos, teléfonos…) ──
   // Para enseñar el sistema a alguien de fuera. Se recuerda en cookie para que el servidor
   // pinte la página ya difuminada y no se alcance a ver nada al navegar.
-  function alternarPrivacidad() {
-    var on = !root.hasAttribute('data-privacidad');
-    if (on) root.setAttribute('data-privacidad', '');
+  // Al activarlo pregunta qué ocultar: solo datos (RFC, montos, correos…) o también los
+  // nombres de empresas y contactos (.nombre-sensible). Cookie: 1 = datos, 2 = con nombres.
+  function ponerPrivacidad(nivel) {
+    if (nivel) root.setAttribute('data-privacidad', nivel);
     else root.removeAttribute('data-privacidad');
-    document.cookie = 'privacidad=' + (on ? '1;max-age=31536000' : ';max-age=0') + ';path=/;samesite=lax';
+    document.cookie = 'privacidad=' + (nivel ? (nivel === 'nombres' ? '2' : '1') + ';max-age=31536000' : ';max-age=0') + ';path=/;samesite=lax';
     var btn = document.querySelector('[data-privacidad-toggle]');
     if (btn) {
-      btn.textContent = on ? '🙈' : '👁';
-      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+      btn.textContent = nivel ? '🙈' : '👁';
+      btn.setAttribute('aria-pressed', nivel ? 'true' : 'false');
+      btn.setAttribute('title', nivel
+        ? 'Modo privacidad activo (' + (nivel === 'nombres' ? 'datos y nombres' : 'solo datos') + ') — clic para quitarlo (Alt+P)'
+        : 'Modo privacidad: difumina datos sensibles al enseñar la pantalla (Alt+P)');
     }
+    cerrarMenuPrivacidad();
+  }
+  function menuPrivacidad() { return document.querySelector('[data-privacidad-menu]'); }
+  function cerrarMenuPrivacidad() { var m = menuPrivacidad(); if (m) m.hidden = true; }
+  function alternarPrivacidad() {
+    if (root.hasAttribute('data-privacidad')) return ponerPrivacidad(null);
+    var m = menuPrivacidad();
+    if (!m) return ponerPrivacidad('datos');
+    m.hidden = !m.hidden;
+    if (!m.hidden) { var primero = m.querySelector('[data-privacidad-nivel]'); if (primero) primero.focus(); }
   }
   document.addEventListener('click', function (e) {
-    if (e.target.closest('[data-privacidad-toggle]')) alternarPrivacidad();
+    var nivel = e.target.closest('[data-privacidad-nivel]');
+    if (nivel) return ponerPrivacidad(nivel.getAttribute('data-privacidad-nivel'));
+    if (e.target.closest('[data-privacidad-toggle]')) return alternarPrivacidad();
+    if (!e.target.closest('[data-privacidad-menu]')) cerrarMenuPrivacidad();
   });
   document.addEventListener('keydown', function (e) {
+    var m = menuPrivacidad();
+    if (m && !m.hidden) {
+      if (e.key === 'Escape') { cerrarMenuPrivacidad(); return; }
+      if (e.key === '1' || e.key === '2') { e.preventDefault(); ponerPrivacidad(e.key === '2' ? 'nombres' : 'datos'); return; }
+    }
     if (e.altKey && !e.ctrlKey && !e.metaKey && (e.key === 'p' || e.key === 'P' || e.code === 'KeyP')) {
       if (!document.querySelector('[data-privacidad-toggle]')) return;
       e.preventDefault();
       alternarPrivacidad();
     }
   });
+
+  // ── Visor de imágenes: las capturas del ticket se abren encima de la página ──
+  // (antes abrían otra pestaña). Clic fuera, ✕ o Esc lo cierran; «Abrir aparte» sigue a mano.
+  function abrirVisor(src, alt) {
+    var v = document.createElement('div');
+    v.className = 'visor-img';
+    v.setAttribute('role', 'dialog');
+    v.setAttribute('aria-modal', 'true');
+    v.innerHTML = '<div class="visor-img__barra"><a class="visor-img__btn" target="_blank" rel="noopener" title="Abrir en otra pestaña">↗ Abrir aparte</a>' +
+      '<button type="button" class="visor-img__btn" data-visor-cerrar title="Cerrar (Esc)">✕</button></div><img alt="" />';
+    v.querySelector('a').href = src;
+    var img = v.querySelector('img');
+    img.src = src;
+    img.alt = alt || '';
+    img.addEventListener('click', function (e) { e.stopPropagation(); img.classList.toggle('visor-img__img--real'); });
+    v.addEventListener('click', function (e) { if (!e.target.closest('a')) cerrarVisor(); });
+    document.body.appendChild(v);
+    document.body.classList.add('visor-abierto');
+  }
+  function cerrarVisor() {
+    var v = document.querySelector('.visor-img');
+    if (v) v.remove();
+    document.body.classList.remove('visor-abierto');
+  }
+  document.addEventListener('click', function (e) {
+    if (e.ctrlKey || e.metaKey || e.shiftKey || e.button !== 0) return; // Ctrl+clic: pestaña nueva, como siempre
+    var img = e.target.closest('img.adjunto-thumb, .ticket-descripcion img, .chat__cuerpo img');
+    if (!img || img.closest('.visor-img')) return;
+    var a = img.closest('a');
+    e.preventDefault();
+    abrirVisor(a && /^(\/|data:image\/|https?:)/.test(a.getAttribute('href') || '') ? a.getAttribute('href') : img.currentSrc || img.src, img.alt);
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && document.querySelector('.visor-img')) cerrarVisor();
+  });
+  document.addEventListener('htmx:beforeSwap', cerrarVisor);
 
   // ── Colapsar menú lateral (escritorio) ─────────────────────────────────────
   function pintarColapsar() {

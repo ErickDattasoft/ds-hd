@@ -23,8 +23,8 @@
     <tbody>
       {% for c in contactos %}
         <tr>
-          <td><a href="/app/contactos/{{ c.id }}/editar">{{ c.nombre }}</a>{% if rolEnEmpresa[c.id] %}<br><span class="muted">{{ rolEnEmpresa[c.id] }}</span>{% endif %}</td>
-          <td>{% if nombreEmpresa[c.empresaId] %}<a href="/app/empresas/{{ c.empresaId }}">{{ nombreEmpresa[c.empresaId] }}</a>{% else %}(empresa eliminada){% endif %}</td>
+          <td><a class="nombre-sensible" href="/app/contactos/{{ c.id }}/editar">{{ c.nombre }}</a>{% if rolEnEmpresa[c.id] %}<br><span class="muted">{{ rolEnEmpresa[c.id] }}</span>{% endif %}</td>
+          <td>{% if nombreEmpresa[c.empresaId] %}<a class="nombre-sensible" href="/app/empresas/{{ c.empresaId }}">{{ nombreEmpresa[c.empresaId] }}</a>{% else %}(empresa eliminada){% endif %}</td>
           <td>{{ c.puesto or '—' }}</td>
           <td class="sensible">{{ c.email or '—' }}</td>
           <td class="sensible">{{ c.telefono or '—' }}</td>

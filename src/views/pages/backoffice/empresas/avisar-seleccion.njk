@@ -14,7 +14,7 @@
       {% for f in filas %}
         <div class="card">
           <input type="hidden" name="empresaIds" value="{{ f.empresaId }}" />
-          <h2>{{ f.empresaNombre }}</h2>
+          <h2 class="nombre-sensible">{{ f.empresaNombre }}</h2>
           {% if f.pendientes | length %}
             {% for p in f.pendientes %}
               <div><label class="field--check">

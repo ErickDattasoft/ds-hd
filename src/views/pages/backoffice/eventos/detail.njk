@@ -80,7 +80,7 @@
         {% set hist = historialEmpresas[inv.empresaNombre | lower] %}
         <tr>
           <td>
-            {{ inv.empresaNombre }}
+            <span class="nombre-sensible">{{ inv.empresaNombre }}</span>
             {% if hist %}<span class="muted" title="Participó en {{ hist.eventos }} evento(s) anteriores{% if hist.asistio %}, asistió a {{ hist.asistio }}{% endif %}">🔁 {{ hist.eventos }}{% if hist.asistio %}·✅{{ hist.asistio }}{% endif %}</span>{% endif %}
           </td>
           <td class="muted">{{ inv.sistemas | join(', ') or '—' }}</td>
@@ -259,7 +259,7 @@
             </td>
           {% else %}
             <td>{{ i.nombre }}</td>
-            <td>{{ i.empresa or '—' }}</td>
+            <td class="nombre-sensible">{{ i.empresa or '—' }}</td>
             <td>{% if i.asistioAntes %}🔁 {{ i.asistioAntes }}{% else %}—{% endif %}</td>
             <td><span class="sensible">{{ i.email }}</span>{% if i.correoSospechoso %} 🚩{% endif %}</td>
             <td>{{ i.correoEstado or '—' }}</td>

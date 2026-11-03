@@ -30,7 +30,7 @@
       {% for c in cotizaciones %}
         <tr>
           <td><a href="/app/cotizaciones/{{ c.id }}">{{ c.folio }}</a></td>
-          <td>{{ c.empresaNombre or '—' }}</td>
+          <td class="nombre-sensible">{{ c.empresaNombre or '—' }}</td>
           <td>{{ c.fecha | fecha }}</td>
           <td{% if c.estado == 'vencida' %} class="texto-peligro"{% endif %}>{{ c.venceEl | fecha }}</td>
           <td>{{ c.total | moneda(c.moneda) }}</td>

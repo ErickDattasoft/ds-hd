@@ -35,7 +35,7 @@
         <div class="chat__hilo" data-chat-hilo data-chat-conteo="/app/tickets/{{ ticket.id }}/notas/conteo" data-chat-n="{{ notasTotal }}">
           <div class="chat__msg chat__msg--cliente">
             <div class="chat__meta">
-              <span class="chat__autor">📝 {{ ticket.contactoNombre or ticket.solicitadoPor or 'Cliente' }}</span>
+              <span class="chat__autor">📝 <span class="nombre-sensible">{{ ticket.contactoNombre or ticket.solicitadoPor or 'Cliente' }}</span></span>
               <span class="badge">solicitud original</span>
             </div>
             <div class="chat__cuerpo ticket-descripcion">{{ descripcionHtml | safe }}</div>
@@ -49,7 +49,7 @@
               or (n.autorUid == 'migracion' and ticket.contactoNombre and (n.autorNombre | lower | trim) == (ticket.contactoNombre | lower | trim)) %}
             <div class="chat__msg {{ 'chat__msg--interna' if n.tipo == 'interna' else ('chat__msg--cliente' if deCliente else 'chat__msg--equipo') }}">
               <div class="chat__meta">
-                <span class="chat__autor">{{ '🔒' if n.tipo == 'interna' else ('📥' if recibida else ('👤' if deCliente else '📤')) }} {{ n.autorNombre }}</span>
+                <span class="chat__autor">{{ '🔒' if n.tipo == 'interna' else ('📥' if recibida else ('👤' if deCliente else '📤')) }} <span class="{{ 'nombre-sensible' if deCliente }}">{{ n.autorNombre }}</span></span>
                 {% if n.correoDe and n.correoDe != n.autorNombre %}<span class="muted sensible">&lt;{{ n.correoDe }}&gt;</span>{% endif %}
                 {% if n.tipo == 'interna' %}<span class="badge badge--warning">interna</span>{% endif %}
               </div>
@@ -176,11 +176,11 @@
           {% if vm.facturacion.clase %}<span class="badge badge--{{ vm.facturacion.clase }}">{{ vm.facturacion.etiqueta }}</span>{% else %}{{ vm.facturacion.etiqueta }}{% endif %}
         </p>
         <p><strong>Agente:</strong> {{ ticket.agenteAsignadoNombre or 'Sin asignar' }}</p>
-        <p><strong>Empresa:</strong> {{ ticket.empresaNombre or '—' }}</p>
-        <p><strong>Contacto:</strong> {{ ticket.contactoNombre or '—' }}{% if ticket.contactoCorreo %} <span class="muted">({{ ticket.contactoCorreo }})</span>{% endif %}</p>
+        <p><strong>Empresa:</strong> <span class="nombre-sensible">{{ ticket.empresaNombre or '—' }}</span></p>
+        <p><strong>Contacto:</strong> <span class="nombre-sensible">{{ ticket.contactoNombre or '—' }}</span>{% if ticket.contactoCorreo %} <span class="muted">({{ ticket.contactoCorreo }})</span>{% endif %}</p>
         <p><strong>Grupo:</strong> {{ ticket.grupo or '—' }}</p>
         <p><strong>Sistema:</strong> {{ ticket.sistema or '—' }}</p>
-        {% if ticket.solicitadoPor %}<p><strong>Solicitado por:</strong> {{ ticket.solicitadoPor }}</p>{% endif %}
+        {% if ticket.solicitadoPor %}<p><strong>Solicitado por:</strong> <span class="nombre-sensible">{{ ticket.solicitadoPor }}</span></p>{% endif %}
         {% if ticket.canalizadoA %}<p><strong>Canalizado a:</strong> {{ ticket.canalizadoA }}</p>{% endif %}
         <p><strong>Canal:</strong> {{ ticket.canal }}</p>
         {% if vm.agenda %}

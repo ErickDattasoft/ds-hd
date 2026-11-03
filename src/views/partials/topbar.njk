@@ -16,9 +16,16 @@
     {% if can('tickets:crear') %}<a class="btn btn--sm" href="/app/tickets/nuevo" title="Crear un ticket nuevo — funciona desde cualquier sección" aria-label="Nuevo ticket">➕<span class="topbar__etiqueta"> Ticket</span></a>{% endif %}
     {% if can('configuracion:integraciones') %}<a class="btn btn--ghost btn--sm" href="/app/configuracion/backup/descargar" data-respaldar hx-boost="false" title="Descargar backup completo — funciona desde cualquier sección" aria-label="Respaldar">🛡️<span class="topbar__etiqueta"> Respaldar</span></a>{% endif %}
     {% if area == 'backoffice' %}
-      <button type="button" class="theme-toggle" data-privacidad-toggle title="Modo privacidad: difumina RFC, montos, correos y teléfonos (Alt+P)" aria-pressed="{{ 'true' if privacidad else 'false' }}">{{ '🙈' if privacidad else '👁' }}</button>
+      <span class="privacidad">
+        <button type="button" class="theme-toggle" data-privacidad-toggle title="Modo privacidad: difumina datos sensibles al enseñar la pantalla (Alt+P)" aria-pressed="{{ 'true' if privacidad else 'false' }}" aria-haspopup="menu">{{ '🙈' if privacidad else '👁' }}</button>
+        <span class="privacidad__menu" role="menu" data-privacidad-menu hidden>
+          <span class="privacidad__titulo">¿Qué ocultar?</span>
+          <button type="button" role="menuitem" data-privacidad-nivel="datos"><strong>1 · Solo datos principales</strong><span class="muted">RFC, montos, correos, teléfonos y claves</span></button>
+          <button type="button" role="menuitem" data-privacidad-nivel="nombres"><strong>2 · Incluir nombres</strong><span class="muted">Además, nombres de empresas y contactos</span></button>
+        </span>
+      </span>
     {% endif %}
-    <button type="button" class="theme-toggle" data-theme-toggle aria-label="Cambiar tema">◐</button>
+    {% include "partials/boton-tema.njk" %}
     {% if user %}
       {% if area == 'backoffice' %}
         <a class="topbar__name" href="/app/mi-perfil" title="Mi perfil (firma)">{{ user.nombre }}</a>

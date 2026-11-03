@@ -17,7 +17,7 @@
     {% if user %}
       <a href="{{ '/portal' if user.esCliente else (volverA or '/app') }}">← Volver al CRM</a>
     {% endif %}
-    <button type="button" class="theme-toggle" data-theme-toggle aria-label="Cambiar tema">◐</button>
+    {% include "partials/boton-tema.njk" %}
   </nav>
 </header>
 <main id="contenido" class="container">

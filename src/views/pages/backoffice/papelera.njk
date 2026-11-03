@@ -67,11 +67,11 @@
   {% if aviso %}<div class="alert alert--ok" role="status">{{ aviso }}</div>{% endif %}
 
   {% call(e) seccion('empresas', 'Empresas archivadas', empresas, ['Nombre', 'RFC']) %}
-    <td>{{ e.nombre }}</td><td class="muted sensible">{{ e.rfc or '—' }}</td>
+    <td class="nombre-sensible">{{ e.nombre }}</td><td class="muted sensible">{{ e.rfc or '—' }}</td>
   {% endcall %}
 
   {% call(c) seccion('contactos', 'Contactos archivados', contactos, ['Nombre', 'Empresa', 'Correo']) %}
-    <td>{{ c.nombre }}</td><td>{{ nombreEmpresa[c.empresaId] or '(empresa eliminada)' }}</td><td class="muted sensible">{{ c.email or '—' }}</td>
+    <td class="nombre-sensible">{{ c.nombre }}</td><td class="nombre-sensible">{{ nombreEmpresa[c.empresaId] or '(empresa eliminada)' }}</td><td class="muted sensible">{{ c.email or '—' }}</td>
   {% endcall %}
 
   {% call(t) seccion('tickets', 'Tickets archivados', tickets, ['#', 'Asunto']) %}

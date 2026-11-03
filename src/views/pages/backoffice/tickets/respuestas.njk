@@ -21,7 +21,7 @@
           <strong>#{{ r.numero }} — {{ r.asunto }}</strong>
           <span class="muted">{{ r.at | fechahora }}</span>
         </span>
-        <span class="muted">💬 {{ r.autorNombre }}{% if r.empresaNombre %} · {{ r.empresaNombre }}{% endif %}{% if r.agenteAsignadoNombre %} · agente: {{ r.agenteAsignadoNombre }}{% endif %}</span>
+        <span class="muted">💬 <span class="nombre-sensible">{{ r.autorNombre }}</span>{% if r.empresaNombre %} · <span class="nombre-sensible">{{ r.empresaNombre }}</span>{% endif %}{% if r.agenteAsignadoNombre %} · agente: {{ r.agenteAsignadoNombre }}{% endif %}</span>
         <span class="buzon-respuestas__extracto">{{ r.extracto }}</span>
       </a>
     {% else %}

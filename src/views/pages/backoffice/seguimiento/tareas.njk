@@ -52,7 +52,7 @@
             <strong{% if t.completada %} style="text-decoration:line-through"{% endif %}>{{ t.titulo }}</strong>
             {% if t.descripcion %}<div class="muted">{{ t.descripcion }}</div>{% endif %}
           </td>
-          <td>{% if t.empresaId %}<a href="/app/empresas/{{ t.empresaId }}">{{ nombreEmpresa[t.empresaId] or t.empresaId }}</a>{% else %}—{% endif %}</td>
+          <td>{% if t.empresaId %}<a class="nombre-sensible" href="/app/empresas/{{ t.empresaId }}">{{ nombreEmpresa[t.empresaId] or t.empresaId }}</a>{% else %}—{% endif %}</td>
           <td>{{ t.asignadoANombre or t.asignadoAUid }}</td>
           <td>
             {% if t.urgencia == 'vencida' %}<span class="badge badge--danger">{{ t.vence }}</span>

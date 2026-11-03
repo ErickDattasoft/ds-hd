@@ -903,6 +903,16 @@ tr.fila--sla-vencido > td { background: color-mix(in srgb, var(--danger) 6%, tra
   line-height: 1;
 }
 .theme-toggle:hover { color: var(--color-text); }
+/* Botón de tema: monitor (automático), sol (claro) o luna (oscuro), según data-theme. */
+[data-theme-toggle] { display: inline-flex; align-items: center; justify-content: center; }
+.ico-tema {
+  display: none; width: 1.1rem; height: 1.1rem;
+  fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+}
+:root:not([data-theme]) .ico-tema--sistema,
+[data-theme="light"] .ico-tema--claro,
+[data-theme="dark"] .ico-tema--oscuro { display: block; }
+[data-theme="dark"] .ico-tema--oscuro { fill: currentColor; stroke-width: 1.5; }
 
 /* ── Toasts ──────────────────────────────────────────────────────────── */
 .toasts {
@@ -1535,10 +1545,56 @@ dialog.card .field--check { display: flex; gap: var(--space-2); align-items: fle
   filter: blur(5px);
   user-select: none;
 }
+/* Nivel «nombres»: además, nombres de empresas y contactos y los campos donde se eligen. */
+[data-privacidad="nombres"] .nombre-sensible,
+[data-privacidad="nombres"] select:not(:focus):is([name="empresaId"], [name="empresa"], [name^="contacto" i]),
+[data-privacidad="nombres"] :is(input, textarea):not(:focus):is(
+  [name="empresaNombre"], [name="contactoNombre"], [name="solicitadoPor"], [name="empresa"], [name="contacto"]
+) {
+  filter: blur(5px);
+  user-select: none;
+}
 [data-privacidad] [data-privacidad-toggle] { color: var(--brand); border-color: var(--brand); }
+.privacidad { position: relative; display: inline-flex; }
+.privacidad__menu {
+  position: absolute; top: calc(100% + 6px); right: 0; z-index: 70;
+  display: flex; flex-direction: column; gap: 2px; width: 17rem; padding: var(--space-2);
+  background: var(--color-surface, var(--color-bg)); border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm); box-shadow: 0 8px 24px rgb(0 0 0 / 0.18);
+}
+.privacidad__menu[hidden] { display: none; }
+.privacidad__titulo { font-size: var(--text-sm); font-weight: 600; padding: 0.2rem 0.5rem; color: var(--color-text-muted); }
+.privacidad__menu button {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 2px; text-align: left;
+  background: transparent; border: 0; border-radius: var(--radius-sm); padding: 0.45rem 0.55rem;
+  color: var(--color-text); cursor: pointer; font: inherit;
+}
+.privacidad__menu button span { font-size: var(--text-sm); }
+.privacidad__menu button:hover, .privacidad__menu button:focus-visible { background: var(--brand-weak); outline: none; }
+
+/* ── Visor de imágenes (capturas de tickets) ── */
+.visor-img {
+  position: fixed; inset: 0; z-index: 200; display: flex; align-items: center; justify-content: center;
+  background: rgb(0 0 0 / 0.82); padding: 3rem 1rem 1rem; cursor: zoom-out;
+}
+.visor-img img {
+  max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 4px;
+  box-shadow: 0 10px 40px rgb(0 0 0 / 0.5); cursor: zoom-in; background: #fff;
+}
+.visor-img img.visor-img__img--real { max-width: none; max-height: none; cursor: zoom-out; }
+.visor-img:has(.visor-img__img--real) { align-items: flex-start; justify-content: flex-start; overflow: auto; }
+.visor-img__barra { position: fixed; top: 0.75rem; right: 1rem; display: flex; gap: 0.5rem; }
+.visor-img__btn {
+  background: rgb(255 255 255 / 0.14); color: #fff; border: 1px solid rgb(255 255 255 / 0.3);
+  border-radius: var(--radius-sm); padding: 0.35rem 0.7rem; cursor: pointer; text-decoration: none; font: inherit;
+}
+.visor-img__btn:hover { background: rgb(255 255 255 / 0.26); }
+body.visor-abierto { overflow: hidden; }
+img.adjunto-thumb, .ticket-descripcion img, .chat__cuerpo img { cursor: zoom-in; }
 @media print {
   [data-privacidad] .sensible,
-  [data-privacidad] a { filter: none; }
+  [data-privacidad] .nombre-sensible,
+  [data-privacidad] :is(a, input, textarea, select) { filter: none; }
 }
 
 /* ── Roles de personal (alta/edición de usuario): tarjetas con lo que puede / no puede ── */

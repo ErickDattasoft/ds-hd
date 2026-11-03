@@ -27,7 +27,7 @@
     <tbody>
       {% for r in resultados %}
         <tr>
-          <td>{{ r.empresaNombre }}</td>
+          <td class="nombre-sensible">{{ r.empresaNombre }}</td>
           <td>
             {% if r.whatsappManual %}
               <span class="badge badge--warning">Pendiente de enviar</span>

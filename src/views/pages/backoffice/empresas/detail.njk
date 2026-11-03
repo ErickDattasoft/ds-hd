@@ -7,7 +7,7 @@
         <button type="submit" form="fav-empresa" class="star-btn" title="{{ 'Quitar de favoritas' if empresa.favorita else 'Marcar como favorita' }}"
                 aria-pressed="{{ 'true' if empresa.favorita else 'false' }}">{{ '⭐' if empresa.favorita else '☆' }}</button>
       {% elif empresa.favorita %}⭐{% endif %}
-      {{ empresa.nombre }} {% if not empresa.activa %}<span class="badge">archivada</span>{% endif %}
+      <span class="nombre-sensible">{{ empresa.nombre }}</span> {% if not empresa.activa %}<span class="badge">archivada</span>{% endif %}
     </h1>
     <div class="page-head__actions">
       {% set correoDestino = empresa.email %}
@@ -122,7 +122,7 @@
     <tbody>
       {% for c in contactos %}
         <tr>
-          <td><a href="/app/contactos/{{ c.id }}/editar">{{ c.nombre }}</a>{% if c.id == empresa.contactoPrincipalId %} <span class="badge">Principal</span>{% elif c.id == empresa.contactoAlternativoId %} <span class="badge">Alternativo</span>{% endif %}</td>
+          <td><a class="nombre-sensible" href="/app/contactos/{{ c.id }}/editar">{{ c.nombre }}</a>{% if c.id == empresa.contactoPrincipalId %} <span class="badge">Principal</span>{% elif c.id == empresa.contactoAlternativoId %} <span class="badge">Alternativo</span>{% endif %}</td>
           <td>{{ c.puesto or '—' }}</td>
           <td>{% if c.email %}<a href="mailto:{{ c.email }}" title="Escribir correo">✉️ {{ c.email }}</a>{% else %}—{% endif %}{% if c.emailAlternativo %}<br><a href="mailto:{{ c.emailAlternativo }}" title="Correo alternativo">✉️ {{ c.emailAlternativo }}</a>{% endif %}</td>
           <td class="sensible">{% if c.telefono %}📱 {{ c.telefono }}{% endif %}{% if c.celular %}{{ '<br>' | safe if c.telefono }}☎️ {{ c.celular }}{% endif %}{% if not c.telefono and not c.celular %}—{% endif %}</td>

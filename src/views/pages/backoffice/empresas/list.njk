@@ -104,7 +104,7 @@
                       aria-pressed="{{ 'true' if e.favorita else 'false' }}">{{ '⭐' if e.favorita else '☆' }}</button>
             </td>
           {% endif %}
-          <td><a href="/app/empresas/{{ e.id }}">{{ e.nombre }}</a></td>
+          <td><a class="nombre-sensible" href="/app/empresas/{{ e.id }}">{{ e.nombre }}</a></td>
           <td>{{ fila.contactoPrincipal.nombre if fila.contactoPrincipal else '—' }}</td>
           <td>
             {% set correo = e.email or (fila.contactoPrincipal.email if fila.contactoPrincipal) %}

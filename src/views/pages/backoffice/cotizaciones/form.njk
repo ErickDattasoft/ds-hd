@@ -28,7 +28,7 @@
         </label>
       {% endif %}
     {% else %}
-      <p class="muted">{{ cotizacion.folio }} · {{ cotizacion.empresaNombre }}</p>
+      <p class="muted">{{ cotizacion.folio }} · <span class="nombre-sensible">{{ cotizacion.empresaNombre }}</span></p>
     {% endif %}
 
     <details class="disclosure"{{ ' open' if valores.emisorNombre or valores.rfc or valores.contactoNombre }}>

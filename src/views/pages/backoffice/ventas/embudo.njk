@@ -33,7 +33,7 @@
           <div class="kanban__card">
             <a href="/app/ventas/{{ o.id }}/editar"><strong>{{ o.titulo }}</strong></a>
             <div class="kanban__meta">
-              <span>{{ o.empresaNombre or 'Sin empresa' }}</span>
+              <span class="nombre-sensible">{{ o.empresaNombre or 'Sin empresa' }}</span>
               <strong>{{ o.monto | moneda }}</strong>
             </div>
             <div class="kanban__meta">

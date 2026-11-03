@@ -38,7 +38,7 @@
       <tbody>
         {% for a in avisos %}
           <tr>
-            <td><a href="/app/empresas/{{ a.empresaId }}">{{ a.empresaNombre }}</a></td>
+            <td><a class="nombre-sensible" href="/app/empresas/{{ a.empresaId }}">{{ a.empresaNombre }}</a></td>
             <td>{{ a.sistema }}</td>
             <td>
               {% if a.tipo == 'licencia' %}

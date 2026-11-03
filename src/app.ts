@@ -203,7 +203,10 @@ export function createApp(container: Container, options: CreateAppOptions = {}):
     const tema = req.cookies?.theme;
     if (tema === 'light' || tema === 'dark') res.locals.theme = tema;
     res.locals.sidebarMini = req.cookies?.sidebar === 'mini';
-    res.locals.privacidad = req.cookies?.privacidad === '1';
+    // privacidad: '1' = solo datos (RFC, montos, correos, teléfonos); '2' = también nombres.
+    const privacidad = req.cookies?.privacidad;
+    res.locals.privacidad = privacidad === '1' || privacidad === '2';
+    res.locals.privacidadNombres = privacidad === '2';
     next();
   });
 
