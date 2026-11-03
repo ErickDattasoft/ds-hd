@@ -54,7 +54,7 @@
                 {{ a.versionInstalada or 'sin dato' }} → <strong>{{ a.versionOficial or '—' }}</strong>
               {% endif %}
             </td>
-            <td>{{ 'WhatsApp' if a.canal == 'whatsapp' else 'Correo' }}{% if a.destino %}<div class="muted" style="font-size:.78em">{{ a.destino }}</div>{% endif %}</td>
+            <td>{{ 'WhatsApp' if a.canal == 'whatsapp' else 'Correo' }}{% if a.destino %}<div class="muted sensible" style="font-size:.78em">{{ a.destino }}</div>{% endif %}</td>
             <td>{{ a.createdAt | fechahora }}</td>
             <td>{{ a.enviadoPorNombre or '—' }}</td>
           </tr>

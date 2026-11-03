@@ -30,10 +30,10 @@
       {% for f in filas %}
         <tr>
           <td><a href="/app/empresas/{{ f.empresaId }}">{{ f.empresa }}</a></td>
-          <td>{{ f.rfc or '—' }}</td>
+          <td class="sensible">{{ f.rfc or '—' }}</td>
           <td>{{ f.contacto or '—' }}</td>
-          <td>{{ f.correo or '—' }}</td>
-          <td>{{ f.telefono or '—' }}</td>
+          <td class="sensible">{{ f.correo or '—' }}</td>
+          <td class="sensible">{{ f.telefono or '—' }}</td>
           <td>
             {% for s in f.sistemasDesactualizados %}
               <div>{{ s.sistema }}: {{ s.instalada }} → <strong>{{ s.oficial }}</strong>{% if s.cartaTecnica %} · <a href="{{ s.cartaTecnica }}" rel="noopener">carta técnica</a>{% endif %}</div>
@@ -61,7 +61,7 @@
           {% for u in destinatariosSugeridos %}
             <label class="field--check">
               <input type="checkbox" name="destinatariosUsuarios" value="{{ u.email }}" />
-              <span>{{ u.nombre }} <span class="muted">{{ u.email }}</span></span>
+              <span>{{ u.nombre }} <span class="muted sensible">{{ u.email }}</span></span>
             </label>
           {% endfor %}
         </fieldset>

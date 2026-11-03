@@ -15,6 +15,9 @@
     {% endif %}
     {% if can('tickets:crear') %}<a class="btn btn--sm" href="/app/tickets/nuevo" title="Crear un ticket nuevo — funciona desde cualquier sección" aria-label="Nuevo ticket">➕<span class="topbar__etiqueta"> Ticket</span></a>{% endif %}
     {% if can('configuracion:integraciones') %}<a class="btn btn--ghost btn--sm" href="/app/configuracion/backup/descargar" data-respaldar hx-boost="false" title="Descargar backup completo — funciona desde cualquier sección" aria-label="Respaldar">🛡️<span class="topbar__etiqueta"> Respaldar</span></a>{% endif %}
+    {% if area == 'backoffice' %}
+      <button type="button" class="theme-toggle" data-privacidad-toggle title="Modo privacidad: difumina RFC, montos, correos y teléfonos (Alt+P)" aria-pressed="{{ 'true' if privacidad else 'false' }}">{{ '🙈' if privacidad else '👁' }}</button>
+    {% endif %}
     <button type="button" class="theme-toggle" data-theme-toggle aria-label="Cambiar tema">◐</button>
     {% if user %}
       {% if area == 'backoffice' %}

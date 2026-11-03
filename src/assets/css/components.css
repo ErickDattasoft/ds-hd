@@ -1332,7 +1332,7 @@ tr.fila--sla-vencido > td { background: color-mix(in srgb, var(--danger) 6%, tra
 .sugerencias {
   position: absolute; left: 0; right: 0; top: 100%; z-index: 30; margin: 2px 0 0; padding: 4px 0;
   list-style: none; max-height: 320px; overflow-y: auto;
-  background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md, 8px);
+  background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius);
   box-shadow: 0 8px 24px rgb(0 0 0 / 0.15);
 }
 .sugerencias li { padding: 6px 12px; cursor: pointer; font-size: var(--text-sm); }
@@ -1403,7 +1403,7 @@ dialog.card .field--check { display: flex; gap: var(--space-2); align-items: fle
 .banner-lic__lista {
   max-height: 18rem; overflow-y: auto;
   list-style: none; margin: var(--space-2) 0 0; padding: 0;
-  border: 1px solid var(--color-border); border-radius: var(--radius-md, 8px);
+  border: 1px solid var(--color-border); border-radius: var(--radius);
 }
 .banner-lic__item {
   display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: var(--space-3);
@@ -1517,3 +1517,54 @@ dialog.card .field--check { display: flex; gap: var(--space-2); align-items: fle
   border-top: 1px solid var(--color-border);
 }
 .cat-guardar__estado { color: var(--warning); font-weight: 600; font-size: var(--text-sm); }
+
+/* ── Modo privacidad ─────────────────────────────────────────────────────
+   Difumina datos que no debe ver alguien de fuera (RFC, montos, correos, teléfonos,
+   claves). Lo marcado a mano lleva `.sensible`; correos, teléfonos y campos de
+   formulario se detectan solos. Un campo se aclara mientras se escribe en él. */
+[data-privacidad] .sensible,
+[data-privacidad] a[href^="mailto:"],
+[data-privacidad] a[href^="tel:"],
+[data-privacidad] :is(input, textarea):not(:focus):is(
+  [type="email"], [type="tel"],
+  [name*="rfc" i], [name*="telefono" i], [name*="celular" i], [name*="whatsapp" i],
+  [name*="email" i], [name*="correo" i],
+  [name*="precio" i], [name*="monto" i], [name*="importe" i], [name*="total" i], [name*="costo" i],
+  [name*="clave" i], [name*="secret" i], [name*="token" i], [name*="apikey" i], [name*="api_key" i]
+) {
+  filter: blur(5px);
+  user-select: none;
+}
+[data-privacidad] [data-privacidad-toggle] { color: var(--brand); border-color: var(--brand); }
+@media print {
+  [data-privacidad] .sensible,
+  [data-privacidad] a { filter: none; }
+}
+
+/* ── Roles de personal (alta/edición de usuario): tarjetas con lo que puede / no puede ── */
+.roles-staff { width: 100%; min-width: 0; grid-column: 1 / -1; }
+.roles-staff__grupo { margin-block: var(--space-3); }
+.roles-staff__titulo { display: block; margin-bottom: var(--space-2); }
+.roles-staff__tarjetas {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
+  gap: var(--space-3);
+}
+.rol-tarjeta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+.rol-tarjeta:hover { border-color: var(--brand); }
+.rol-tarjeta:has(input:checked) { border-color: var(--brand); background: var(--brand-weak); }
+.rol-tarjeta:has(input:disabled) { opacity: 0.55; cursor: not-allowed; }
+.rol-tarjeta__cabeza { display: flex; align-items: center; gap: var(--space-2); font-size: 1.05em; }
+.rol-tarjeta__lista { margin: 0; padding: 0; list-style: none; font-size: var(--text-sm); }
+.rol-tarjeta__lista li { padding-left: 1.4em; text-indent: -1.4em; line-height: 1.45; }
+.rol-tarjeta__lista--si li::before { content: '✅ '; }
+.rol-tarjeta__lista--no li::before { content: '🚫 '; }
+.rol-tarjeta__lista--no li.muted::before { content: ''; }

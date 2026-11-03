@@ -257,7 +257,7 @@ export class UsuarioController {
     const { email = '', nombre = '' } = body;
     const roles = aArreglo(body.roles) ?? [];
     try {
-      const { urlInvitacion } = await this.crear.ejecutar({
+      const { urlInvitacion, errorCorreo } = await this.crear.ejecutar({
         actor: req.user!,
         email,
         nombre,
@@ -268,6 +268,7 @@ export class UsuarioController {
         nombre,
         email,
         urlInvitacion,
+        errorCorreo,
       });
     } catch (err) {
       this.renderErrorForm(res, 'crear', { email, nombre, roles, esCliente: false }, err);
@@ -378,7 +379,7 @@ export class UsuarioController {
   invitarClientePost = async (req: Request, res: Response): Promise<void> => {
     const { email = '', nombre = '', empresaId = '' } = req.body ?? {};
     try {
-      const { urlInvitacion } = await this.invitarCliente.ejecutar({
+      const { urlInvitacion, errorCorreo } = await this.invitarCliente.ejecutar({
         actor: req.user!,
         email,
         nombre,
@@ -390,6 +391,7 @@ export class UsuarioController {
         nombre,
         email,
         urlInvitacion,
+        errorCorreo,
       });
     } catch (err) {
       const errores =

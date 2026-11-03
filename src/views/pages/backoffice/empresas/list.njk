@@ -110,8 +110,8 @@
             {% set correo = e.email or (fila.contactoPrincipal.email if fila.contactoPrincipal) %}
             {% if correo %}<a href="mailto:{{ correo }}" title="Escribir a {{ correo }}">{{ correo }}</a>{% else %}<span class="muted">—</span>{% endif %}
           </td>
-          <td>{{ e.rfc or '—' }}</td>
-          <td>{{ e.telefono or '—' }}</td>
+          <td class="sensible">{{ e.rfc or '—' }}</td>
+          <td class="sensible">{{ e.telefono or '—' }}</td>
           <td>{{ e.sistemasContratados | length }}</td>
           <td{% if fila.detalleLicencias %} title="{{ fila.detalleLicencias }}"{% endif %}>
             {% if fila.vencidas %}<span class="badge badge--danger">{{ fila.vencidas }} vencida{{ 's' if fila.vencidas != 1 }}</span>{% endif %}

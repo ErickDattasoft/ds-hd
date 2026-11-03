@@ -261,10 +261,10 @@
             <td>{{ i.nombre }}</td>
             <td>{{ i.empresa or '—' }}</td>
             <td>{% if i.asistioAntes %}🔁 {{ i.asistioAntes }}{% else %}—{% endif %}</td>
-            <td>{{ i.email }}{% if i.correoSospechoso %} 🚩{% endif %}</td>
+            <td><span class="sensible">{{ i.email }}</span>{% if i.correoSospechoso %} 🚩{% endif %}</td>
             <td>{{ i.correoEstado or '—' }}</td>
             <td>{% if i.enListaNegra %}🚫{% else %}—{% endif %}</td>
-            <td>{{ i.telefono or '—' }}</td>
+            <td class="sensible">{{ i.telefono or '—' }}</td>
             <td>{{ i.asistira or '—' }}</td>
             <td>{{ 'Sí' if i.asistioReal else '—' }}</td>
             <td>{{ 'Sí' if i.contactadoWsp else '—' }}</td>
@@ -290,7 +290,7 @@
         </form>
         <ul class="kb-list">
           {% for e in listaNegra %}
-            <li>{{ e.email }}{% if e.telefono %} · {{ e.telefono }}{% endif %}
+            <li><span class="sensible">{{ e.email }}{% if e.telefono %} · {{ e.telefono }}{% endif %}</span>
               <span class="muted">{{ e.motivo }}{% if e.marcadoPor %} — por {{ e.marcadoPor }}{% endif %}</span>
               <form method="post" action="/app/eventos/{{ evento.id }}/lista-negra/quitar" class="inline">
                 <input type="hidden" name="_csrf" value="{{ csrfToken }}" />

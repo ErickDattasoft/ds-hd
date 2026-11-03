@@ -81,8 +81,11 @@ function installViewEngine(app: Express, config: AppConfig, precompiled: boolean
   env.addFilter('fechalarga', filtroFecha({ dateStyle: 'long' }));
   env.addFilter('hora', filtroFecha({ timeStyle: 'short' }));
   env.addFilter('textoOHtmlSeguro', (v: unknown) => textoOHtmlASeguro(typeof v === 'string' ? v : ''));
+  // Va envuelto en `.sensible` para que el modo privacidad lo difumine en todas partes.
   env.addFilter('moneda', (v: unknown, moneda = 'MXN') =>
-    new Intl.NumberFormat('es-MX', { style: 'currency', currency: String(moneda) }).format(Number(v) || 0),
+    new nunjucks.runtime.SafeString(
+      `<span class="sensible">${new Intl.NumberFormat('es-MX', { style: 'currency', currency: String(moneda) }).format(Number(v) || 0)}</span>`,
+    ),
   );
 
   // Clases de color para badges de estado/prioridad (tickets, cotizaciones, eventos). Los
@@ -188,6 +191,7 @@ export function createApp(container: Container, options: CreateAppOptions = {}):
     const tema = req.cookies?.theme;
     if (tema === 'light' || tema === 'dark') res.locals.theme = tema;
     res.locals.sidebarMini = req.cookies?.sidebar === 'mini';
+    res.locals.privacidad = req.cookies?.privacidad === '1';
     next();
   });
 

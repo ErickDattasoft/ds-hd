@@ -7,7 +7,7 @@
     <div class="card">
       <p>{% if t.origen == 'correo' %}<span class="badge">📧 por correo</span>{% else %}<span class="badge">🌐 formulario</span>{% endif %}
         <strong>{{ t.asunto }}</strong> — <span class="{{ t.prioridad | prioridadClase }}">{{ t.prioridad }}</span></p>
-      <p class="muted">{{ t.nombre }} ({{ t.correo }}){% if t.empresa %} · {{ t.empresa }}{% endif %} · folio {{ t.folio }}</p>
+      <p class="muted">{{ t.nombre }} (<span class="sensible">{{ t.correo }}</span>){% if t.empresa %} · {{ t.empresa }}{% endif %} · folio {{ t.folio }}</p>
       <p class="muted">{{ t.createdAt | fechahora }}</p>
       <p style="white-space:pre-wrap">{{ t.descripcion }}</p>
       {% if t.imagenes and t.imagenes.length %}

@@ -23,7 +23,7 @@
       {% for u in usuarios %}
         <tr>
           <td>{{ u.nombre }}</td>
-          <td>{{ u.email.value }}</td>
+          <td class="sensible">{{ u.email.value }}</td>
           <td>
             {% for r in u.roles %}<span class="badge badge--rol">{{ ROL_ETIQUETA[r] }}</span>{% endfor %}
           </td>

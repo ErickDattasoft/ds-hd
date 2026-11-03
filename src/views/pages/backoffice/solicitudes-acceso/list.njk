@@ -11,7 +11,7 @@
       {% for s in pendientes %}
         <tr>
           <td>{{ s.nombre }}</td>
-          <td>{{ s.email }}</td>
+          <td class="sensible">{{ s.email }}</td>
           <td class="muted">{{ s.mensaje or '—' }}</td>
           <td>{{ s.createdAt | fechahora }}</td>
           <td>

@@ -22,25 +22,67 @@
         {% if errores.email %}<em class="field__error">{{ errores.email }}</em>{% endif %}
       </label>
     {% else %}
-      <p class="muted">Correo: {{ usuario.email.value }}</p>
+      <p class="muted">Correo: <span class="sensible">{{ usuario.email.value }}</span></p>
     {% endif %}
 
-    <fieldset class="field">
+    {# Lo que puede / no puede cada rol, en palabras. Debe ir de acuerdo con
+       ROLE_PERMISSIONS (src/interfaces/http/rbac/roles.ts). #}
+    {% set ROL_DESCRIPCION = {
+      'soporte': {
+        'puede': ['Ver sus tickets y los sin asignar', 'Crear, editar, asignar y cambiar el estado de tickets', 'Ver notas internas', 'Consultar empresas, contactos y versiones'],
+        'noPuede': ['Ver tickets asignados a otros ni reportes', 'Editar empresas o contactos', 'Cotizaciones, seguimiento ni eventos', 'Usuarios ni configuración']
+      },
+      'ventas': {
+        'puede': ['Crear y editar empresas y contactos', 'Crear y editar cotizaciones', 'Seguimiento y embudo de ventas', 'Eventos e inscritos', 'Consultar versiones'],
+        'noPuede': ['Ver ni atender tickets', 'Reportes', 'Usuarios ni configuración']
+      },
+      'agente': {
+        'puede': ['Todo lo de Soporte técnico', 'Crear y editar contactos', 'Consultar cotizaciones', 'Seguimiento'],
+        'noPuede': ['Ver tickets asignados a otros ni reportes', 'Editar empresas ni crear cotizaciones', 'Eventos', 'Usuarios ni configuración']
+      },
+      'supervisor': {
+        'puede': ['Ver y reasignar todos los tickets', 'Reportes, bitácora y papelera', 'Empresas, contactos, cotizaciones, ventas y eventos', 'Dar de alta usuarios', 'Catálogos de configuración'],
+        'noPuede': ['Integraciones (correo, WhatsApp, Zoho) ni respaldos', 'Cambiar los permisos de los roles']
+      },
+      'admin': {
+        'puede': ['Todo el sistema, sin excepción', 'Integraciones, respaldos y permisos de roles'],
+        'noPuede': []
+      },
+      'lectura': {
+        'puede': ['Ver todo: tickets (con notas internas), empresas, contactos, cotizaciones, versiones, eventos, seguimiento, bitácora y reportes'],
+        'noPuede': ['Crear, editar ni borrar nada']
+      }
+    } %}
+    <fieldset class="field roles-staff">
       <legend>Roles de personal</legend>
-      <p class="muted">Los permisos son la suma de todos los roles marcados.</p>
+      <p class="muted">Si marcas varios, la persona tiene la suma de lo que permite cada uno.
+        La base de conocimiento no depende del rol: se da por persona en su apartado de acceso.</p>
       {% for g in ROL_GRUPOS %}
-        <div class="perm-group">
-          <strong>{{ g.etiqueta }}</strong>
-          {% for r in g.roles %}
-            {% if r in rolesStaff %}
-              <label class="field--check">
-                <input type="checkbox" name="roles" value="{{ r }}"
-                       {{ 'checked' if r in valores.roles }}
-                       {{ 'disabled' if valores.esCliente }} />
-                <span>{{ ROL_ETIQUETA[r] }}</span>
-              </label>
-            {% endif %}
-          {% endfor %}
+        <div class="roles-staff__grupo">
+          <strong class="roles-staff__titulo">{{ g.etiqueta }}</strong>
+          <div class="roles-staff__tarjetas">
+            {% for r in g.roles %}
+              {% if r in rolesStaff %}
+                {% set d = ROL_DESCRIPCION[r] %}
+                <label class="rol-tarjeta">
+                  <span class="rol-tarjeta__cabeza">
+                    <input type="checkbox" name="roles" value="{{ r }}"
+                           {{ 'checked' if r in valores.roles }}
+                           {{ 'disabled' if valores.esCliente }} />
+                    <strong>{{ ROL_ETIQUETA[r] }}</strong>
+                  </span>
+                  {% if d %}
+                    <ul class="rol-tarjeta__lista rol-tarjeta__lista--si">
+                      {% for x in d.puede %}<li>{{ x }}</li>{% endfor %}
+                    </ul>
+                    <ul class="rol-tarjeta__lista rol-tarjeta__lista--no">
+                      {% for x in d.noPuede %}<li>{{ x }}</li>{% else %}<li class="muted">Sin restricciones</li>{% endfor %}
+                    </ul>
+                  {% endif %}
+                </label>
+              {% endif %}
+            {% endfor %}
+          </div>
         </div>
       {% endfor %}
       {% if errores.roles %}<em class="field__error">{{ errores.roles }}</em>{% endif %}

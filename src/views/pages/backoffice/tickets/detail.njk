@@ -50,7 +50,7 @@
             <div class="chat__msg {{ 'chat__msg--interna' if n.tipo == 'interna' else ('chat__msg--cliente' if deCliente else 'chat__msg--equipo') }}">
               <div class="chat__meta">
                 <span class="chat__autor">{{ '🔒' if n.tipo == 'interna' else ('📥' if recibida else ('👤' if deCliente else '📤')) }} {{ n.autorNombre }}</span>
-                {% if n.correoDe and n.correoDe != n.autorNombre %}<span class="muted">&lt;{{ n.correoDe }}&gt;</span>{% endif %}
+                {% if n.correoDe and n.correoDe != n.autorNombre %}<span class="muted sensible">&lt;{{ n.correoDe }}&gt;</span>{% endif %}
                 {% if n.tipo == 'interna' %}<span class="badge badge--warning">interna</span>{% endif %}
               </div>
               <div class="chat__cuerpo">{{ n.cuerpo }}</div>

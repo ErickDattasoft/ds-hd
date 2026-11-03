@@ -28,6 +28,8 @@ export interface CrearUsuarioResultado {
   usuario: Usuario;
   /** URL de un solo uso para que el usuario fije su contraseña. */
   urlInvitacion: string;
+  /** Motivo por el que no salió el correo de invitación (null si se envió). */
+  errorCorreo: string | null;
 }
 
 /** Caso de uso: un administrador da de alta una cuenta de staff. */
@@ -83,6 +85,7 @@ export class CrearUsuarioService {
 
     // Best-effort: si el correo falla, la cuenta ya existe y el admin ve el enlace de
     // invitación en pantalla para compartirlo a mano. No revertimos el alta por esto.
+    let errorCorreo: string | null = null;
     try {
       await this.email.enviar({
         para: [{ email: correo.value, nombre }],
@@ -92,6 +95,7 @@ export class CrearUsuarioService {
         tags: ['invitacion-staff'],
       });
     } catch (err) {
+      errorCorreo = err instanceof Error ? err.message : String(err);
       this.logger.error('No se pudo enviar el correo de invitación de staff', {
         uid,
         err: err instanceof Error ? err.message : err,
@@ -112,7 +116,7 @@ export class CrearUsuarioService {
       resumen: `Nuevo usuario creado: ${nombre} (${roles.join(', ')})`,
     });
     this.logger.info('Usuario staff creado', { uid, roles, por: input.actor.uid });
-    return { usuario, urlInvitacion };
+    return { usuario, urlInvitacion, errorCorreo };
   }
 
   private async crearInvitacion(uid: string, email: string, invitadoPor: string): Promise<string> {

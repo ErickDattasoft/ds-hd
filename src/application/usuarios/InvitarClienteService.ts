@@ -24,6 +24,8 @@ export interface InvitarClienteResultado {
   usuario: Usuario;
   /** `null` cuando la cuenta ya existía y solo se le sumó la empresa (ya tiene contraseña). */
   urlInvitacion: string | null;
+  /** Motivo por el que no salió el correo de invitación (null si se envió). */
+  errorCorreo: string | null;
 }
 
 /**
@@ -66,7 +68,7 @@ export class InvitarClienteService {
       existente.updatedAt = this.clock.now();
       await this.usuarios.save(existente);
       this.logger.info('Empresa agregada a cliente del portal', { uid: existente.uid, empresaId: input.empresaId, por: input.actor.uid });
-      return { usuario: existente, urlInvitacion: null };
+      return { usuario: existente, urlInvitacion: null, errorCorreo: null };
     }
 
     const { uid } = await this.auth.createAccount({
@@ -100,6 +102,7 @@ export class InvitarClienteService {
 
     // Best-effort: igual que en el alta de staff, si el correo falla el admin comparte el
     // enlace de invitación a mano (se muestra en pantalla). No revertimos la invitación.
+    let errorCorreo: string | null = null;
     try {
       await this.email.enviar({
         para: [{ email: correo.value, nombre }],
@@ -109,6 +112,7 @@ export class InvitarClienteService {
         tags: ['invitacion-cliente'],
       });
     } catch (err) {
+      errorCorreo = err instanceof Error ? err.message : String(err);
       this.logger.error('No se pudo enviar el correo de invitación de cliente', {
         uid,
         err: err instanceof Error ? err.message : err,
@@ -116,6 +120,6 @@ export class InvitarClienteService {
     }
 
     this.logger.info('Cliente invitado al portal', { uid, empresaId: input.empresaId, por: input.actor.uid });
-    return { usuario, urlInvitacion };
+    return { usuario, urlInvitacion, errorCorreo };
   }
 }

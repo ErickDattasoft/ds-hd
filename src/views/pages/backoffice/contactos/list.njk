@@ -26,9 +26,9 @@
           <td><a href="/app/contactos/{{ c.id }}/editar">{{ c.nombre }}</a>{% if rolEnEmpresa[c.id] %}<br><span class="muted">{{ rolEnEmpresa[c.id] }}</span>{% endif %}</td>
           <td>{% if nombreEmpresa[c.empresaId] %}<a href="/app/empresas/{{ c.empresaId }}">{{ nombreEmpresa[c.empresaId] }}</a>{% else %}(empresa eliminada){% endif %}</td>
           <td>{{ c.puesto or '—' }}</td>
-          <td>{{ c.email or '—' }}</td>
-          <td>{{ c.telefono or '—' }}</td>
-          <td>{{ c.celular or '—' }}</td>
+          <td class="sensible">{{ c.email or '—' }}</td>
+          <td class="sensible">{{ c.telefono or '—' }}</td>
+          <td class="sensible">{{ c.celular or '—' }}</td>
           <td class="col-acciones">
             {% set tel = (c.telefono or '') | replace(' ', '') | replace('-', '') | replace('(', '') | replace(')', '') | replace('+', '') %}
             {% if tel %}<a class="btn btn--ghost btn--sm" target="_blank" rel="noopener" href="https://wa.me/{{ '52' if tel|length == 10 else '' }}{{ tel }}" title="WhatsApp">💬</a>{% endif %}

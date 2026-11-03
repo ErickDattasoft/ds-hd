@@ -38,6 +38,31 @@
     setTheme(next);
   });
 
+  // ── Modo privacidad: difumina datos sensibles (.sensible, correos, teléfonos…) ──
+  // Para enseñar el sistema a alguien de fuera. Se recuerda en cookie para que el servidor
+  // pinte la página ya difuminada y no se alcance a ver nada al navegar.
+  function alternarPrivacidad() {
+    var on = !root.hasAttribute('data-privacidad');
+    if (on) root.setAttribute('data-privacidad', '');
+    else root.removeAttribute('data-privacidad');
+    document.cookie = 'privacidad=' + (on ? '1;max-age=31536000' : ';max-age=0') + ';path=/;samesite=lax';
+    var btn = document.querySelector('[data-privacidad-toggle]');
+    if (btn) {
+      btn.textContent = on ? '🙈' : '👁';
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    }
+  }
+  document.addEventListener('click', function (e) {
+    if (e.target.closest('[data-privacidad-toggle]')) alternarPrivacidad();
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.altKey && !e.ctrlKey && !e.metaKey && (e.key === 'p' || e.key === 'P' || e.code === 'KeyP')) {
+      if (!document.querySelector('[data-privacidad-toggle]')) return;
+      e.preventDefault();
+      alternarPrivacidad();
+    }
+  });
+
   // ── Colapsar menú lateral (escritorio) ─────────────────────────────────────
   function pintarColapsar() {
     var btn = document.querySelector('[data-nav-colapsar]');

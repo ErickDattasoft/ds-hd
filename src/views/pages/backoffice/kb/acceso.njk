@@ -25,7 +25,7 @@
         {% for f in filas %}
           <tr>
             <td><input type="checkbox" name="acceso" value="{{ f.uid }}" id="acc-{{ loop.index }}" {{ 'checked' if f.marcado }} /></td>
-            <td><label for="acc-{{ loop.index }}">{{ f.nombre }}</label> <span class="muted">{{ f.email }}</span></td>
+            <td><label for="acc-{{ loop.index }}">{{ f.nombre }}</label> <span class="muted sensible">{{ f.email }}</span></td>
             <td>{{ f.roles | join(', ') }}</td>
           </tr>
         {% else %}
