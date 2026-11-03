@@ -60,6 +60,7 @@ import { SolicitarAccesoService } from '../application/auth/SolicitarAccesoServi
 import { SolicitudAccesoService } from '../application/auth/SolicitudAccesoService.js';
 import { CrearUsuarioService } from '../application/usuarios/CrearUsuarioService.js';
 import { ActualizarUsuarioService } from '../application/usuarios/ActualizarUsuarioService.js';
+import { EliminarUsuarioService } from '../application/usuarios/EliminarUsuarioService.js';
 import { EncuestaSatisfaccionService } from '../application/tickets/EncuestaSatisfaccionService.js';
 import { EncuestaController } from '../interfaces/http/controllers/public/EncuestaController.js';
 import { ReportesService } from '../application/reportes/ReportesService.js';
@@ -1039,6 +1040,7 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
           c.contrasenaService,
           c.configuracionTicketsService,
           c.accesoKBService,
+          new EliminarUsuarioService(c.usuarioRepo, c.authProvider, c.ticketQueries, c.logger, c.bitacoraService),
         ),
     ).singleton(),
     solicitudAccesoController: asFunction(

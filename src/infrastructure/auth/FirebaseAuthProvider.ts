@@ -67,6 +67,15 @@ export class FirebaseAuthProvider implements IAuthProvider {
     await this.auth.updateUser(uid, { disabled });
   }
 
+  async deleteAccount(uid: string): Promise<void> {
+    try {
+      await this.auth.deleteUser(uid);
+    } catch (err) {
+      if (isFirebaseError(err) && err.code === 'auth/user-not-found') return;
+      throw err;
+    }
+  }
+
   async setRolesClaim(uid: string, roles: string[]): Promise<void> {
     await this.auth.setCustomUserClaims(uid, { roles, role: roles[0] });
   }

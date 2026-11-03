@@ -31,6 +31,9 @@ export interface IAuthProvider {
   /** Habilita/inhabilita la cuenta a nivel de identidad (bloquea el login). */
   setDisabled(uid: string, disabled: boolean): Promise<void>;
 
+  /** Borra la cuenta de identidad. Si ya no existe (p. ej. uid migrado), no hace nada. */
+  deleteAccount(uid: string): Promise<void>;
+
   /**
    * Fija los custom claims de rol en el token: `roles` (arreglo) y `role` (el principal, para
    * compatibilidad con lectores de un solo rol). No es frontera de seguridad —

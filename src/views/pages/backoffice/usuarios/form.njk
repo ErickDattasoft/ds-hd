@@ -3,6 +3,7 @@
 {% block content %}
   <h1>{{ titulo }}</h1>
   {% if errores.general %}<p class="alert alert--error">{{ errores.general }}</p>{% endif %}
+  {% if errorEliminar %}<p class="alert alert--error">No se eliminó: {{ errorEliminar }}</p>{% endif %}
 
   <form method="post"
         action="{{ '/app/usuarios' if modo == 'crear' else '/app/usuarios/' + usuario.uid }}"
@@ -96,6 +97,7 @@
     {% endif %}
 
     {% if modo == 'editar' %}
+      <input type="hidden" name="activoEnviado" value="1" />
       <label class="field field--check">
         <input type="checkbox" name="activo" {{ 'checked' if usuario.activo }} />
         <span>Cuenta activa</span>
@@ -214,6 +216,16 @@
       <a class="btn btn--ghost" href="/app/usuarios">Cancelar</a>
     </div>
   </form>
+  {% if modo == 'editar' and usuario.uid != user.uid %}
+    <form method="post" action="/app/usuarios/{{ usuario.uid }}/eliminar" class="card form form--wide"
+          data-confirm="¿Eliminar a {{ usuario.nombre }} para siempre? Ya no podrá entrar y no se puede deshacer. Sus tickets y notas conservan su nombre.">
+      <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+      <h2>🗑 Eliminar usuario</h2>
+      <p class="muted">Borra la cuenta para siempre. Si solo quieres que deje de entrar por un tiempo, mejor quita «Cuenta activa».
+        Si tiene tickets abiertos asignados, primero hay que reasignarlos.</p>
+      <button class="btn btn--danger btn--sm" type="submit">🗑 Eliminar a {{ usuario.nombre }}</button>
+    </form>
+  {% endif %}
   {% if modo == 'editar' and usuario.totpActivo %}
     <form method="post" action="/app/usuarios/{{ usuario.uid }}/dos-pasos/quitar" class="card form form--wide"
           data-confirm="¿Quitar la verificación en dos pasos de {{ usuario.nombre }}? Podrá entrar solo con su contraseña hasta que la vuelva a activar.">

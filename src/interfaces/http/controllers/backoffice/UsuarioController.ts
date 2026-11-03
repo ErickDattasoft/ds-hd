@@ -28,6 +28,7 @@ import {
 import { permisosEfectivos } from '../../rbac/policy.js';
 import { invalidarCacheAccesoKB, invalidarCacheUsuario } from '../../middlewares/sessionAuth.js';
 import type { AccesoKBService } from '../../../../application/knowledge/AccesoKBService.js';
+import type { EliminarUsuarioService } from '../../../../application/usuarios/EliminarUsuarioService.js';
 
 /** Gestión de usuarios y perfiles (requiere `usuarios:gestionar`). */
 export class UsuarioController {
@@ -41,6 +42,7 @@ export class UsuarioController {
     private readonly contrasena: ContrasenaService,
     private readonly configTickets: ConfiguracionTicketsService,
     private readonly accesoKB: AccesoKBService,
+    private readonly eliminarUsuario: EliminarUsuarioService,
   ) {}
 
   /** Renderiza Mi perfil (firma, encabezado, predeterminados y contraseña). */
@@ -147,6 +149,7 @@ export class UsuarioController {
       usuarios: lista,
       q: texto,
       ROL_ETIQUETA,
+      eliminado: typeof req.query.eliminado === 'string' ? req.query.eliminado : '',
     });
   };
 
@@ -275,6 +278,19 @@ export class UsuarioController {
     }
   };
 
+  /** Borra al usuario para siempre; si no se puede (tickets abiertos, último admin…) lo dice. */
+  eliminarPost = async (req: Request, res: Response): Promise<void> => {
+    const uid = String(req.params.uid ?? '');
+    try {
+      const { nombre } = await this.eliminarUsuario.ejecutar({ actor: req.user!, uid });
+      invalidarCacheUsuario(uid);
+      res.redirect(`/app/usuarios?eliminado=${encodeURIComponent(nombre)}`);
+    } catch (err) {
+      if (!(err instanceof DomainError)) throw err;
+      res.redirect(`/app/usuarios/${encodeURIComponent(uid)}?errorEliminar=${encodeURIComponent(err.message)}`);
+    }
+  };
+
   editar = async (req: Request, res: Response): Promise<void> => {
     const uid = String(req.params.uid ?? '');
     const usuario = await this.usuarios.findByUid(uid);
@@ -294,6 +310,7 @@ export class UsuarioController {
       errores: {},
       passGuardada: req.query.pass === 'ok',
       erroresPass: {},
+      errorEliminar: typeof req.query.errorEliminar === 'string' ? req.query.errorEliminar : '',
     });
   };
 
@@ -319,7 +336,10 @@ export class UsuarioController {
         uid,
         nombre: body.nombre,
         roles: parseRoles(roles),
-        activo: body.activo === undefined ? undefined : body.activo === 'on' || body.activo === 'true',
+        // La casilla desmarcada no llega: sin el marcador, desactivar nunca surtía efecto.
+        activo: body.activoEnviado
+          ? body.activo === 'on' || body.activo === 'true'
+          : body.activo === undefined ? undefined : body.activo === 'on' || body.activo === 'true',
         empresaId: body.empresaId ?? undefined,
         // Las casillas desmarcadas no llegan: el marcador indica que la sección sí se envió.
         empresasAdicionales: body.empresasAdicionalesEnviado ? (aArreglo(body.empresasAdicionales) ?? []) : undefined,

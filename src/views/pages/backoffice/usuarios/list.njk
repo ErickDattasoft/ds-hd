@@ -9,6 +9,7 @@
       <a class="btn btn--sm btn--secondary" href="/app/usuarios/invitar-cliente">Invitar cliente</a>
     </div>
   </div>
+  {% if eliminado %}<p class="alert alert--ok">🗑 Se eliminó a <strong>{{ eliminado }}</strong>.</p>{% endif %}
 
   <form method="get" class="filterbar">
     <input type="search" name="q" value="{{ q }}" placeholder="Buscar por nombre o correo…" autocomplete="off" spellcheck="false" />

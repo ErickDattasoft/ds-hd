@@ -53,6 +53,10 @@ export class FakeAuthProvider implements IAuthProvider {
     for (const c of this.porEmail.values()) if (c.uid === uid) c.disabled = disabled;
   }
 
+  async deleteAccount(uid: string): Promise<void> {
+    for (const [email, c] of this.porEmail) if (c.uid === uid) this.porEmail.delete(email);
+  }
+
   async setRolesClaim(uid: string, roles: string[]): Promise<void> {
     for (const c of this.porEmail.values()) if (c.uid === uid) c.roles = [...roles];
   }

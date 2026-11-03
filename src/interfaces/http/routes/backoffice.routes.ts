@@ -153,6 +153,7 @@ export function backofficeRoutes(container: Container): Router {
   r.get('/usuarios/invitar-cliente', gestUsuarios, (req, res) => usuarios().invitarClienteGet(req, res));
   r.post('/usuarios/invitar-cliente', gestUsuarios, (req, res) => usuarios().invitarClientePost(req, res));
   r.get('/usuarios/:uid', gestUsuarios, (req, res) => usuarios().editar(req, res));
+  r.post('/usuarios/:uid/eliminar', gestUsuarios, (req, res) => usuarios().eliminarPost(req, res));
   r.post('/usuarios/:uid/contrasena', gestUsuarios, (req, res) => usuarios().restablecerPasswordPost(req, res));
   r.post('/usuarios/:uid', gestUsuarios, (req, res) => usuarios().actualizarPost(req, res));
 

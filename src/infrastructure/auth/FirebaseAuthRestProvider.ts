@@ -87,6 +87,15 @@ export class FirebaseAuthRestProvider implements IAuthProvider {
     await this.admin('/accounts:update', { localId: uid, disableUser: disabled });
   }
 
+  async deleteAccount(uid: string): Promise<void> {
+    try {
+      await this.admin('/accounts:delete', { localId: uid });
+    } catch (err) {
+      if (err instanceof AuthRestError && err.status === 'USER_NOT_FOUND') return;
+      throw err;
+    }
+  }
+
   async setRolesClaim(uid: string, roles: string[]): Promise<void> {
     await this.admin('/accounts:update', {
       localId: uid,
