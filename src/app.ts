@@ -80,6 +80,8 @@ function installViewEngine(app: Express, config: AppConfig, precompiled: boolean
   // abreviado del formato `medium` se lee informal.
   env.addFilter('fechalarga', filtroFecha({ dateStyle: 'long' }));
   env.addFilter('hora', filtroFecha({ timeStyle: 'short' }));
+  // «3 de noviembre», para cumpleaños (se guardan sin año).
+  env.addFilter('fechaDiaMes', filtroFecha({ day: 'numeric', month: 'long' }));
   env.addFilter('textoOHtmlSeguro', (v: unknown) => textoOHtmlASeguro(typeof v === 'string' ? v : ''));
   // Va envuelto en `.sensible` para que el modo privacidad lo difumine en todas partes.
   env.addFilter('moneda', (v: unknown, moneda = 'MXN') =>

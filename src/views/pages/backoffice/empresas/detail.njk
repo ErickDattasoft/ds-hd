@@ -39,6 +39,7 @@
       {% if empresa.emailAlternativo and empresa.emailAlternativo != empresa.email %}
         <div><dt>Correo alternativo</dt><dd><a href="mailto:{{ empresa.emailAlternativo }}">{{ empresa.emailAlternativo }}</a></dd></div>
       {% endif %}
+      {% if empresa.fechaFundacion %}<div><dt>🎉 Fundación</dt><dd>{{ empresa.fechaFundacion | fechalarga }}</dd></div>{% endif %}
       {% if empresa.direccion %}<div class="ficha-datos__ancho"><dt>Dirección</dt><dd class="sensible">{{ empresa.direccion }}</dd></div>{% endif %}
       {% if empresa.notas %}<div class="ficha-datos__ancho"><dt>Notas</dt><dd class="ficha-datos__notas">{{ empresa.notas }}</dd></div>{% endif %}
     </dl>
@@ -98,7 +99,7 @@
       {% for c in contactos %}
         <tr>
           <td><a href="/app/contactos/{{ c.id }}/editar">{{ c.nombre }}</a>{% if c.id == empresa.contactoPrincipalId %} <span class="badge">Principal</span>{% elif c.id == empresa.contactoAlternativoId %} <span class="badge">Alternativo</span>{% endif %}</td>
-          <td>{{ c.puesto or '—' }}</td>
+          <td>{{ c.puesto or '—' }}{% if c.cumpleanos %}<br><span class="muted" title="Cumpleaños">🎂 {{ ('2000-' + c.cumpleanos) | fechaDiaMes }}</span>{% endif %}</td>
           <td>{% if c.email %}<a href="mailto:{{ c.email }}" title="Escribir correo">✉️ {{ c.email }}</a>{% else %}—{% endif %}{% if c.emailAlternativo %}<br><a href="mailto:{{ c.emailAlternativo }}" title="Correo alternativo">✉️ {{ c.emailAlternativo }}</a>{% endif %}</td>
           <td class="sensible">{% if c.telefono %}📱 {{ c.telefono }}{% endif %}{% if c.celular %}{{ '<br>' | safe if c.telefono }}☎️ {{ c.celular }}{% endif %}{% if not c.telefono and not c.celular %}—{% endif %}</td>
           <td>

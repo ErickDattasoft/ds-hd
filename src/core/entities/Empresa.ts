@@ -1,4 +1,5 @@
 import { ValidationError } from '../errors/DomainError.js';
+import { normalizarFechaISO } from './value-objects/fechasEspeciales.js';
 
 /** Estado de la licencia de un sistema respecto de su fecha de vigencia. */
 export type EstadoVigencia = 'sin_dato' | 'vigente' | 'por_vencer' | 'vencida';
@@ -45,6 +46,8 @@ export interface EmpresaProps {
   contactoPrincipalId?: string | null;
   contactoAlternativoId?: string | null;
   notas?: string | null;
+  /** Fecha de fundación de la empresa (ISO `YYYY-MM-DD`), para felicitarla en su aniversario. */
+  fechaFundacion?: string | null;
   activa?: boolean;
   /** Marcada como favorita (⭐) por el equipo — atajo para la lista. */
   favorita?: boolean;
@@ -75,6 +78,7 @@ export class Empresa {
   contactoPrincipalId: string | null;
   contactoAlternativoId: string | null;
   notas: string | null;
+  fechaFundacion: string | null;
   activa: boolean;
   favorita: boolean;
   camposExtra: { etiqueta: string; valor: string }[];
@@ -103,6 +107,7 @@ export class Empresa {
     this.contactoPrincipalId = props.contactoPrincipalId ?? null;
     this.contactoAlternativoId = props.contactoAlternativoId ?? null;
     this.notas = props.notas?.trim() || null;
+    this.fechaFundacion = normalizarFechaISO(props.fechaFundacion);
     this.activa = props.activa ?? true;
     this.favorita = props.favorita ?? false;
     this.camposExtra = (props.camposExtra ?? [])

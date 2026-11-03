@@ -468,6 +468,7 @@ export class EmpresaController {
       versionesInstaladas: reclave(mapaConPrefijo(b, 'version:')),
       camposExtra: this.camposExtra(b),
       notas: str(b.notas),
+      fechaFundacion: str(b.fechaFundacion),
     };
   }
 

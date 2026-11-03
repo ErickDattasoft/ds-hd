@@ -2,6 +2,7 @@ import { type DocumentData, type Firestore, type Query } from 'firebase-admin/fi
 import { Timestamp } from '../../core/entities/value-objects/Timestamp.js';
 import type { IEmpresaRepository, ListarEmpresasFiltro } from '../../core/ports/repositories/IEmpresaRepository.js';
 import { Empresa } from '../../core/entities/Empresa.js';
+import { mesDiaDeFecha } from '../../core/entities/value-objects/fechasEspeciales.js';
 
 const COL = 'empresas';
 const fecha = (v: unknown): Date | undefined => (v instanceof Timestamp ? v.toDate() : undefined);
@@ -24,6 +25,7 @@ function toDomain(id: string, d: DocumentData): Empresa {
     contactoPrincipalId: d.contactoPrincipalId ?? null,
     contactoAlternativoId: d.contactoAlternativoId ?? null,
     notas: d.notas ?? null,
+    fechaFundacion: d.fechaFundacion ?? null,
     activa: d.activa !== false,
     favorita: d.favorita === true,
     camposExtra: Array.isArray(d.camposExtra) ? d.camposExtra : [],
@@ -85,6 +87,9 @@ export class FirestoreEmpresaRepository implements IEmpresaRepository {
       contactoPrincipalId: empresa.contactoPrincipalId,
       contactoAlternativoId: empresa.contactoAlternativoId,
       notas: empresa.notas,
+      fechaFundacion: empresa.fechaFundacion,
+      // Mes-día aparte para encontrar los aniversarios con una consulta `in`, sin leerlas todas.
+      fundacionMD: empresa.fechaFundacion ? mesDiaDeFecha(empresa.fechaFundacion) : null,
       activa: empresa.activa,
       favorita: empresa.favorita,
       creadoPorUid: empresa.creadoPorUid,
@@ -93,6 +98,12 @@ export class FirestoreEmpresaRepository implements IEmpresaRepository {
       ultimoAvisoVersionesEn: ts(empresa.ultimoAvisoVersionesEn),
       ultimoAvisoLicenciasEn: ts(empresa.ultimoAvisoLicenciasEn),
     };
+  }
+
+  async fundacionEn(mesDias: string[]): Promise<Empresa[]> {
+    if (!mesDias.length) return [];
+    const snap = await this.db.collection(COL).where('fundacionMD', 'in', mesDias.slice(0, 30)).get();
+    return snap.docs.map((d) => toDomain(d.id, d.data())).filter((e) => e.activa);
   }
 
   async save(empresa: Empresa): Promise<void> {

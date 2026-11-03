@@ -1568,3 +1568,25 @@ dialog.card .field--check { display: flex; gap: var(--space-2); align-items: fle
 .rol-tarjeta__lista--si li::before { content: '✅ '; }
 .rol-tarjeta__lista--no li::before { content: '🚫 '; }
 .rol-tarjeta__lista--no li.muted::before { content: ''; }
+
+/* ── Tablero: cumpleaños (contactos) y aniversarios (empresas) ──────────── */
+.cumples { margin-block: var(--space-4); }
+.cumples__titulo { margin: 0 0 var(--space-3); font-size: 1.1rem; }
+.cumples__lista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-2); }
+.cumples__item {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+}
+.cumples__item--hoy { border-color: var(--success); background: var(--success-weak); }
+.cumples__icono { font-size: 1.4rem; }
+.cumples__quien { display: flex; flex-direction: column; min-width: 0; }
+.cumples__acciones { display: flex; gap: var(--space-1); flex-wrap: wrap; justify-content: flex-end; }
+@media (max-width: 40rem) {
+  .cumples__item { grid-template-columns: auto 1fr; }
+  .cumples__cuando, .cumples__acciones { grid-column: 2; justify-content: flex-start; }
+}

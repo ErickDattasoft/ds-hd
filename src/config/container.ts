@@ -61,6 +61,7 @@ import { SolicitudAccesoService } from '../application/auth/SolicitudAccesoServi
 import { CrearUsuarioService } from '../application/usuarios/CrearUsuarioService.js';
 import { ActualizarUsuarioService } from '../application/usuarios/ActualizarUsuarioService.js';
 import { EliminarUsuarioService } from '../application/usuarios/EliminarUsuarioService.js';
+import { CumpleanosService } from '../application/dashboard/CumpleanosService.js';
 import { EncuestaSatisfaccionService } from '../application/tickets/EncuestaSatisfaccionService.js';
 import { EncuestaController } from '../interfaces/http/controllers/public/EncuestaController.js';
 import { ReportesService } from '../application/reportes/ReportesService.js';
@@ -1232,7 +1233,13 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
     ).singleton(),
     eventoController: asFunction((c: Cradle) => new EventoController(c.eventoService)).singleton(),
     dashboardController: asFunction(
-      (c: Cradle) => new DashboardController(c.obtenerMetricasService, c.agendaService, c.backupService),
+      (c: Cradle) =>
+        new DashboardController(
+          c.obtenerMetricasService,
+          c.agendaService,
+          c.backupService,
+          new CumpleanosService(c.contactoRepo, c.empresaRepo, c.clock),
+        ),
     ).singleton(),
     eventoPublicoController: asFunction(
       (c: Cradle) => new EventoPublicoController(c.eventoService, c.config.turnstile.siteKey),

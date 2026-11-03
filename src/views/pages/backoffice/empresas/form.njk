@@ -24,12 +24,13 @@
         </select></label>
     {% endif %}
 
-    <details class="disclosure"{{ ' open' if valores.rfc or valores.razonSocial or valores.direccion }}>
-      <summary class="disclosure__summary">Datos fiscales</summary>
+    <details class="disclosure"{{ ' open' if valores.rfc or valores.razonSocial or valores.direccion or valores.fechaFundacion }}>
+      <summary class="disclosure__summary">Datos fiscales y fundación</summary>
       <div class="disclosure__body form">
         <label class="field"><span>RFC</span><input name="rfc" value="{{ valores.rfc }}" /></label>
         <label class="field"><span>Razón social</span><input name="razonSocial" value="{{ valores.razonSocial }}" /></label>
         <label class="field"><span>Dirección</span><input name="direccion" value="{{ valores.direccion }}" /></label>
+        <label class="field"><span>🎉 Fecha de fundación <span class="muted">(para felicitarla en su aniversario)</span></span><input type="date" name="fechaFundacion" value="{{ valores.fechaFundacion }}" /></label>
       </div>
     </details>
 

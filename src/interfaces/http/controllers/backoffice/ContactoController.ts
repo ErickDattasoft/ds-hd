@@ -3,6 +3,7 @@ import type { ContactoService } from '../../../../application/contactos/Contacto
 import type { ContactoExcelService } from '../../../../application/contactos/ContactoExcelService.js';
 import type { EmpresaService } from '../../../../application/empresas/EmpresaService.js';
 import { camposDeError } from '../../support/errores.js';
+import { mesDiaDe } from '../../../../core/entities/value-objects/fechasEspeciales.js';
 
 const str = (v: unknown): string => (typeof v === 'string' ? v : '');
 
@@ -175,6 +176,7 @@ export class ContactoController {
       telefono: str(b.telefono),
       celular: str(b.celular),
       notas: str(b.notas),
+      cumpleanos: mesDiaDe(b.cumpleDia, b.cumpleMes),
     };
   }
 }

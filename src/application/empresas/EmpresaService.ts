@@ -2,6 +2,7 @@ import type { IEmpresaRepository, ListarEmpresasFiltro } from '../../core/ports/
 import type { IClock } from '../../core/ports/services/IClock.js';
 import type { IIdGenerator } from '../../core/ports/services/IIdGenerator.js';
 import { Empresa } from '../../core/entities/Empresa.js';
+import { normalizarFechaISO } from '../../core/entities/value-objects/fechasEspeciales.js';
 import { ConflictError, ForbiddenError, NotFoundError } from '../../core/errors/DomainError.js';
 import type { BitacoraService } from '../shared/BitacoraService.js';
 import type { SessionUser } from '../shared/SessionUser.js';
@@ -28,6 +29,8 @@ export interface DatosEmpresa {
   /** Campos personalizados libres. */
   camposExtra?: { etiqueta: string; valor: string }[];
   notas?: string;
+  /** ISO `YYYY-MM-DD`; vacío lo borra; sin definir no se toca (p. ej. al importar Excel). */
+  fechaFundacion?: string | null;
 }
 
 /** Gestión de empresas (CRUD + archivar). */
@@ -114,6 +117,7 @@ export class EmpresaService {
       .map((c) => ({ etiqueta: c.etiqueta.trim(), valor: c.valor.trim() }))
       .filter((c) => c.etiqueta || c.valor);
     empresa.notas = datos.notas?.trim() || null;
+    if (datos.fechaFundacion !== undefined) empresa.fechaFundacion = normalizarFechaISO(datos.fechaFundacion);
     empresa.updatedAt = ahora;
     await this.repo.save(empresa);
     await this.bitacora.registrar({

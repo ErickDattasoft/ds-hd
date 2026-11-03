@@ -1,5 +1,6 @@
 import { ValidationError } from '../errors/DomainError.js';
 import { Email } from './value-objects/Email.js';
+import { normalizarMesDia } from './value-objects/fechasEspeciales.js';
 
 /** Props para construir un {@link Contacto}. */
 export interface ContactoProps {
@@ -23,6 +24,8 @@ export interface ContactoProps {
   /** uid de la cuenta de portal vinculada, si existe. */
   uid?: string | null;
   notas?: string | null;
+  /** Cumpleaños como mes-día `MM-DD` (sin año: casi nunca se sabe). */
+  cumpleanos?: string | null;
   activo?: boolean;
   createdAt?: Date;
   updatedAt?: Date;
@@ -42,6 +45,7 @@ export class Contacto {
   esPortal: boolean;
   uid: string | null;
   notas: string | null;
+  cumpleanos: string | null;
   activo: boolean;
   readonly createdAt: Date;
   updatedAt: Date;
@@ -65,6 +69,7 @@ export class Contacto {
     this.esPortal = props.esPortal ?? false;
     this.uid = props.uid ?? null;
     this.notas = props.notas?.trim() || null;
+    this.cumpleanos = normalizarMesDia(props.cumpleanos);
     this.activo = props.activo ?? true;
     this.createdAt = props.createdAt ?? new Date();
     this.updatedAt = props.updatedAt ?? this.createdAt;

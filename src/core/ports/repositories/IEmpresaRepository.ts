@@ -24,4 +24,6 @@ export interface IEmpresaRepository {
   /** Borrado permanente (solo desde la papelera). */
   eliminar(id: string): Promise<void>;
   existePorNombre(nombre: string, exceptoId?: string): Promise<boolean>;
+  /** Empresas activas cuyo aniversario de fundación cae en alguno de esos `MM-DD` (máx. 30). */
+  fundacionEn(mesDias: string[]): Promise<Empresa[]>;
 }

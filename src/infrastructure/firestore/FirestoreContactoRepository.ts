@@ -20,6 +20,7 @@ function toDomain(id: string, d: DocumentData): Contacto {
     esPortal: Boolean(d.esPortal),
     uid: d.uid ?? null,
     notas: d.notas ?? null,
+    cumpleanos: d.cumpleanos ?? null,
     activo: d.activo !== false,
     createdAt: fecha(d.createdAt) ?? new Date(),
     updatedAt: fecha(d.updatedAt) ?? new Date(),
@@ -81,10 +82,18 @@ export class FirestoreContactoRepository implements IContactoRepository {
       esPortal: c.esPortal,
       uid: c.uid,
       notas: c.notas,
+      cumpleanos: c.cumpleanos,
       activo: c.activo,
       createdAt: Timestamp.fromDate(c.createdAt),
       updatedAt: Timestamp.fromDate(c.updatedAt),
     };
+  }
+
+  /** Consulta por igualdad (`in`) sobre `cumpleanos`: solo se leen los que cumplen, no todos. */
+  async cumpleanosEn(mesDias: string[]): Promise<Contacto[]> {
+    if (!mesDias.length) return [];
+    const snap = await this.db.collection(COL).where('cumpleanos', 'in', mesDias.slice(0, 30)).get();
+    return snap.docs.map((d) => toDomain(d.id, d.data())).filter((c) => c.activo);
   }
 
   async save(c: Contacto): Promise<void> {

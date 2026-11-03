@@ -3,6 +3,7 @@ import type { IEmpresaRepository } from '../../core/ports/repositories/IEmpresaR
 import type { IClock } from '../../core/ports/services/IClock.js';
 import type { IIdGenerator } from '../../core/ports/services/IIdGenerator.js';
 import { Contacto } from '../../core/entities/Contacto.js';
+import { normalizarMesDia } from '../../core/entities/value-objects/fechasEspeciales.js';
 import { ForbiddenError, NotFoundError, ValidationError } from '../../core/errors/DomainError.js';
 import type { BitacoraService } from '../shared/BitacoraService.js';
 import type { SessionUser } from '../shared/SessionUser.js';
@@ -18,6 +19,8 @@ export interface DatosContacto {
   telefono?: string;
   celular?: string;
   notas?: string;
+  /** `MM-DD`; `null` lo borra; sin definir no se toca (p. ej. al importar Excel). */
+  cumpleanos?: string | null;
 }
 
 /** Gestión de contactos (CRUD + archivar). */
@@ -98,6 +101,7 @@ export class ContactoService {
     contacto.telefono = datos.telefono?.trim() || null;
     contacto.celular = datos.celular?.trim() || null;
     contacto.notas = datos.notas?.trim() || null;
+    if (datos.cumpleanos !== undefined) contacto.cumpleanos = normalizarMesDia(datos.cumpleanos);
     contacto.updatedAt = ahora;
     await this.repo.save(contacto);
     await this.bitacora.registrar({

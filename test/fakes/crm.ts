@@ -39,6 +39,9 @@ export class InMemoryEmpresaRepository implements IEmpresaRepository {
   async eliminarVarias(ids: string[]): Promise<void> {
     for (const id of ids) await this.eliminar(id);
   }
+  async fundacionEn(mesDias: string[]): Promise<Empresa[]> {
+    return [...this.items.values()].filter((e) => e.activa && e.fechaFundacion && mesDias.includes(e.fechaFundacion.slice(5)));
+  }
   async existePorNombre(nombre: string, exceptoId?: string): Promise<boolean> {
     return [...this.items.values()].some(
       (e) => e.nombre.toLowerCase() === nombre.trim().toLowerCase() && e.id !== exceptoId,
@@ -82,6 +85,9 @@ export class InMemoryContactoRepository implements IContactoRepository {
   }
   async eliminarVarios(ids: string[]): Promise<void> {
     for (const id of ids) await this.eliminar(id);
+  }
+  async cumpleanosEn(mesDias: string[]): Promise<Contacto[]> {
+    return [...this.items.values()].filter((c) => c.activo && c.cumpleanos && mesDias.includes(c.cumpleanos));
   }
   async contarPorEmpresa(empresaId: string): Promise<number> {
     return [...this.items.values()].filter((c) => c.empresaId === empresaId).length;

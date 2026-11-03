@@ -24,4 +24,6 @@ export interface IContactoRepository {
   /** Borrado permanente (solo desde la papelera). */
   eliminar(id: string): Promise<void>;
   contarPorEmpresa(empresaId: string): Promise<number>;
+  /** Contactos activos que cumplen años en alguno de esos `MM-DD` (máx. 30). */
+  cumpleanosEn(mesDias: string[]): Promise<Contacto[]>;
 }

@@ -133,6 +133,38 @@
   </div>
   {% endif %}
 
+  {% if fechasEspeciales %}
+  <section class="card cumples" aria-labelledby="cumples-titulo">
+    <h2 id="cumples-titulo" class="cumples__titulo">🎂 Cumpleaños y aniversarios <span class="muted">— hoy y los próximos 7 días</span></h2>
+    <ul class="cumples__lista">
+      {% for f in fechasEspeciales %}
+        <li class="cumples__item{{ ' cumples__item--hoy' if f.dias == 0 }}">
+          <span class="cumples__icono" aria-hidden="true">{{ '🎂' if f.tipo == 'cumpleanos' else '🎉' }}</span>
+          <span class="cumples__quien">
+            <a href="{{ f.href }}"><strong>{{ f.nombre }}</strong></a>
+            <span class="muted">
+              {% if f.tipo == 'cumpleanos' %}cumple años{% if f.detalle %} · {{ f.detalle }}{% endif %}
+              {% else %}cumple {{ f.anios }} año{{ 's' if f.anios != 1 }} de fundada{% if f.detalle %} · contacto: {{ f.detalle }}{% endif %}{% endif %}
+            </span>
+          </span>
+          <span class="cumples__cuando">
+            {% if f.dias == 0 %}<span class="badge badge--ok">¡Hoy!</span>
+            {% elif f.dias == 1 %}<span class="badge badge--warning">Mañana</span>
+            {% else %}<span class="badge">{{ ('2000-' + f.mesDia) | fechaDiaMes }} · en {{ f.dias }} días</span>{% endif %}
+          </span>
+          <span class="cumples__acciones">
+            {% if f.email %}<a class="btn btn--ghost btn--sm" href="mailto:{{ f.email }}?subject={{ f.asunto | urlencode }}&body={{ f.mensaje | urlencode }}" title="Abre tu correo con la felicitación ya escrita, para revisarla y enviarla">✉️ Correo</a>{% endif %}
+            {% if f.whatsapp %}<a class="btn btn--ghost btn--sm" target="_blank" rel="noopener" href="https://wa.me/{{ f.whatsapp }}?text={{ f.mensaje | urlencode }}" title="Abre WhatsApp con la felicitación ya escrita, para revisarla y enviarla">💬 WhatsApp</a>{% endif %}
+            {% if not f.email and not f.whatsapp %}<a class="btn btn--ghost btn--sm" href="{{ f.href }}" title="No tiene correo ni teléfono capturado">Capturar contacto</a>{% endif %}
+          </span>
+        </li>
+      {% else %}
+        <li class="muted">Nadie cumple años ni aniversario esta semana. El cumpleaños se captura en cada contacto y la fecha de fundación en la empresa.</li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% endif %}
+
   {# Tarjetas del dashboard del viejo: cartera y tickets por estado, cada una abre su lista. #}
   <div class="stat-row">
     {% if m.licencias %}
