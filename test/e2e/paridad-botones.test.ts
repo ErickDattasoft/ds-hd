@@ -354,7 +354,7 @@ describe('detalle de empresa, carta técnica y contactos de soporte propios', ()
       _csrf: csrf, empresaId: 'e1', concepto_descripcion: 'Licencia', concepto_cantidad: '1', concepto_precio: '100',
     });
     const det = await agent.get('/app/empresas/e1');
-    expect(det.text).toContain('Cotizaciones (1)');
+    expect(det.text).toMatch(/Cotizaciones <span class="muted">\(1\)<\/span>/);
     expect(det.text).toMatch(/COT-\d{4}-0001/);
   });
 });

@@ -39,14 +39,29 @@
       {% if empresa.emailAlternativo and empresa.emailAlternativo != empresa.email %}
         <div><dt>Correo alternativo</dt><dd><a href="mailto:{{ empresa.emailAlternativo }}">{{ empresa.emailAlternativo }}</a></dd></div>
       {% endif %}
-      {% if empresa.fechaFundacion %}<div><dt>🎉 Fundación</dt><dd>{{ empresa.fechaFundacion | fechalarga }}</dd></div>{% endif %}
+      <div><dt>🎉 Fundación</dt><dd>{% if empresa.fechaFundacion %}{{ empresa.fechaFundacion | fechalarga }}{% elif can('empresas:editar') %}<a class="muted" href="/app/empresas/{{ empresa.id }}/editar">— capturar</a>{% else %}—{% endif %}</dd></div>
       {% if empresa.direccion %}<div class="ficha-datos__ancho"><dt>Dirección</dt><dd class="sensible">{{ empresa.direccion }}</dd></div>{% endif %}
       {% if empresa.notas %}<div class="ficha-datos__ancho"><dt>Notas</dt><dd class="ficha-datos__notas">{{ empresa.notas }}</dd></div>{% endif %}
     </dl>
   </div>
 
   {% if sistemas | length %}
-    <h2>Sistemas, licencias y versiones</h2>
+    {# selectattr de Nunjucks no compara valores: se cuenta con push (un set dentro del for no sale). #}
+    {% set lv = [] %}{% set lp = [] %}{% set ld = [] %}
+    {% for s in sistemas %}
+      {% if s.estadoVigencia == 'vencida' %}{% set _ = lv.push(s) %}{% elif s.estadoVigencia == 'por_vencer' %}{% set _ = lp.push(s) %}{% endif %}
+      {% if s.estadoVersion == 'desactualizada' %}{% set _ = ld.push(s) %}{% endif %}
+    {% endfor %}
+    {% set nVencidas = lv | length %}{% set nPorVencer = lp | length %}{% set nDesact = ld | length %}
+    <details class="seccion" data-seccion="sistemas">
+    <summary class="seccion__titulo"><h2>💿 Sistemas, licencias y versiones <span class="muted">({{ sistemas | length }})</span></h2>
+      <span class="seccion__resumen">
+        {% if nVencidas %}<span class="badge badge--danger">{{ nVencidas }} vencida{{ 's' if nVencidas != 1 }}</span>{% endif %}
+        {% if nPorVencer %}<span class="badge badge--warning">{{ nPorVencer }} por vencer</span>{% endif %}
+        {% if nDesact %}<span class="badge badge--warning">{{ nDesact }} desactualizada{{ 's' if nDesact != 1 }}</span>{% endif %}
+        {% if not nVencidas and not nPorVencer and not nDesact %}<span class="badge badge--ok">Todo al día</span>{% endif %}
+      </span></summary>
+    <div class="seccion__cuerpo">
     <table class="data-table">
       <thead><tr><th>Sistema</th><th>Licencia</th><th>Vence</th><th>Instalada</th><th>Oficial</th><th>Versión</th></tr></thead>
       <tbody>
@@ -76,6 +91,8 @@
       Último aviso de versiones: {{ empresa.ultimoAvisoVersionesEn | fechahora if empresa.ultimoAvisoVersionesEn else 'nunca' }}
       · Último aviso de licencias: {{ empresa.ultimoAvisoLicenciasEn | fechahora if empresa.ultimoAvisoLicenciasEn else 'nunca' }}
     </p>
+    </div>
+    </details>
   {% endif %}
 
   {% if can('empresas:eliminar') %}
@@ -86,34 +103,45 @@
   {% endif %}
 
   {% if empresa.camposExtra | length %}
-    <h2>Campos extra</h2>
+    <details class="seccion" data-seccion="campos">
+    <summary class="seccion__titulo"><h2>🏷️ Campos extra <span class="muted">({{ empresa.camposExtra | length }})</span></h2></summary>
+    <div class="seccion__cuerpo">
     <table class="data-table">
       <tbody>{% for c in empresa.camposExtra %}<tr><th>{{ c.etiqueta }}</th><td>{{ c.valor }}</td></tr>{% endfor %}</tbody>
     </table>
+    </div>
+    </details>
   {% endif %}
 
-  <h2>Contactos ({{ contactos | length }})</h2>
+  <details class="seccion" data-seccion="contactos" open>
+  <summary class="seccion__titulo"><h2>👥 Contactos <span class="muted">({{ contactos | length }})</span></h2></summary>
+  <div class="seccion__cuerpo">
   <table class="data-table">
-    <thead><tr><th>Nombre</th><th>Puesto</th><th>Correo</th><th>Teléfono</th><th data-no-ordenar>WhatsApp</th><th>Portal</th></tr></thead>
+    <thead><tr><th>Nombre</th><th>Puesto</th><th>Correo</th><th>Teléfono</th><th>🎂 Cumpleaños</th><th data-no-ordenar>WhatsApp</th><th>Portal</th></tr></thead>
     <tbody>
       {% for c in contactos %}
         <tr>
           <td><a href="/app/contactos/{{ c.id }}/editar">{{ c.nombre }}</a>{% if c.id == empresa.contactoPrincipalId %} <span class="badge">Principal</span>{% elif c.id == empresa.contactoAlternativoId %} <span class="badge">Alternativo</span>{% endif %}</td>
-          <td>{{ c.puesto or '—' }}{% if c.cumpleanos %}<br><span class="muted" title="Cumpleaños">🎂 {{ ('2000-' + c.cumpleanos) | fechaDiaMes }}</span>{% endif %}</td>
+          <td>{{ c.puesto or '—' }}</td>
           <td>{% if c.email %}<a href="mailto:{{ c.email }}" title="Escribir correo">✉️ {{ c.email }}</a>{% else %}—{% endif %}{% if c.emailAlternativo %}<br><a href="mailto:{{ c.emailAlternativo }}" title="Correo alternativo">✉️ {{ c.emailAlternativo }}</a>{% endif %}</td>
           <td class="sensible">{% if c.telefono %}📱 {{ c.telefono }}{% endif %}{% if c.celular %}{{ '<br>' | safe if c.telefono }}☎️ {{ c.celular }}{% endif %}{% if not c.telefono and not c.celular %}—{% endif %}</td>
+          <td>{{ ('2000-' + c.cumpleanos) | fechaDiaMes if c.cumpleanos else '—' }}</td>
           <td>
             {% set tel = (c.telefono or c.celular) | replace(' ', '') | replace('-', '') | replace('(', '') | replace(')', '') | replace('+', '') %}
             {% if tel %}<a class="btn btn--ghost btn--sm" target="_blank" rel="noopener" href="https://wa.me/{{ '52' if tel|length == 10 else '' }}{{ tel }}">💬 WhatsApp</a>{% else %}—{% endif %}
           </td>
           <td>{{ 'Sí' if c.esPortal else 'No' }}</td>
         </tr>
-      {% else %}<tr><td colspan="6" class="muted">Sin contactos.</td></tr>{% endfor %}
+      {% else %}<tr><td colspan="7" class="muted">Sin contactos.</td></tr>{% endfor %}
     </tbody>
   </table>
+  </div>
+  </details>
 
   {% if can('cotizaciones:leer') %}
-    <h2>Cotizaciones ({{ cotizaciones | length }})</h2>
+    <details class="seccion" data-seccion="cotizaciones">
+    <summary class="seccion__titulo"><h2>💰 Cotizaciones <span class="muted">({{ cotizaciones | length }})</span></h2></summary>
+    <div class="seccion__cuerpo">
     <table class="data-table">
       <thead><tr><th>Folio</th><th>Fecha</th><th>Total</th><th>Estado</th><th data-no-ordenar></th></tr></thead>
       <tbody>
@@ -130,9 +158,18 @@
         {% endfor %}
       </tbody>
     </table>
+    </div>
+    </details>
   {% endif %}
 
-  <h2>Tickets recientes</h2>
+  {# `set` dentro de un for no sale del ciclo en Nunjucks: se cuenta con push a una lista. #}
+  {% set abiertos = [] %}
+  {% for t in tickets %}{% if not ('cerrad' in (t.estado | lower) or 'resuelt' in (t.estado | lower)) %}{% set _ = abiertos.push(t) %}{% endif %}{% endfor %}
+  {% set nAbiertos = abiertos | length %}
+  <details class="seccion" data-seccion="tickets">
+  <summary class="seccion__titulo"><h2>🎫 Tickets recientes <span class="muted">({{ tickets | length }})</span></h2>
+    <span class="seccion__resumen">{% if nAbiertos %}<span class="badge badge--warning">{{ nAbiertos }} abierto{{ 's' if nAbiertos != 1 }}</span>{% endif %}</span></summary>
+  <div class="seccion__cuerpo">
   <table class="data-table">
     <thead><tr><th>#</th><th>Asunto</th><th>Estado</th></tr></thead>
     <tbody>
@@ -141,9 +178,16 @@
       {% else %}<tr><td colspan="3" class="muted">Sin tickets.</td></tr>{% endfor %}
     </tbody>
   </table>
+  </div>
+  </details>
 
   {% if can('seguimiento:leer') %}
-    <h2 id="tareas">Tareas ({{ tareas | length }})</h2>
+    {% set ltv = [] %}{% for t in tareas %}{% if t.urgencia == 'vencida' %}{% set _ = ltv.push(t) %}{% endif %}{% endfor %}
+    {% set nTareasVencidas = ltv | length %}
+    <details class="seccion" data-seccion="tareas" id="tareas">
+    <summary class="seccion__titulo"><h2>✅ Tareas <span class="muted">({{ tareas | length }})</span></h2>
+      <span class="seccion__resumen">{% if nTareasVencidas %}<span class="badge badge--danger">{{ nTareasVencidas }} vencida{{ 's' if nTareasVencidas != 1 }}</span>{% endif %}</span></summary>
+    <div class="seccion__cuerpo">
     {% if filtroHistorial.desde or filtroHistorial.hasta %}<p class="muted">Solo las que vencen en el rango de fechas del filtro del historial.</p>{% endif %}
     <ul class="timeline">
       {% for t in tareas %}
@@ -191,8 +235,14 @@
         </form>
       </details>
     {% endif %}
+    </div>
+    </details>
 
-    <h2 id="historial">Historial ({{ historial | length }})</h2>
+    {% set filtrandoHistorial = filtroHistorial.desde or filtroHistorial.hasta or filtroHistorial.tipo %}
+    <details class="seccion" data-seccion="historial" id="historial"{{ ' open data-forzar-abierta' if filtrandoHistorial }}>
+    <summary class="seccion__titulo"><h2>🕓 Historial <span class="muted">({{ historial | length }})</span></h2>
+      {% if historial | length %}<span class="seccion__resumen muted">último: {{ historial[0].fecha | fecha }}</span>{% endif %}</summary>
+    <div class="seccion__cuerpo">
     <form method="get" action="/app/empresas/{{ empresa.id }}" class="filterbar">
       <input type="date" name="hDesde" value="{{ filtroHistorial.desde }}" />
       <input type="date" name="hHasta" value="{{ filtroHistorial.hasta }}" />
@@ -233,7 +283,9 @@
       {% endfor %}
     </ul>
     {% if can('seguimiento:gestionar') %}
-      <form method="post" action="/app/interacciones" class="form">
+      <details class="disclosure">
+      <summary class="disclosure__summary">➕ Registrar interacción <span class="disclosure__hint">— llamada, correo, reunión, WhatsApp o nota</span></summary>
+      <form method="post" action="/app/interacciones" class="form disclosure__body">
         <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
         <input type="hidden" name="empresaId" value="{{ empresa.id }}" />
         <div class="filterbar">
@@ -245,6 +297,9 @@
         <textarea name="resumen" rows="3" placeholder="Describe la interacción..." required></textarea>
         <div><button class="btn btn--sm" type="submit">Registrar</button></div>
       </form>
+      </details>
     {% endif %}
+    </div>
+    </details>
   {% endif %}
 {% endblock %}

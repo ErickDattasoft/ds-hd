@@ -3239,8 +3239,39 @@
     try { localStorage.setItem(NAV_CASCADA_KEY, JSON.stringify(abiertas)); } catch (e2) { /* sin storage: solo esta vez */ }
   });
 
+  /**
+   * Secciones desplegables de las fichas (p. ej. la de empresa): cada una recuerda en este
+   * navegador si se dejó abierta o cerrada, para todas las empresas. Si la URL apunta a una
+   * (#historial) o el servidor la manda abierta por un filtro, se respeta eso.
+   */
+  var SECCIONES_KEY = 'seccionesFicha';
+  function seccionesGuardadas() {
+    try { return JSON.parse(localStorage.getItem(SECCIONES_KEY) || '{}') || {}; } catch (e) { return {}; }
+  }
+  function initSecciones() {
+    var guardadas = seccionesGuardadas();
+    var hash = location.hash ? location.hash.slice(1) : '';
+    document.querySelectorAll('details[data-seccion]').forEach(function (d) {
+      if (d.dataset.seccionLista) return;
+      d.dataset.seccionLista = '1';
+      if (hash && (d.id === hash || d.querySelector('[id="' + hash + '"]'))) { d.open = true; return; }
+      if (d.hasAttribute('data-forzar-abierta')) return;
+      var k = d.getAttribute('data-seccion');
+      if (Object.prototype.hasOwnProperty.call(guardadas, k)) d.open = !!guardadas[k];
+    });
+  }
+  document.addEventListener('click', function (e) {
+    var sum = e.target.closest && e.target.closest('details[data-seccion] > summary');
+    if (!sum) return;
+    var d = sum.parentElement;
+    var g = seccionesGuardadas();
+    g[d.getAttribute('data-seccion')] = !d.open; // el clic aún no la cambió
+    try { localStorage.setItem(SECCIONES_KEY, JSON.stringify(g)); } catch (e2) { /* sin storage */ }
+  });
+
   function iniciarPagina() {
     initNavCascada();
+    initSecciones();
     updateToggle();
     pintarColapsar();
     initKanban();
