@@ -82,6 +82,16 @@ function installViewEngine(app: Express, config: AppConfig, precompiled: boolean
   env.addFilter('hora', filtroFecha({ timeStyle: 'short' }));
   // «3 de noviembre», para cumpleaños (se guardan sin año).
   env.addFilter('fechaDiaMes', filtroFecha({ day: 'numeric', month: 'long' }));
+  // Notas que dejó la migración: «Contacto original/alternativo del CRM viejo: …» repite lo que ya
+  // está en Contactos y se quita; en lo demás («Otros correos del CRM viejo: …») sobra la leyenda.
+  env.addFilter('notasLimpias', (v: unknown) =>
+    String(v ?? '')
+      .split('\n')
+      .filter((l) => !/^\s*Contacto (original|alternativo) del CRM viejo:/i.test(l))
+      .map((l) => l.replace(/ (original )?del CRM viejo:/i, ':'))
+      .join('\n')
+      .trim(),
+  );
   env.addFilter('textoOHtmlSeguro', (v: unknown) => textoOHtmlASeguro(typeof v === 'string' ? v : ''));
   // Va envuelto en `.sensible` para que el modo privacidad lo difumine en todas partes.
   env.addFilter('moneda', (v: unknown, moneda = 'MXN') =>

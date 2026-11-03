@@ -39,9 +39,10 @@
       {% if empresa.emailAlternativo and empresa.emailAlternativo != empresa.email %}
         <div><dt>Correo alternativo</dt><dd><a href="mailto:{{ empresa.emailAlternativo }}">{{ empresa.emailAlternativo }}</a></dd></div>
       {% endif %}
-      <div><dt>🎉 Fundación</dt><dd>{% if empresa.fechaFundacion %}{{ empresa.fechaFundacion | fechalarga }}{% elif can('empresas:editar') %}<a class="muted" href="/app/empresas/{{ empresa.id }}/editar">— capturar</a>{% else %}—{% endif %}</dd></div>
+      <div><dt title="Aniversario de fundación de la empresa">🎉 Aniversario</dt><dd>{% if empresa.fechaFundacion %}{{ empresa.fechaFundacion | fechalarga }}{% elif can('empresas:editar') %}<a class="muted" href="/app/empresas/{{ empresa.id }}/editar">— capturar</a>{% else %}—{% endif %}</dd></div>
       {% if empresa.direccion %}<div class="ficha-datos__ancho"><dt>Dirección</dt><dd class="sensible">{{ empresa.direccion }}</dd></div>{% endif %}
-      {% if empresa.notas %}<div class="ficha-datos__ancho"><dt>Notas</dt><dd class="ficha-datos__notas">{{ empresa.notas }}</dd></div>{% endif %}
+      {% set notasEmpresa = empresa.notas | notasLimpias %}
+      {% if notasEmpresa %}<div class="ficha-datos__ancho"><dt>Notas</dt><dd class="ficha-datos__notas">{{ notasEmpresa }}</dd></div>{% endif %}
     </dl>
   </div>
 

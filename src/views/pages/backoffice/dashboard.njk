@@ -144,7 +144,7 @@
             <a href="{{ f.href }}"><strong>{{ f.nombre }}</strong></a>
             <span class="muted">
               {% if f.tipo == 'cumpleanos' %}cumple años{% if f.detalle %} · {{ f.detalle }}{% endif %}
-              {% else %}cumple {{ f.anios }} año{{ 's' if f.anios != 1 }} de fundada{% if f.detalle %} · contacto: {{ f.detalle }}{% endif %}{% endif %}
+              {% else %}aniversario: cumple {{ f.anios }} año{{ 's' if f.anios != 1 }}{% if f.detalle %} · contacto: {{ f.detalle }}{% endif %}{% endif %}
             </span>
           </span>
           <span class="cumples__cuando">
