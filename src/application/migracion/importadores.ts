@@ -18,7 +18,7 @@ import { Cotizacion, type EstadoCotizacion } from '../../core/entities/Cotizacio
 import type { EntradaBitacora } from '../../core/entities/EntradaBitacora.js';
 import type { EventoTicket, NotaTicket } from '../../core/entities/NotaTicket.js';
 import { PRIORIDADES, type Prioridad } from '../../core/entities/value-objects/Prioridad.js';
-import type { EstadoFacturacion } from '../../core/entities/value-objects/EstadoFacturacion.js';
+import { valorFacturacion, type EstadoFacturacion } from '../../core/entities/value-objects/EstadoFacturacion.js';
 import type { IEmpresaRepository } from '../../core/ports/repositories/IEmpresaRepository.js';
 import { sanearAcercaDe } from '../../core/entities/AcercaDe.js';
 import { CONFIG_TICKETS_POR_DEFECTO, type ConfiguracionTickets } from '../../core/entities/ConfiguracionTickets.js';
@@ -480,28 +480,9 @@ export function crearImportadores({ dryRun: DRY_RUN, log }: OpcionesImportacion)
     return (PRIORIDADES as readonly string[]).includes(t) ? (t as Prioridad) : 'Media';
   }
 
-  /** Mapea el catálogo textual multi-estado del CRM viejo al catálogo fijo de ds-hd. */
+  /** Texto de facturación del CRM viejo → valor de ds-hd (clave de fábrica o el mismo texto). */
   function estadoFacturacionDe(texto: string): EstadoFacturacion {
-    switch (texto.trim().toLowerCase()) {
-      case 'facturado':
-        return 'facturado';
-      case 'factura mensual':
-        return 'factura_mensual';
-      case 'consulta sin costo':
-        return 'consulta_sin_costo';
-      case 'en proceso':
-        return 'en_proceso';
-      case 'garantia':
-      case 'garantía':
-        return 'garantia';
-      case 'no aplica':
-      case 'no aplica facturacion':
-      case 'no aplica facturación':
-        return 'no_aplica';
-      default:
-        // 'no facturado', vacío o desconocido → pendiente de facturar.
-        return 'no_facturado';
-    }
+    return texto.trim() ? valorFacturacion(texto) : 'no_facturado';
   }
 
   /** Guarda una tanda de tickets ya numerados, con sus notas, actividad y nota interna. */
@@ -561,15 +542,10 @@ export function crearImportadores({ dryRun: DRY_RUN, log }: OpcionesImportacion)
           // tope de subpeticiones del worker (ver `guardarConDetalle`).
           const notas: NotaTicket[] = [];
           const eventos: EventoTicket[] = [];
-          // Nota interna con el texto libre que el viejo guardaba aparte + el estado de
-          // facturación textual original (por si el mapeo al catálogo fijo perdió matiz,
-          // p. ej. "en proceso" o "garantía").
+          // Nota interna con el texto libre que el viejo guardaba aparte (la facturación ya se
+          // conserva tal cual: el catálogo es editable).
           const notaInterna = [
             s(d.notasInternas),
-            facturadoTexto &&
-            !['no facturado', 'facturado', 'en proceso', 'garantia', 'garantía', 'factura mensual', 'no aplica', 'no aplica facturacion', 'no aplica facturación', 'consulta sin costo'].includes(facturadoTexto.trim().toLowerCase())
-              ? `Facturación original del CRM viejo: ${facturadoTexto}`
-              : '',
           ]
             .filter(Boolean)
             .join('\n\n');
@@ -824,6 +800,11 @@ export function crearImportadores({ dryRun: DRY_RUN, log }: OpcionesImportacion)
       tiposFacturables: CONFIG_TICKETS_POR_DEFECTO.tiposFacturables.filter((t) =>
         ((cfg.tipos as string[]) ?? []).includes(t),
       ),
+      // La lista de facturación del viejo era editable: se trae tal cual (sus textos coinciden
+      // con los de fábrica, p. ej. «FACTURADO», o quedan como estados propios).
+      facturacion: arr(cfg.facturacion as unknown as Dato[]).map(String).map((x) => x.trim()).filter(Boolean).length
+        ? arr(cfg.facturacion as unknown as Dato[]).map(String).map((x) => x.trim()).filter(Boolean)
+        : CONFIG_TICKETS_POR_DEFECTO.facturacion,
       estadoInicial: s((cfg.defaults as Dato)?.estados) || CONFIG_TICKETS_POR_DEFECTO.estadoInicial,
       correosNotificacion: s(cfg.correoSoporte)
         .split(',')

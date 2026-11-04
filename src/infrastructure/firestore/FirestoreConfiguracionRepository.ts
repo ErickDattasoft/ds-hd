@@ -56,6 +56,7 @@ export class FirestoreConfiguracionRepository implements IConfiguracionRepositor
       prioridades: arr(d.prioridades, CONFIG_TICKETS_POR_DEFECTO.prioridades),
       slaHoras: (d.slaHoras as Record<string, number>) ?? { ...CONFIG_TICKETS_POR_DEFECTO.slaHoras },
       tiposFacturables: arr(d.tiposFacturables, CONFIG_TICKETS_POR_DEFECTO.tiposFacturables),
+      facturacion: arr(d.facturacion, [...(CONFIG_TICKETS_POR_DEFECTO.facturacion ?? [])]),
       estadoInicial: String(d.estadoInicial ?? CONFIG_TICKETS_POR_DEFECTO.estadoInicial),
       correosNotificacion: arr(d.correosNotificacion, []),
       respuestas: Array.isArray(d.respuestas) ? d.respuestas : [],

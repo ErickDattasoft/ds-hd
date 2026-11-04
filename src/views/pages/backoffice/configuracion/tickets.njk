@@ -44,7 +44,7 @@
   </section>
 {% endmacro %}
 
-{#- Tarjeta de solo elegir el predeterminado (agentes = usuarios, facturación = catálogo fijo). -#}
+{#- Tarjeta de solo elegir el predeterminado (agentes = usuarios). -#}
 {% macro eleccion(icono, titulo, pred, predValor, vacio, opciones, kValor, kEtiqueta) %}
   <section class="card cat-card" data-cat data-cat-fija>
     <h2 class="cat-card__titulo">{{ icono }} {{ titulo }} <span class="cat-card__n">{{ opciones | length }}</span></h2>
@@ -99,7 +99,8 @@
           <span>Mejor asignar a quien lo crea (técnicos) — gana sobre la ★</span></label>
         <p class="cat-card__ayuda muted">Los agentes se dan de alta en Usuarios.</p>
       {% endcall %}
-      {{ eleccion('🧾', 'Facturación', 'predFacturacion', pred.estadoFacturacion or '', '— Sin preselección —', estadosFacturacion, 'valor', 'etiqueta') }}
+      {{ catalogo('🧾', 'Facturación', 'facturacion', facturacionLista, 'predFacturacion', predFacturacionTexto, obligatoria = true,
+           ayuda = 'Opciones del campo Facturación del ticket. <strong>★</strong> = con la que nace un ticket nuevo') }}
       {{ catalogo('🤝', 'Distribuidores', 'distribuidores', config.distribuidores or ['DATTASOFT'],
            ayuda = 'Quién atiende el ticket. DATTASOFT siempre está y es el que se usa si no se elige otro.') }}
     </div>

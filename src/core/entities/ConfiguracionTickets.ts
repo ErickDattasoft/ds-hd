@@ -1,6 +1,7 @@
 import { PRIORIDADES, SLA_HORAS_POR_DEFECTO, type Prioridad } from './value-objects/Prioridad.js';
 import { ESTADOS_POR_DEFECTO } from './value-objects/EstadoTicket.js';
 import { DISTRIBUIDOR_POR_DEFECTO, normalizarDistribuidor } from './Ticket.js';
+import { CATALOGO_FACTURACION_POR_DEFECTO } from './value-objects/EstadoFacturacion.js';
 
 /** Catálogos configurables del módulo de tickets (documento `configuracion/tickets`). */
 export interface ConfiguracionTickets {
@@ -15,6 +16,8 @@ export interface ConfiguracionTickets {
   slaHoras: Record<string, number>;
   /** Tipos de ticket que ameritan facturación. */
   tiposFacturables: string[];
+  /** Estados de facturación que se pueden elegir (editable; ver `opcionesFacturacion`). */
+  facturacion?: string[];
   /** Estado con el que nace un ticket nuevo. */
   estadoInicial: string;
   /** Correos que se notifican al llegar un ticket del portal público. */
@@ -91,6 +94,7 @@ export const CONFIG_TICKETS_POR_DEFECTO: ConfiguracionTickets = {
   prioridades: [...PRIORIDADES],
   slaHoras: { ...SLA_HORAS_POR_DEFECTO },
   tiposFacturables: ['Consultoría Sitio', 'Consultoría Remoto'],
+  facturacion: [...CATALOGO_FACTURACION_POR_DEFECTO],
   estadoInicial: 'Abierto',
   correosNotificacion: [],
   avisarClienteEstados: [],

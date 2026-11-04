@@ -1,6 +1,6 @@
 import type { Ticket } from '../../../core/entities/Ticket.js';
 import { esEstadoFinal } from '../../../core/entities/value-objects/EstadoTicket.js';
-import { ETIQUETAS_FACTURACION, esFacturacionCompletada } from '../../../core/entities/value-objects/EstadoFacturacion.js';
+import { etiquetaFacturacion, esFacturacionCompletada } from '../../../core/entities/value-objects/EstadoFacturacion.js';
 
 function duracion(ms: number): string {
   const seg = Math.max(0, Math.round(ms / 1000));
@@ -130,7 +130,7 @@ export function ticketVM(t: Ticket, ahora: Date): TicketVM {
     abiertoEnIso: t.abiertoEn.toISOString(),
     facturacion: {
       estado: t.facturacion.estado,
-      etiqueta: ETIQUETAS_FACTURACION[t.facturacion.estado],
+      etiqueta: etiquetaFacturacion(t.facturacion.estado),
       clase: esFacturacionCompletada(t.facturacion.estado)
         ? 'ok'
         : t.facturacion.estado === 'en_proceso'

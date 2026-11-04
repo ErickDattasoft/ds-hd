@@ -1,6 +1,6 @@
 import type { FiltroTickets, ITicketQueries } from '../../core/ports/repositories/ITicketQueries.js';
 import type { ColumnaExcel, IExcelIO } from '../../core/ports/services/IExcelIO.js';
-import { ETIQUETAS_FACTURACION } from '../../core/entities/value-objects/EstadoFacturacion.js';
+import { etiquetaFacturacion } from '../../core/entities/value-objects/EstadoFacturacion.js';
 
 export const COLUMNAS_TICKETS: ColumnaExcel[] = [
   { header: 'Número', key: 'numero' },
@@ -45,7 +45,7 @@ export class TicketExcelService {
       prioridad: t.prioridad,
       canal: t.canal,
       agente: t.agenteAsignadoNombre ?? '',
-      facturado: ETIQUETAS_FACTURACION[t.facturacion.estado],
+      facturado: etiquetaFacturacion(t.facturacion.estado),
       creado: t.createdAt.toISOString().slice(0, 10),
     }));
   }

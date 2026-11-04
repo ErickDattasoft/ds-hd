@@ -31,10 +31,10 @@ import { parsePrioridad } from '../../../../core/entities/value-objects/Priorida
 import { alcanceTickets } from '../../../../application/tickets/alcance.js';
 import { ROLES_ASIGNABLES } from '../../../../core/entities/value-objects/Rol.js';
 import {
-  ESTADOS_FACTURACION,
-  ETIQUETAS_FACTURACION,
   esEstadoFacturacion,
+  opcionesFacturacion,
   parseEstadoFacturacion,
+  valorFacturacion,
 } from '../../../../core/entities/value-objects/EstadoFacturacion.js';
 import { parseAgenda } from '../../../../core/entities/value-objects/AgendaTicket.js';
 import { sanitizarDescripcionHtml } from '../../../../core/entities/value-objects/descripcionHtml.js';
@@ -49,8 +49,8 @@ const casillas = (v: unknown): string[] =>
 const str = (v: unknown): string => (typeof v === 'string' ? v : '');
 
 /** Estados de facturación como opciones de `<select>`. */
-export const catalogoFacturacion = (): { valor: string; etiqueta: string }[] =>
-  ESTADOS_FACTURACION.map((valor) => ({ valor, etiqueta: ETIQUETAS_FACTURACION[valor] }));
+export const catalogoFacturacion = (catalogo?: readonly string[], actual?: string): { valor: string; etiqueta: string }[] =>
+  opcionesFacturacion(catalogo, actual);
 
 /** Módulo de tickets del back-office. */
 export class TicketController {
@@ -146,7 +146,7 @@ export class TicketController {
       agentes,
       enPapelera,
       solicitudesPendientes,
-      estadosFacturacion: ESTADOS_FACTURACION.map((e) => ({ valor: e, etiqueta: ETIQUETAS_FACTURACION[e] })),
+      estadosFacturacion: catalogoFacturacion(config.facturacion),
       filtro: req.query,
     });
   };
@@ -213,7 +213,7 @@ export class TicketController {
       config,
       // Folio que le tocará si nadie más guarda uno antes; el definitivo se asigna al guardar.
       folioSiguiente: ultimoFolio + 1,
-      estadosFacturacion: catalogoFacturacion(),
+      estadosFacturacion: catalogoFacturacion(config.facturacion),
       equipoRecordatorio: await this.listar.equipoRecordatorio().catch(() => []),
       agentes: puedeAsignar ? await this.usuarios.list({ roles: ROLES_ASIGNABLES, activo: true }) : [],
       puedeAsignar,
@@ -308,7 +308,7 @@ export class TicketController {
           ? { notasInternas: str(b.notasInternas) || null }
           : {}),
         asignarAlActor: b.asignarAMi === 'on',
-        estadoFacturacion: esEstadoFacturacion(b.estadoFacturacion) ? b.estadoFacturacion : undefined,
+        estadoFacturacion: esEstadoFacturacion(b.estadoFacturacion) ? valorFacturacion(b.estadoFacturacion) : undefined,
         agenda: str(b.agendaFecha)
           ? parseAgenda({
               fecha: b.agendaFecha,
@@ -430,8 +430,8 @@ export class TicketController {
       ) {
         await this.asignar.ejecutar({ actor, ticketId: id, agenteUid: str(b.agenteUid), forzar: true });
       }
-      if (esEstadoFacturacion(b.estadoFacturacion) && b.estadoFacturacion !== ticket.facturacion.estado) {
-        await this.facturar.ejecutar({ actor, ticketId: id, estado: b.estadoFacturacion });
+      if (esEstadoFacturacion(b.estadoFacturacion) && valorFacturacion(b.estadoFacturacion) !== ticket.facturacion.estado) {
+        await this.facturar.ejecutar({ actor, ticketId: id, estado: valorFacturacion(b.estadoFacturacion) });
       }
       const fecha = str(b.agendaFecha);
       const hora = str(b.agendaHora);
@@ -493,7 +493,7 @@ export class TicketController {
       eventos: d.eventos,
       adjuntos: d.adjuntos,
       config: d.config,
-      estadosFacturacion: catalogoFacturacion(),
+      estadosFacturacion: catalogoFacturacion(d.config?.facturacion, d.ticket.facturacion.estado),
       permisos: {
         editar: d.puedeEditar,
         asignar: d.puedeAsignar,

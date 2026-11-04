@@ -29,6 +29,13 @@ import {
 } from '../../../../core/entities/ConfiguracionIntegraciones.js';
 import { INFO_APP } from '../../../../core/entities/AcercaDe.js';
 import { catalogoFacturacion } from './TicketController.js';
+import type { ConfiguracionTickets } from '../../../../core/entities/ConfiguracionTickets.js';
+
+/** Texto del catálogo que lleva la ★ de Facturación (el predeterminado se guarda como valor). */
+const textoPredFacturacion = (config: ConfiguracionTickets): string => {
+  const v = config.predeterminados?.estadoFacturacion;
+  return v ? (catalogoFacturacion(config.facturacion).find((o) => o.valor === v)?.etiqueta ?? '') : '';
+};
 import { respuestasATexto } from '../../../../core/entities/ConfiguracionTickets.js';
 import { camposDeError } from '../../support/errores.js';
 
@@ -302,7 +309,9 @@ export class ConfiguracionController {
   ticketsView = async (_req: Request, res: Response): Promise<void> => {
     const config = await this.configTickets.obtener();
     res.render('pages/backoffice/configuracion/tickets', {
-      estadosFacturacion: catalogoFacturacion(),
+      estadosFacturacion: catalogoFacturacion(config.facturacion),
+      predFacturacionTexto: textoPredFacturacion(config),
+      facturacionLista: catalogoFacturacion(config.facturacion).map((o) => o.etiqueta),
       agentesPred: await this.configTickets.agentesAsignables(),
       respuestasATexto,
       titulo: 'Configuración de tickets',
@@ -328,6 +337,7 @@ export class ConfiguracionController {
         estados: str(b.estados),
         prioridades: str(b.prioridades),
         tiposFacturables: str(b.tiposFacturables),
+        ...(b.facturacion !== undefined ? { facturacion: str(b.facturacion) } : {}),
         estadoInicial: str(b.estadoInicial),
         correosNotificacion: str(b.correosNotificacion),
         slaHoras,
@@ -346,7 +356,9 @@ export class ConfiguracionController {
       await this.auditar(req, 'Configuración de tickets actualizada (catálogos, SLA, avisos)');
       const config = await this.configTickets.obtener();
       res.render('pages/backoffice/configuracion/tickets', {
-      estadosFacturacion: catalogoFacturacion(),
+      estadosFacturacion: catalogoFacturacion(config.facturacion),
+      predFacturacionTexto: textoPredFacturacion(config),
+      facturacionLista: catalogoFacturacion(config.facturacion).map((o) => o.etiqueta),
       agentesPred: await this.configTickets.agentesAsignables(),
       respuestasATexto,
         titulo: 'Configuración de tickets',
@@ -357,7 +369,9 @@ export class ConfiguracionController {
     } catch (err) {
       const config = await this.configTickets.obtener();
       res.status(422).render('pages/backoffice/configuracion/tickets', {
-      estadosFacturacion: catalogoFacturacion(),
+      estadosFacturacion: catalogoFacturacion(config.facturacion),
+      predFacturacionTexto: textoPredFacturacion(config),
+      facturacionLista: catalogoFacturacion(config.facturacion).map((o) => o.etiqueta),
       agentesPred: await this.configTickets.agentesAsignables(),
       respuestasATexto,
         titulo: 'Configuración de tickets',

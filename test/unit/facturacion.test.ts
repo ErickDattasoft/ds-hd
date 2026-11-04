@@ -5,6 +5,8 @@ import {
   parseEstadoFacturacion,
   sanearEstadoFacturacion,
   esFacturacionCompletada,
+  etiquetaFacturacion,
+  opcionesFacturacion,
 } from '../../src/core/entities/value-objects/EstadoFacturacion.js';
 import { ValidationError } from '../../src/core/errors/DomainError.js';
 import type { SessionUser } from '../../src/application/shared/SessionUser.js';
@@ -38,9 +40,22 @@ const actor = (over: Partial<SessionUser> = {}): SessionUser => ({
 });
 
 describe('EstadoFacturacion (value object)', () => {
-  it('valida el catálogo fijo y rechaza lo demás', () => {
+  it('acepta los de fábrica (por clave o texto) y los agregados en Configuración; rechaza vacío', () => {
     expect(parseEstadoFacturacion('factura_mensual')).toBe('factura_mensual');
-    expect(() => parseEstadoFacturacion('otro')).toThrow(ValidationError);
+    expect(parseEstadoFacturacion('FACTURADO')).toBe('facturado');
+    expect(parseEstadoFacturacion('EN PROCESO')).toBe('en_proceso');
+    expect(parseEstadoFacturacion('GARANTIA')).toBe('garantia');
+    expect(parseEstadoFacturacion('NO APLICA FACTURACION')).toBe('no_aplica');
+    expect(parseEstadoFacturacion('Pendiente de pago')).toBe('Pendiente de pago');
+    expect(etiquetaFacturacion('en_proceso')).toBe('En proceso');
+    expect(etiquetaFacturacion('Pendiente de pago')).toBe('Pendiente de pago');
+    expect(() => parseEstadoFacturacion('')).toThrow(ValidationError);
+  });
+
+  it('las opciones salen del catálogo configurado y conservan el estado actual del ticket', () => {
+    const op = opcionesFacturacion(['NO FACTURADO', 'FACTURADO', 'Pendiente de pago'], 'garantia');
+    expect(op.map((o) => o.valor)).toEqual(['no_facturado', 'facturado', 'Pendiente de pago', 'garantia']);
+    expect(op[0]!.etiqueta).toBe('NO FACTURADO');
   });
 
   it('respalda al esquema viejo (facturado: boolean) cuando no viene estado', () => {

@@ -5,7 +5,7 @@ import type { IIdGenerator } from '../../core/ports/services/IIdGenerator.js';
 import type { IWebhookPublisher } from '../../core/ports/services/IWebhookPublisher.js';
 import type { IEmailSender } from '../../core/ports/services/IEmailSender.js';
 import {
-  ETIQUETAS_FACTURACION,
+  etiquetaFacturacion,
   esFacturacionCompletada,
   type EstadoFacturacion,
 } from '../../core/entities/value-objects/EstadoFacturacion.js';
@@ -41,7 +41,7 @@ export class MarcarFacturacionService {
     await this.tickets.save(ticket);
     await registrarEvento(this.tickets, this.ids, ticket.id, {
       tipo: 'facturacion',
-      resumen: `Facturación: ${ETIQUETAS_FACTURACION[anterior]} → ${ETIQUETAS_FACTURACION[input.estado]}`,
+      resumen: `Facturación: ${etiquetaFacturacion(anterior)} → ${etiquetaFacturacion(input.estado)}`,
       actor: input.actor,
       at: ahora,
     });

@@ -63,7 +63,7 @@ export class UsuarioController {
       pred: usuario?.predeterminadosTicket ?? {},
       contactosSoporteTexto: (usuario?.contactosSoporte ?? []).map((c) => `${c.nombre}, ${c.telefono}`).join('\n'),
       config,
-      estadosFacturacion: catalogoFacturacion(),
+      estadosFacturacion: catalogoFacturacion(config.facturacion, usuario?.predeterminadosTicket?.estadoFacturacion || undefined),
       guardado: false,
       passGuardada: false,
       erroresPass: {},

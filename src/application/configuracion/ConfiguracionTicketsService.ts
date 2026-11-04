@@ -7,6 +7,7 @@ import { ForbiddenError, ValidationError } from '../../core/errors/DomainError.j
 import type { SessionUser } from '../shared/SessionUser.js';
 import type { IUsuarioRepository } from '../../core/ports/repositories/IUsuarioRepository.js';
 import { ROLES_ASIGNABLES } from '../../core/entities/value-objects/Rol.js';
+import { valorFacturacion } from '../../core/entities/value-objects/EstadoFacturacion.js';
 
 const listaLimpia = (v: unknown): string[] =>
   String(v ?? '')
@@ -43,6 +44,8 @@ export class ConfiguracionTicketsService {
     estados: string;
     prioridades: string;
     tiposFacturables: string;
+    /** Estados de facturación, uno por línea. */
+    facturacion?: string;
     estadoInicial: string;
     correosNotificacion: string;
     slaHoras: Record<string, string | number>;
@@ -87,6 +90,14 @@ export class ConfiguracionTicketsService {
       input.distribuidores !== undefined
         ? distribuidoresDe({ distribuidores: listaLimpia(input.distribuidores) })
         : distribuidoresDe(await this.repo.obtenerTickets());
+    if (input.facturacion !== undefined) {
+      const lista = listaLimpia(input.facturacion).map((t) => t.slice(0, 60));
+      if (!lista.length) throw new ValidationError('Deja al menos un estado de facturación', { facturacion: 'Vacío' });
+      config.facturacion = lista;
+    } else {
+      const previa = (await this.repo.obtenerTickets()).facturacion;
+      if (previa) config.facturacion = previa;
+    }
     if (input.respuestas !== undefined) config.respuestas = parsearRespuestas(input.respuestas);
     else config.respuestas = (await this.repo.obtenerTickets()).respuestas ?? [];
     if (input.predeterminados) {
@@ -98,7 +109,8 @@ export class ConfiguracionTicketsService {
         prioridad: en(p.prioridad, prioridades),
         sistema: en(p.sistema, config.sistemas),
         grupo: en(p.grupo, config.grupos),
-        estadoFacturacion: p.estadoFacturacion ?? '',
+        // La ★ de la tarjeta manda el texto; se guarda su valor (clave de fábrica o el texto).
+        estadoFacturacion: p.estadoFacturacion ? valorFacturacion(p.estadoFacturacion) : '',
         asignarAlCreador: Boolean(p.asignarAlCreador),
         agenteUid: (p.agenteUid ?? '').trim(),
       };
