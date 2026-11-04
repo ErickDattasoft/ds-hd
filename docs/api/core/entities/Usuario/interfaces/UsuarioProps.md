@@ -90,6 +90,15 @@ Otras empresas del cliente (p. ej. un administrador que lleva varias que se fact
 
 ***
 
+### distribuidor?
+
+> `optional` **distribuidor?**: `string` \| `null`
+
+Distribuidor del usuario (ALFONSO, TONY…): solo ve y crea tickets de ese distribuidor.
+`null` = sin restricción (ve todos los que su rol le deja ver).
+
+***
+
 ### firma?
 
 > `optional` **firma?**: `string` \| `null`

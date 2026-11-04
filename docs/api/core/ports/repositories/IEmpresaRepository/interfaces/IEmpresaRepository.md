@@ -147,3 +147,21 @@ Borrado permanente (solo desde la papelera).
 #### Returns
 
 `Promise`\<`boolean`\>
+
+***
+
+### fundacionEn()
+
+> **fundacionEn**(`mesDias`): `Promise`\<[`Empresa`](../../../../entities/Empresa/classes/Empresa.md)[]\>
+
+Empresas activas cuyo aniversario de fundación cae en alguno de esos `MM-DD` (máx. 30).
+
+#### Parameters
+
+##### mesDias
+
+`string`[]
+
+#### Returns
+
+`Promise`\<[`Empresa`](../../../../entities/Empresa/classes/Empresa.md)[]\>

@@ -10,3 +10,7 @@
 
 - [NotaTicket](interfaces/NotaTicket.md)
 - [EventoTicket](interfaces/EventoTicket.md)
+
+## Functions
+
+- [esPlatica](functions/esPlatica.md)

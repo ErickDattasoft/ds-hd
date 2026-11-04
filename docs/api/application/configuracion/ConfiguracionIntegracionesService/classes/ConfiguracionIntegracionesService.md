@@ -177,11 +177,32 @@ Manda un WhatsApp de prueba con el proveedor de clientes guardado (Meta o Twilio
 
 ***
 
+### entregasCorreo()
+
+> **entregasCorreo**(`actor`, `destino`): `Promise`\<\{ `ok`: `boolean`; `detalle`: `string`; `eventos`: [`EntregaCorreo`](../interfaces/EntregaCorreo.md)[]; \}\>
+
+Qué registró Brevo de lo enviado a `destino` en los últimos días: si se entregó, rebotó o
+quedó bloqueado. "Enviado" en el CRM solo dice que Brevo lo aceptó.
+
+#### Parameters
+
+##### actor
+
+[`SessionUser`](../../../shared/SessionUser/interfaces/SessionUser.md)
+
+##### destino
+
+`string`
+
+#### Returns
+
+`Promise`\<\{ `ok`: `boolean`; `detalle`: `string`; `eventos`: [`EntregaCorreo`](../interfaces/EntregaCorreo.md)[]; \}\>
+
+***
+
 ### probarCorreo()
 
 > **probarCorreo**(`actor`, `destino`): `Promise`\<[`ResultadoPrueba`](../../../../core/ports/services/IIntegracionesGateway/interfaces/ResultadoPrueba.md)\>
-
-Manda un correo de prueba a `destino` para verificar que el envío funciona de verdad.
 
 #### Parameters
 

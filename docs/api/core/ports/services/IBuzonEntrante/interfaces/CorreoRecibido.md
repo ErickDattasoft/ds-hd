@@ -64,7 +64,8 @@ Texto plano ya sin HTML (la cita del hilo se recorta después, con `cuerpoSinCit
 
 > `optional` **adjuntos?**: `object`[]
 
-Imágenes adjuntas (solo las que alguien adjuntó a propósito, no las incrustadas).
+Imágenes adjuntas (solo las que alguien adjuntó a propósito, no las incrustadas). Si el
+proveedor no manda el contenido sino un enlace a su almacén, viene `url` y `base64` vacío.
 
 #### nombre
 
@@ -77,3 +78,23 @@ Imágenes adjuntas (solo las que alguien adjuntó a propósito, no las incrustad
 #### base64
 
 > **base64**: `string`
+
+#### url?
+
+> `optional` **url?**: `string`
+
+***
+
+### omitidos?
+
+> `optional` **omitidos?**: `object`[]
+
+Adjuntos que no se guardan (no son imagen), para avisarlo en la nota en vez de perderlos sin decir nada.
+
+#### nombre
+
+> **nombre**: `string`
+
+#### motivo
+
+> **motivo**: `string`

@@ -14,3 +14,4 @@
 
 - [DatosIntegraciones](interfaces/DatosIntegraciones.md)
 - [InfoCorreo](interfaces/InfoCorreo.md)
+- [EntregaCorreo](interfaces/EntregaCorreo.md)

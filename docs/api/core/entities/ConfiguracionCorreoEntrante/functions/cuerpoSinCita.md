@@ -8,8 +8,7 @@
 
 > **cuerpoSinCita**(`texto`): `string`
 
-Deja solo lo que el cliente escribió: corta en la primera línea de cita ("El ... escribió:",
-"-----Original Message-----", "> …") para no repetir el hilo completo en cada nota.
+Texto de la respuesta sin el hilo citado (lo que viene después de «El … escribió:», «>», etc.).
 
 ## Parameters
 

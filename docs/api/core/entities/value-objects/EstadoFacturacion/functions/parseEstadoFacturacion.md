@@ -6,7 +6,7 @@
 
 # Function: parseEstadoFacturacion()
 
-> **parseEstadoFacturacion**(`v`): `"no_facturado"` \| `"facturado"` \| `"no_aplica"` \| `"factura_mensual"` \| `"consulta_sin_costo"`
+> **parseEstadoFacturacion**(`v`): `string`
 
 Valida y normaliza un estado de facturación recibido de un formulario.
 
@@ -18,4 +18,4 @@ Valida y normaliza un estado de facturación recibido de un formulario.
 
 ## Returns
 
-`"no_facturado"` \| `"facturado"` \| `"no_aplica"` \| `"factura_mensual"` \| `"consulta_sin_costo"`
+`string`

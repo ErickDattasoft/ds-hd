@@ -1,8 +1,8 @@
 name: Cron
 
+# Ya NO corre solo: GitHub atrasaba el horario 5-6 h. Los jobs los dispara el cron de
+# Cloudflare (`JOBS_POR_CRON` en src/main.worker.ts). Esto queda para correrlos a mano.
 on:
-  schedule:
-    - cron: '17 * * * *' # cada hora, minuto 17
   workflow_dispatch:
 
 jobs:
@@ -29,11 +29,6 @@ jobs:
         if: ${{ !cancelled() }}
         run: |
           curl -fsS -X POST "${{ secrets.APP_BASE_URL }}/jobs/completar-empresa-tickets" \
-            -H "Authorization: Bearer ${{ secrets.JOBS_SECRET }}"
-      - name: Marcar 💬 los tickets que ya tenían plática (solo trabaja la primera vez)
-        if: ${{ !cancelled() }}
-        run: |
-          curl -fsS -X POST "${{ secrets.APP_BASE_URL }}/jobs/marcar-tickets-con-platica" \
             -H "Authorization: Bearer ${{ secrets.JOBS_SECRET }}"
       - name: Retención de bitácora (60 días)
         if: ${{ !cancelled() }}

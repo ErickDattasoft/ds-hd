@@ -14,10 +14,12 @@
 
 ## Variables
 
+- [DISTRIBUIDORES\_INICIALES](variables/DISTRIBUIDORES_INICIALES.md)
 - [CONFIG\_TICKETS\_POR\_DEFECTO](variables/CONFIG_TICKETS_POR_DEFECTO.md)
 
 ## Functions
 
 - [parsearRespuestas](functions/parsearRespuestas.md)
 - [respuestasATexto](functions/respuestasATexto.md)
+- [distribuidoresDe](functions/distribuidoresDe.md)
 - [horasSlaDe](functions/horasSlaDe.md)

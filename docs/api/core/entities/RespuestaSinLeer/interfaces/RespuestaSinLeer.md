@@ -76,3 +76,11 @@ Inicio del mensaje, para el listado.
 ### canalizadoA
 
 > **canalizadoA**: `string` \| `null`
+
+***
+
+### distribuidor
+
+> **distribuidor**: `string`
+
+Distribuidor del ticket (para que la gente de otro distribuidor solo vea las suyas).

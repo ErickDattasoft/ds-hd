@@ -124,3 +124,11 @@ Encabezado/plantilla del usuario para redactar tickets (con `[fecha]`).
 
 Admins activos (uid + nombre). Solo se llena para quien no ve todos los tickets: un ticket
 con un admin en "Agente" y sin canalizar es visible para todos (ver `ticketDisponibleParaEquipo`).
+
+***
+
+### distribuidor?
+
+> `readonly` `optional` **distribuidor?**: `string` \| `null`
+
+Si lo tiene, solo ve y crea tickets de este distribuidor (ver `alcanceTickets`).

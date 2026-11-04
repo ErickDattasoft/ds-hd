@@ -84,6 +84,8 @@ Borrado permanente, incluidas notas y eventos (solo desde la papelera).
 
 > **agregarNota**(`ticketId`, `nota`): `Promise`\<`void`\>
 
+Guarda la nota; si es pública, marca el ticket `conPlatica`.
+
 #### Parameters
 
 ##### ticketId
@@ -97,6 +99,36 @@ Borrado permanente, incluidas notas y eventos (solo desde la papelera).
 #### Returns
 
 `Promise`\<`void`\>
+
+***
+
+### contarNotas()
+
+> **contarNotas**(`ticketId`): `Promise`\<`number`\>
+
+Cuántas notas tiene el ticket (para que el chat abierto sepa si llegó algo, a 1 lectura).
+
+#### Parameters
+
+##### ticketId
+
+`string`
+
+#### Returns
+
+`Promise`\<`number`\>
+
+***
+
+### marcarConPlatica()
+
+> **marcarConPlatica**(): `Promise`\<`number`\>
+
+Relleno de una vez: marca `conPlatica` en los tickets que ya tenían mensajes públicos. Devuelve cuántos.
+
+#### Returns
+
+`Promise`\<`number`\>
 
 ***
 

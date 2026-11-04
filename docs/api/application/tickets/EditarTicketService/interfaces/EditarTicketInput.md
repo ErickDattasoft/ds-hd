@@ -46,6 +46,14 @@ Todo lo que se captura al crear un ticket y se puede corregir después.
 
 ***
 
+### distribuidor?
+
+> `optional` **distribuidor?**: `string` \| `null`
+
+Ausente = no se toca.
+
+***
+
 ### prioridad
 
 > **prioridad**: `string`

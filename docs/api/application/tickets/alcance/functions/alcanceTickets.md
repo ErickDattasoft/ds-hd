@@ -6,7 +6,7 @@
 
 # Function: alcanceTickets()
 
-> **alcanceTickets**(`actor`): `Pick`\<[`FiltroTickets`](../../../../core/ports/repositories/ITicketQueries/interfaces/FiltroTickets.md), `"alcanceAgente"`\>
+> **alcanceTickets**(`actor`): `Pick`\<[`FiltroTickets`](../../../../core/ports/repositories/ITicketQueries/interfaces/FiltroTickets.md), `"alcanceAgente"` \| `"distribuidor"`\>
 
 Filtro de alcance para listados/conteos: quien no ve todos ve los suyos (por uid o por nombre en
 "Agente"/"Canalizado a") más los que nadie tiene todavía — si no, los sin asignar quedarían
@@ -21,4 +21,4 @@ ticket con un admin en "Agente" y sin canalizar también cuenta como «de nadie 
 
 ## Returns
 
-`Pick`\<[`FiltroTickets`](../../../../core/ports/repositories/ITicketQueries/interfaces/FiltroTickets.md), `"alcanceAgente"`\>
+`Pick`\<[`FiltroTickets`](../../../../core/ports/repositories/ITicketQueries/interfaces/FiltroTickets.md), `"alcanceAgente"` \| `"distribuidor"`\>

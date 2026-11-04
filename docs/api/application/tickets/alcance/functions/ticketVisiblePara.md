@@ -14,7 +14,7 @@ Misma regla que [alcanceTickets](alcanceTickets.md), para un ticket suelto (ver/
 
 ### ticket
 
-`Pick`\<[`Ticket`](../../../../core/entities/Ticket/classes/Ticket.md), `"agenteAsignadoUid"` \| `"agenteAsignadoNombre"` \| `"canalizadoA"`\>
+`Pick`\<[`Ticket`](../../../../core/entities/Ticket/classes/Ticket.md), `"agenteAsignadoUid"` \| `"agenteAsignadoNombre"` \| `"canalizadoA"` \| `"distribuidor"`\>
 
 ### actor
 

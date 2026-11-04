@@ -116,6 +116,12 @@ Empresa/cliente del CRM.
 
 ***
 
+### fechaFundacion
+
+> **fechaFundacion**: `string` \| `null`
+
+***
+
 ### activa
 
 > **activa**: `boolean`

@@ -113,3 +113,11 @@ Campos personalizados libres.
 ### notas?
 
 > `optional` **notas?**: `string`
+
+***
+
+### fechaFundacion?
+
+> `optional` **fechaFundacion?**: `string` \| `null`
+
+ISO `YYYY-MM-DD`; vacío lo borra; sin definir no se toca (p. ej. al importar Excel).

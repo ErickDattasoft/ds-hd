@@ -13,8 +13,9 @@
     "directory": "worker-dist/assets",
     "binding": "ASSETS"
   },
-  // Cada 5 min: respuestas de clientes con imágenes desde Zoho (ver `scheduled` en main.worker.ts).
-  "triggers": { "crons": ["*/5 * * * *"] },
+  // Cada 5 min: respuestas de clientes con imágenes desde Zoho. Los otros tres: jobs horarios
+  // (SLA, recordatorios, resumen…) repartidos — ver `JOBS_POR_CRON` en main.worker.ts.
+  "triggers": { "crons": ["*/5 * * * *", "7 * * * *", "27 * * * *", "47 * * * *"] },
   "observability": {
     "enabled": true
   },

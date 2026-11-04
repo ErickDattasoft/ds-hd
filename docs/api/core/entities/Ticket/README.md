@@ -24,8 +24,13 @@
 
 - [CanalTicket](type-aliases/CanalTicket.md)
 
+## Variables
+
+- [DISTRIBUIDOR\_POR\_DEFECTO](variables/DISTRIBUIDOR_POR_DEFECTO.md)
+
 ## Functions
 
+- [normalizarDistribuidor](functions/normalizarDistribuidor.md)
 - [coincideTexto](functions/coincideTexto.md)
 - [nombresCoinciden](functions/nombresCoinciden.md)
 - [ticketEsDeAgente](functions/ticketEsDeAgente.md)

@@ -80,6 +80,12 @@ Quiénes pueden ser el agente predeterminado (los mismos que se pueden asignar a
 
 `string`
 
+###### distribuidores?
+
+`string`
+
+Un distribuidor por línea; DATTASOFT se agrega solo si falta.
+
 ###### estados
 
 `string`
@@ -91,6 +97,12 @@ Quiénes pueden ser el agente predeterminado (los mismos que se pueden asignar a
 ###### tiposFacturables
 
 `string`
+
+###### facturacion?
+
+`string`
+
+Estados de facturación, uno por línea.
 
 ###### estadoInicial
 

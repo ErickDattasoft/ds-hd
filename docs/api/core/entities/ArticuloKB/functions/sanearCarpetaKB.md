@@ -9,7 +9,7 @@
 > **sanearCarpetaKB**(`v`, `categoria?`): `"soporte"` \| `"empresas"`
 
 Carpeta guardada; los artículos de antes de que existiera el campo se reparten por su
-categoría (`empresa` → Empresas, todo lo demás → Soporte y licencias), sin reescribir datos.
+categoría (`empresa` → Empresas, todo lo demás → Soporte), sin reescribir datos.
 
 ## Parameters
 

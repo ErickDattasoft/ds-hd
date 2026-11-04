@@ -110,7 +110,7 @@ Botón "Enviar resumen ahora" desde Configuración.
 
 > **enviarSiCorresponde**(): `Promise`\<\{ `enviado`: `boolean`; `motivo?`: `string`; `enviadoA?`: `string`[]; \}\>
 
-Job de cron (corre cada hora): envía una sola vez al día, a la hora configurada.
+Job de cron (corre cada hora): envía una sola vez al día, a partir de la hora configurada.
 
 #### Returns
 

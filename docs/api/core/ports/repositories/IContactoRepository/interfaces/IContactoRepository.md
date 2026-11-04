@@ -169,3 +169,21 @@ Borrado permanente (solo desde la papelera).
 #### Returns
 
 `Promise`\<`number`\>
+
+***
+
+### cumpleanosEn()
+
+> **cumpleanosEn**(`mesDias`): `Promise`\<[`Contacto`](../../../../entities/Contacto/classes/Contacto.md)[]\>
+
+Contactos activos que cumplen años en alguno de esos `MM-DD` (máx. 30).
+
+#### Parameters
+
+##### mesDias
+
+`string`[]
+
+#### Returns
+
+`Promise`\<[`Contacto`](../../../../entities/Contacto/classes/Contacto.md)[]\>

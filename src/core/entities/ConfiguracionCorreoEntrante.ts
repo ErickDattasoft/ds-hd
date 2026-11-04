@@ -105,6 +105,7 @@ function citaPartida(lineas: string[], i: number): boolean {
   return false;
 }
 
+/** Texto de la respuesta sin el hilo citado (lo que viene después de «El … escribió:», «>», etc.). */
 export function cuerpoSinCita(texto: string): string {
   const lineas = (texto ?? '').replace(/\r\n/g, '\n').split('\n');
   const corte = lineas.findIndex(

@@ -46,6 +46,14 @@ Props para construir un [Ticket](../classes/Ticket.md).
 
 ***
 
+### distribuidor?
+
+> `optional` **distribuidor?**: `string` \| `null`
+
+Quién atiende/vendió (DATTASOFT, otro distribuidor…); ausente = DATTASOFT.
+
+***
+
 ### estado
 
 > **estado**: `string`
@@ -269,6 +277,15 @@ Ajuste manual del tiempo trabajado; `null` = usar el cálculo automático.
 ### archivado?
 
 > `optional` **archivado?**: `boolean`
+
+***
+
+### conPlatica?
+
+> `optional` **conPlatica?**: `boolean`
+
+Ya hubo plática con el cliente (al menos un mensaje público además de la solicitud). Lo marca
+el repositorio al guardar la nota — nunca `save()`, para que un ticket cargado antes no lo borre.
 
 ***
 

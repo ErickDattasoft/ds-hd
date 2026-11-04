@@ -98,6 +98,24 @@ Habilita/inhabilita la cuenta a nivel de identidad (bloquea el login).
 
 ***
 
+### deleteAccount()
+
+> **deleteAccount**(`uid`): `Promise`\<`void`\>
+
+Borra la cuenta de identidad. Si ya no existe (p. ej. uid migrado), no hace nada.
+
+#### Parameters
+
+##### uid
+
+`string`
+
+#### Returns
+
+`Promise`\<`void`\>
+
+***
+
 ### setRolesClaim()
 
 > **setRolesClaim**(`uid`, `roles`): `Promise`\<`void`\>

@@ -3275,7 +3275,7 @@
    */
   var NAV_CASCADA_KEY = 'navCascadaAbierta';
   function navCascadaAbiertas() {
-    try { return JSON.parse(localStorage.getItem(NAV_CASCADA_KEY) || '[]'); } catch (e) { return []; }
+    try { return JSON.parse(localStorage.getItem(NAV_CASCADA_KEY) || '[]'); } catch { return []; }
   }
   function pintarNavCascada(btn, abierta) {
     btn.setAttribute('aria-expanded', abierta ? 'true' : 'false');
@@ -3296,7 +3296,7 @@
     pintarNavCascada(btn, abierta);
     var abiertas = navCascadaAbiertas().filter(function (k) { return k !== clave; });
     if (abierta) abiertas.push(clave);
-    try { localStorage.setItem(NAV_CASCADA_KEY, JSON.stringify(abiertas)); } catch (e2) { /* sin storage: solo esta vez */ }
+    try { localStorage.setItem(NAV_CASCADA_KEY, JSON.stringify(abiertas)); } catch { /* sin storage: solo esta vez */ }
   });
 
   /**
@@ -3306,7 +3306,7 @@
    */
   var SECCIONES_KEY = 'seccionesFicha';
   function seccionesGuardadas() {
-    try { return JSON.parse(localStorage.getItem(SECCIONES_KEY) || '{}') || {}; } catch (e) { return {}; }
+    try { return JSON.parse(localStorage.getItem(SECCIONES_KEY) || '{}') || {}; } catch { return {}; }
   }
   function initSecciones() {
     var guardadas = seccionesGuardadas();
@@ -3326,7 +3326,7 @@
     var d = sum.parentElement;
     var g = seccionesGuardadas();
     g[d.getAttribute('data-seccion')] = !d.open; // el clic aún no la cambió
-    try { localStorage.setItem(SECCIONES_KEY, JSON.stringify(g)); } catch (e2) { /* sin storage */ }
+    try { localStorage.setItem(SECCIONES_KEY, JSON.stringify(g)); } catch { /* sin storage */ }
   });
 
   function iniciarPagina() {

@@ -97,6 +97,15 @@ secreto `CORREO_ENTRANTE_SECRET` (si existe), así el corte no depende de tocar 
 
 ***
 
+### zohoRevisadoHasta
+
+> **zohoRevisadoHasta**: `string` \| `null`
+
+Hasta qué correo (fecha de llegada, ISO) ya se revisó el buzón de Zoho: la próxima revisión
+toma solo lo que llegó después. Así no hay que marcar nada como leído en el buzón.
+
+***
+
 ### ultimaRevision
 
 > **ultimaRevision**: `string` \| `null`

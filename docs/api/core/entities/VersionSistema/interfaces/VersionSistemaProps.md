@@ -54,6 +54,14 @@ Enlace a la carta técnica oficial del sistema.
 
 ***
 
+### servicePacks?
+
+> `optional` **servicePacks?**: [`ServicePackVersion`](ServicePackVersion.md)[]
+
+SP de la versión, cada uno con su descarga (fecha y links de arriba son los de la versión).
+
+***
+
 ### updatedAt?
 
 > `optional` **updatedAt?**: `Date`

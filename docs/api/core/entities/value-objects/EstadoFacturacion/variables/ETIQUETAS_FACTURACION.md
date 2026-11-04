@@ -6,4 +6,4 @@
 
 # Variable: ETIQUETAS\_FACTURACION
 
-> `const` **ETIQUETAS\_FACTURACION**: `Record`\<[`EstadoFacturacion`](../type-aliases/EstadoFacturacion.md), `string`\>
+> `const` **ETIQUETAS\_FACTURACION**: `Record`\<[`EstadoFacturacionBase`](../type-aliases/EstadoFacturacionBase.md), `string`\>

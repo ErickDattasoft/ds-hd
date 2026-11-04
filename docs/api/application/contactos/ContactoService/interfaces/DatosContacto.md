@@ -61,3 +61,11 @@ Datos editables de un contacto (alta o edición).
 ### notas?
 
 > `optional` **notas?**: `string`
+
+***
+
+### cumpleanos?
+
+> `optional` **cumpleanos?**: `string` \| `null`
+
+`MM-DD`; `null` lo borra; sin definir no se toca (p. ej. al importar Excel).

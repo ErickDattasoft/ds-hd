@@ -22,6 +22,14 @@ Ticket con sus notas/eventos/adjuntos y los permisos del actor ya resueltos para
 
 ***
 
+### notasTotal
+
+> **notasTotal**: `number`
+
+Todas las notas, internas incluidas (lo que cuenta `contarNotas`).
+
+***
+
 ### eventos
 
 > **eventos**: [`EventoTicket`](../../../../core/entities/NotaTicket/interfaces/EventoTicket.md)[]

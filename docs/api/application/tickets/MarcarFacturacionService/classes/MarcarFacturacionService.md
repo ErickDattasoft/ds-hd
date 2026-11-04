@@ -64,7 +64,7 @@ Caso de uso: cambiar el estado de facturación de un ticket (catálogo fijo).
 
 ###### estado
 
-`"no_facturado"` \| `"facturado"` \| `"no_aplica"` \| `"factura_mensual"` \| `"consulta_sin_costo"`
+`string`
 
 #### Returns
 

@@ -108,6 +108,14 @@ Versión instalada por sistema (texto libre, p. ej. `16.3.1 SP2`).
 
 ***
 
+### fechaFundacion?
+
+> `optional` **fechaFundacion?**: `string` \| `null`
+
+Fecha de fundación de la empresa (ISO `YYYY-MM-DD`), para felicitarla en su aniversario.
+
+***
+
 ### activa?
 
 > `optional` **activa?**: `boolean`

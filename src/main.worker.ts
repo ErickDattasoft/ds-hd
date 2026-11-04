@@ -38,15 +38,51 @@ app.listen(PORT, () => {
 
 const http = httpServerHandler({ port: PORT });
 
+/**
+ * Jobs que antes corrían solo desde el cron de GitHub (que en la práctica se atrasa 5-6 h).
+ * Cada cron de Cloudflare es una invocación aparte, con su propio presupuesto de
+ * subpeticiones, así que se reparten en grupos chicos.
+ */
+const JOBS_POR_CRON: Record<string, string[]> = {
+  '7 * * * *': ['recordatorios-eventos', 'seguimiento-eventos'],
+  '27 * * * *': ['recalcular-sla', 'resumen-diario'],
+  '47 * * * *': ['completar-empresa-tickets', 'purgar-bitacora', 'backup-pendiente', 'revisar-versiones-contpaqi'],
+};
+
 export default {
   fetch: (request: Request, env: unknown, ctx: unknown) => http.fetch(request, env, ctx),
   /**
-   * Cron Trigger de Cloudflare (`triggers.crons` en wrangler.jsonc, cada 5 min): revisa el buzón
-   * de Zoho para traer las respuestas con imágenes, que CloudMailin gratis rechaza por tamaño.
-   * El resto de los jobs sigue en el cron horario de GitHub.
+   * Cron Triggers de Cloudflare (`triggers.crons` en wrangler.jsonc). Cada 5 min: buzón de Zoho
+   * (respuestas con imágenes, que CloudMailin gratis rechaza por tamaño). Cada hora: los jobs de
+   * {@link JOBS_POR_CRON}, llamados por dentro (sin salir a internet) con el JOBS_SECRET.
    */
-  async scheduled(_evento: unknown, _env: unknown, ctx: { waitUntil(p: Promise<unknown>): void }): Promise<void> {
+  async scheduled(evento: { cron?: string }, env: unknown, ctx: { waitUntil(p: Promise<unknown>): void }): Promise<void> {
     const { correoEntranteService, logger } = container.cradle;
+    const jobs = evento?.cron ? JOBS_POR_CRON[evento.cron] : undefined;
+    if (jobs) {
+      ctx.waitUntil(
+        (async () => {
+          for (const job of jobs) {
+            try {
+              const r = await http.fetch(
+                new Request(`https://ds-hd.interno/jobs/${job}`, {
+                  method: 'POST',
+                  headers: { authorization: `Bearer ${config.jobs.secret}` },
+                }),
+                env,
+                ctx,
+              );
+              const cuerpo = (await r.text()).slice(0, 300);
+              if (r.ok) logger.info(`cron ${job}`, { status: r.status, cuerpo });
+              else logger.warn(`cron ${job} falló`, { status: r.status, cuerpo });
+            } catch (err) {
+              logger.warn(`cron ${job} falló`, { err: err instanceof Error ? err.message : String(err) });
+            }
+          }
+        })(),
+      );
+      return;
+    }
     const { resultado, lecturas } = conLecturas(() => correoEntranteService.revisar());
     ctx.waitUntil(
       resultado

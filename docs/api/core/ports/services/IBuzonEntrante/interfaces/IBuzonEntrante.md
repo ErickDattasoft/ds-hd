@@ -6,16 +6,19 @@
 
 # Interface: IBuzonEntrante
 
-Buzón de correo entrante (hoy: Zoho Mail por API OAuth). Se lee cada hora desde el cron para
-convertir las respuestas de los clientes en notas de su ticket.
+Buzón de correo entrante (hoy: Zoho Mail por API OAuth). Se lee cada pocos minutos para
+convertir las respuestas de los clientes en notas de su ticket. Es el buzón de una persona:
+solo se lee, nunca se marca nada como leído ni se mueve.
 
 ## Methods
 
-### listarNoLeidos()
+### listarRecientes()
 
-> **listarNoLeidos**(`cfg`, `limite`): `Promise`\<[`CorreoRecibido`](CorreoRecibido.md)[]\>
+> **listarRecientes**(`cfg`, `opts`): `Promise`\<[`CorreoRecibido`](CorreoRecibido.md)[]\>
 
-Correos sin leer de la carpeta configurada, del más viejo al más nuevo.
+Correos que llegaron después de `desde` con número de ticket en el asunto, del más viejo al
+más nuevo (con su contenido y sus imágenes). Con `soloConAdjuntos`, solo los que traen
+archivos: los demás ya llegan al instante por CloudMailin.
 
 #### Parameters
 
@@ -23,7 +26,17 @@ Correos sin leer de la carpeta configurada, del más viejo al más nuevo.
 
 [`ConfiguracionCorreoEntrante`](../../../../entities/ConfiguracionCorreoEntrante/interfaces/ConfiguracionCorreoEntrante.md)
 
-##### limite
+##### opts
+
+###### desde
+
+`Date`
+
+###### soloConAdjuntos
+
+`boolean`
+
+###### limite
 
 `number`
 
@@ -33,11 +46,11 @@ Correos sin leer de la carpeta configurada, del más viejo al más nuevo.
 
 ***
 
-### marcarLeido()
+### canjearCodigo()
 
-> **marcarLeido**(`cfg`, `correo`): `Promise`\<`void`\>
+> **canjearCodigo**(`cfg`, `codigo`): `Promise`\<`string`\>
 
-Marca uno como leído para no volver a procesarlo.
+Cambia el código de un solo uso de la consola de Zoho por un refresh token (no expira).
 
 #### Parameters
 
@@ -45,13 +58,13 @@ Marca uno como leído para no volver a procesarlo.
 
 [`ConfiguracionCorreoEntrante`](../../../../entities/ConfiguracionCorreoEntrante/interfaces/ConfiguracionCorreoEntrante.md)
 
-##### correo
+##### codigo
 
-[`CorreoRecibido`](CorreoRecibido.md)
+`string`
 
 #### Returns
 
-`Promise`\<`void`\>
+`Promise`\<`string`\>
 
 ***
 

@@ -46,6 +46,14 @@ Datos para crear un ticket desde cualquier canal (staff, portal o público).
 
 ***
 
+### distribuidor?
+
+> `optional` **distribuidor?**: `string` \| `null`
+
+Ausente = DATTASOFT; quien es de otro distribuidor siempre crea con el suyo.
+
+***
+
 ### grupo?
 
 > `optional` **grupo?**: `string` \| `null`
@@ -164,7 +172,7 @@ Correos en copia de las notificaciones del ticket.
 
 ### estadoFacturacion?
 
-> `optional` **estadoFacturacion?**: `"no_facturado"` \| `"facturado"` \| `"no_aplica"` \| `"factura_mensual"` \| `"consulta_sin_costo"`
+> `optional` **estadoFacturacion?**: `string`
 
 Si se omite, se infiere del tipo (`tiposFacturables`) — solo el alta desde el back-office lo captura.
 

@@ -68,6 +68,12 @@ Versión vigente de un sistema (CONTPAQi/Compac) que el equipo instala/soporta.
 
 ***
 
+### servicePacks
+
+> **servicePacks**: [`ServicePackVersion`](../interfaces/ServicePackVersion.md)[]
+
+***
+
 ### updatedAt
 
 > **updatedAt**: `Date`

@@ -114,14 +114,15 @@ export class ResumenDiarioService {
     return { enviadoA };
   }
 
-  /** Job de cron (corre cada hora): envía una sola vez al día, a la hora configurada. */
+  /** Job de cron (corre cada hora): envía una sola vez al día, a partir de la hora configurada. */
   async enviarSiCorresponde(): Promise<{ enviado: boolean; motivo?: string; enviadoA?: string[] }> {
     const config = await this.repo.obtenerResumen();
     if (!config.habilitado) return { enviado: false, motivo: 'deshabilitado' };
     if (!config.destinatarios.length) return { enviado: false, motivo: 'sin destinatarios' };
     const { fechaISO, hora } = fechaYHoraLocal(this.clock.now());
     if (config.ultimoEnvio === fechaISO) return { enviado: false, motivo: 'ya se envió hoy' };
-    if (hora !== config.horaEnvio) return { enviado: false, motivo: 'fuera de horario' };
+    // `<` y no `!==`: si el cron se atrasa o se salta la hora exacta, sale en la siguiente vuelta del día.
+    if (hora < config.horaEnvio) return { enviado: false, motivo: 'todavía no es la hora' };
 
     const enviadoA = await this.enviar(config.destinatarios, ACTOR_SISTEMA);
     await this.repo.guardarResumen({ ...config, ultimoEnvio: fechaISO });

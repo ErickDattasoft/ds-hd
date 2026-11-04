@@ -114,7 +114,10 @@ sin número → solicitud en el buzón de tickets públicos, para convertirla o 
 
 > **revisar**(`opts?`): `Promise`\<[`ResultadoCorreoEntrante`](../interfaces/ResultadoCorreoEntrante.md)\>
 
-Revisa el buzón. `forzado` = lo pidió una persona desde Configuración (ignora "habilitado").
+Revisa el buzón de Zoho: lo que llegó desde la última revisión con número de ticket en el
+asunto. Con CloudMailin activo solo toma los correos con adjuntos (los demás ya llegaron por
+ahí al instante, y CloudMailin gratis rechaza los de más de 512 KB). No marca nada como leído:
+recuerda hasta qué fecha revisó. `forzado` = lo pidió una persona desde Configuración.
 
 #### Parameters
 
@@ -162,7 +165,7 @@ Guarda la config; los secretos vacíos conservan el valor anterior.
 
 ##### datos
 
-`Omit`\<[`ConfiguracionCorreoEntrante`](../../../../core/entities/ConfiguracionCorreoEntrante/interfaces/ConfiguracionCorreoEntrante.md), `"ultimaRevision"` \| `"ultimoResultado"` \| `"remitenteEmail"` \| `"remitenteNombre"` \| `"webhookKey"`\>
+`Omit`\<[`ConfiguracionCorreoEntrante`](../../../../core/entities/ConfiguracionCorreoEntrante/interfaces/ConfiguracionCorreoEntrante.md), `"remitenteEmail"` \| `"remitenteNombre"` \| `"webhookKey"` \| `"zohoRevisadoHasta"` \| `"ultimaRevision"` \| `"ultimoResultado"`\> & `object`
 
 #### Returns
 

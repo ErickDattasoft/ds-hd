@@ -28,6 +28,14 @@ Catálogos configurables del módulo de tickets (documento `configuracion/ticket
 
 ***
 
+### distribuidores?
+
+> `optional` **distribuidores?**: `string`[]
+
+Distribuidores que atienden tickets (DATTASOFT siempre va primero; ver `distribuidoresDe`).
+
+***
+
 ### estados
 
 > **estados**: `string`[]
@@ -53,6 +61,14 @@ Horas objetivo de SLA por prioridad.
 > **tiposFacturables**: `string`[]
 
 Tipos de ticket que ameritan facturación.
+
+***
+
+### facturacion?
+
+> `optional` **facturacion?**: `string`[]
+
+Estados de facturación que se pueden elegir (editable; ver `opcionesFacturacion`).
 
 ***
 

@@ -93,6 +93,14 @@ uid de la cuenta de portal vinculada, si existe.
 
 ***
 
+### cumpleanos?
+
+> `optional` **cumpleanos?**: `string` \| `null`
+
+Cumpleaños como mes-día `MM-DD` (sin año: casi nunca se sabe).
+
+***
+
 ### activo?
 
 > `optional` **activo?**: `boolean`

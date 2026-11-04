@@ -98,6 +98,12 @@ Persona de contacto asociada a una empresa.
 
 ***
 
+### cumpleanos
+
+> **cumpleanos**: `string` \| `null`
+
+***
+
 ### activo
 
 > **activo**: `boolean`

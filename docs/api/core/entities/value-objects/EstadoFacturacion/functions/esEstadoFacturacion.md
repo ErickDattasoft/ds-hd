@@ -6,9 +6,9 @@
 
 # Function: esEstadoFacturacion()
 
-> **esEstadoFacturacion**(`v`): v is "no\_facturado" \| "facturado" \| "no\_aplica" \| "factura\_mensual" \| "consulta\_sin\_costo"
+> **esEstadoFacturacion**(`v`): `v is string`
 
-Type guard: ¿el valor es uno de los estados de facturación válidos?
+Type guard: ¿el valor sirve como estado de facturación? (texto no vacío y corto).
 
 ## Parameters
 
@@ -18,4 +18,4 @@ Type guard: ¿el valor es uno de los estados de facturación válidos?
 
 ## Returns
 
-v is "no\_facturado" \| "facturado" \| "no\_aplica" \| "factura\_mensual" \| "consulta\_sin\_costo"
+`v is string`

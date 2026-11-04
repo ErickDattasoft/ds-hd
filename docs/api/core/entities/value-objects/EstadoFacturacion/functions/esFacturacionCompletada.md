@@ -14,7 +14,7 @@
 
 ### estado
 
-`"no_facturado"` \| `"facturado"` \| `"no_aplica"` \| `"factura_mensual"` \| `"consulta_sin_costo"`
+`string`
 
 ## Returns
 

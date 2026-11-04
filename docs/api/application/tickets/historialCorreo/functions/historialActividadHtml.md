@@ -20,7 +20,7 @@ readonly [`EventoTicket`](../../../../core/entities/NotaTicket/interfaces/Evento
 
 ### modo
 
-`"cliente"` \| `"interno"`
+`"interno"` \| `"cliente"`
 
 ## Returns
 

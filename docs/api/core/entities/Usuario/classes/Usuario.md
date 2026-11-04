@@ -90,6 +90,12 @@ Roles asignados (fuente de verdad). Ver getters `rol`/`rolPrincipal`.
 
 ***
 
+### distribuidor
+
+> **distribuidor**: `string` \| `null`
+
+***
+
 ### firma
 
 > **firma**: `string` \| `null`

@@ -8,7 +8,7 @@
 
 > **fechaHoraAgenda**(`a`): `Date`
 
-La fecha/hora programada como `Date` (hora local del proceso, igual que el CRM viejo).
+La fecha/hora programada (capturada en hora de México) como instante.
 
 ## Parameters
 

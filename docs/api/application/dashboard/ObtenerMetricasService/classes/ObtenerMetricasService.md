@@ -68,13 +68,19 @@ Caso de uso: métricas del dashboard, acotadas al alcance del actor.
 
 ### ejecutar()
 
-> **ejecutar**(`actor`): `Promise`\<[`Metricas`](../interfaces/Metricas.md)\>
+> **ejecutar**(`actor`, `opciones?`): `Promise`\<[`Metricas`](../interfaces/Metricas.md)\>
 
 #### Parameters
 
 ##### actor
 
 [`SessionUser`](../../../shared/SessionUser/interfaces/SessionUser.md)
+
+##### opciones?
+
+###### mesesGrafica?
+
+`number`
 
 #### Returns
 

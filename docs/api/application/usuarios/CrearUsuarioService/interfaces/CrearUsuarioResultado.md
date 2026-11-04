@@ -21,3 +21,11 @@ Resultado del alta: el usuario creado y el link para que fije su contraseña.
 > **urlInvitacion**: `string`
 
 URL de un solo uso para que el usuario fije su contraseña.
+
+***
+
+### errorCorreo
+
+> **errorCorreo**: `string` \| `null`
+
+Motivo por el que no salió el correo de invitación (null si se envió).

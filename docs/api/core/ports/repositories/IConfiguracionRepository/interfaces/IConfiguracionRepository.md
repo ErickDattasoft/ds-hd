@@ -293,3 +293,31 @@ Documentos singleton de configuración (`configuracion/{seccion}`).
 #### Returns
 
 `Promise`\<`void`\>
+
+***
+
+### obtenerVersionesContpaqi()
+
+> **obtenerVersionesContpaqi**(): `Promise`\<[`EstadoVersionesContpaqi`](../../../../entities/DescargasContpaqi/interfaces/EstadoVersionesContpaqi.md)\>
+
+Lo último leído de la página de descargas de CONTPAQi (`configuracion/versionesContpaqi`).
+
+#### Returns
+
+`Promise`\<[`EstadoVersionesContpaqi`](../../../../entities/DescargasContpaqi/interfaces/EstadoVersionesContpaqi.md)\>
+
+***
+
+### guardarVersionesContpaqi()
+
+> **guardarVersionesContpaqi**(`estado`): `Promise`\<`void`\>
+
+#### Parameters
+
+##### estado
+
+[`EstadoVersionesContpaqi`](../../../../entities/DescargasContpaqi/interfaces/EstadoVersionesContpaqi.md)
+
+#### Returns
+
+`Promise`\<`void`\>

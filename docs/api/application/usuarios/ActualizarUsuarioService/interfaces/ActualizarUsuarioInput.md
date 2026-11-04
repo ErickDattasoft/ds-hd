@@ -71,3 +71,11 @@ Otras empresas del cliente (reemplaza la lista actual).
 ### agente?
 
 > `optional` **agente?**: `Partial`\<[`PerfilAgente`](../../../../core/entities/Usuario/interfaces/PerfilAgente.md)\>
+
+***
+
+### distribuidor?
+
+> `optional` **distribuidor?**: `string` \| `null`
+
+'' / null = sin restricción; undefined = no se toca.

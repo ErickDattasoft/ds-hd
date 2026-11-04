@@ -6,4 +6,6 @@
 
 # Type Alias: EstadoFacturacion
 
-> **EstadoFacturacion** = *typeof* [`ESTADOS_FACTURACION`](../variables/ESTADOS_FACTURACION.md)\[`number`\]
+> **EstadoFacturacion** = `string`
+
+Clave de fábrica o el texto de un estado agregado en Configuración.

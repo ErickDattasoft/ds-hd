@@ -34,6 +34,29 @@ Caso de uso: cargar el detalle de un ticket para el back-office (notas internas 
 
 ## Methods
 
+### contarNotas()
+
+> **contarNotas**(`actor`, `ticketId`): `Promise`\<`number`\>
+
+Cuántas notas tiene el ticket, para que el chat abierto se actualice solo: 2 lecturas
+(el ticket, para el permiso, y un conteo) en vez de todo el detalle.
+
+#### Parameters
+
+##### actor
+
+[`SessionUser`](../../../shared/SessionUser/interfaces/SessionUser.md)
+
+##### ticketId
+
+`string`
+
+#### Returns
+
+`Promise`\<`number`\>
+
+***
+
 ### ejecutar()
 
 > **ejecutar**(`actor`, `ticketId`): `Promise`\<[`DetalleTicket`](../interfaces/DetalleTicket.md)\>

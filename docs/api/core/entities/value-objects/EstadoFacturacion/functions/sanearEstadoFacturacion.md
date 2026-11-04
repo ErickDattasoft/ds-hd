@@ -6,7 +6,7 @@
 
 # Function: sanearEstadoFacturacion()
 
-> **sanearEstadoFacturacion**(`estado`, `facturadoLegacy`): `"no_facturado"` \| `"facturado"` \| `"no_aplica"` \| `"factura_mensual"` \| `"consulta_sin_costo"`
+> **sanearEstadoFacturacion**(`estado`, `facturadoLegacy`): `string`
 
 Normaliza el estado leído de props/Firestore, con respaldo al esquema viejo
 (`facturacion.facturado: boolean`, sin `estado`) para no romper tickets ya guardados.
@@ -23,4 +23,4 @@ Normaliza el estado leído de props/Firestore, con respaldo al esquema viejo
 
 ## Returns
 
-`"no_facturado"` \| `"facturado"` \| `"no_aplica"` \| `"factura_mensual"` \| `"consulta_sin_costo"`
+`string`

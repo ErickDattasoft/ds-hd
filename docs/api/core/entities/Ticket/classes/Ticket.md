@@ -63,6 +63,12 @@ de tiempo trabajado y el reloj de SLA con pausa. No conoce Firestore ni HTTP.
 
 ***
 
+### distribuidor
+
+> **distribuidor**: `string`
+
+***
+
 ### estado
 
 > **estado**: `string`
@@ -267,6 +273,14 @@ de tiempo trabajado y el reloj de SLA con pausa. No conoce Firestore ni HTTP.
 
 ***
 
+### conPlatica
+
+> **conPlatica**: `boolean`
+
+Solo lectura en la práctica: ver `TicketProps.conPlatica`.
+
+***
+
 ### eliminadoPorAdmin
 
 > **eliminadoPorAdmin**: `boolean`
@@ -409,6 +423,10 @@ en la papelera; al restaurarlo, el marcador se quita.
 
 `string` \| `null`
 
+###### distribuidor?
+
+`string` \| `null`
+
 ###### grupo?
 
 `string` \| `null`
@@ -471,7 +489,7 @@ en la papelera; al restaurarlo, el marcador se quita.
 
 ###### estadoFacturacion?
 
-`"no_facturado"` \| `"facturado"` \| `"no_aplica"` \| `"factura_mensual"` \| `"consulta_sin_costo"`
+`string`
 
 Si se omite, se infiere de `requiereFacturacion` (no_facturado si requiere, si no no_aplica).
 
@@ -600,6 +618,12 @@ Edita los datos del ticket (lo que se captura al crearlo). Estado, agente, factu
 
 `string` \| `null`
 
+###### distribuidor?
+
+`string` \| `null`
+
+Ausente = no se toca (p. ej. quien solo puede ver su distribuidor no lo cambia).
+
 ###### prioridad
 
 `"Baja"` \| `"Media"` \| `"Alta"` \| `"Urgente"`
@@ -688,7 +712,7 @@ Actualiza los campos de gestión interna del ticket (solicitado por / canalizado
 
 ##### estado
 
-`"no_facturado"` \| `"facturado"` \| `"no_aplica"` \| `"factura_mensual"` \| `"consulta_sin_costo"`
+`string`
 
 ##### ahora
 
