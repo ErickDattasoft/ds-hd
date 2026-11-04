@@ -489,14 +489,17 @@ export function crearImportadores({ dryRun: DRY_RUN, log }: OpcionesImportacion)
         return 'factura_mensual';
       case 'consulta sin costo':
         return 'consulta_sin_costo';
+      case 'en proceso':
+        return 'en_proceso';
       case 'garantia':
       case 'garantía':
+        return 'garantia';
       case 'no aplica':
       case 'no aplica facturacion':
       case 'no aplica facturación':
         return 'no_aplica';
       default:
-        // 'no facturado', 'en proceso', vacío o desconocido → pendiente de facturar.
+        // 'no facturado', vacío o desconocido → pendiente de facturar.
         return 'no_facturado';
     }
   }
@@ -563,7 +566,8 @@ export function crearImportadores({ dryRun: DRY_RUN, log }: OpcionesImportacion)
           // p. ej. "en proceso" o "garantía").
           const notaInterna = [
             s(d.notasInternas),
-            facturadoTexto && facturadoTexto.toLowerCase() !== 'no facturado'
+            facturadoTexto &&
+            !['no facturado', 'facturado', 'en proceso', 'garantia', 'garantía', 'factura mensual', 'no aplica', 'no aplica facturacion', 'no aplica facturación', 'consulta sin costo'].includes(facturadoTexto.trim().toLowerCase())
               ? `Facturación original del CRM viejo: ${facturadoTexto}`
               : '',
           ]

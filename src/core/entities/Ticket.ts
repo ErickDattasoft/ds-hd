@@ -63,7 +63,7 @@ export interface SlaState {
 export interface FacturacionState {
   /** Si el tipo de ticket amerita facturación (p. ej. consultorías). */
   requiere: boolean;
-  /** Catálogo fijo: no_facturado/facturado/no_aplica/factura_mensual/consulta_sin_costo. */
+  /** Catálogo fijo: no_facturado/en_proceso/facturado/garantia/no_aplica/factura_mensual/consulta_sin_costo. */
   estado: EstadoFacturacion;
   notificadaEn: Date | null;
 }

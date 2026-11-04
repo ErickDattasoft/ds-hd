@@ -11,6 +11,7 @@
 
 {% macro facturacionBadge(vm) %}
   {% if vm.facturacion.estado == 'facturado' %}<span class="badge badge--warning">{{ vm.facturacion.etiqueta }}</span>
+  {% elif vm.facturacion.clase == 'info' %}<span class="badge badge--info">{{ vm.facturacion.etiqueta }}</span>
   {% elif vm.facturacion.clase == 'warning' %}<span class="badge badge--danger">{{ vm.facturacion.etiqueta }}</span>
   {% else %}<span class="muted">{{ vm.facturacion.etiqueta }}</span>{% endif %}
 {% endmacro %}

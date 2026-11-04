@@ -3,7 +3,9 @@ import { ValidationError } from '../../errors/DomainError.js';
 /** Catálogo fijo de estados de facturación de un ticket (paridad exacta con el CRM viejo). */
 export const ESTADOS_FACTURACION = [
   'no_facturado',
+  'en_proceso',
   'facturado',
+  'garantia',
   'no_aplica',
   'factura_mensual',
   'consulta_sin_costo',
@@ -13,7 +15,9 @@ export type EstadoFacturacion = (typeof ESTADOS_FACTURACION)[number];
 
 export const ETIQUETAS_FACTURACION: Record<EstadoFacturacion, string> = {
   no_facturado: 'No facturado',
+  en_proceso: 'En proceso',
   facturado: 'Facturado',
+  garantia: 'Garantía',
   no_aplica: 'No aplica',
   factura_mensual: 'Factura mensual',
   consulta_sin_costo: 'Consulta sin costo',
