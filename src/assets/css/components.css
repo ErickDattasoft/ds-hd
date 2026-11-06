@@ -287,7 +287,9 @@
 }
 .topbar__title { font-weight: 650; }
 /* Separado del botón ☰ para que no parezca parte de él. */
-.nav-collapse + .topbar__title { margin-left: var(--space-4); }
+.nav-collapse + .topbar__title { margin-left: 2.5rem; }
+.topbar__title { font-size: 1.3rem; letter-spacing: -0.01em; }
+@media (max-width: 860px) { .nav-collapse + .topbar__title { margin-left: var(--space-2); } .topbar__title { font-size: 1.1rem; } }
 .nav-collapse { font-size: 1.15rem; line-height: 1; }
 .topbar__user { display: flex; align-items: center; gap: var(--space-3); }
 .topbar__name { font-size: var(--text-sm); color: var(--color-text-muted); text-decoration: none; }
