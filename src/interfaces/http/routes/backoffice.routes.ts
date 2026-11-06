@@ -198,9 +198,19 @@ export function backofficeRoutes(container: Container): Router {
   r.post('/tickets/:id/asignar', requirePermission('tickets:asignar'), (req, res) =>
     tickets().asignarPost(req, res),
   );
-  r.post('/tickets/:id/nota', requirePermission('tickets:editar'), (req, res) => tickets().notaPost(req, res));
+  // Escribir o borrar un mensaje cambia el 💬 del menú: se olvida su caché para verlo al momento.
+  const olvidarContadores = (): void => {
+    cacheContadores.delete(container);
+  };
+  r.post('/tickets/:id/nota', requirePermission('tickets:editar'), async (req, res) => {
+    await tickets().notaPost(req, res);
+    olvidarContadores();
+  });
   r.post('/tickets/:id/notas/:notaId/editar', requirePermission('tickets:editar'), (req, res) => tickets().notaEditarPost(req, res));
-  r.post('/tickets/:id/notas/:notaId/eliminar', requirePermission('tickets:editar'), (req, res) => tickets().notaEliminarPost(req, res));
+  r.post('/tickets/:id/notas/:notaId/eliminar', requirePermission('tickets:editar'), async (req, res) => {
+    await tickets().notaEliminarPost(req, res);
+    olvidarContadores();
+  });
   r.post('/tickets/:id/reenviar-correo', requirePermission('tickets:editar'), (req, res) =>
     tickets().reenviarCorreoPost(req, res),
   );
