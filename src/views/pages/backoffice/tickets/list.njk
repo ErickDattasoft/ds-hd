@@ -13,6 +13,7 @@
     </div>
   </div>
   {% if filtro.agenda == '1' %}<p class="muted">Solo tickets con atención programada, del más próximo al más lejano.</p>{% endif %}
+  {% if filtro.platica == '1' %}<p class="alert">💬 Solo tickets con plática con el cliente (tienen o tuvieron mensajes). <a href="/app/tickets">Ver todos</a></p>{% endif %}
 
   {% if resumen %}
     <div class="stat-row">
@@ -31,6 +32,7 @@
   <form method="get" class="filterbar">
     <input type="hidden" name="f" value="1" />
     {% if filtro.agenda == '1' %}<input type="hidden" name="agenda" value="1" />{% endif %}
+    {% if filtro.platica == '1' %}<input type="hidden" name="platica" value="1" />{% endif %}
     <input type="search" name="texto" value="{{ filtro.texto }}" placeholder="Buscar por asunto, #, empresa, contacto o agente…" autocomplete="off" spellcheck="false" />
     <select name="estado">
       <option value="">Todos los estados</option>

@@ -43,6 +43,8 @@ export interface NavItem {
   contadorTotalTitulo?: string;
   /** Emoji antes del número del segundo badge, para no confundirlo con el principal. */
   contadorTotalIcono?: string;
+  /** Adónde lleva el clic en el globo del total (si no, el clic va al enlace del renglón). */
+  contadorTotalHref?: string;
   /** Valores de los badges para esta request — los llena `conContadores`, nunca el catálogo estático. */
   contador?: number;
   contadorTotal?: number;
@@ -80,8 +82,8 @@ export const NAV_BACKOFFICE: readonly NavItem[] = [
   { etiqueta: 'Tickets', href: '/app/tickets', icono: '🎫', permiso: 'tickets:leer', grupo: 'soporte',
     contadorKey: 'ticketsAbiertos', contadorTitulo: '{n} tickets sin cerrar (ni resueltos ni cerrados)',
     // El total ya está en el recuadro «Total tickets» de la lista; aquí, cuántos tuvieron plática.
-    contadorTotalKey: 'ticketsConPlatica', contadorTotalIcono: '💬',
-    contadorTotalTitulo: '{n} tickets con plática con el cliente (tienen o tuvieron mensajes, sin contar la papelera)' },
+    contadorTotalKey: 'ticketsConPlatica', contadorTotalIcono: '💬', contadorTotalHref: '/app/tickets?platica=1',
+    contadorTotalTitulo: '{n} tickets con plática con el cliente (tienen o tuvieron mensajes, sin contar la papelera) — clic para verlos' },
   { etiqueta: 'Reportes', href: '/app/reportes', icono: '📈', permiso: 'tickets:leer_todos', grupo: 'soporte' },
 
   { etiqueta: 'Empresas', href: '/app/empresas', icono: '🏢', permiso: 'empresas:leer', grupo: 'comercial', contadorKey: 'empresasTotal', contadorTitulo: '{n} empresas' },

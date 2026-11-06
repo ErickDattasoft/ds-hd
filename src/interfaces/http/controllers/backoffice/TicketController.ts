@@ -122,6 +122,7 @@ export class TicketController {
       // desmarca la casilla a mano, y eso se sabe porque el formulario manda `f=1`.
       ...(q.f === '1' && q.abiertos !== '0' ? { soloAbiertos: true } : {}),
       ...(q.agenda === '1' ? { soloProgramados: true } : {}),
+      ...(q.platica === '1' ? { conPlatica: true } : {}),
       archivado: false,
     };
   }

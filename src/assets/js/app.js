@@ -123,6 +123,15 @@
   });
   document.addEventListener('htmx:beforeSwap', cerrarVisor);
 
+  // Un globo dentro de un enlace del menú que lleva a otra parte (no se pueden anidar <a>).
+  document.addEventListener('click', function (e) {
+    var ir = e.target.closest && e.target.closest('[data-ir]');
+    if (!ir) return;
+    e.preventDefault();
+    e.stopPropagation();
+    location.href = ir.getAttribute('data-ir');
+  }, true);
+
   // ── Colapsar menú lateral (escritorio) ─────────────────────────────────────
   function pintarColapsar() {
     var btn = document.querySelector('[data-nav-colapsar]');
