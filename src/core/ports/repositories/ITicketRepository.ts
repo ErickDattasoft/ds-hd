@@ -23,6 +23,8 @@ export interface ITicketRepository {
   marcarConPlatica(): Promise<number>;
   /** Cambia el estado `viejo` por `nuevo` en todos los tickets que lo tengan (renombrar en Configuración). Devuelve cuántos. */
   renombrarEstado(viejo: string, nuevo: string): Promise<number>;
+  /** Igual, pero `viejo` sin importar mayúsculas (busca también por `estadoSlug`). */
+  renombrarEstadoSinMayusculas(viejo: string, nuevo: string): Promise<number>;
   listarNotas(ticketId: string): Promise<NotaTicket[]>;
 
   registrarEvento(ticketId: string, evento: EventoTicket): Promise<void>;

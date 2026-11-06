@@ -125,6 +125,17 @@ export class InMemoryTicketRepository implements ITicketRepository {
     return n;
   }
 
+  async renombrarEstadoSinMayusculas(viejo: string, nuevo: string): Promise<number> {
+    let n = 0;
+    for (const t of this.store.tickets.values()) {
+      if (t.estado.toLowerCase() === viejo.toLowerCase() && t.estado !== nuevo) {
+        (t as { estado: string }).estado = nuevo;
+        n++;
+      }
+    }
+    return n;
+  }
+
   async marcarConPlatica(): Promise<number> {
     let n = 0;
     for (const [id, notas] of this.store.notas) {

@@ -167,6 +167,19 @@ export class FirestoreTicketRepository implements ITicketRepository {
     return snap.docs.length;
   }
 
+  async renombrarEstadoSinMayusculas(viejo: string, nuevo: string): Promise<number> {
+    const [exacto, porSlug] = await Promise.all([
+      this.db.collection(COL).where('estado', '==', viejo).get(),
+      this.db.collection(COL).where('estadoSlug', '==', viejo.toLowerCase()).get(),
+    ]);
+    const docs = new Map([...exacto.docs, ...porSlug.docs].map((d) => [d.id, d]));
+    const pendientes = [...docs.values()].filter((d) => d.data().estado !== nuevo);
+    await this.enTandas(pendientes, (batch, d) =>
+      batch.set(d.ref, { estado: nuevo, estadoSlug: nuevo.toLowerCase() }, { merge: true }),
+    );
+    return pendientes.length;
+  }
+
   async listarNotas(ticketId: string): Promise<NotaTicket[]> {
     const snap = await this.db
       .collection(COL)

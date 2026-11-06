@@ -130,6 +130,21 @@
     </div>
   </form>
 
+  <form method="post" action="/app/configuracion/tickets/cambiar-estado" class="card cat-card" style="margin-top: var(--space-4)">
+    <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+    <h2 class="cat-card__titulo">🔁 Cambiar el estado de tickets que traen un nombre viejo</h2>
+    <p class="cat-card__ayuda muted">Para tickets con un estado que ya no está en la lista (renombrado antes o traído del CRM viejo).
+      Escribe el nombre tal como se ve en el ticket (no importan mayúsculas).</p>
+    {% if errorCambioEstado %}<p class="alert alert--error">{{ errorCambioEstado }}</p>{% endif %}
+    {% if cambioEstado %}<p class="alert {{ 'alert--ok' if cambioEstado.n else 'alert--error' }}">{% if cambioEstado.n %}Listo: {{ cambioEstado.n }} ticket{{ 's' if cambioEstado.n != 1 }} pasaron de «{{ cambioEstado.de }}» a «{{ cambioEstado.a }}».{% else %}No se encontró ningún ticket con el estado «{{ cambioEstado.de }}».{% endif %}</p>{% endif %}
+    <div style="display: flex; gap: var(--space-2); flex-wrap: wrap; align-items: center">
+      <input name="de" required maxlength="60" placeholder="Ej. Consulta SIN Costo" />
+      <span>→</span>
+      <select name="a" required>{% for e in config.estados %}<option>{{ e }}</option>{% endfor %}</select>
+      <button class="btn btn--sm" type="submit">Cambiar</button>
+    </div>
+  </form>
+
   {#- El resto de Configuración en cascada, para no tener que salir de aquí: cada barra trae su
       apartado la primera vez que se abre (sin su encabezado). Guardar ahí lleva a su página. -#}
   <div class="cfg-cascada">

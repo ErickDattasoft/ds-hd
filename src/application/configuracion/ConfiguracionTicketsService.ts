@@ -32,6 +32,19 @@ export class ConfiguracionTicketsService {
     return lista.map((u) => ({ uid: u.uid, nombre: u.nombre }));
   }
 
+  /** Pasa los tickets con un estado que ya no está en el catálogo (`de`, sin importar mayúsculas) al estado `a`. */
+  async cambiarEstadoDeTickets(actor: SessionUser, de: string, a: string): Promise<number> {
+    if (!actor.permisos.includes('configuracion:catalogos')) throw new ForbiddenError('No puedes editar la configuración');
+    const viejo = de.trim();
+    if (!viejo) throw new ValidationError('Escribe el estado que traen los tickets', { de: 'Vacío' });
+    const { estados } = await this.repo.obtenerTickets();
+    if (!estados.includes(a)) throw new ValidationError('Elige un estado de la lista', { a: 'No está en la lista' });
+    if (!this.tickets) return 0;
+    const n = await this.tickets.renombrarEstadoSinMayusculas(viejo, a);
+    this.logger.info('Estado de tickets cambiado', { por: actor.uid, de: viejo, a, n });
+    return n;
+  }
+
   obtener(): Promise<ConfiguracionTickets> {
     return this.repo.obtenerTickets();
   }

@@ -397,6 +397,9 @@ export function backofficeRoutes(container: Container): Router {
   r.post('/configuracion/tickets', requirePermission('configuracion:catalogos'), (req, res) =>
     configuracion().ticketsPost(req, res),
   );
+  r.post('/configuracion/tickets/cambiar-estado', requirePermission('configuracion:catalogos'), (req, res) =>
+    configuracion().cambiarEstadoPost(req, res),
+  );
   r.get('/configuracion/cotizaciones', requirePermission('configuracion:catalogos'), (req, res) =>
     configuracion().cotizacionesView(req, res),
   );

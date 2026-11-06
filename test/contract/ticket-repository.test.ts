@@ -61,6 +61,8 @@ function contrato(nombre: string, crear: () => Promise<{ repo: ITicketRepository
       expect(await repo.renombrarEstado(estado, 'Sin costo')).toBe(2);
       expect((await repo.findById('t1'))!.estado).toBe('Sin costo');
       expect(await repo.renombrarEstado('No existe', 'X')).toBe(0);
+      expect(await repo.renombrarEstadoSinMayusculas('SIN COSTO', 'Cerrado')).toBe(2);
+      expect((await repo.findById('t2'))!.estado).toBe('Cerrado');
     });
 
     it('eliminar borra el ticket con sus notas y eventos', async () => {

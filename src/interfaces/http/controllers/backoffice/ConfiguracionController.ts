@@ -319,7 +319,7 @@ export class ConfiguracionController {
     }
   };
 
-  ticketsView = async (_req: Request, res: Response): Promise<void> => {
+  ticketsView = async (_req: Request, res: Response, extra: Record<string, unknown> = {}): Promise<void> => {
     const config = await this.configTickets.obtener();
     res.render('pages/backoffice/configuracion/tickets', {
       estadosFacturacion: catalogoFacturacion(config.facturacion),
@@ -331,7 +331,23 @@ export class ConfiguracionController {
       config,
       errores: {},
       guardado: false,
+      ...extra,
     });
+  };
+
+  /** Recuadro «Cambiar el estado de tickets que traen un nombre viejo». */
+  cambiarEstadoPost = async (req: Request, res: Response): Promise<void> => {
+    const b = req.body ?? {};
+    const de = str(b.de).trim();
+    const a = str(b.a).trim();
+    try {
+      const n = await this.configTickets.cambiarEstadoDeTickets(req.user!, de, a);
+      if (n) await this.auditar(req, `Estado de ${n} tickets cambiado de «${de}» a «${a}»`);
+      await this.ticketsView(req, res, { cambioEstado: { n, de, a } });
+    } catch (err) {
+      res.status(422);
+      await this.ticketsView(req, res, { errorCambioEstado: err instanceof Error ? err.message : 'No se pudo cambiar' });
+    }
   };
 
   ticketsPost = async (req: Request, res: Response): Promise<void> => {
