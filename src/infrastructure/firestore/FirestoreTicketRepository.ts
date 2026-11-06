@@ -159,6 +159,14 @@ export class FirestoreTicketRepository implements ITicketRepository {
     return pendientes.size;
   }
 
+  async renombrarEstado(viejo: string, nuevo: string): Promise<number> {
+    const snap = await this.db.collection(COL).where('estado', '==', viejo).get();
+    await this.enTandas(snap.docs, (batch, d) =>
+      batch.set(d.ref, { estado: nuevo, estadoSlug: nuevo.toLowerCase() }, { merge: true }),
+    );
+    return snap.docs.length;
+  }
+
   async listarNotas(ticketId: string): Promise<NotaTicket[]> {
     const snap = await this.db
       .collection(COL)

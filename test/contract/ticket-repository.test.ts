@@ -54,6 +54,15 @@ function contrato(nombre: string, crear: () => Promise<{ repo: ITicketRepository
       expect(await repo.listarEventos('t1')).toHaveLength(1);
     });
 
+    it('renombrarEstado cambia solo los tickets con ese estado', async () => {
+      await repo.save(nuevo('t1', 1));
+      await repo.save(nuevo('t2', 2));
+      const estado = (await repo.findById('t1'))!.estado;
+      expect(await repo.renombrarEstado(estado, 'Sin costo')).toBe(2);
+      expect((await repo.findById('t1'))!.estado).toBe('Sin costo');
+      expect(await repo.renombrarEstado('No existe', 'X')).toBe(0);
+    });
+
     it('eliminar borra el ticket con sus notas y eventos', async () => {
       await repo.save(nuevo('t1', 1));
       await repo.agregarNota('t1', { id: 'n1', tipo: 'publica', cuerpo: 'x', autorUid: 'u', autorNombre: 'U', createdAt: new Date('2026-09-01T10:00:00Z') });

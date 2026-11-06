@@ -41,6 +41,19 @@ import { camposDeError } from '../../support/errores.js';
 
 const str = (v: unknown): string => (typeof v === 'string' ? v : '');
 
+/** `{"nombre anterior":"nuevo"}` que manda la tarjeta de un catálogo al renombrar renglones. */
+const renombres = (v: unknown): Record<string, string> => {
+  try {
+    const o: unknown = JSON.parse(str(v) || '{}');
+    if (!o || typeof o !== 'object') return {};
+    const out: Record<string, string> = {};
+    for (const [k, val] of Object.entries(o)) if (typeof val === 'string' && k.trim() && val.trim()) out[k.trim()] = val.trim();
+    return out;
+  } catch {
+    return {};
+  }
+};
+
 /** Configuración → Tickets (catálogos, SLA, notificaciones del portal), integraciones y backup. */
 export class ConfiguracionController {
   constructor(
@@ -328,8 +341,9 @@ export class ConfiguracionController {
       if (k.startsWith('sla_')) slaHoras[k.slice(4)] = String(v);
     }
     try {
-      await this.configTickets.actualizar({
+      const { ticketsRenombrados } = await this.configTickets.actualizar({
         actor: req.user!,
+        renombresEstados: renombres(b.estadosRenombres),
         tipos: str(b.tipos),
         sistemas: str(b.sistemas),
         distribuidores: str(b.distribuidores),
@@ -365,6 +379,7 @@ export class ConfiguracionController {
         config,
         errores: {},
         guardado: true,
+        ticketsRenombrados,
       });
     } catch (err) {
       const config = await this.configTickets.obtener();

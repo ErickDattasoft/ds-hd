@@ -840,7 +840,7 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
         ),
     ).singleton(),
     configuracionTicketsService: asFunction(
-      (c: Cradle) => new ConfiguracionTicketsService(c.configuracionRepo, c.logger, c.usuarioRepo),
+      (c: Cradle) => new ConfiguracionTicketsService(c.configuracionRepo, c.logger, c.usuarioRepo, c.ticketRepo),
     ).singleton(),
     configuracionCotizacionesService: asFunction(
       (c: Cradle) => new ConfiguracionCotizacionesService(c.configuracionRepo, c.logger),

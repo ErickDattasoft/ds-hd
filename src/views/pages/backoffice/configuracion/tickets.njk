@@ -13,7 +13,7 @@
             <button type="button" data-cat-mover="1" title="Bajar" aria-label="Bajar">▼</button>
           </span>
           {% if pred %}<button type="button" class="cat-btn cat-estrella{{ ' is-on' if predValor == v }}" data-cat-estrella title="Predeterminado" aria-label="Predeterminado">★</button>{% endif %}
-          <input class="cat-fila__valor" value="{{ v }}" title="{{ v }}" data-cat-valor aria-label="{{ titulo }}" />
+          <input class="cat-fila__valor" value="{{ v }}" title="{{ v }}" data-cat-valor data-cat-original="{{ v }}" aria-label="{{ titulo }}" />
           {% if sla %}<label class="cat-fila__sla" title="Horas de SLA"><input type="number" min="1" name="sla_{{ v }}" value="{{ sla[v] or 24 }}" data-cat-sla /><span>h</span></label>{% endif %}
           {% if marca %}<button type="button" class="cat-btn cat-marca{{ ' is-on' if v in marca.lista }}" data-cat-marca title="{{ marca.titulo }}" aria-label="{{ marca.titulo }}">{{ marca.icono }}</button>{% endif %}
           <button type="button" class="cat-btn cat-quitar" data-cat-quitar title="Quitar" aria-label="Quitar">🗑</button>
@@ -32,6 +32,7 @@
     <template data-cat-molde>{{ fila('', titulo, pred, '-', marca, sla) }}</template>
     <button type="button" class="btn btn--ghost btn--sm cat-agregar" data-cat-agregar>＋ Agregar</button>
     <textarea name="{{ campo }}" hidden data-cat-salida>{{ items | join('\n') }}</textarea>
+    <input type="hidden" name="{{ campo }}Renombres" value="" data-cat-renombres />
     {% if pred %}<input type="hidden" name="{{ pred }}" value="{{ predValor }}" data-cat-pred />{% endif %}
     {% if marca %}
       {% if marca.multi %}
@@ -70,7 +71,7 @@
     <h1>Configuración de tickets</h1>
     <div class="page-head__actions">{{ cfgnav.nav('tickets') }}</div>
   </div>
-  {% if guardado %}<p class="alert alert--ok">Configuración guardada.</p>{% endif %}
+  {% if guardado %}<p class="alert alert--ok">Configuración guardada.{% if ticketsRenombrados %} Se cambió el estado en {{ ticketsRenombrados }} ticket{{ 's' if ticketsRenombrados != 1 }}.{% endif %}</p>{% endif %}
   {% if errores.general %}<p class="alert alert--error">{{ errores.general }}</p>{% endif %}
   {% if errores.estados %}<p class="alert alert--error">Estados: {{ errores.estados }}</p>{% endif %}
   {% if errores.estadoInicial %}<p class="alert alert--error">Estado inicial: {{ errores.estadoInicial }}</p>{% endif %}

@@ -114,6 +114,17 @@ export class InMemoryTicketRepository implements ITicketRepository {
   async listarEventos(ticketId: string): Promise<EventoTicket[]> {
     return [...(this.store.eventos.get(ticketId) ?? [])].sort((a, b) => a.at.getTime() - b.at.getTime());
   }
+  async renombrarEstado(viejo: string, nuevo: string): Promise<number> {
+    let n = 0;
+    for (const t of this.store.tickets.values()) {
+      if (t.estado === viejo) {
+        (t as { estado: string }).estado = nuevo;
+        n++;
+      }
+    }
+    return n;
+  }
+
   async marcarConPlatica(): Promise<number> {
     let n = 0;
     for (const [id, notas] of this.store.notas) {

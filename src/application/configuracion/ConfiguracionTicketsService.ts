@@ -7,6 +7,7 @@ import { ForbiddenError, ValidationError } from '../../core/errors/DomainError.j
 import type { SessionUser } from '../shared/SessionUser.js';
 import type { IUsuarioRepository } from '../../core/ports/repositories/IUsuarioRepository.js';
 import { ROLES_ASIGNABLES } from '../../core/entities/value-objects/Rol.js';
+import type { ITicketRepository } from '../../core/ports/repositories/ITicketRepository.js';
 import { valorFacturacion } from '../../core/entities/value-objects/EstadoFacturacion.js';
 
 const listaLimpia = (v: unknown): string[] =>
@@ -21,6 +22,7 @@ export class ConfiguracionTicketsService {
     private readonly repo: IConfiguracionRepository,
     private readonly logger: ILogger,
     private readonly usuarios?: IUsuarioRepository,
+    private readonly tickets?: ITicketRepository,
   ) {}
 
   /** Quiénes pueden ser el agente predeterminado (los mismos que se pueden asignar a un ticket). */
@@ -53,7 +55,9 @@ export class ConfiguracionTicketsService {
     respuestas?: string;
     /** Estados marcados para avisar al cliente. */
     avisarClienteEstados?: string[];
-  }): Promise<void> {
+    /** Estados renombrados en su renglón (nombre anterior → nuevo): los tickets que lo tienen se pasan al nuevo. */
+    renombresEstados?: Record<string, string>;
+  }): Promise<{ ticketsRenombrados: number }> {
     if (!input.actor.permisos.includes('configuracion:catalogos')) {
       throw new ForbiddenError('No puedes editar la configuración');
     }
@@ -116,6 +120,15 @@ export class ConfiguracionTicketsService {
       };
     }
     await this.repo.guardarTickets(config);
-    this.logger.info('Configuración de tickets actualizada', { por: input.actor.uid });
+    let ticketsRenombrados = 0;
+    if (this.tickets) {
+      for (const [viejo, nuevo] of Object.entries(input.renombresEstados ?? {})) {
+        // Solo si de verdad cambió de nombre: el viejo ya no está y el nuevo sí.
+        if (!viejo || viejo === nuevo || estados.includes(viejo) || !estados.includes(nuevo)) continue;
+        ticketsRenombrados += await this.tickets.renombrarEstado(viejo, nuevo);
+      }
+    }
+    this.logger.info('Configuración de tickets actualizada', { por: input.actor.uid, ticketsRenombrados });
+    return { ticketsRenombrados };
   }
 }

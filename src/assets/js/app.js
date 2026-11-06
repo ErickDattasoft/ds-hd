@@ -1636,9 +1636,12 @@
     var vistos = {};
     var valores = [];
     var marcados = [];
+    var renombres = {};
     filas.forEach(function (f) {
       var inp = f.querySelector('[data-cat-valor]');
       var v = inp.value.trim();
+      var orig = inp.getAttribute('data-cat-original') || '';
+      if (orig && v && orig !== v) renombres[orig] = v;
       var clave = v.toLowerCase();
       var repetido = !!(v && vistos[clave]);
       inp.classList.toggle('is-repetido', repetido);
@@ -1651,6 +1654,8 @@
     });
     var salida = card.querySelector('[data-cat-salida]');
     if (salida) salida.value = valores.join('\n');
+    var ren = card.querySelector('[data-cat-renombres]');
+    if (ren) ren.value = JSON.stringify(renombres);
     var n = card.querySelector('[data-cat-n]');
     if (n) n.textContent = valores.length;
     var pred = card.querySelector('[data-cat-pred]');

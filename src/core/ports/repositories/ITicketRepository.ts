@@ -21,6 +21,8 @@ export interface ITicketRepository {
   contarNotas(ticketId: string): Promise<number>;
   /** Relleno de una vez: marca `conPlatica` en los tickets que ya tenían mensajes públicos. Devuelve cuántos. */
   marcarConPlatica(): Promise<number>;
+  /** Cambia el estado `viejo` por `nuevo` en todos los tickets que lo tengan (renombrar en Configuración). Devuelve cuántos. */
+  renombrarEstado(viejo: string, nuevo: string): Promise<number>;
   listarNotas(ticketId: string): Promise<NotaTicket[]>;
 
   registrarEvento(ticketId: string, evento: EventoTicket): Promise<void>;
