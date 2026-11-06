@@ -48,6 +48,33 @@ describe('flujo de tickets', () => {
     expect(t.emailSender.enviados.length).toBeGreaterThanOrEqual(3);
   });
 
+  it('⋮ de un mensaje: el autor lo edita y lo elimina; otro agente no puede', async () => {
+    const t = makeTestApp({ usuarios: [SUP, AG] });
+    const { agent, csrf } = await login(t.app, SUP.email, SUP.password);
+    const crear = await agent.post('/app/tickets').type('form').send({
+      _csrf: csrf, asunto: 'Prueba chat', descripcion: 'Mensaje de prueba del chat', tipo: 'General', prioridad: 'Media',
+      contactoNombre: 'Cliente X', contactoCorreo: 'cliente@x.com',
+    });
+    const id = String(crear.headers.location).split('/').pop()!;
+    await agent.post(`/app/tickets/${id}/nota`).type('form').send({ _csrf: csrf, cuerpo: 'Pend', tipo: 'publica' });
+    const nota = t.ticketStore.notas.get(id)![0]!;
+    expect(t.ticketStore.tickets.get(id)!.conPlatica).toBe(true);
+
+    const ag = await login(t.app, AG.email, AG.password);
+    await ag.agent.post(`/app/tickets/${id}/notas/${nota.id}/editar`).type('form').send({ _csrf: ag.csrf, cuerpo: 'hackeado' });
+    expect(t.ticketStore.notas.get(id)![0]!.cuerpo).toBe('Pend');
+
+    const det = await agent.get(`/app/tickets/${id}`);
+    expect(det.text).toContain(`/notas/${nota.id}/eliminar`);
+    await agent.post(`/app/tickets/${id}/notas/${nota.id}/editar`).type('form').send({ _csrf: csrf, cuerpo: 'Pendiente de respuesta' });
+    expect(t.ticketStore.notas.get(id)![0]!.cuerpo).toBe('Pendiente de respuesta');
+    expect(t.ticketStore.notas.get(id)![0]!.editadaEn).toBeInstanceOf(Date);
+
+    await agent.post(`/app/tickets/${id}/notas/${nota.id}/eliminar`).type('form').send({ _csrf: csrf });
+    expect(t.ticketStore.notas.get(id)).toEqual([]);
+    expect(t.ticketStore.tickets.get(id)!.conPlatica).toBe(false);
+  });
+
   it('alta con estado inicial, solicitado/canalizado y notas internas; luego gestión e imprimir', async () => {
     const t = makeTestApp({ usuarios: [SUP] });
     const { agent, csrf } = await login(t.app, SUP.email, SUP.password);

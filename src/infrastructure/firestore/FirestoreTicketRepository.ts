@@ -3,6 +3,7 @@ import type { ITicketRepository } from '../../core/ports/repositories/ITicketRep
 import type { Ticket } from '../../core/entities/Ticket.js';
 import { esPlatica, type EventoTicket, type NotaTicket } from '../../core/entities/NotaTicket.js';
 import { TicketMapper } from './mappers/TicketMapper.js';
+import { Timestamp } from '../../core/entities/value-objects/Timestamp.js';
 
 const COL = 'tickets';
 
@@ -138,6 +139,22 @@ export class FirestoreTicketRepository implements ITicketRepository {
     batch.set(ref.collection('notas').doc(nota.id), TicketMapper.notaToDoc(nota));
     batch.set(ref, { conPlatica: true }, { merge: true });
     await batch.commit();
+  }
+
+  async editarNota(ticketId: string, notaId: string, cuerpo: string, editadaEn: Date): Promise<void> {
+    await this.db
+      .collection(COL)
+      .doc(ticketId)
+      .collection('notas')
+      .doc(notaId)
+      .set({ cuerpo, editadaEn: Timestamp.fromDate(editadaEn) }, { merge: true });
+  }
+
+  async eliminarNota(ticketId: string, notaId: string): Promise<void> {
+    const ref = this.db.collection(COL).doc(ticketId);
+    await ref.collection('notas').doc(notaId).delete();
+    const quedan = await this.listarNotas(ticketId);
+    if (!quedan.some(esPlatica)) await ref.set({ conPlatica: false }, { merge: true });
   }
 
   async marcarConPlatica(): Promise<number> {

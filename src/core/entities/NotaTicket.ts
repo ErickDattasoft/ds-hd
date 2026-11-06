@@ -10,6 +10,8 @@ export interface NotaTicket {
   adjuntoIds?: string[];
   /** Correo de quien la escribió, si llegó por correo (para distinguirla de las del CRM). */
   correoDe?: string;
+  /** Cuándo se editó por última vez (se muestra «editado»). */
+  editadaEn?: Date;
 }
 
 /**

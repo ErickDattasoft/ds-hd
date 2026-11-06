@@ -43,6 +43,8 @@
           </div>
 
           {% for n in notas %}
+            {% set cuerpo = (n.cuerpo | sinMarcasMigracion) if n.autorUid == 'migracion' else n.cuerpo %}
+            {% if cuerpo or (n.adjuntoIds and n.adjuntoIds.length) %}
             {% set recibida = n.autorUid == 'correo-entrante' or n.correoDe %}
             {# Los migrados del viejo no dicen quién escribió: si el autor es el contacto del ticket, es del cliente. #}
             {% set deCliente = recibida or (ticket.solicitanteUid and n.autorUid == ticket.solicitanteUid)
@@ -52,15 +54,39 @@
                 <span class="chat__autor">{{ '🔒' if n.tipo == 'interna' else ('📥' if recibida else ('👤' if deCliente else '📤')) }} <span class="{{ 'nombre-sensible' if deCliente }}">{{ n.autorNombre }}</span></span>
                 {% if n.correoDe and n.correoDe != n.autorNombre %}<span class="muted sensible">&lt;{{ n.correoDe }}&gt;</span>{% endif %}
                 {% if n.tipo == 'interna' %}<span class="badge badge--warning">interna</span>{% endif %}
+                {% if n.modificable %}
+                  <details class="chat__menu">
+                    <summary title="Opciones del mensaje" aria-label="Opciones del mensaje">⋮</summary>
+                    <div class="chat__menu-lista">
+                      <button type="button" data-nota-editar>✏️ Editar</button>
+                      <form method="post" action="/app/tickets/{{ ticket.id }}/notas/{{ n.id }}/eliminar">
+                        <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+                        <button type="submit" data-confirm="¿Eliminar este mensaje de la conversación?{{ ' Si ya se mandó por correo, al cliente le sigue llegando el original.' if n.tipo == 'publica' and not deCliente }}">🗑 Eliminar</button>
+                      </form>
+                    </div>
+                  </details>
+                {% endif %}
               </div>
-              <div class="chat__cuerpo">{{ n.cuerpo }}</div>
+              <div class="chat__cuerpo" data-nota-cuerpo>{{ cuerpo }}</div>
+              {% if n.modificable %}
+                <form method="post" action="/app/tickets/{{ ticket.id }}/notas/{{ n.id }}/editar" class="chat__editar" data-nota-edicion hidden>
+                  <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+                  <textarea name="cuerpo" rows="3" required>{{ cuerpo }}</textarea>
+                  {% if n.tipo == 'publica' and not deCliente %}<p class="muted chat__editar-aviso">Solo cambia aquí y en el portal: no se vuelve a mandar correo.</p>{% endif %}
+                  <div class="chat__editar-botones">
+                    <button type="button" class="btn btn--ghost btn--sm" data-nota-cancelar>Cancelar</button>
+                    <button type="submit" class="btn btn--sm">Guardar</button>
+                  </div>
+                </form>
+              {% endif %}
               {% if n.adjuntoIds and n.adjuntoIds.length %}
                 <div class="nota__imgs">
                   {% for aid in n.adjuntoIds %}<a href="/app/tickets/{{ ticket.id }}/adjuntos/{{ aid }}" target="_blank" rel="noopener"><img src="/app/tickets/{{ ticket.id }}/adjuntos/{{ aid }}" alt="Captura {{ loop.index }}" class="adjunto-thumb" loading="lazy" /></a>{% endfor %}
                 </div>
               {% endif %}
-              <div class="chat__hora">{{ n.createdAt | fechahora }}{% if recibida %} · por correo{% endif %}</div>
+              <div class="chat__hora">{% if n.editadaEn %}<span title="Editado {{ n.editadaEn | fechahora }}">editado · </span>{% endif %}{{ n.createdAt | fechahora }}{% if recibida %} · por correo{% endif %}</div>
             </div>
+            {% endif %}
           {% else %}
             <p class="muted chat__vacio">Sin respuestas todavía.</p>
           {% endfor %}

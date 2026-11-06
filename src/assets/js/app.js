@@ -132,6 +132,28 @@
     location.href = ir.getAttribute('data-ir');
   }, true);
 
+  // ⋮ de un mensaje del chat → Editar: cambia el texto por un cuadro para corregirlo.
+  document.addEventListener('click', function (e) {
+    var msg;
+    if (e.target.closest('[data-nota-editar]')) {
+      msg = e.target.closest('.chat__msg');
+      var menu = msg.querySelector('.chat__menu');
+      if (menu) menu.open = false;
+      msg.querySelector('[data-nota-cuerpo]').hidden = true;
+      var f = msg.querySelector('[data-nota-edicion]');
+      f.hidden = false;
+      var ta = f.querySelector('textarea');
+      ta.focus();
+      ta.setSelectionRange(ta.value.length, ta.value.length);
+    } else if (e.target.closest('[data-nota-cancelar]')) {
+      msg = e.target.closest('.chat__msg');
+      msg.querySelector('[data-nota-edicion]').hidden = true;
+      msg.querySelector('[data-nota-cuerpo]').hidden = false;
+    } else if (!e.target.closest('.chat__menu')) {
+      Array.prototype.forEach.call(document.querySelectorAll('.chat__menu[open]'), function (d) { d.open = false; });
+    }
+  });
+
   // ── Colapsar menú lateral (escritorio) ─────────────────────────────────────
   function pintarColapsar() {
     var btn = document.querySelector('[data-nav-colapsar]');

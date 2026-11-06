@@ -56,7 +56,7 @@
     {% for n in notas %}
       <div class="nota">
         <p class="muted" style="margin:0">{{ n.autorNombre }} · {{ n.createdAt | fechahora }}</p>
-        <div>{{ n.cuerpo }}</div>
+        <div>{{ (n.cuerpo | sinMarcasMigracion) if n.autorUid == 'migracion' else n.cuerpo }}</div>
       </div>
     {% endfor %}
   {% endif %}

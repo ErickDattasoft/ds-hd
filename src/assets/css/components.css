@@ -762,6 +762,20 @@ tr.fila--sla-vencido > td { background: color-mix(in srgb, var(--danger) 6%, tra
 /* Lo que se lee primero es el mensaje: cuerpo grande; autor, fecha y etiquetas chicos y en gris. */
 .chat__meta { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); font-size: 0.7rem; color: var(--color-text-muted); margin-bottom: var(--space-1); }
 .chat__meta .badge { font-size: 0.65rem; padding-block: 0; }
+/* ⋮ de cada mensaje: editar / eliminar (como en WhatsApp). */
+.chat__menu { position: relative; margin-left: auto; }
+.chat__menu > summary { list-style: none; cursor: pointer; padding: 0 6px; border-radius: 6px; font-size: 1rem; line-height: 1.2; opacity: 0.55; }
+.chat__menu > summary::-webkit-details-marker { display: none; }
+.chat__msg:hover .chat__menu > summary, .chat__menu[open] > summary { opacity: 1; }
+.chat__menu > summary:hover { background: var(--color-surface-2, rgba(127,127,127,.15)); }
+.chat__menu-lista { position: absolute; right: 0; top: 100%; z-index: 20; min-width: 140px; display: flex; flex-direction: column;
+  background: var(--color-surface, #1e2433); border: 1px solid var(--color-border, rgba(127,127,127,.3)); border-radius: 8px; box-shadow: 0 6px 18px rgba(0,0,0,.25); padding: 4px; }
+.chat__menu-lista form { margin: 0; }
+.chat__menu-lista button { all: unset; box-sizing: border-box; width: 100%; cursor: pointer; padding: 6px 10px; border-radius: 6px; font-size: 0.85rem; color: var(--color-text); }
+.chat__menu-lista button:hover { background: var(--color-surface-2, rgba(127,127,127,.15)); }
+.chat__editar textarea { width: 100%; min-width: 260px; }
+.chat__editar-aviso { font-size: 0.7rem; margin: 4px 0; }
+.chat__editar-botones { display: flex; gap: var(--space-2); justify-content: flex-end; margin-top: 4px; }
 .chat__autor { font-weight: 600; }
 .chat__cuerpo { white-space: pre-wrap; font-size: var(--text-lg); line-height: 1.5; color: var(--color-text); }
 .chat__cuerpo img { max-width: 100%; height: auto; }

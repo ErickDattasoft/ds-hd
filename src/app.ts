@@ -92,6 +92,15 @@ function installViewEngine(app: Express, config: AppConfig, precompiled: boolean
       .join('\n')
       .trim(),
   );
+  // Mensajes que dejó la migración en la conversación: «Facturación original del CRM viejo: …» era
+  // una marca de la importación (la facturación ya está en el ticket), no algo que alguien escribió.
+  env.addFilter('sinMarcasMigracion', (v: unknown) =>
+    String(v ?? '')
+      .split('\n')
+      .filter((l) => !/^\s*Facturaci[oó]n original del CRM viejo:/i.test(l))
+      .join('\n')
+      .trim(),
+  );
   env.addFilter('textoOHtmlSeguro', (v: unknown) => textoOHtmlASeguro(typeof v === 'string' ? v : ''));
   // Va envuelto en `.sensible` para que el modo privacidad lo difumine en todas partes.
   env.addFilter('moneda', (v: unknown, moneda = 'MXN') =>

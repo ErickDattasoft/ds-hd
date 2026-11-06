@@ -136,6 +136,21 @@ export class InMemoryTicketRepository implements ITicketRepository {
     return n;
   }
 
+  async editarNota(ticketId: string, notaId: string, cuerpo: string, editadaEn: Date): Promise<void> {
+    const n = (this.store.notas.get(ticketId) ?? []).find((x) => x.id === notaId);
+    if (n) {
+      n.cuerpo = cuerpo;
+      n.editadaEn = editadaEn;
+    }
+  }
+
+  async eliminarNota(ticketId: string, notaId: string): Promise<void> {
+    const quedan = (this.store.notas.get(ticketId) ?? []).filter((x) => x.id !== notaId);
+    this.store.notas.set(ticketId, quedan);
+    const t = this.store.tickets.get(ticketId);
+    if (t && !quedan.some(esPlatica)) t.conPlatica = false;
+  }
+
   async marcarConPlatica(): Promise<number> {
     let n = 0;
     for (const [id, notas] of this.store.notas) {

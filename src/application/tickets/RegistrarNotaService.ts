@@ -21,6 +21,7 @@ import { historialActividadHtml } from './historialCorreo.js';
 import { destinatariosTicket } from './notificacionTicket.js';
 import type { RegistrarNotaInput } from './dto.js';
 import { ticketVisiblePara } from './alcance.js';
+import type { SessionUser } from '../shared/SessionUser.js';
 import type { RespuestasSinLeerService } from './RespuestasSinLeerService.js';
 
 /** Caso de uso: agregar una nota (pública o interna) a un ticket. */
@@ -40,6 +41,58 @@ export class RegistrarNotaService {
     /** Contestarle al cliente también quita su respuesta del buzón 🔔. */
     private readonly respuestas?: RespuestasSinLeerService,
   ) {}
+
+  /**
+   * ¿Puede editar o borrar este mensaje? El autor (staff) lo suyo; un admin cualquiera
+   * (incluidos los migrados y los que llegaron por correo).
+   */
+  static puedeModificarNota(actor: SessionUser, nota: Pick<NotaTicket, 'autorUid'>): boolean {
+    if (!actor.esStaff || !actor.permisos.includes('tickets:editar')) return false;
+    return actor.roles.includes('admin') || nota.autorUid === actor.uid;
+  }
+
+  private async notaModificable(actor: SessionUser, ticketId: string, notaId: string): Promise<NotaTicket> {
+    const ticket = await this.tickets.findById(ticketId);
+    if (!ticket) throw new NotFoundError('Ticket', ticketId);
+    if (!ticketVisiblePara(ticket, actor)) throw new ForbiddenError('Solo puedes modificar tickets asignados a ti');
+    const nota = (await this.tickets.listarNotas(ticketId)).find((n) => n.id === notaId);
+    if (!nota) throw new NotFoundError('Mensaje', notaId);
+    if (!RegistrarNotaService.puedeModificarNota(actor, nota)) {
+      throw new ForbiddenError('Solo puedes modificar tus propios mensajes');
+    }
+    return nota;
+  }
+
+  /** Cambia el texto de un mensaje de la conversación (no vuelve a mandar correo). */
+  async editar(input: { actor: SessionUser; ticketId: string; notaId: string; cuerpo: string }): Promise<void> {
+    const cuerpo = input.cuerpo.trim();
+    if (!cuerpo) throw new ValidationError('El mensaje no puede quedar vacío', { cuerpo: 'Requerido' });
+    const nota = await this.notaModificable(input.actor, input.ticketId, input.notaId);
+    if (nota.cuerpo === cuerpo) return;
+    const ahora = this.clock.now();
+    await this.tickets.editarNota(input.ticketId, nota.id, cuerpo, ahora);
+    await registrarEvento(this.tickets, this.ids, input.ticketId, {
+      tipo: 'nota',
+      resumen: `${input.actor.nombre} editó un mensaje de ${nota.autorNombre || 'la conversación'}`,
+      actor: input.actor,
+      at: ahora,
+    });
+  }
+
+  /** Borra un mensaje de la conversación (con sus imágenes). */
+  async eliminar(input: { actor: SessionUser; ticketId: string; notaId: string }): Promise<void> {
+    const nota = await this.notaModificable(input.actor, input.ticketId, input.notaId);
+    await this.tickets.eliminarNota(input.ticketId, nota.id);
+    for (const aid of nota.adjuntoIds ?? []) {
+      await this.adjuntos?.eliminar(aid).catch(() => undefined);
+    }
+    await registrarEvento(this.tickets, this.ids, input.ticketId, {
+      tipo: 'nota',
+      resumen: `${input.actor.nombre} eliminó un mensaje de ${nota.autorNombre || 'la conversación'}`,
+      actor: input.actor,
+      at: this.clock.now(),
+    });
+  }
 
   /** Máximo de capturas por respuesta. */
   static readonly MAX_IMAGENES = 5;

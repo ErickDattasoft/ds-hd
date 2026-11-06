@@ -8,7 +8,7 @@ import type { Request, Response } from 'express';
 import type { CrearTicketService } from '../../../../application/tickets/CrearTicketService.js';
 import type { ActualizarEstadoTicketService } from '../../../../application/tickets/ActualizarEstadoTicketService.js';
 import type { AsignarAgenteService } from '../../../../application/tickets/AsignarAgenteService.js';
-import type { RegistrarNotaService } from '../../../../application/tickets/RegistrarNotaService.js';
+import { RegistrarNotaService } from '../../../../application/tickets/RegistrarNotaService.js';
 import type { ReenviarCorreoTicketService } from '../../../../application/tickets/ReenviarCorreoTicketService.js';
 import type { AdjuntoTicketService } from '../../../../application/tickets/AdjuntoTicketService.js';
 import type { ActualizarGestionTicketService } from '../../../../application/tickets/ActualizarGestionTicketService.js';
@@ -489,7 +489,7 @@ export class TicketController {
       vm: ticketVM(d.ticket, ahora),
       ticket: d.ticket,
       descripcionHtml: d.descripcionHtml,
-      notas: d.notas,
+      notas: d.notas.map((n) => ({ ...n, modificable: RegistrarNotaService.puedeModificarNota(req.user!, n) })),
       notasTotal: d.notasTotal,
       eventos: d.eventos,
       adjuntos: d.adjuntos,
@@ -558,6 +558,20 @@ export class TicketController {
       imagenes,
     });
     res.redirect(`/app/tickets/${str(req.params.id)}`);
+  };
+
+  /** ⋮ → Editar en un mensaje de la conversación. */
+  notaEditarPost = async (req: Request, res: Response): Promise<void> => {
+    const id = str(req.params.id);
+    await this.registrarNota.editar({ actor: req.user!, ticketId: id, notaId: str(req.params.notaId), cuerpo: str(req.body?.cuerpo) });
+    res.redirect(`/app/tickets/${id}#conversacion`);
+  };
+
+  /** ⋮ → Eliminar en un mensaje de la conversación. */
+  notaEliminarPost = async (req: Request, res: Response): Promise<void> => {
+    const id = str(req.params.id);
+    await this.registrarNota.eliminar({ actor: req.user!, ticketId: id, notaId: str(req.params.notaId) });
+    res.redirect(`/app/tickets/${id}#conversacion`);
   };
 
   reenviarCorreoPost = async (req: Request, res: Response): Promise<void> => {

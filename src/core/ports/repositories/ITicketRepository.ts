@@ -19,6 +19,10 @@ export interface ITicketRepository {
   agregarNota(ticketId: string, nota: NotaTicket): Promise<void>;
   /** Cuántas notas tiene el ticket (para que el chat abierto sepa si llegó algo, a 1 lectura). */
   contarNotas(ticketId: string): Promise<number>;
+  /** Cambia el texto de una nota y marca cuándo se editó. */
+  editarNota(ticketId: string, notaId: string, cuerpo: string, editadaEn: Date): Promise<void>;
+  /** Borra una nota; si ya no queda ningún mensaje público, el ticket deja de contar en el 💬. */
+  eliminarNota(ticketId: string, notaId: string): Promise<void>;
   /** Relleno de una vez: marca `conPlatica` en los tickets que ya tenían mensajes públicos. Devuelve cuántos. */
   marcarConPlatica(): Promise<number>;
   /** Cambia el estado `viejo` por `nuevo` en todos los tickets que lo tengan (renombrar en Configuración). Devuelve cuántos. */

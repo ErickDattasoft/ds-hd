@@ -150,6 +150,7 @@ export const TicketMapper = {
       createdAt: Timestamp.fromDate(n.createdAt),
       ...(n.adjuntoIds?.length ? { adjuntoIds: n.adjuntoIds } : {}),
       ...(n.correoDe ? { correoDe: n.correoDe } : {}),
+      ...(n.editadaEn ? { editadaEn: Timestamp.fromDate(n.editadaEn) } : {}),
     };
   },
   notaToDomain(id: string, d: DocumentData): NotaTicket {
@@ -162,6 +163,7 @@ export const TicketMapper = {
       createdAt: fecha(d.createdAt) ?? new Date(),
       ...(Array.isArray(d.adjuntoIds) && d.adjuntoIds.length ? { adjuntoIds: d.adjuntoIds.map(String) } : {}),
       ...(d.correoDe ? { correoDe: String(d.correoDe) } : {}),
+      ...(fecha(d.editadaEn) ? { editadaEn: fecha(d.editadaEn)! } : {}),
     };
   },
 
