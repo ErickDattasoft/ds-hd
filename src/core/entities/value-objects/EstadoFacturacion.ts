@@ -28,7 +28,7 @@ export const ETIQUETAS_FACTURACION: Record<EstadoFacturacionBase, string> = {
   garantia: 'Garantía',
   no_aplica: 'No aplica',
   factura_mensual: 'Factura mensual',
-  consulta_sin_costo: 'Consulta sin costo',
+  consulta_sin_costo: 'Sin costo',
 };
 
 /** Catálogo con el que arranca Configuración → Tickets → Facturación. */
@@ -41,6 +41,12 @@ const normal = (t: string): string =>
 /** Sinónimos (sobre todo los textos del CRM viejo) → clave de fábrica. */
 const SINONIMOS: Record<string, EstadoFacturacionBase> = {
   'no aplica facturacion': 'no_aplica',
+  'consulta sin costo': 'consulta_sin_costo',
+};
+
+/** Nombres de fábrica que cambiaron: si el catálogo guardado aún trae el viejo, se muestra el nuevo. */
+const RENOMBRADOS: Record<string, EstadoFacturacionBase> = {
+  'consulta sin costo': 'consulta_sin_costo',
 };
 
 /** Texto que se ve en pantalla para un estado guardado. */
@@ -69,7 +75,9 @@ export function opcionesFacturacion(
   const out: { valor: string; etiqueta: string }[] = [];
   for (const texto of lista) {
     const valor = valorFacturacion(texto);
-    if (valor && !out.some((o) => o.valor === valor)) out.push({ valor, etiqueta: texto.trim() });
+    const renombrado = RENOMBRADOS[normal(texto)];
+    const etiqueta = renombrado ? ETIQUETAS_FACTURACION[renombrado] : texto.trim();
+    if (valor && !out.some((o) => o.valor === valor)) out.push({ valor, etiqueta });
   }
   if (actual && !out.some((o) => o.valor === actual)) out.push({ valor: actual, etiqueta: etiquetaFacturacion(actual) });
   return out;

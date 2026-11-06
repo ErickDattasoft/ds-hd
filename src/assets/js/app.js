@@ -126,7 +126,10 @@
   // ── Colapsar menú lateral (escritorio) ─────────────────────────────────────
   function pintarColapsar() {
     var btn = document.querySelector('[data-nav-colapsar]');
-    if (btn) btn.textContent = root.getAttribute('data-sidebar') === 'mini' ? '›' : '‹';
+    if (!btn) return;
+    var mini = root.getAttribute('data-sidebar') === 'mini';
+    btn.textContent = '☰';
+    btn.setAttribute('aria-label', mini ? 'Expandir menú' : 'Colapsar menú');
   }
   pintarColapsar();
   document.addEventListener('click', function (e) {
