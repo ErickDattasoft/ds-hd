@@ -58,6 +58,8 @@
               <button type="button" class="btn btn--ghost btn--sm" data-agregar-sp="{{ f.sistema }}" title="Agregar un service pack a este sistema">＋ SP</button>
               {% if f.completada %}
                 <div class="muted" style="font-size: 0.8rem" title="{{ f.origen }}">📥 se completó lo que faltaba</div>
+              {% elif f.traida and f.mayorQuePublicada %}
+                <div style="font-size: 0.8rem; color: var(--warning, #d97706)" title="{{ f.origen }}">⚠ antes: {{ f.anterior }} — CONTPAQi no ha publicado esa versión (¿error de captura?). Se propone lo último publicado.</div>
               {% elif f.traida %}
                 <div class="muted" style="font-size: 0.8rem" title="{{ f.origen }}">antes: {{ f.anterior or '—' }} · 📥 {{ f.origen }}</div>
               {% elif f.sugerida %}

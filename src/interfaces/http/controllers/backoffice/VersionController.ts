@@ -141,7 +141,9 @@ export class VersionController {
       const comparacion = u ? compararVersiones(registrada, u.version) : 1;
       const spsDe = (lista: UltimaVersionContpaqi['servicePacks']) =>
         lista.map((p) => ({ numero: p.numero, fecha: p.fecha || null, linkDescarga: p.linkDescarga || null, nota: p.titulo || null }));
-      if (traer && u && comparacion < 0) {
+      // Registrada MAYOR que lo último publicado = error de captura (p. ej. "14.1.10" por
+      // "14.1.0"): antes la fila se quedaba sin traer nada. Se propone lo publicado y se avisa.
+      if (traer && u && (comparacion < 0 || (comparacion > 0 && f.versionActual))) {
         traidas.push(f.sistema);
         return {
           ...f,
@@ -152,6 +154,7 @@ export class VersionController {
           servicePacks: spsDe(u.servicePacks),
           traida: true,
           anterior: registrada,
+          mayorQuePublicada: comparacion > 0,
           origen: u.titulo,
         };
       }
