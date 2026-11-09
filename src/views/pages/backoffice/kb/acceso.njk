@@ -36,15 +36,20 @@
 
     <h2>Rutas de las carpetas</h2>
     <p class="muted">
-      Solo como recordatorio junto al botón 🔄 Indexar. El navegador no puede abrir una ruta escrita: la primera vez
-      eliges la carpeta y la recuerda para las siguientes (Chrome / Edge).
+      Con <strong>📂 Elegir</strong> abres el explorador y escoges la carpeta: el CRM la recuerda y 🔄 Indexar la usa
+      sin volver a preguntar (Chrome / Edge). El navegador solo deja saber el <em>nombre</em> de la carpeta, no la ruta
+      completa: si quieres la ruta entera como recordatorio, pégala en la casilla (en el explorador de Windows, clic en la
+      barra de dirección y Ctrl + C).
     </p>
-    <label class="field"><span>🏢 Empresas</span>
-      <input type="text" name="rutaEmpresas" value="{{ rutas.empresas }}" placeholder="D:\…\EMPRESAS" maxlength="300" />
-    </label>
-    <label class="field"><span>🛠 Soporte</span>
-      <input type="text" name="rutaSoporte" value="{{ rutas.soporte }}" placeholder="D:\…\ARCHIVOS ContPAQi" maxlength="300" />
-    </label>
+    {% for c in [{id: 'empresas', etiqueta: '🏢 Empresas', name: 'rutaEmpresas', valor: rutas.empresas, ph: 'D:\\…\\EMPRESAS'}, {id: 'soporte', etiqueta: '🛠 Soporte', name: 'rutaSoporte', valor: rutas.soporte, ph: 'D:\\…\\ARCHIVOS ContPAQi'}] %}
+      <label class="field"><span>{{ c.etiqueta }}</span>
+        <span style="display: flex; gap: var(--space-2)">
+          <input type="text" name="{{ c.name }}" value="{{ c.valor }}" placeholder="{{ c.ph }}" maxlength="300" data-kb-ruta="{{ c.id }}" />
+          <button type="button" class="btn btn--sm btn--secondary" data-kb-recordar="{{ c.id }}" title="Abre el explorador para elegir la carpeta; 🔄 Indexar usará esa">📂 Elegir</button>
+        </span>
+        <small class="muted" data-kb-carpeta-recordada="{{ c.id }}"></small>
+      </label>
+    {% endfor %}
     <div class="page-head__actions">
       <button class="btn" type="submit">Guardar</button>
     </div>

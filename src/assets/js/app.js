@@ -846,6 +846,32 @@
     }
   }
 
+  // Acceso a la KB → Rutas: «📂 Elegir» abre el explorador, recuerda la carpeta para 🔄 Indexar
+  // (sin indexar todavía) y, si la casilla está vacía o es de otra carpeta, pone su nombre.
+  document.addEventListener('click', async function (e) {
+    var btn = e.target.closest && e.target.closest('[data-kb-recordar]');
+    if (!btn) return;
+    var carpeta = btn.getAttribute('data-kb-recordar');
+    if (!window.showDirectoryPicker) {
+      alert('Este navegador no deja elegir carpetas. Usa Chrome o Edge.');
+      return;
+    }
+    try {
+      var handle = await window.showDirectoryPicker({ id: 'kb-' + carpeta, mode: 'read' });
+      await kbRecordarCarpeta(carpeta, handle);
+      kbPintarRecordadas();
+      var input = document.querySelector('[data-kb-ruta="' + carpeta + '"]');
+      if (input) {
+        var actual = input.value.trim().replace(/[\\/]+$/, '');
+        var ultimo = actual.split(/[\\/]/).pop() || '';
+        if (ultimo.toLowerCase() !== handle.name.toLowerCase()) input.value = handle.name;
+      }
+    } catch (err) {
+      if (err && err.name === 'AbortError') return;
+      alert(err && err.message ? err.message : 'No se pudo abrir la carpeta');
+    }
+  });
+
   document.addEventListener('click', function (e) {
     var indexar = e.target.closest('[data-kb-indexar]');
     var elegir = e.target.closest('[data-kb-elegir]');
