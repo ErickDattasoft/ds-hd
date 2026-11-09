@@ -1695,3 +1695,8 @@ img.adjunto-thumb, .ticket-descripcion img, .chat__cuerpo img { cursor: zoom-in;
 .seccion__resumen { display: inline-flex; gap: var(--space-1); flex-wrap: wrap; margin-left: auto; font-size: var(--text-sm); }
 .seccion__cuerpo { padding: var(--space-3) var(--space-4); }
 .seccion__cuerpo > .data-table:first-child { margin-top: 0; }
+
+/* Ctrl + clic abre el enlace (ver app.js): con Ctrl apretado, las casillas de enlace se ven como enlace. */
+.ctrl-abre-link input[name="linkDescarga"],
+.ctrl-abre-link input[name="linkCartaTecnica"],
+.ctrl-abre-link input[name="spDescarga"] { cursor: pointer; text-decoration: underline; color: var(--primary, #6366f1); }

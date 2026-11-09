@@ -1621,6 +1621,31 @@
     cc.value = ya.join(', ');
   });
 
+  // Casillas de enlace (descargas y cartas técnicas de Versiones): Ctrl + clic (⌘ + clic en
+  // Mac) abre el enlace en otra pestaña; el clic normal sigue siendo para editar.
+  var SEL_LINK = 'input[name="linkDescarga"], input[name="linkCartaTecnica"], input[name="spDescarga"]';
+  document.addEventListener('click', function (e) {
+    if (!(e.ctrlKey || e.metaKey)) return;
+    var input = e.target.closest && e.target.closest(SEL_LINK);
+    if (!input) return;
+    var url = input.value.trim();
+    if (!/^https?:\/\//i.test(url)) return;
+    e.preventDefault();
+    window.open(url, '_blank', 'noopener');
+  });
+  // Mientras se tiene Ctrl apretado, las casillas con enlace muestran la manita.
+  function marcarCtrl(e) { document.documentElement.classList.toggle('ctrl-abre-link', e.ctrlKey || e.metaKey); }
+  document.addEventListener('keydown', marcarCtrl);
+  document.addEventListener('keyup', marcarCtrl);
+  window.addEventListener('blur', function () { document.documentElement.classList.remove('ctrl-abre-link'); });
+  document.addEventListener('mouseover', function (e) {
+    var input = e.target.closest && e.target.closest(SEL_LINK);
+    if (input && input.value && !input.dataset.tituloLink) {
+      input.dataset.tituloLink = '1';
+      input.title = input.value + '\n(Ctrl + clic para abrir)';
+    }
+  });
+
   // Versiones del mercado: «＋ SP» agrega un renglón de service pack debajo de los de ese sistema.
   document.addEventListener('click', function (e) {
     var btn = e.target.closest && e.target.closest('[data-agregar-sp]');
