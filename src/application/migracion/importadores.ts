@@ -12,6 +12,7 @@ import { Empresa } from '../../core/entities/Empresa.js';
 import { Contacto } from '../../core/entities/Contacto.js';
 import { DISTRIBUIDOR_POR_DEFECTO, Ticket } from '../../core/entities/Ticket.js';
 import { VersionSistema } from '../../core/entities/VersionSistema.js';
+import { compararVersiones } from '../../core/entities/value-objects/version.js';
 import { ArticuloKB } from '../../core/entities/ArticuloKB.js';
 import { Evento, type RespuestaInvitacion, RESPUESTAS_INVITACION } from '../../core/entities/Evento.js';
 import { Cotizacion, type EstadoCotizacion } from '../../core/entities/Cotizacion.js';
@@ -685,7 +686,12 @@ export function crearImportadores({ dryRun: DRY_RUN, log }: OpcionesImportacion)
   }
 
   /**
-   * Versiones de sistemas (`versionesMercado` + `cartasTecnicas`, dos dicts sistema→valor)
+   * Versiones de sistemas (`versionesMercado` + `cartasTecnicas`, dos dicts sistema→valor).
+   *
+   * El viejo solo guarda el número de versión y, a veces, la carta técnica. Lo que ds-hd ya
+   * tiene (descargas, fecha de liberación, SP traídos de CONTPAQi, notas) se CONSERVA: antes se
+   * pisaba el registro completo y reimportar un respaldo borraba los enlaces (6-nov-2026).
+   * La versión del respaldo solo gana si es más nueva que la registrada.
    */
   async function importarVersiones(c: Container, datos: Dato): Promise<number> {
     const repo = c.resolve('versionRepo');
@@ -695,12 +701,24 @@ export function crearImportadores({ dryRun: DRY_RUN, log }: OpcionesImportacion)
     for (const [sistema, versionActual] of Object.entries(versiones)) {
       if (!s(versionActual)) continue;
       if (!DRY_RUN) {
+        const id = slug(sistema);
+        const previa = await repo.findById(id);
+        const carta = s(cartas[sistema]) || null;
+        // Importaciones anteriores metían la carta técnica en "Descarga": se regresa a su columna.
+        const descargaEraCarta = !!previa?.linkDescarga && previa.linkDescarga === carta;
+        const masNueva = !previa || compararVersiones(previa.versionActual, s(versionActual)) < 0;
         await repo.save(
           new VersionSistema({
-            id: slug(sistema),
+            id,
             sistema,
-            versionActual: s(versionActual),
-            linkDescarga: s(cartas[sistema]) || null,
+            versionActual: masNueva ? s(versionActual) : previa!.versionActual,
+            fechaLiberacion: masNueva ? null : previa!.fechaLiberacion,
+            notasVersion: previa?.notasVersion ?? null,
+            linkDescarga: masNueva || descargaEraCarta ? null : previa!.linkDescarga,
+            linkCartaTecnica: previa?.linkCartaTecnica || carta,
+            servicePacks: masNueva ? [] : previa!.servicePacks,
+            updatedAt: previa?.updatedAt,
+            actualizadoPorUid: previa?.actualizadoPorUid ?? null,
           }),
         );
       }

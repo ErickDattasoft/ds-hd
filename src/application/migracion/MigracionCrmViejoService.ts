@@ -298,12 +298,8 @@ export class MigracionCrmViejoService {
       conteo.empresas = empresas.length;
       if (!simulacro) await repo.eliminarVarias(empresas.map((e) => e.id));
     }
-    if (trae('versiones')) {
-      const repo = this.c.resolve('versionRepo');
-      const versiones = await repo.list();
-      conteo.versiones = versiones.length;
-      if (!simulacro) await repo.eliminarVarios(versiones.map((v) => v.id));
-    }
+    // Versiones NO se borran: el viejo no trae descargas, fechas ni SP, y borrarlas perdía los
+    // enlaces capturados en ds-hd. La importación las actualiza conservando eso (6-nov-2026).
     if (trae('bitacora')) {
       const repo = this.c.resolve('bitacoraRepo');
       conteo.bitacora = (await repo.listar({})).length;
