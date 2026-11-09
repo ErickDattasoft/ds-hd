@@ -698,7 +698,7 @@
     for (var i = 0; i < etiquetas.length; i++) {
       var el = etiquetas[i];
       var h = await kbCarpetaRecordada(el.getAttribute('data-kb-carpeta-recordada'));
-      el.textContent = h ? '📁 Carpeta recordada: ' + h.name : (window.showDirectoryPicker ? 'La primera vez te pedirá elegir la carpeta.' : 'Este navegador no recuerda carpetas: la elegirás cada vez.');
+      el.textContent = h ? '📁 Carpeta recordada: ' + h.name : (window.showDirectoryPicker ? 'La primera vez te pedirá elegir la carpeta.' : (navigator.brave ? 'Brave tiene apagado elegir carpetas: actívalo en brave://flags/#file-system-access-api (o usa Chrome / Edge).' : 'Este navegador no recuerda carpetas: la elegirás cada vez.'));
     }
   }
 
@@ -853,7 +853,9 @@
     if (!btn) return;
     var carpeta = btn.getAttribute('data-kb-recordar');
     if (!window.showDirectoryPicker) {
-      alert('Este navegador no deja elegir carpetas. Usa Chrome o Edge.');
+      alert(navigator.brave
+        ? 'Brave trae apagada la opción de elegir carpetas.\n\n1. Abre en otra pestaña: brave://flags/#file-system-access-api\n2. Ponla en «Enabled» y dale «Relaunch».\n\nO usa Chrome / Edge.'
+        : 'Este navegador no deja elegir carpetas. Usa Chrome o Edge.');
       return;
     }
     try {
