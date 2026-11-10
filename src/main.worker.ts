@@ -17,6 +17,7 @@ import { loadConfig } from './config/env.js';
 import { APP_VERSION } from './config/version.js';
 import { ConsoleLogger } from './infrastructure/system/ConsoleLogger.js';
 import { conLecturas } from './infrastructure/firestore-rest/lecturas.js';
+import { registrarBindingIA } from './infrastructure/ia/WorkersAIRedactor.js';
 
 const PORT = 8787;
 
@@ -50,7 +51,10 @@ const JOBS_POR_CRON: Record<string, string[]> = {
 };
 
 export default {
-  fetch: (request: Request, env: unknown, ctx: unknown) => http.fetch(request, env, ctx),
+  fetch: (request: Request, env: unknown, ctx: unknown) => {
+    registrarBindingIA(env);
+    return http.fetch(request, env, ctx);
+  },
   /**
    * Cron Triggers de Cloudflare (`triggers.crons` en wrangler.jsonc). Cada 5 min: buzón de Zoho
    * (respuestas con imágenes, que CloudMailin gratis rechaza por tamaño). Cada hora: los jobs de

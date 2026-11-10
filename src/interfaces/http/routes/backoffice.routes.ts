@@ -173,6 +173,18 @@ export function backofficeRoutes(container: Container): Router {
   r.get('/tickets/respuestas', leerTickets, (req, res) => respuestas().listarView(req, res));
   r.get('/tickets/respuestas/contador', leerTickets, (req, res) => respuestas().contadorJson(req, res));
   r.post('/tickets/respuestas/leidas', leerTickets, (req, res) => respuestas().todasLeidasPost(req, res));
+  // «✨ Corregir» del editor: varias redacciones propuestas por Workers AI (solo el equipo).
+  r.post('/tickets/corregir-texto', leerTickets, async (req, res) => {
+    try {
+      const b = (req.body ?? {}) as Record<string, unknown>;
+      const r = await container
+        .resolve('redactarConIAService')
+        .proponer(req.user!, String(b.texto ?? ''), String(b.asunto ?? ''), b.tips === true);
+      res.json({ ok: true, ...r });
+    } catch (err) {
+      res.status(422).json({ ok: false, detalle: err instanceof Error ? err.message : 'No se pudo corregir' });
+    }
+  });
   r.post('/tickets/:id/leida', leerTickets, (req, res) => respuestas().leidaPost(req, res));
   r.get('/tickets/buzon', requirePermission('tickets:crear'), (req, res) => tickets().buzonView(req, res));
   r.post('/tickets/buzon/:id/aceptar', requirePermission('tickets:crear'), (req, res) =>

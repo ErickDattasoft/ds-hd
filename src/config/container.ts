@@ -92,6 +92,9 @@ import { ActualizarGestionTicketService } from '../application/tickets/Actualiza
 import { ActualizarEstadoTicketService } from '../application/tickets/ActualizarEstadoTicketService.js';
 import { AsignarAgenteService } from '../application/tickets/AsignarAgenteService.js';
 import { RegistrarNotaService } from '../application/tickets/RegistrarNotaService.js';
+import { RedactarConIAService } from '../application/tickets/RedactarConIAService.js';
+import { WorkersAIRedactor } from '../infrastructure/ia/WorkersAIRedactor.js';
+import type { IRedactorIA } from '../core/ports/services/IRedactorIA.js';
 import { ReenviarCorreoTicketService } from '../application/tickets/ReenviarCorreoTicketService.js';
 import { MarcarFacturacionService } from '../application/tickets/MarcarFacturacionService.js';
 import { ProgramarAtencionService } from '../application/tickets/ProgramarAtencionService.js';
@@ -276,6 +279,8 @@ export interface Cradle {
   actualizarEstadoTicketService: ActualizarEstadoTicketService;
   asignarAgenteService: AsignarAgenteService;
   registrarNotaService: RegistrarNotaService;
+  redactorIA: IRedactorIA;
+  redactarConIAService: RedactarConIAService;
   reenviarCorreoTicketService: ReenviarCorreoTicketService;
   marcarFacturacionService: MarcarFacturacionService;
   programarAtencionService: ProgramarAtencionService;
@@ -757,6 +762,8 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
           c.logger,
         ),
     ).singleton(),
+    redactorIA: asFunction(() => new WorkersAIRedactor()).singleton(),
+    redactarConIAService: asFunction((c: Cradle) => new RedactarConIAService(c.redactorIA, c.logger)).singleton(),
     registrarNotaService: asFunction(
       (c: Cradle) =>
         new RegistrarNotaService(

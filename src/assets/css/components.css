@@ -1700,3 +1700,14 @@ img.adjunto-thumb, .ticket-descripcion img, .chat__cuerpo img { cursor: zoom-in;
 .ctrl-abre-link input[name="linkDescarga"],
 .ctrl-abre-link input[name="linkCartaTecnica"],
 .ctrl-abre-link input[name="spDescarga"] { cursor: pointer; text-decoration: underline; color: var(--primary, #6366f1); }
+
+/* «✨ Corregir» del editor de tickets: opciones de redacción para elegir. */
+dialog.corrector-ia { width: min(760px, calc(100vw - 32px)); max-height: 88vh; overflow: auto; }
+.corrector-ia__opciones { display: grid; gap: var(--space-3); margin: var(--space-3) 0; }
+.corrector-ia__opcion { border: 1px solid var(--color-border); border-radius: var(--radius); padding: var(--space-3); display: grid; gap: var(--space-2); justify-items: start; }
+.corrector-ia__texto { white-space: pre-wrap; font-size: var(--text-sm); line-height: 1.5; width: 100%; }
+.corrector-ia__acciones { display: flex; gap: var(--space-2); justify-content: flex-end; flex-wrap: wrap; }
+.corrector-ia__cabeza { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-2); }
+.corrector-ia__tips { margin-top: var(--space-3); padding: var(--space-2) var(--space-3); border-radius: var(--radius); border: 1px solid var(--color-border); background: color-mix(in srgb, #f5b301 12%, transparent); font-size: var(--text-sm); }
+.corrector-ia__tips ul { margin: var(--space-1) 0 0; padding-left: 1.2em; }
+[data-tips-toggle][aria-pressed="true"] { border-color: #f5b301; }

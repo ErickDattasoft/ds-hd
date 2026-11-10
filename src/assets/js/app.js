@@ -2772,6 +2772,156 @@
     caja.focus();
   });
 
+  // «✨ Corregir»: manda el texto del editor a Workers AI y muestra varias versiones para elegir.
+  // Lo elegido reemplaza el texto (las imágenes pegadas se conservan al final) y se puede deshacer.
+  function textoAHtmlCorregido(texto) {
+    return texto.split('\n').map(function (l) {
+      var esc = escHtmlTexto(l);
+      return esc.replace(/^(Fecha|Síntoma|Sintoma|Problema|Causa|Solución|Solucion|Tiempo trabajado|Observaciones):/i, '<b>$1:</b>');
+    }).join('<br>');
+  }
+  function aplicarCorreccion(caja, texto, btn) {
+    var antes = caja.isContentEditable ? caja.innerHTML : caja.value;
+    if (caja.isContentEditable) {
+      var imgs = Array.prototype.map.call(caja.querySelectorAll('img'), function (i) { return i.outerHTML; }).join('<br>');
+      caja.innerHTML = textoAHtmlCorregido(texto) + (imgs ? '<br><br>' + imgs : '');
+    } else {
+      caja.value = texto;
+    }
+    caja.dispatchEvent(new Event('input', { bubbles: true }));
+    caja.focus();
+    var barra = btn.closest('.editor-toolbar');
+    var viejo = barra && barra.querySelector('[data-deshacer-ia]');
+    if (viejo) viejo.remove();
+    if (!barra) return;
+    var deshacer = document.createElement('button');
+    deshacer.type = 'button';
+    deshacer.className = 'btn btn--ghost btn--sm';
+    deshacer.setAttribute('data-deshacer-ia', '');
+    deshacer.textContent = '↩ Deshacer corrección';
+    deshacer.addEventListener('click', function () {
+      if (caja.isContentEditable) caja.innerHTML = antes; else caja.value = antes;
+      caja.dispatchEvent(new Event('input', { bubbles: true }));
+      deshacer.remove();
+    });
+    btn.insertAdjacentElement('afterend', deshacer);
+    setTimeout(function () { deshacer.remove(); }, 120000);
+  }
+  // «💡 Tips» (qué dato le falta al ticket): se prende/apaga en la ventana y se recuerda en el navegador.
+  function tipsCorrectorActivos() {
+    try { return localStorage.getItem('corrector-tips') !== '0'; } catch { return true; }
+  }
+  function guardarTipsCorrector(v) {
+    try { localStorage.setItem('corrector-tips', v ? '1' : '0'); } catch { /* sin almacenamiento: no se recuerda */ }
+  }
+  function ventanaCorrector(caja, btn, texto) {
+    var dlg = document.createElement('dialog');
+    dlg.className = 'card corrector-ia';
+    dlg.innerHTML = '<div class="corrector-ia__cabeza"><h3 style="margin:0">✨ Elige cómo quieres que quede</h3>' +
+      '<button type="button" class="btn btn--ghost btn--sm" data-tips-toggle aria-pressed="false"></button></div>' +
+      '<p class="text-muted" data-estado>Preparando opciones… (tarda unos segundos)</p>' +
+      '<div class="corrector-ia__tips" data-tips hidden></div>' +
+      '<div class="corrector-ia__opciones" data-opciones></div>' +
+      '<p class="text-muted" style="font-size:.85em">Revisa antes de usarla: la IA puede equivocarse. Si algo dice «[pendiente]», complétalo tú.</p>' +
+      '<div class="corrector-ia__acciones"><button type="button" class="btn btn--ghost" data-otra>🔄 Otras opciones</button>' +
+      '<button type="button" class="btn btn--ghost" data-cerrar>Cancelar</button></div>';
+    dlg.addEventListener('close', function () { dlg.remove(); });
+    dlg.querySelector('[data-cerrar]').addEventListener('click', function () { dlg.close(); });
+    var tipsOn = tipsCorrectorActivos();
+    var tipsPedidos = false;
+    var tipsBox = dlg.querySelector('[data-tips]');
+    var tipsBtn = dlg.querySelector('[data-tips-toggle]');
+    function pintarTipsBtn() {
+      tipsBtn.textContent = tipsOn ? '💡 Tips: encendidos' : '💡 Tips: apagados';
+      tipsBtn.setAttribute('aria-pressed', tipsOn ? 'true' : 'false');
+      tipsBtn.title = tipsOn ? 'Clic para apagar los consejos' : 'Clic para que te diga qué dato le falta al ticket';
+      tipsBox.hidden = !tipsOn || !tipsBox.childNodes.length;
+    }
+    function pintarTips(lista) {
+      tipsBox.innerHTML = '';
+      if (!lista || !lista.length) { pintarTipsBtn(); return; }
+      var t = document.createElement('strong');
+      t.textContent = '💡 Para que quede más completo:';
+      var ul = document.createElement('ul');
+      lista.forEach(function (x) { var li = document.createElement('li'); li.textContent = x; ul.appendChild(li); });
+      tipsBox.appendChild(t);
+      tipsBox.appendChild(ul);
+      pintarTipsBtn();
+    }
+    tipsBtn.addEventListener('click', function () {
+      tipsOn = !tipsOn;
+      guardarTipsCorrector(tipsOn);
+      pintarTipsBtn();
+      if (tipsOn && !tipsPedidos) pedir();
+    });
+    pintarTipsBtn();
+    var asunto = document.querySelector('[name="asunto"]');
+    var asuntoTxt = asunto ? asunto.value : ((document.querySelector('h1') || {}).textContent || '');
+    function pedir() {
+      var estado = dlg.querySelector('[data-estado]');
+      var caj = dlg.querySelector('[data-opciones]');
+      var otra = dlg.querySelector('[data-otra]');
+      estado.hidden = false;
+      estado.textContent = 'Preparando opciones… (tarda unos segundos)';
+      caj.innerHTML = '';
+      pintarTips([]);
+      otra.disabled = true;
+      tipsPedidos = tipsOn;
+      fetch('/app/tickets/corregir-texto', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', accept: 'application/json', 'x-csrf-token': cookie('x-csrf-token') },
+        body: JSON.stringify({ texto: texto, asunto: asuntoTxt, tips: tipsOn }),
+      })
+        .then(function (r) { return r.json().catch(function () { return { ok: false, detalle: 'Respuesta inválida del servidor' }; }); })
+        .then(function (d) {
+          otra.disabled = false;
+          if (!d.ok) { estado.textContent = '⚠ ' + (d.detalle || 'No se pudo corregir'); return; }
+          estado.hidden = true;
+          pintarTips(d.tips);
+          d.opciones.forEach(function (o) {
+            var card = document.createElement('div');
+            card.className = 'corrector-ia__opcion';
+            var h = document.createElement('strong');
+            h.textContent = o.titulo || 'Opción';
+            var p = document.createElement('div');
+            p.className = 'corrector-ia__texto';
+            p.textContent = o.texto;
+            var usar = document.createElement('button');
+            usar.type = 'button';
+            usar.className = 'btn btn--primary btn--sm';
+            usar.textContent = '✔ Usar esta';
+            usar.addEventListener('click', function () {
+              aplicarCorreccion(caja, o.texto, btn);
+              dlg.close();
+              toast('Texto reemplazado — puedes deshacerlo con «↩ Deshacer corrección»');
+            });
+            card.appendChild(h);
+            card.appendChild(p);
+            card.appendChild(usar);
+            caj.appendChild(card);
+          });
+        })
+        .catch(function () {
+          otra.disabled = false;
+          estado.textContent = '⚠ Sin conexión con el servidor';
+        });
+    }
+    dlg.querySelector('[data-otra]').addEventListener('click', pedir);
+    document.body.appendChild(dlg);
+    dlg.showModal();
+    pedir();
+  }
+  document.addEventListener('click', function (e) {
+    var btn = e.target.closest('[data-corregir-ia]');
+    if (!btn) return;
+    e.preventDefault();
+    var caja = document.querySelector(btn.getAttribute('data-destino'));
+    if (!caja) return;
+    var texto = caja.isContentEditable ? htmlATexto(caja.innerHTML.replace(/<img[^>]*>/gi, '')) : caja.value.trim();
+    if (texto.length < 5) { toast('Escribe algo antes de corregir', 'error'); return; }
+    ventanaCorrector(caja, btn, texto);
+  });
+
   // Totales en vivo del formulario de cotización (el IVA solo de las líneas marcadas).
   function recalcularTotalesCot() {
     var tabla = document.querySelector('[data-conceptos-catalogo]');

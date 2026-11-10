@@ -16,6 +16,8 @@
   // Cada 5 min: respuestas de clientes con imágenes desde Zoho. Los otros tres: jobs horarios
   // (SLA, recordatorios, resumen…) repartidos — ver `JOBS_POR_CRON` en main.worker.ts.
   "triggers": { "crons": ["*/5 * * * *", "7 * * * *", "27 * * * *", "47 * * * *"] },
+  // Workers AI (gratis dentro de la cuota diaria): el «✨ Corregir» del editor de tickets.
+  "ai": { "binding": "AI" },
   "observability": {
     "enabled": true
   },
