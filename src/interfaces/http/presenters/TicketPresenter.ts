@@ -1,5 +1,5 @@
 import type { Ticket } from '../../../core/entities/Ticket.js';
-import { esEstadoFinal } from '../../../core/entities/value-objects/EstadoTicket.js';
+import { esEstadoCerrado, esEstadoFinal, esEstadoResuelto } from '../../../core/entities/value-objects/EstadoTicket.js';
 import { etiquetaFacturacion, esFacturacionCompletada } from '../../../core/entities/value-objects/EstadoFacturacion.js';
 
 function duracion(ms: number): string {
@@ -135,7 +135,9 @@ export function ticketVM(t: Ticket, ahora: Date): TicketVM {
         ? 'ok'
         : t.facturacion.estado === 'en_proceso'
           ? 'info'
-          : t.facturacion.estado === 'no_facturado' && t.facturacion.requiere
+          : // En DATTASOFT todo se cobra (salvo «Sin costo»): rojo = ya se terminó (resuelto o
+            // cerrado) y sigue «No facturado», sin importar el tipo de ticket.
+            t.facturacion.estado === 'no_facturado' && (esEstadoResuelto(t.estado) || esEstadoCerrado(t.estado))
             ? 'warning'
             : null,
     },
