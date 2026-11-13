@@ -236,7 +236,7 @@ export class EmpresaController {
       const contactoNombre = str(b.contactoNombre).trim();
       if (contactoNombre.length >= 2) {
         try {
-          await this.contactos.crear(req.user!, {
+          const c = await this.contactos.crear(req.user!, {
             nombre: contactoNombre,
             empresaId: e.id,
             puesto: str(b.contactoPuesto),
@@ -244,6 +244,8 @@ export class EmpresaController {
             telefono: str(b.contactoTelefono),
             celular: str(b.contactoCelular),
           });
+          // Es quien pide el soporte: queda como contacto principal de la empresa.
+          await this.empresas.marcarContactos(req.user!, e.id, { principal: c.id });
         } catch {
           // opcional — la empresa ya se creó, no se bloquea el flujo por esto.
         }
