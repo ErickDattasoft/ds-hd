@@ -1509,7 +1509,13 @@
         btnCc.setAttribute('data-email', otroEmail);
       }
     }
-    if (opt) {
+    if (opt && opt.getAttribute('data-solo-empresa')) {
+      // Empresa sin contactos: solo se llena la empresa; el contacto se escribe a mano.
+      if (nombre) nombre.value = '';
+      if (correo) correo.value = '';
+      if (empresa) empresa.value = opt.getAttribute('data-empresa');
+      if (nombre) nombre.focus();
+    } else if (opt) {
       if (nombre) nombre.value = opt.value;
       if (correo) correo.value = opt.getAttribute('data-email') || '';
       if (empresa && opt.getAttribute('data-empresa')) empresa.value = opt.getAttribute('data-empresa');

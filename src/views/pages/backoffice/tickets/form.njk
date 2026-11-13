@@ -30,6 +30,7 @@
       </label>
       <datalist id="ticket-contactos">
         {% for c in contactos %}<option value="{{ c.nombre }}" data-email="{{ c.email }}" data-empresa="{{ c.empresa }}" data-otro-nombre="{{ c.otroNombre }}" data-otro-email="{{ c.otroEmail }}" data-otro-rol="{{ c.otroRol }}">{{ c.empresa }}{% if c.rol %} · contacto {{ c.rol }}{% endif %}{% if c.email %} · {{ c.email }}{% endif %}</option>{% endfor %}
+        {% for e in empresasSinContacto %}<option value="{{ e }}" data-empresa="{{ e }}" data-solo-empresa="1">🏢 empresa sin contactos registrados</option>{% endfor %}
       </datalist>
       <div class="form-grid">
         <label class="field"><span>Contacto</span><input name="contactoNombre" value="{{ valores.contactoNombre }}" data-c-nombre placeholder="Nombre del contacto" /></label>

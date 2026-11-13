@@ -231,6 +231,15 @@ export class TicketController {
           otroEmail: porId.get(contraparte.get(c.id) ?? '')?.email ?? '',
           otroRol: rol.get(contraparte.get(c.id) ?? '') ?? '',
         })),
+      // Empresas recién dadas de alta (o sin nadie registrado) no tienen contacto que buscar:
+      // se ofrecen solas para que el ticket quede ligado a ellas.
+      empresasSinContacto: (() => {
+        const conContacto = new Set(contactos.map((c) => c.empresaId).filter(Boolean));
+        return empresas
+          .filter((e) => !conContacto.has(e.id))
+          .map((e) => e.nombre)
+          .sort((a, b) => a.localeCompare(b, 'es'));
+      })(),
     };
   }
 
