@@ -293,7 +293,7 @@ describe('avisos: elegir qué sistemas mencionar', () => {
       'e1',
       new Empresa({ id: 'e1', nombre: 'Dos Licencias', sistemasContratados: ['Contabilidad', 'Nóminas'], vigencias: { Contabilidad: '2026-01-01', Nóminas: '2026-02-01' } }),
     );
-    t.empresaRepo.items.set('e2', new Empresa({ id: 'e2', nombre: 'Omitida', sistemasContratados: ['Bancos'], vigencias: { Bancos: '2026-01-15' } }));
+    t.empresaRepo.items.set('e2', new Empresa({ id: 'e2', nombre: 'OMITIDA', sistemasContratados: ['Bancos'], vigencias: { Bancos: '2026-01-15' } }));
     const { agent, csrf } = await login(t.app, ADMIN.email, ADMIN.password);
     for (const [id, correo] of [['e1', 'uno@x.mx'], ['e2', 'dos@x.mx']]) {
       await agent.post('/app/contactos').type('form').send({ _csrf: csrf, nombre: `C ${id}`, empresaId: id, email: correo });
@@ -303,7 +303,7 @@ describe('avisos: elegir qué sistemas mencionar', () => {
       _csrf: csrf, accion: 'licencias-correo', empresaIds: ['e1', 'e2'],
     });
     expect(paso1.text).toContain('Nóminas');
-    expect(paso1.text).toContain('Omitida');
+    expect(paso1.text).toContain('OMITIDA');
 
     const res = await agent.post('/app/empresas/avisar/confirmar').type('form').send({
       _csrf: csrf, accion: 'licencias-correo', empresaIds: ['e1', 'e2'], sel_e1: 'Contabilidad',

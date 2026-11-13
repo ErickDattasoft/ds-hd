@@ -64,7 +64,7 @@ describe('BackupService', () => {
   it('exporta y restaura una empresa y un ticket, con fechas anidadas revividas correctamente', async () => {
     const original = new Empresa({
       id: 'e1',
-      nombre: 'Empresa Backup',
+      nombre: 'EMPRESA BACKUP',
       createdAt: new Date('2026-01-01T00:00:00Z'),
       updatedAt: new Date('2026-02-01T00:00:00Z'),
     });
@@ -123,7 +123,7 @@ describe('BackupService', () => {
       notas: 'nota',
     });
     const empresaRestaurada = await empresas2.findById('e1');
-    expect(empresaRestaurada?.nombre).toBe('Empresa Backup');
+    expect(empresaRestaurada?.nombre).toBe('EMPRESA BACKUP');
     expect(empresaRestaurada?.createdAt).toEqual(new Date('2026-01-01T00:00:00Z'));
     const ticketRestaurado = await ticketRepo2.findById('t1');
     expect(ticketRestaurado?.numero).toBe(501);

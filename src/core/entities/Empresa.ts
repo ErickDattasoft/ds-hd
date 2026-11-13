@@ -1,5 +1,6 @@
 import { ValidationError } from '../errors/DomainError.js';
 import { normalizarFechaISO } from './value-objects/fechasEspeciales.js';
+import { nombreEmpresa } from './value-objects/nombres.js';
 
 /** Estado de la licencia de un sistema respecto de su fecha de vigencia. */
 export type EstadoVigencia = 'sin_dato' | 'vigente' | 'por_vencer' | 'vencida';
@@ -93,7 +94,7 @@ export class Empresa {
       throw new ValidationError('El nombre de la empresa es obligatorio', { nombre: 'Requerido' });
     }
     this.id = props.id;
-    this.nombre = props.nombre.trim();
+    this.nombre = nombreEmpresa(props.nombre);
     this.rfc = props.rfc?.trim().toUpperCase() || null;
     this.razonSocial = props.razonSocial?.trim() || null;
     this.direccion = props.direccion?.trim() || null;

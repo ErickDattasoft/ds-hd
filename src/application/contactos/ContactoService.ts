@@ -7,6 +7,7 @@ import { normalizarMesDia } from '../../core/entities/value-objects/fechasEspeci
 import { ForbiddenError, NotFoundError, ValidationError } from '../../core/errors/DomainError.js';
 import type { BitacoraService } from '../shared/BitacoraService.js';
 import type { SessionUser } from '../shared/SessionUser.js';
+import { nombrePersona } from '../../core/entities/value-objects/nombres.js';
 
 /** Datos editables de un contacto (alta o edición). */
 export interface DatosContacto {
@@ -92,7 +93,7 @@ export class ContactoService {
     const contacto = await this.obtener(id);
     if (datos.empresaId !== contacto.empresaId) await this.assertEmpresaExiste(datos.empresaId);
     const ahora = this.clock.now();
-    contacto.nombre = datos.nombre.trim();
+    contacto.nombre = nombrePersona(datos.nombre);
     contacto.empresaId = datos.empresaId;
     contacto.puesto = datos.puesto?.trim() || null;
     contacto.rfc = datos.rfc?.trim().toUpperCase() || null;

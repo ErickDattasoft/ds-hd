@@ -119,7 +119,7 @@ describe('ObtenerMetricasService', () => {
     await empresas.save(
       new Empresa({
         id: 'e2',
-        nombre: 'Globex',
+        nombre: 'GLOBEX',
         sistemasContratados: ['Compac'],
         vigencias: { Compac: '2026-09-20' }, // por vencer (dentro de 30 d)
       }),
@@ -145,6 +145,6 @@ describe('ObtenerMetricasService', () => {
     expect(m.licencias!.empresasEnRiesgo).toBe(2);
     // Como el viejo: solo versiones desactualizadas → e1 y e3 (e2 solo tiene licencia).
     expect(m.licencias!.avisosPendientes).toBe(2);
-    expect(m.licencias!.banner.map((b) => b.nombre)).toEqual(['ACME', 'Globex']);
+    expect(m.licencias!.banner.map((b) => b.nombre)).toEqual(['ACME', 'GLOBEX']);
   });
 });

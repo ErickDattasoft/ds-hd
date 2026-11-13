@@ -7,6 +7,7 @@ import { ConflictError, ForbiddenError, NotFoundError } from '../../core/errors/
 import type { BitacoraService } from '../shared/BitacoraService.js';
 import type { SessionUser } from '../shared/SessionUser.js';
 import type { IWebhookPublisher } from '../../core/ports/services/IWebhookPublisher.js';
+import { nombreEmpresa } from '../../core/entities/value-objects/nombres.js';
 
 /** Datos editables de una empresa (alta o edición). */
 export interface DatosEmpresa {
@@ -100,7 +101,7 @@ export class EmpresaService {
       throw new ConflictError(`Ya existe otra empresa llamada "${datos.nombre}"`);
     }
     const ahora = this.clock.now();
-    empresa.nombre = datos.nombre.trim();
+    empresa.nombre = nombreEmpresa(datos.nombre);
     empresa.rfc = datos.rfc?.trim().toUpperCase() || null;
     empresa.razonSocial = datos.razonSocial?.trim() || null;
     empresa.direccion = datos.direccion?.trim() || null;

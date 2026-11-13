@@ -12,6 +12,7 @@ import {
 import { sanearEstadoFacturacion, type EstadoFacturacion } from './value-objects/EstadoFacturacion.js';
 import { fechaHoraAgenda, sanearAgenda, type AgendaTicket } from './value-objects/AgendaTicket.js';
 import { descripcionATextoPlano, sanitizarDescripcionHtml } from './value-objects/descripcionHtml.js';
+import { nombreEmpresa, nombrePersona } from './value-objects/nombres.js';
 
 /** Respuesta del cliente a la encuesta de satisfacción (1 = mala … 5 = excelente). */
 export interface SatisfaccionTicket {
@@ -215,9 +216,9 @@ export class Ticket {
     this.canal = props.canal;
 
     this.empresaId = props.empresaId ?? null;
-    this.empresaNombre = props.empresaNombre ?? null;
+    this.empresaNombre = props.empresaNombre ? nombreEmpresa(props.empresaNombre) : null;
     this.contactoId = props.contactoId ?? null;
-    this.contactoNombre = props.contactoNombre ?? null;
+    this.contactoNombre = props.contactoNombre ? nombrePersona(props.contactoNombre) : null;
     this.contactoCorreo = props.contactoCorreo ?? null;
 
     this.agenteAsignadoUid = props.agenteAsignadoUid ?? null;
@@ -460,8 +461,8 @@ export class Ticket {
     this.prioridad = datos.prioridad;
     this.grupo = datos.grupo?.trim() || null;
     this.empresaId = datos.empresaId;
-    this.empresaNombre = datos.empresaNombre?.trim() || null;
-    this.contactoNombre = datos.contactoNombre?.trim() || null;
+    this.empresaNombre = datos.empresaNombre?.trim() ? nombreEmpresa(datos.empresaNombre) : null;
+    this.contactoNombre = datos.contactoNombre?.trim() ? nombrePersona(datos.contactoNombre) : null;
     this.contactoCorreo = datos.contactoCorreo?.trim().toLowerCase() || null;
     this.cc = datos.cc.map((c) => c.trim()).filter(Boolean);
     this.cco = datos.cco.map((c) => c.trim()).filter(Boolean);

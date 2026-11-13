@@ -50,11 +50,11 @@ describe('seguimiento comercial', () => {
 describe('papelera', () => {
   it('muestra empresas archivadas y permite restaurarlas', async () => {
     const t = makeTestApp({ usuarios: [ADMIN] });
-    t.empresaRepo.items.set('e1', new Empresa({ id: 'e1', nombre: 'Vieja SA', activa: false }));
+    t.empresaRepo.items.set('e1', new Empresa({ id: 'e1', nombre: 'VIEJA SA', activa: false }));
     const { agent, csrf } = await login(t.app, ADMIN.email, ADMIN.password);
 
     const pap = await agent.get('/app/papelera');
-    expect(pap.text).toContain('Vieja SA');
+    expect(pap.text).toContain('VIEJA SA');
 
     await agent.post('/app/empresas/e1/archivar').type('form').send({ _csrf: csrf, archivar: 'false' });
     expect(t.empresaRepo.items.get('e1')?.activa).toBe(true);

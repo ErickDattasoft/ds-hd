@@ -1,6 +1,7 @@
 import { ValidationError } from '../errors/DomainError.js';
 import { Email } from './value-objects/Email.js';
 import { normalizarMesDia } from './value-objects/fechasEspeciales.js';
+import { nombrePersona } from './value-objects/nombres.js';
 
 /** Props para construir un {@link Contacto}. */
 export interface ContactoProps {
@@ -58,7 +59,7 @@ export class Contacto {
       throw new ValidationError('El contacto debe pertenecer a una empresa', { empresaId: 'Requerido' });
     }
     this.id = props.id;
-    this.nombre = props.nombre.trim();
+    this.nombre = nombrePersona(props.nombre);
     this.empresaId = props.empresaId;
     this.puesto = props.puesto?.trim() || null;
     this.rfc = props.rfc?.trim().toUpperCase() || null;

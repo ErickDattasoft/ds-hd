@@ -148,7 +148,7 @@ describe('empresas y contactos', () => {
 
   it('marca una empresa como favorita y la filtra', async () => {
     const t = makeTestApp({ usuarios: [ADMIN] });
-    t.empresaRepo.items.set('e1', new Empresa({ id: 'e1', nombre: 'Favorita SA' }));
+    t.empresaRepo.items.set('e1', new Empresa({ id: 'e1', nombre: 'FAVORITA SA' }));
     t.empresaRepo.items.set('e2', new Empresa({ id: 'e2', nombre: 'Normal SA' }));
     const { agent, csrf } = await login(t.app, ADMIN.email, ADMIN.password);
 
@@ -161,24 +161,24 @@ describe('empresas y contactos', () => {
     expect(t.empresaRepo.items.get('e1')?.favorita).toBe(true);
 
     const lista = await agent.get('/app/empresas?favoritas=1');
-    expect(lista.text).toContain('Favorita SA');
+    expect(lista.text).toContain('FAVORITA SA');
     expect(lista.text).not.toContain('Normal SA');
   });
 
   it('filtra empresas por sistema contratado', async () => {
     const t = makeTestApp({ usuarios: [ADMIN] });
-    t.empresaRepo.items.set('e1', new Empresa({ id: 'e1', nombre: 'Con Contpaqi', sistemasContratados: ['Contpaqi'] }));
+    t.empresaRepo.items.set('e1', new Empresa({ id: 'e1', nombre: 'CON CONTPAQI', sistemasContratados: ['Contpaqi'] }));
     t.empresaRepo.items.set('e2', new Empresa({ id: 'e2', nombre: 'Con Compac', sistemasContratados: ['Compac'] }));
     const { agent } = await login(t.app, ADMIN.email, ADMIN.password);
 
     const lista = await agent.get('/app/empresas?sistema=Contpaqi');
-    expect(lista.text).toContain('Con Contpaqi');
+    expect(lista.text).toContain('CON CONTPAQI');
     expect(lista.text).not.toContain('Con Compac');
   });
 
   it('guarda una búsqueda, la vuelve a aplicar y la borra', async () => {
     const t = makeTestApp({ usuarios: [ADMIN] });
-    t.empresaRepo.items.set('e1', new Empresa({ id: 'e1', nombre: 'Con Contpaqi', sistemasContratados: ['Contpaqi'] }));
+    t.empresaRepo.items.set('e1', new Empresa({ id: 'e1', nombre: 'CON CONTPAQI', sistemasContratados: ['Contpaqi'] }));
     t.empresaRepo.items.set('e2', new Empresa({ id: 'e2', nombre: 'Con Compac', sistemasContratados: ['Compac'] }));
     const { agent, csrf } = await login(t.app, ADMIN.email, ADMIN.password);
 

@@ -63,7 +63,7 @@ describe('ReporteVersionesService', () => {
     await empresas.save(
       new Empresa({
         id: 'e1',
-        nombre: 'Empresa Uno',
+        nombre: 'EMPRESA UNO',
         rfc: 'EUN010101AA1',
         sistemasContratados: ['Contabilidad'],
         versionesInstaladas: { Contabilidad: '18.0.0' },
@@ -84,7 +84,7 @@ describe('ReporteVersionesService', () => {
   it('lista solo empresas con sistemas o licencias desactualizadas, con carta técnica', async () => {
     const filas = await service.generar();
     expect(filas).toHaveLength(1);
-    expect(filas[0]!.empresa).toBe('Empresa Uno');
+    expect(filas[0]!.empresa).toBe('EMPRESA UNO');
     expect(filas[0]!.rfc).toBe('EUN010101AA1');
     expect(filas[0]!.correo).toBe('ana@uno.com');
     expect(filas[0]!.sistemasDesactualizados[0]).toMatchObject({
@@ -110,7 +110,7 @@ describe('ReporteVersionesService', () => {
     const { enviadoA } = await service.enviarPorCorreo(actor(), { destinatarios: ['jefe@d.com', ' JEFE@d.com '] });
     expect(enviadoA).toEqual(['jefe@d.com']);
     expect(email.enviados).toHaveLength(1);
-    expect(email.enviados[0]!.html).toContain('Empresa Uno');
+    expect(email.enviados[0]!.html).toContain('EMPRESA UNO');
     expect(bitacora.entradas).toHaveLength(1);
   });
 

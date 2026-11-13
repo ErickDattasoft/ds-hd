@@ -93,7 +93,7 @@ describe('AvisarEmpresasService', () => {
     await versiones.save(new VersionSistema({ id: 'v1', sistema: 'Contabilidad', versionActual: '19.1.0' }));
     const empresa = new Empresa({
       id: 'e1',
-      nombre: 'Empresa Uno',
+      nombre: 'EMPRESA UNO',
       sistemasContratados: ['Contabilidad'],
       versionesInstaladas: { Contabilidad: '18.0.0' },
     });
@@ -103,11 +103,11 @@ describe('AvisarEmpresasService', () => {
 
     const resultados = await service.ejecutar({ actor: actor(), empresaIds: ['e1'], tipo: 'versiones' });
 
-    expect(resultados).toEqual([{ empresaId: 'e1', empresaNombre: 'Empresa Uno', enviado: true }]);
+    expect(resultados).toEqual([{ empresaId: 'e1', empresaNombre: 'EMPRESA UNO', enviado: true }]);
     expect(email.enviados).toHaveLength(1);
     expect(email.enviados[0]!.para).toEqual([{ email: 'cliente@uno.com', nombre: 'Cliente Uno' }]);
     expect(email.enviados[0]!.texto).toContain('Cliente Uno');
-    expect(email.enviados[0]!.texto).toContain('Empresa Uno');
+    expect(email.enviados[0]!.texto).toContain('EMPRESA UNO');
     expect(email.enviados[0]!.texto).toContain('Contabilidad: 18.0.0 → 19.1.0');
     const guardada = await empresas.findById('e1');
     expect(guardada?.ultimoAvisoVersionesEn).toEqual(clock.now());
@@ -120,7 +120,7 @@ describe('AvisarEmpresasService', () => {
     await empresas.save(
       new Empresa({
         id: 'e2',
-        nombre: 'Empresa Al Día',
+        nombre: 'EMPRESA AL DÍA',
         sistemasContratados: ['Contabilidad'],
         versionesInstaladas: { Contabilidad: '19.1.0' },
       }),
@@ -129,7 +129,7 @@ describe('AvisarEmpresasService', () => {
     const resultados = await service.ejecutar({ actor: actor(), empresaIds: ['e2'], tipo: 'versiones' });
 
     expect(resultados).toEqual([
-      { empresaId: 'e2', empresaNombre: 'Empresa Al Día', enviado: false, motivo: 'sin_pendientes' },
+      { empresaId: 'e2', empresaNombre: 'EMPRESA AL DÍA', enviado: false, motivo: 'sin_pendientes' },
     ]);
     expect(email.enviados).toHaveLength(0);
   });
@@ -163,7 +163,7 @@ describe('AvisarEmpresasService', () => {
     await empresas.save(
       new Empresa({
         id: 'e4',
-        nombre: 'Empresa WhatsApp',
+        nombre: 'EMPRESA WHATSAPP',
         sistemasContratados: ['Contabilidad'],
         versionesInstaladas: { Contabilidad: '18.0.0' },
       }),
@@ -179,7 +179,7 @@ describe('AvisarEmpresasService', () => {
       canal: 'whatsapp',
     });
 
-    expect(resultados).toEqual([{ empresaId: 'e4', empresaNombre: 'Empresa WhatsApp', enviado: true }]);
+    expect(resultados).toEqual([{ empresaId: 'e4', empresaNombre: 'EMPRESA WHATSAPP', enviado: true }]);
     expect(email.enviados).toHaveLength(0);
     expect(gateway.webhooksLlamados).toHaveLength(1);
     expect(gateway.webhooksLlamados[0]!.url).toBe('https://n8n.example.com/wh');
@@ -349,7 +349,7 @@ describe('AvisarEmpresasService — historial de avisos enviados', () => {
     await empresas.save(
       new Empresa({
         id: 'e1',
-        nombre: 'Empresa Uno',
+        nombre: 'EMPRESA UNO',
         sistemasContratados: ['Contabilidad', 'Nóminas'],
         versionesInstaladas: { Contabilidad: '18.0.0', 'Nóminas': '11.0.0' },
       }),
@@ -361,7 +361,7 @@ describe('AvisarEmpresasService — historial de avisos enviados', () => {
     // Dos sistemas desactualizados => dos filas, no un solo registro de "ya le avisé".
     expect(avisos.items).toHaveLength(2);
     const conta = avisos.items.find((a) => a.sistema === 'Contabilidad')!;
-    expect(conta.empresaNombre).toBe('Empresa Uno');
+    expect(conta.empresaNombre).toBe('EMPRESA UNO');
     expect(conta.tipo).toBe('sistema');
     expect(conta.versionInstalada).toBe('18.0.0');
     expect(conta.versionOficial).toBe('19.1.0');
@@ -394,7 +394,7 @@ describe('AvisarEmpresasService — historial de avisos enviados', () => {
     await empresas.save(
       new Empresa({
         id: 'e1',
-        nombre: 'Empresa Uno',
+        nombre: 'EMPRESA UNO',
         sistemasContratados: ['Contabilidad', 'Nóminas'],
         versionesInstaladas: { Contabilidad: '18.0.0', 'Nóminas': '11.0.0' },
       }),
@@ -460,7 +460,7 @@ describe('AvisarEmpresasService — lo ya avisado (paridad con el CRM viejo)', (
     await versiones.save(new VersionSistema({ id: 'v2', sistema: 'Nóminas', versionActual: '12.0.0' }));
     const empresa = new Empresa({
       id: 'e1',
-      nombre: 'Empresa Uno',
+      nombre: 'EMPRESA UNO',
       sistemasContratados: ['Contabilidad', 'Nóminas'],
       versionesInstaladas: { Contabilidad: '18.0.0', 'Nóminas': '11.0.0' },
       vigencias: { Contabilidad: '2026-09-30' },

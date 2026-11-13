@@ -109,7 +109,7 @@ describe('ExcelUnificadoService', () => {
       {
         nombre: 'Empresas',
         columnas: [{ header: 'Nombre', key: 'nombre' }],
-        filas: [{ nombre: 'Nueva Empresa SA' }],
+        filas: [{ nombre: 'NUEVA EMPRESA SA' }],
       },
       {
         nombre: 'Contactos',
@@ -117,7 +117,7 @@ describe('ExcelUnificadoService', () => {
           { header: 'Nombre', key: 'nombre' },
           { header: 'Empresa', key: 'empresa' },
         ],
-        filas: [{ nombre: 'Laura', empresa: 'Nueva Empresa SA' }],
+        filas: [{ nombre: 'Laura', empresa: 'NUEVA EMPRESA SA' }],
       },
       { nombre: 'Tickets', columnas: [{ header: 'Folio', key: 'folio' }], filas: [{ folio: '999' }] },
     ]);
@@ -125,7 +125,7 @@ describe('ExcelUnificadoService', () => {
     const resumen = await unificado.importar(actor(), nuevoBuffer);
     expect(resumen.empresas).toMatchObject({ creadas: 1 });
     expect(resumen.contactos).toMatchObject({ creadas: 1 });
-    expect([...empresaRepo.items.values()].some((e) => e.nombre === 'Nueva Empresa SA')).toBe(true);
+    expect([...empresaRepo.items.values()].some((e) => e.nombre === 'NUEVA EMPRESA SA')).toBe(true);
   });
 
   it('sin permiso de escribir contactos, esa hoja se omite pero empresas sí se procesa', async () => {

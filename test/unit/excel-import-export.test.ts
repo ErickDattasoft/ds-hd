@@ -44,7 +44,7 @@ describe('EmpresaExcelService', () => {
   });
 
   it('exporta e importa de vuelta: crea las que no existen', async () => {
-    await empresaService.crear(actor(), { nombre: 'Empresa Uno', rfc: 'ABC010101XXX', sistemasContratados: ['Contabilidad'] });
+    await empresaService.crear(actor(), { nombre: 'EMPRESA UNO', rfc: 'ABC010101XXX', sistemasContratados: ['Contabilidad'] });
     const buffer = await excel.exportar();
 
     const empresaRepo2 = new InMemoryEmpresaRepository();
@@ -56,13 +56,13 @@ describe('EmpresaExcelService', () => {
     expect(resumen).toMatchObject({ total: 1, creadas: 1, actualizadas: 0, errores: [] });
     const lista = await empresaService2.listar();
     expect(lista).toHaveLength(1);
-    expect(lista[0]!.nombre).toBe('Empresa Uno');
+    expect(lista[0]!.nombre).toBe('EMPRESA UNO');
     expect(lista[0]!.rfc).toBe('ABC010101XXX');
     expect(lista[0]!.sistemasContratados).toEqual(['Contabilidad']);
   });
 
   it('una segunda importación con el mismo nombre actualiza en vez de duplicar', async () => {
-    await empresaService.crear(actor(), { nombre: 'Empresa Dos', telefono: '111' });
+    await empresaService.crear(actor(), { nombre: 'EMPRESA DOS', telefono: '111' });
     const buffer1 = await excel.exportar();
     await excel.importar(actor(), buffer1); // idéntico -> debería actualizar, no duplicar
 
@@ -75,7 +75,7 @@ describe('EmpresaExcelService', () => {
     const buffer = await io.escribir(
       'Empresas',
       [{ header: 'Nombre', key: 'nombre' }, { header: 'RFC', key: 'rfc' }],
-      [{ nombre: '', rfc: 'X' }, { nombre: 'Empresa Tres', rfc: '' }],
+      [{ nombre: '', rfc: 'X' }, { nombre: 'EMPRESA TRES', rfc: '' }],
     );
     const resumen = await excel.importar(actor(), buffer);
     expect(resumen.total).toBe(2);

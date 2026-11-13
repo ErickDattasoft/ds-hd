@@ -151,7 +151,7 @@ describe('versiones de sistemas', () => {
     );
     await t.empresaRepo.save(
       new (await import('../../src/core/entities/Empresa.js')).Empresa({
-        id: 'e1', nombre: 'Rezagada SA', sistemasContratados: ['Contabilidad'],
+        id: 'e1', nombre: 'REZAGADA SA', sistemasContratados: ['Contabilidad'],
         versionesInstaladas: { Contabilidad: '17.0.0' },
       }),
     );
@@ -159,7 +159,7 @@ describe('versiones de sistemas', () => {
 
     const rep = await agent.get('/app/versiones/reporte');
     expect(rep.status).toBe(200);
-    expect(rep.text).toContain('Rezagada SA');
+    expect(rep.text).toContain('REZAGADA SA');
     expect(rep.text).toContain('17.0.0');
 
     const xlsx = await agent.get('/app/versiones/reporte.xlsx');
@@ -168,11 +168,11 @@ describe('versiones de sistemas', () => {
 
     const imprimir = await agent.get('/app/versiones/reporte/imprimir');
     expect(imprimir.status).toBe(200);
-    expect(imprimir.text).toContain('Rezagada SA');
+    expect(imprimir.text).toContain('REZAGADA SA');
     expect(imprimir.text).toContain('data-logo-img');
 
     // filtro a otra empresa → la fila de Rezagada (su versión 17.0.0) ya no sale
-    // ("Rezagada SA" seguiría en el <select> de empresas, por eso comparamos la versión)
+    // ("REZAGADA SA" seguiría en el <select> de empresas, por eso comparamos la versión)
     const vacio = await agent.get('/app/versiones/reporte?empresa=otra');
     expect(vacio.text).not.toContain('17.0.0');
     expect(vacio.text).toContain('Ninguna empresa con sistemas o licencias desactualizadas');

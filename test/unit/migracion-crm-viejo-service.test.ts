@@ -412,7 +412,7 @@ describe('MigracionCrmViejoService', () => {
       secciones: ['empresas', 'contactos'],
     });
     expect(r.contactosSinEmpresa).toHaveLength(1);
-    expect((await empresas.list()).some((e) => e.nombre.startsWith('Sin empresa'))).toBe(true);
+    expect((await empresas.list()).some((e) => e.nombre.startsWith('SIN EMPRESA'))).toBe(true);
   });
 
   it('retira la empresa buzón cuando ya no cuelga nadie de ella', async () => {
@@ -425,7 +425,7 @@ describe('MigracionCrmViejoService', () => {
       simulacro: false,
       secciones: ['empresas', 'contactos'],
     });
-    expect((await empresas.list()).some((e) => e.nombre.startsWith('Sin empresa'))).toBe(true);
+    expect((await empresas.list()).some((e) => e.nombre.startsWith('SIN EMPRESA'))).toBe(true);
 
     // En el CRM viejo le asignan su empresa y se vuelve a importar: el buzón sobra.
     const corregido = respaldo();
@@ -434,7 +434,7 @@ describe('MigracionCrmViejoService', () => {
       simulacro: false,
       secciones: ['empresas', 'contactos'],
     });
-    expect((await empresas.list()).some((e) => e.nombre.startsWith('Sin empresa'))).toBe(false);
+    expect((await empresas.list()).some((e) => e.nombre.startsWith('SIN EMPRESA'))).toBe(false);
   });
 
   it('dos empresas con nombres parecidos no acaban en el mismo documento', async () => {
