@@ -64,6 +64,14 @@ export function destinatariosTicket(
   return { para: copias.map((email) => ({ email })), cc: [], cco, responderA, sinContacto: true };
 }
 
+/**
+ * Leyenda para el cliente: puede contestar el correo tal cual. El "[Ticket #N]" del asunto es lo
+ * que hace que su respuesta regrese a este ticket (ver CorreoEntranteService).
+ */
+export function avisoResponderHtml(numero: number): string {
+  return `<p style="background:#ecfdf5;color:#065f46;padding:8px 12px;border-radius:6px;font-family:sans-serif;font-size:13px">✉️ Si desea agregar información o contestar, puede responder directamente a este correo <strong>sin modificar el asunto</strong> (debe conservar «[Ticket #${numero}]»). Su respuesta se agregará automáticamente a su ticket.</p>`;
+}
+
 /** Una fila `<tr>` de la tabla de datos del ticket en el correo. */
 function fila(k: string, v: string | null | undefined): string {
   return `<tr><td style="padding:6px 12px;font-weight:bold;background:#f3f4f6;width:130px">${k}</td><td style="padding:6px 12px">${esc(
@@ -103,7 +111,7 @@ export function resumenTicketHtml(
     ? `<p style="background:#e0e7ff;color:#4338ca;padding:8px 12px;border-radius:6px;font-size:13px">📨 Este correo es un reenvío — revisa la descripción del ticket por si hay cambios o información nueva.</p>`
     : '';
 
-  return `${avisoSinContacto}${avisoReenvio}
+  return `${avisoSinContacto}${avisoReenvio}${avisoResponderHtml(ticket.numero)}
     <h2 style="font-family:sans-serif">[Ticket #${ticket.numero}] ${esc(ticket.asunto)}</h2>
     <table style="border-collapse:collapse;font-family:sans-serif;font-size:14px">
       ${fila('Empresa', ticket.empresaNombre)}
