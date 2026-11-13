@@ -1509,21 +1509,61 @@
         btnCc.setAttribute('data-email', otroEmail);
       }
     }
+    if (otroEmail) {
+      var copias = wrap.querySelector('[data-c-copias]');
+      if (copias) copias.open = true;
+    }
     if (opt && opt.getAttribute('data-solo-empresa')) {
       // Empresa sin contactos: solo se llena la empresa; el contacto se escribe a mano.
       if (nombre) nombre.value = '';
       if (correo) correo.value = '';
       if (empresa) empresa.value = opt.getAttribute('data-empresa');
+      verCamposContacto(wrap, true);
       if (nombre) nombre.focus();
     } else if (opt) {
       if (nombre) nombre.value = opt.value;
       if (correo) correo.value = opt.getAttribute('data-email') || '';
       if (empresa && opt.getAttribute('data-empresa')) empresa.value = opt.getAttribute('data-empresa');
+      // Contacto elegido: se resume en una tarjeta y se sigue con el asunto.
+      mostrarTarjetaContacto(wrap);
+      var asunto = wrap.closest('form') && wrap.closest('form').querySelector('[name="asunto"]');
+      if (asunto) asunto.focus();
     } else if (nombre) {
       nombre.value = busca.value;
+      // Lo escrito no es un contacto de la lista: se muestran los campos para completarlo.
+      verCamposContacto(wrap, !!busca.value.trim());
     }
     poblarCcPicker(wrap);
   }
+  function verCamposContacto(wrap, ver) {
+    var campos = wrap.querySelector('[data-c-campos]');
+    if (campos) campos.hidden = !ver;
+  }
+  function mostrarTarjetaContacto(wrap) {
+    var tarjeta = wrap.querySelector('[data-c-tarjeta]');
+    if (!tarjeta) return;
+    var val = function (sel) { var el = wrap.querySelector(sel); return el ? el.value.trim() : ''; };
+    var empresa = val('[data-c-empresa]');
+    tarjeta.querySelector('[data-c-t-nombre]').textContent = '✔ ' + (val('[data-c-nombre]') || '(sin nombre)');
+    tarjeta.querySelector('[data-c-t-empresa]').textContent = empresa ? ' · ' + empresa : '';
+    tarjeta.querySelector('[data-c-t-correo]').textContent = val('[data-c-correo]') || 'sin correo';
+    tarjeta.hidden = false;
+    verCamposContacto(wrap, false);
+    var buscador = wrap.querySelector('[data-c-buscador]');
+    if (buscador) buscador.hidden = true;
+  }
+  // ✏️ Cambiar: vuelve a mostrar el buscador y los campos para corregir o elegir a otro.
+  document.addEventListener('click', function (e) {
+    var btn = e.target.closest && e.target.closest('[data-c-cambiar]');
+    if (!btn) return;
+    var wrap = btn.closest('[data-contacto-picker]');
+    wrap.querySelector('[data-c-tarjeta]').hidden = true;
+    verCamposContacto(wrap, true);
+    var buscador = wrap.querySelector('[data-c-buscador]');
+    if (buscador) buscador.hidden = false;
+    var busca = wrap.querySelector('[data-buscar-contacto]');
+    if (busca) { busca.focus(); busca.select(); }
+  });
   function cajaSugerencias(busca) {
     var caja = busca.parentNode.querySelector('.sugerencias');
     if (!caja) {

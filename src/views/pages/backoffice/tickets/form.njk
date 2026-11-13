@@ -25,26 +25,38 @@
 
     <div class="card" data-contacto-picker>
       <p><strong>1 · Contacto</strong></p>
-      <label class="field"><span>🔍 Buscar contacto por empresa, nombre o correo</span>
+      <label class="field" data-c-buscador {{ 'hidden' if (valores.contactoNombre or valores.contactoCorreo or valores.empresaNombre) }}><span>🔍 Buscar contacto por empresa, nombre o correo</span>
         <input data-opciones="ticket-contactos" data-buscar-contacto autocomplete="off" placeholder="Empieza a escribir…" value="{{ valores.contactoNombre }}" />
       </label>
       <datalist id="ticket-contactos">
         {% for c in contactos %}<option value="{{ c.nombre }}" data-email="{{ c.email }}" data-empresa="{{ c.empresa }}" data-otro-nombre="{{ c.otroNombre }}" data-otro-email="{{ c.otroEmail }}" data-otro-rol="{{ c.otroRol }}">{{ c.empresa }}{% if c.rol %} · contacto {{ c.rol }}{% endif %}{% if c.email %} · {{ c.email }}{% endif %}</option>{% endfor %}
         {% for e in empresasSinContacto %}<option value="{{ e }}" data-empresa="{{ e }}" data-solo-empresa="1">🏢 empresa sin contactos registrados</option>{% endfor %}
       </datalist>
-      <div class="form-grid">
+      {% set conContacto = valores.contactoNombre or valores.contactoCorreo or valores.empresaNombre %}
+      <div class="contacto-tarjeta" data-c-tarjeta {{ '' if conContacto else 'hidden' }}>
+        <div>
+          <strong data-c-t-nombre>✔ {{ valores.contactoNombre or '(sin nombre)' }}</strong>
+          <span data-c-t-empresa>{{ ' · ' + valores.empresaNombre if valores.empresaNombre }}</span><br />
+          <span class="muted" data-c-t-correo>{{ valores.contactoCorreo or 'sin correo' }}</span>
+        </div>
+        <button type="button" class="btn btn--ghost btn--sm" data-c-cambiar>✏️ Cambiar</button>
+      </div>
+      <div class="form-grid" data-c-campos hidden>
         <label class="field"><span>Contacto</span><input name="contactoNombre" value="{{ valores.contactoNombre }}" data-c-nombre placeholder="Nombre del contacto" /></label>
         <label class="field"><span>Correo del contacto</span><input type="email" name="contactoCorreo" value="{{ valores.contactoCorreo }}" data-c-correo placeholder="correo@empresa.mx" /></label>
         <label class="field"><span>Empresa</span><input name="empresaNombre" value="{{ valores.empresaNombre }}" data-c-empresa placeholder="Nombre de la empresa" /></label>
       </div>
-      <div class="form-grid">
-        <label class="field"><span>CC</span><input name="cc" value="{{ valores.cc }}" data-c-cc placeholder="correo1@x.com, correo2@x.com" /></label>
-        <p data-c-sugerir-cc hidden><button type="button" class="btn btn--ghost btn--sm" data-c-agregar-cc></button></p>
-        <label class="field"><span>Agregar a CC otro contacto de la empresa</span>
-          <select data-c-cc-picker disabled><option value="">Elige primero el contacto</option></select>
-        </label>
-        <label class="field"><span>CCO</span><input name="cco" value="{{ valores.cco }}" placeholder="correo@x.com" /></label>
-      </div>
+      <details class="disclosure" data-c-copias{{ ' open' if valores.cc or valores.cco }}>
+        <summary class="disclosure__summary">＋ Copias <span class="disclosure__hint">— CC / CCO</span></summary>
+        <div class="disclosure__body form-grid">
+          <label class="field"><span>CC</span><input name="cc" value="{{ valores.cc }}" data-c-cc placeholder="correo1@x.com, correo2@x.com" /></label>
+          <p data-c-sugerir-cc hidden><button type="button" class="btn btn--ghost btn--sm" data-c-agregar-cc></button></p>
+          <label class="field"><span>Agregar a CC otro contacto de la empresa</span>
+            <select data-c-cc-picker disabled><option value="">Elige primero el contacto</option></select>
+          </label>
+          <label class="field"><span>CCO</span><input name="cco" value="{{ valores.cco }}" placeholder="correo@x.com" /></label>
+        </div>
+      </details>
     </div>
 
     <div class="card">
