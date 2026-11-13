@@ -226,30 +226,41 @@ export class EmpresaController {
     });
   };
 
+  /**
+   * Contacto principal capturado en el mismo form de la empresa (alta, o edición de una empresa
+   * que aún no tiene contactos) — como el CRM viejo. Opcional: si falla (p. ej. sin permiso
+   * contactos:crear), la empresa ya quedó guardada y no se revierte por esto.
+   */
+  private async crearContactoPrincipal(req: Request, b: Record<string, unknown>, empresaId: string): Promise<void> {
+    const contactoNombre = str(b.contactoNombre).trim();
+    if (contactoNombre.length < 2) return;
+    try {
+      const c = await this.contactos.crear(req.user!, {
+        nombre: contactoNombre,
+        empresaId,
+        puesto: str(b.contactoPuesto),
+        email: str(b.contactoEmail),
+        telefono: str(b.contactoTelefono),
+        celular: str(b.contactoCelular),
+      });
+      // Es quien pide el soporte: queda como contacto principal de la empresa.
+      await this.empresas.marcarContactos(req.user!, empresaId, { principal: c.id });
+    } catch {
+      // opcional — la empresa ya se guardó, no se bloquea el flujo por esto.
+    }
+  }
+
   crearPost = async (req: Request, res: Response): Promise<void> => {
     const b = req.body ?? {};
+    // Si no se dieron teléfono/correo generales de la empresa, se usan los del contacto principal.
+    if (!str(b.telefono).trim()) b.telefono = str(b.contactoTelefono).trim() || str(b.contactoCelular).trim();
+    if (!str(b.email).trim()) b.email = str(b.contactoEmail).trim();
     try {
       const e = await this.empresas.crear(req.user!, this.datos(b, await this.catalogoSistemas()));
       // Primer contacto opcional en el mismo paso — como el CRM viejo ("Contactos de esta
       // empresa" en su form de alta). Si falla (p. ej. sin permiso contactos:crear), la empresa
       // ya quedó creada; no se revierte por un campo secundario opcional.
-      const contactoNombre = str(b.contactoNombre).trim();
-      if (contactoNombre.length >= 2) {
-        try {
-          const c = await this.contactos.crear(req.user!, {
-            nombre: contactoNombre,
-            empresaId: e.id,
-            puesto: str(b.contactoPuesto),
-            email: str(b.contactoEmail),
-            telefono: str(b.contactoTelefono),
-            celular: str(b.contactoCelular),
-          });
-          // Es quien pide el soporte: queda como contacto principal de la empresa.
-          await this.empresas.marcarContactos(req.user!, e.id, { principal: c.id });
-        } catch {
-          // opcional — la empresa ya se creó, no se bloquea el flujo por esto.
-        }
-      }
+      await this.crearContactoPrincipal(req, b, e.id);
       res.redirect(`/app/empresas/${e.id}`);
     } catch (err) {
       res.status(422).render('pages/backoffice/empresas/form', {
@@ -370,12 +381,14 @@ export class EmpresaController {
     try {
       // Principal y alternativo solo pueden ser contactos de esta misma empresa.
       const deLaEmpresa = new Set((await this.contactos.listar({ empresaId: id })).map((c) => c.id));
+      const sinContactos = deLaEmpresa.size === 0;
       const elegido = (v: unknown): string | null => (deLaEmpresa.has(str(v)) ? str(v) : null);
       await this.empresas.actualizar(req.user!, id, {
         ...this.datos(b, await this.catalogoSistemas()),
         contactoPrincipalId: elegido(b.contactoPrincipalId),
         contactoAlternativoId: elegido(b.contactoAlternativoId),
       });
+      if (sinContactos) await this.crearContactoPrincipal(req, b, id);
       res.redirect(`/app/empresas/${id}`);
     } catch (err) {
       const empresa = await this.empresas.obtener(id).catch(() => null);

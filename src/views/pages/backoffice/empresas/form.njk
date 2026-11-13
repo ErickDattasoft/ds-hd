@@ -5,23 +5,36 @@
   {% if errores.general %}<p class="alert alert--error">{{ errores.general }}</p>{% endif %}
   <form method="post" action="{{ '/app/empresas' if modo == 'crear' else '/app/empresas/' + empresa.id }}" class="form form--wide">
     <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
-    <label class="field"><span>Nombre</span><input name="nombre" value="{{ valores.nombre }}" required style="text-transform:uppercase" />
+    <label class="field"><span>Nombre de la empresa</span><input name="nombre" value="{{ valores.nombre }}" required style="text-transform:uppercase" />
       {% if errores.nombre %}<em class="field__error">{{ errores.nombre }}</em>{% endif %}</label>
-    <label class="field"><span>Teléfono</span><input type="tel" inputmode="tel" name="telefono" value="{{ valores.telefono }}" /></label>
-    <label class="field"><span>Teléfono alternativo</span><input type="tel" inputmode="tel" name="telefonoAlternativo" value="{{ valores.telefonoAlternativo }}" /></label>
-    <label class="field"><span>Correo</span><input type="email" name="email" autocomplete="email" value="{{ valores.email }}" /></label>
-    <label class="field"><span>Correo alternativo</span><input type="email" name="emailAlternativo" autocomplete="off" value="{{ valores.emailAlternativo }}" /></label>
-    {% if modo == 'crear' and can('contactos:crear') %}
+    {% if (modo == 'crear' or not (contactos and contactos.length)) and can('contactos:crear') %}
     <details class="disclosure" open>
       <summary class="disclosure__summary">👤 Contacto principal <span class="disclosure__hint">— quien pide el soporte; opcional, se pueden agregar más después</span></summary>
       <div class="disclosure__body form">
         <label class="field"><span>Nombre del contacto</span><input name="contactoNombre" value="{{ valores.contactoNombre }}" /></label>
-        <label class="field"><span>Puesto</span><input name="contactoPuesto" value="{{ valores.contactoPuesto }}" /></label>
         <label class="field"><span>Correo del contacto</span><input type="email" name="contactoEmail" autocomplete="off" value="{{ valores.contactoEmail }}" /></label>
         <label class="field"><span>📱 Celular <span class="muted">(WhatsApp)</span></span><input type="tel" name="contactoTelefono" value="{{ valores.contactoTelefono }}" /></label>
         <label class="field"><span>☎️ Tel. oficina</span><input type="tel" name="contactoCelular" value="{{ valores.contactoCelular }}" /></label>
+        <label class="field"><span>Puesto</span><input name="contactoPuesto" value="{{ valores.contactoPuesto }}" /></label>
       </div>
     </details>
+    {% endif %}
+
+    {% if modo == 'crear' %}
+    <details class="disclosure"{{ ' open' if valores.telefono or valores.email or valores.telefonoAlternativo or valores.emailAlternativo }}>
+      <summary class="disclosure__summary">🏢 Teléfono y correo generales de la empresa <span class="disclosure__hint">— opcional; si se dejan vacíos se usan los del contacto</span></summary>
+      <div class="disclosure__body form">
+    <label class="field"><span>Teléfono de la empresa</span><input type="tel" inputmode="tel" name="telefono" value="{{ valores.telefono }}" /></label>
+    <label class="field"><span>Teléfono alternativo de la empresa</span><input type="tel" inputmode="tel" name="telefonoAlternativo" value="{{ valores.telefonoAlternativo }}" /></label>
+    <label class="field"><span>Correo de la empresa</span><input type="email" name="email" autocomplete="email" value="{{ valores.email }}" /></label>
+    <label class="field"><span>Correo alternativo de la empresa</span><input type="email" name="emailAlternativo" autocomplete="off" value="{{ valores.emailAlternativo }}" /></label>
+      </div>
+    </details>
+    {% else %}
+    <label class="field"><span>Teléfono de la empresa</span><input type="tel" inputmode="tel" name="telefono" value="{{ valores.telefono }}" /></label>
+    <label class="field"><span>Teléfono alternativo de la empresa</span><input type="tel" inputmode="tel" name="telefonoAlternativo" value="{{ valores.telefonoAlternativo }}" /></label>
+    <label class="field"><span>Correo de la empresa</span><input type="email" name="email" autocomplete="email" value="{{ valores.email }}" /></label>
+    <label class="field"><span>Correo alternativo de la empresa</span><input type="email" name="emailAlternativo" autocomplete="off" value="{{ valores.emailAlternativo }}" /></label>
     {% endif %}
 
     {% if modo == 'editar' and contactos and contactos.length %}
