@@ -55,6 +55,22 @@ const renombres = (v: unknown): Record<string, string> => {
 };
 
 /** Configuración → Tickets (catálogos, SLA, notificaciones del portal), integraciones y backup. */
+/**
+ * Fecha y hora (de México) para el nombre de los archivos que se descargan: «2026-11-13_17-42».
+ * Con la hora, dos respaldos del mismo día no chocan y el navegador no los renombra «(1)».
+ */
+function sello(ahora = new Date()): string {
+  const p = Object.fromEntries(
+    new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'America/Mexico_City',
+      year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
+    })
+      .formatToParts(ahora)
+      .map((x) => [x.type, x.value]),
+  );
+  return `${p.year}-${p.month}-${p.day}_${p.hour}-${p.minute}`;
+}
+
 export class ConfiguracionController {
   constructor(
     private readonly configTickets: ConfiguracionTicketsService,
@@ -105,7 +121,7 @@ export class ConfiguracionController {
     const dias = this.diasLimpieza(req.query.dias);
     const ids = str(req.query.ids).split(',').filter(Boolean);
     const zip = await this.limpiezaAdjuntos.zip(req.user!, dias, ids);
-    const fecha = new Date().toISOString().slice(0, 10);
+    const fecha = sello();
     res.setHeader('Content-Disposition', `attachment; filename="adjuntos-archivados-${fecha}.zip"`);
     res.type('application/zip').send(zip);
   };
@@ -221,7 +237,7 @@ export class ConfiguracionController {
   backupDescargar = async (req: Request, res: Response): Promise<void> => {
     const datos = await this.backup.exportar();
     await this.backup.registrarDescarga(req.user!);
-    const fecha = new Date().toISOString().slice(0, 10);
+    const fecha = sello();
     res.setHeader('Content-Disposition', `attachment; filename="ds-hd-backup-${fecha}.json"`);
     res.type('application/json').send(JSON.stringify(datos, null, 2));
   };
@@ -237,7 +253,7 @@ export class ConfiguracionController {
       .map(Number)
       .filter((n) => Number.isInteger(n) && n > 0);
     const zip = await this.imagenesRespaldo.zip(req.user!, folios);
-    const fecha = new Date().toISOString().slice(0, 10);
+    const fecha = sello();
     res.setHeader('Content-Disposition', `attachment; filename="ds-hd-imagenes-tickets-${fecha}.zip"`);
     res.type('application/zip').send(zip);
   };
@@ -293,7 +309,7 @@ export class ConfiguracionController {
         contactos: b.contactos === 'on',
         tickets: b.tickets === 'on',
       });
-      const fecha = new Date().toISOString().slice(0, 10);
+      const fecha = sello();
       res.setHeader('Content-Disposition', `attachment; filename="ds-hd-excel-${fecha}.xlsx"`);
       res.type('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet').send(buffer);
     } catch (err) {
