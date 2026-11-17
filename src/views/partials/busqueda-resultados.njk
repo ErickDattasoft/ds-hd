@@ -3,22 +3,27 @@
 {% elif resultados | length == 0 %}
   <p class="muted busqueda-global__hint">Sin resultados para "{{ q }}".</p>
 {% else %}
-  <ul class="busqueda-global__lista">
-    {% for r in resultados %}
-      <li>
-        <a href="{{ r.href }}"{% if r.vista %} data-kb-rapida="{{ r.vista }}" title="Clic: leerlo aquí · Ctrl+clic: abrir en la base de conocimiento"{% endif %}{% if r.fragmento %} class="busqueda-global__con-fragmento"{% endif %}>
-          <span class="busqueda-global__fila">
-            <span class="badge badge--estado">{{ r.etiquetaTipo }}</span>
-            <span class="busqueda-global__titulo">{{ r.titulo }}</span>
-            {% if r.subtitulo %}<span class="muted busqueda-global__sub">{{ r.subtitulo }}</span>{% endif %}
-          </span>
-          {% if r.fragmento %}
-            <span class="kb-fragmento busqueda-global__fragmento">…{{ r.fragmento.antes }}<mark>{{ r.fragmento.coincidencia }}</mark>{{ r.fragmento.despues }}…</span>
-          {% endif %}
-        </a>
-      </li>
-    {% endfor %}
-  </ul>
+  {% for g in grupos %}
+    <section class="busqueda-global__grupo">
+      <h3 class="busqueda-global__grupo-titulo">{{ g.titulo }} <span class="busqueda-global__grupo-n">{{ g.items | length }}</span></h3>
+      <ul class="busqueda-global__lista">
+        {% for r in g.items %}
+          <li>
+            <a href="{{ r.href }}"{% if r.vista %} data-kb-rapida="{{ r.vista }}" title="Clic: leerlo aquí · Ctrl+clic: abrir en la base de conocimiento"{% endif %}{% if r.fragmento %} class="busqueda-global__con-fragmento"{% endif %}>
+              <span class="busqueda-global__fila">
+                {% if r.etiquetaTipo == '⚡ Script' %}<span class="badge badge--estado">⚡ Script</span>{% endif %}
+                <span class="busqueda-global__titulo">{{ r.titulo }}</span>
+                {% if r.subtitulo %}<span class="muted busqueda-global__sub">{{ r.subtitulo }}</span>{% endif %}
+              </span>
+              {% if r.fragmento %}
+                <span class="kb-fragmento busqueda-global__fragmento">…{{ r.fragmento.antes }}<mark>{{ r.fragmento.coincidencia }}</mark>{{ r.fragmento.despues }}…</span>
+              {% endif %}
+            </a>
+          </li>
+        {% endfor %}
+      </ul>
+    </section>
+  {% endfor %}
 {% endif %}
 {% if puedeKB and q | length >= 2 %}
   <a class="busqueda-global__ver-kb" href="/app/kb?q={{ q | urlencode }}">📚 Buscar «{{ q }}» en toda la base de conocimiento →</a>
