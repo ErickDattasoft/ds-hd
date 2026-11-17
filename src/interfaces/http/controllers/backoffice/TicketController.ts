@@ -335,17 +335,19 @@ export class TicketController {
             actor: req.user!,
             ticketId: ticket.id,
             agenteUid: str(b.agenteUid),
-            // Con «Enviar correo al cliente» el agente ya recibe ese correo en copia: un solo correo.
-            notificar: b.enviarCorreo !== 'on',
+            // El agente ya va en copia del correo del ticket nuevo (con o sin cliente): un solo correo.
+            notificar: false,
           })
           .catch(() => {});
       }
       await this.subirAdjuntosIniciales(req.user!, ticket.id, b.adjuntosNuevos);
       // Casilla "Enviar correo al cliente" (como en el CRM viejo): el correo con la descripción y
       // sus imágenes. Si no hay a quién mandarlo, el ticket igual queda creado.
-      if (b.enviarCorreo === 'on') {
-        await this.reenviarCorreo.ejecutar({ actor: req.user!, ticketId: ticket.id, esReenvio: false }).catch(() => {});
-      }
+      // Un solo correo al crear: al cliente con copia a la lista de «Correos de notificación»
+      // (Configuración → Tickets) y al agente; sin la casilla, ese mismo correo solo al equipo.
+      await this.reenviarCorreo
+        .ejecutar({ actor: req.user!, ticketId: ticket.id, esReenvio: false, soloEquipo: b.enviarCorreo !== 'on' })
+        .catch(() => {});
 
       res.redirect(b.guardarYNuevo === '1' ? '/app/tickets/nuevo?ok=1' : `/app/tickets/${ticket.id}`);
     } catch (err) {

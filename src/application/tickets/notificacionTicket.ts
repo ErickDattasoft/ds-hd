@@ -90,6 +90,8 @@ export function resumenTicketHtml(
   opts: {
     reenvio?: boolean;
     sinContacto?: boolean;
+    /** Solo al equipo: se creó sin «Enviar correo al cliente». */
+    soloEquipo?: boolean;
     adjuntos?: readonly AdjuntoTicketMeta[];
     /** URL pública de la app: con ella las imágenes de la descripción se muestran enlazadas. */
     baseUrl?: string;
@@ -104,14 +106,16 @@ export function resumenTicketHtml(
         .map((u, i) => `<a href="${u}">Imagen ${i + 1}</a>`)
         .join(' · ')}</p>`
     : '';
-  const avisoSinContacto = opts.sinContacto
+  const avisoSinContacto = opts.soloEquipo
+    ? `<p style="background:#fef3c7;color:#92400e;padding:8px 12px;border-radius:6px;font-size:13px">🔒 Solo para el equipo — este ticket se creó sin enviar correo al cliente.</p>`
+    : opts.sinContacto
     ? `<p style="background:#fef3c7;color:#92400e;padding:8px 12px;border-radius:6px;font-size:13px">⚠️ El contacto no tiene correo registrado — este ticket no se notificó al cliente.</p>`
     : '';
   const avisoReenvio = opts.reenvio
     ? `<p style="background:#e0e7ff;color:#4338ca;padding:8px 12px;border-radius:6px;font-size:13px">📨 Este correo es un reenvío — revisa la descripción del ticket por si hay cambios o información nueva.</p>`
     : '';
 
-  return `${avisoSinContacto}${avisoReenvio}${avisoResponderHtml(ticket.numero)}
+  return `${avisoSinContacto}${avisoReenvio}${opts.soloEquipo ? '' : avisoResponderHtml(ticket.numero)}
     <h2 style="font-family:sans-serif">[Ticket #${ticket.numero}] ${esc(ticket.asunto)}</h2>
     <table style="border-collapse:collapse;font-family:sans-serif;font-size:14px">
       ${fila('Empresa', ticket.empresaNombre)}

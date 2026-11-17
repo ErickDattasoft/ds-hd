@@ -18,6 +18,9 @@ export interface ReenviarCorreoInput {
   ticketId: string;
   /** `false` = correo al crear el ticket (casilla "Enviar correo al cliente"), no un reenvío. */
   esReenvio?: boolean;
+  /** Solo a la lista de notificación y al agente (ticket creado sin «Enviar correo al cliente»):
+   * el equipo se entera igual, pero el cliente no recibe nada. */
+  soloEquipo?: boolean;
 }
 
 /** Caso de uso: reenviar al cliente el correo con el resumen actual del ticket. */
@@ -48,6 +51,7 @@ export class ReenviarCorreoTicketService {
 
     const cfg = await this.config.obtenerTickets();
     const hayLista = cfg.correosNotificacion.some((e) => e.includes('@'));
+    if (input.soloEquipo && !hayLista && !ticket.agenteAsignadoUid) return { enviadoA: [] };
     if (!ticket.contactoCorreo?.trim() && !hayLista) {
       throw new ValidationError(
         'El ticket no tiene correo de contacto y no hay correos de notificación configurados',
@@ -59,7 +63,7 @@ export class ReenviarCorreoTicketService {
       ? await this.usuarios.findByUid(ticket.agenteAsignadoUid)
       : null;
     const dest = destinatariosTicket(
-      ticket,
+      input.soloEquipo ? { contactoCorreo: null, contactoNombre: null } : ticket,
       cfg.correosNotificacion,
       agente?.email.value ?? input.actor.email,
     );
@@ -78,6 +82,7 @@ export class ReenviarCorreoTicketService {
       html: resumenTicketHtml(ticket, eventos, {
         reenvio: input.esReenvio !== false,
         sinContacto: dest.sinContacto,
+        soloEquipo: input.soloEquipo === true,
         adjuntos,
         baseUrl: this.baseUrl,
       }),
@@ -87,7 +92,7 @@ export class ReenviarCorreoTicketService {
     const enviadoA = dest.para.map((p) => p.email);
     await registrarEvento(this.tickets, this.ids, ticket.id, {
       tipo: 'correo',
-      resumen: `${input.esReenvio === false ? 'Correo del ticket nuevo' : 'Reenvío de correo'} a ${enviadoA.join(', ')}`,
+      resumen: `${input.soloEquipo ? 'Aviso al equipo del ticket nuevo (sin correo al cliente)' : input.esReenvio === false ? 'Correo del ticket nuevo' : 'Reenvío de correo'} a ${enviadoA.join(', ')}`,
       actor: input.actor,
       at: ahora,
     });
