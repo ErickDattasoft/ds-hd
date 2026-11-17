@@ -3310,13 +3310,13 @@
       .writeText(url)
       .then(function () {
         var original = btn.textContent;
-        btn.textContent = '✅ Link copiado';
+        btn.textContent = btn.getAttribute('data-copiado') || '✅ Link copiado';
         setTimeout(function () { btn.textContent = original; }, 1800);
-        toast('🔗 Link de registro copiado');
+        toast(btn.getAttribute('data-toast') || '🔗 Link de registro copiado');
       })
       .catch(function () {
         // Sin permiso de portapapeles (o sin HTTPS): al menos déjalo seleccionable a mano.
-        window.prompt('Copia este link para compartir:', url);
+        window.prompt('Copia este link:', url);
       });
   });
 

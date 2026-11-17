@@ -27,8 +27,8 @@
           <td>{{ v.sistema }}</td>
           <td><strong>{{ v.versionActual }}</strong></td>
           <td>{{ v.fechaLiberacion or '—' }}</td>
-          <td>{% if v.linkDescarga %}<a href="{{ v.linkDescarga }}" rel="noopener">enlace</a>{% else %}—{% endif %}</td>
-          <td>{% if v.linkCartaTecnica %}<a href="{{ v.linkCartaTecnica }}" rel="noopener">carta</a>{% else %}—{% endif %}</td>
+          <td>{% if v.linkDescarga %}<span style="white-space:nowrap"><a class="btn btn--sm btn--secondary" href="{{ v.linkDescarga }}" rel="noopener" hx-boost="false" title="Descargar el instalador">⬇ Descargar</a> <button type="button" class="btn btn--sm btn--ghost" data-copiar-link data-link="{{ v.linkDescarga }}" data-copiado="✅" data-toast="📋 Enlace de descarga copiado" title="Copiar el enlace para pegarlo en un correo o WhatsApp">📋</button></span>{% else %}—{% endif %}</td>
+          <td>{% if v.linkCartaTecnica %}<span style="white-space:nowrap"><a class="btn btn--sm btn--secondary" href="{{ v.linkCartaTecnica }}" rel="noopener" hx-boost="false" title="Abrir la carta técnica">📄 Carta</a> <button type="button" class="btn btn--sm btn--ghost" data-copiar-link data-link="{{ v.linkCartaTecnica }}" data-copiado="✅" data-toast="📋 Enlace de la carta técnica copiado" title="Copiar el enlace para pegarlo en un correo o WhatsApp">📋</button></span>{% else %}—{% endif %}</td>
           <td>{% if can('versiones:editar') %}<a href="/app/versiones/{{ v.id }}/editar">Editar</a>{% endif %}</td>
         </tr>
         {% for sp in v.servicePacks %}
@@ -36,7 +36,7 @@
             <td style="padding-left: var(--space-6)">↳ Service pack</td>
             <td>SP {{ sp.numero }}</td>
             <td>{{ sp.fecha or '—' }}</td>
-            <td>{% if sp.linkDescarga %}<a href="{{ sp.linkDescarga }}" rel="noopener">enlace</a>{% else %}—{% endif %}</td>
+            <td>{% if sp.linkDescarga %}<span style="white-space:nowrap"><a class="btn btn--sm btn--secondary" href="{{ sp.linkDescarga }}" rel="noopener" hx-boost="false" title="Descargar el service pack">⬇ Descargar</a> <button type="button" class="btn btn--sm btn--ghost" data-copiar-link data-link="{{ sp.linkDescarga }}" data-copiado="✅" data-toast="📋 Enlace del service pack copiado" title="Copiar el enlace para pegarlo en un correo o WhatsApp">📋</button></span>{% else %}—{% endif %}</td>
             <td colspan="2"></td>
           </tr>
         {% endfor %}
