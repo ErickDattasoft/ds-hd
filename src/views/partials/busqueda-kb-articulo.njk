@@ -1,0 +1,15 @@
+{#- Artículo de la KB leído dentro de Ctrl+K: sin salir de la página en la que estás. -#}
+<article class="kb-article busqueda-kb">
+  <div class="busqueda-kb__barra">
+    <button type="button" class="btn btn--ghost btn--sm" data-busqueda-volver>← Resultados</button>
+    <button type="button" class="btn btn--sm" data-kb-copiar>📋 Copiar</button>
+    <a class="btn btn--ghost btn--sm" href="/app/kb/{{ articulo.id }}">Abrir en la base de conocimiento ↗</a>
+  </div>
+  <h2 class="busqueda-kb__titulo">{% if articulo.esScript %}⚡ {% endif %}{{ articulo.titulo }}</h2>
+  <p class="muted busqueda-kb__ruta">
+    {{ etiquetaCarpeta }}{% if articulo.rutaDestino %} · <code>{{ articulo.rutaDestino }}</code>{% endif %}
+    · Actualizado {{ articulo.updatedAt | fecha }}
+  </p>
+  <textarea hidden data-kb-markdown>{{ articulo.cuerpoMarkdown }}</textarea>
+  <div class="prose">{{ cuerpoHtml | safe }}</div>
+</article>

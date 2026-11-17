@@ -6,7 +6,7 @@
   <ul class="busqueda-global__lista">
     {% for r in resultados %}
       <li>
-        <a href="{{ r.href }}"{% if r.fragmento %} class="busqueda-global__con-fragmento"{% endif %}>
+        <a href="{{ r.href }}"{% if r.vista %} data-kb-rapida="{{ r.vista }}" title="Clic: leerlo aquí · Ctrl+clic: abrir en la base de conocimiento"{% endif %}{% if r.fragmento %} class="busqueda-global__con-fragmento"{% endif %}>
           <span class="busqueda-global__fila">
             <span class="badge badge--estado">{{ r.etiquetaTipo }}</span>
             <span class="busqueda-global__titulo">{{ r.titulo }}</span>

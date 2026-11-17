@@ -973,6 +973,13 @@ tr.fila--sla-vencido > td { background: color-mix(in srgb, var(--danger) 6%, tra
 .busqueda-global__form input[type="search"] { width: 100%; font-size: var(--text-base); }
 .busqueda-global__resultados { padding: var(--space-2); overflow-y: auto; max-height: calc(70vh - 4rem); }
 .busqueda-global__hint { padding: var(--space-3); }
+/* Artículo de la KB leído dentro de Ctrl+K: la ventana se agranda para leerlo cómodo. */
+.busqueda-global--articulo { width: min(64rem, 94vw); max-height: 86vh; margin-top: 5vh; }
+.busqueda-global__articulo { padding: var(--space-3) var(--space-4); overflow-y: auto; max-height: calc(86vh - 4.5rem); }
+.busqueda-kb__barra { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; position: sticky; top: calc(-1 * var(--space-3)); background: var(--color-surface); padding-block: var(--space-2); z-index: 1; }
+.busqueda-kb__barra a:last-child { margin-left: auto; }
+.busqueda-kb__titulo { margin: var(--space-2) 0 var(--space-1); }
+.busqueda-kb__ruta { font-size: var(--text-xs); margin-bottom: var(--space-3); }
 .busqueda-global__lista { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 2px; }
 .busqueda-global__lista a {
   display: flex;

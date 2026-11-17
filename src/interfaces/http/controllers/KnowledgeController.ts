@@ -135,6 +135,16 @@ export class KnowledgeController {
     });
   };
 
+  /** Artículo dentro de la ventana de Ctrl+K (solo el contenido, sin la página alrededor). */
+  vistaRapida = async (req: Request, res: Response): Promise<void> => {
+    const articulo = await this.kb.ver(req.user!, str(req.params.idOrSlug));
+    res.render('partials/busqueda-kb-articulo', {
+      articulo,
+      etiquetaCarpeta: CARPETA_KB_ETIQUETA[articulo.carpeta],
+      cuerpoHtml: cuerpoHtml(articulo),
+    });
+  };
+
   /** Vista dividida: dos artículos lado a lado (`?a=id&b=id`). */
   comparar = async (req: Request, res: Response): Promise<void> => {
     const user = req.user!;

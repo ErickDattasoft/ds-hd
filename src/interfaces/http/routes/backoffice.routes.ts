@@ -125,6 +125,7 @@ export function backofficeRoutes(container: Container): Router {
   );
 
   r.get('/buscar', (req, res) => container.resolve('busquedaController').buscar(req, res));
+  r.get('/buscar/kb/:idOrSlug', requirePermission('kb:leer'), (req, res) => kb().vistaRapida(req, res));
 
   // Manual de uso — visible para cualquier staff, sin permiso especial (es documentación).
   r.get('/manual', (req, res) => container.resolve('manualController').ver(req, res));

@@ -2509,7 +2509,48 @@
     }
     var resultados = document.getElementById('busqueda-global-resultados');
     if (resultados) resultados.innerHTML = '';
+    cerrarArticuloBusqueda();
   }
+  // Artículo de la KB dentro de Ctrl+K: clic lo muestra aquí mismo (Ctrl+clic abre su página).
+  function cerrarArticuloBusqueda() {
+    var dialog = document.getElementById('busqueda-global');
+    var art = document.getElementById('busqueda-global-articulo');
+    var res = document.getElementById('busqueda-global-resultados');
+    if (!art || art.hidden) return;
+    art.hidden = true;
+    art.innerHTML = '';
+    if (res) res.hidden = false;
+    if (dialog) dialog.classList.remove('busqueda-global--articulo');
+  }
+  document.addEventListener('click', function (e) {
+    var link = e.target.closest && e.target.closest('#busqueda-global [data-kb-rapida]');
+    if (!link || e.ctrlKey || e.metaKey || e.shiftKey || e.button !== 0) return;
+    // En captura y sin propagar: si no, el hx-boost del enlace navega a la página de la KB.
+    e.preventDefault();
+    e.stopPropagation();
+    var dialog = document.getElementById('busqueda-global');
+    var art = document.getElementById('busqueda-global-articulo');
+    var res = document.getElementById('busqueda-global-resultados');
+    if (!dialog || !art) return;
+    art.innerHTML = '<p class="muted busqueda-global__hint">Cargando…</p>';
+    art.hidden = false;
+    if (res) res.hidden = true;
+    dialog.classList.add('busqueda-global--articulo');
+    fetch(link.getAttribute('data-kb-rapida'), { headers: { 'HX-Request': 'true' }, credentials: 'same-origin' })
+      .then(function (r) { if (!r.ok) throw new Error(String(r.status)); return r.text(); })
+      .then(function (html) { art.innerHTML = html; art.scrollTop = 0; })
+      .catch(function () { window.location.href = link.href; });
+  }, true);
+  document.addEventListener('click', function (e) {
+    if (!(e.target.closest && e.target.closest('[data-busqueda-volver]'))) return;
+    cerrarArticuloBusqueda();
+    var input = document.querySelector('#busqueda-global input[name="q"]');
+    if (input) input.focus();
+  });
+  // Escribir otra búsqueda regresa a la lista de resultados.
+  document.addEventListener('input', function (e) {
+    if (e.target.closest && e.target.closest('#busqueda-global')) cerrarArticuloBusqueda();
+  });
   document.addEventListener('keydown', function (e) {
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
       e.preventDefault();
@@ -3403,7 +3444,7 @@
   document.addEventListener('click', function (e) {
     var copiar = e.target.closest('[data-kb-copiar]');
     if (!copiar) return;
-    var fuente = document.querySelector('[data-kb-markdown]');
+    var fuente = (copiar.closest('.kb-article') || document).querySelector('[data-kb-markdown]');
     if (!fuente) return;
     navigator.clipboard.writeText(fuente.value).then(function () {
       var original = copiar.textContent;

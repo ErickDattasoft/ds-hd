@@ -26,6 +26,8 @@ export interface ResultadoBusqueda {
   href: string;
   /** Solo KB: el pedazo del contenido donde apareció lo buscado. */
   fragmento?: FragmentoKB | null;
+  /** Solo KB: vista rápida para leer el artículo dentro de la misma ventana de Ctrl+K. */
+  vista?: string;
 }
 
 /** Búsqueda global (Ctrl+K): empresas, contactos, tickets y KB, acotada a lo que el usuario
@@ -128,6 +130,7 @@ export class BusquedaGlobalService {
               titulo: a.titulo,
               subtitulo: a.subcarpeta || a.categoria || '',
               href: `/app/kb/${a.id}`,
+              vista: `/app/buscar/kb/${a.id}`,
               fragmento: fragmentoKB(a, texto, 50),
             })),
         ),
