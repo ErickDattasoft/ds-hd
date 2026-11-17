@@ -78,35 +78,42 @@
 
   <form method="post" action="/app/configuracion/tickets" class="cat-form" data-cat-form>
     <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
-    <p class="muted cat-leyenda">
-      <strong>▲▼</strong> o arrastra <strong>⠿</strong> para ordenar · <strong>★</strong> lo que trae marcado un ticket nuevo ·
-      escribe sobre un nombre para renombrarlo · <strong>🗑</strong> quita. Nada se guarda hasta que oprimas <strong>Guardar</strong>.
-    </p>
+    {#- Los catálogos (tipos, estados, prioridades…) en su barra desplegable, como el resto;
+        se recuerda abierta o cerrada en este navegador (data-seccion). -#}
+    <details class="disclosure" data-seccion="cfg-tickets-catalogos"{{ ' open data-forzar-abierta' if (errores.estados or errores.estadoInicial or errores.general) }}>
+      <summary class="disclosure__summary">🗂️ Catálogos de tickets <span class="disclosure__hint">— tipos, estados, prioridades, grupos, sistemas, agentes, facturación y distribuidores</span></summary>
+      <div class="disclosure__body">
+        <p class="muted cat-leyenda">
+          <strong>▲▼</strong> o arrastra <strong>⠿</strong> para ordenar · <strong>★</strong> lo que trae marcado un ticket nuevo ·
+          escribe sobre un nombre para renombrarlo · <strong>🗑</strong> quita. Nada se guarda hasta que oprimas <strong>Guardar</strong>.
+        </p>
 
-    {% set pred = config.predeterminados or {} %}
-    <div class="cat-grid">
-      {{ catalogo('🏷️', 'Tipos de Ticket', 'tipos', config.tipos, 'predTipo', pred.tipo,
-           marca = { campo: 'tiposFacturables', lista: config.tiposFacturables, icono: '💲', titulo: 'Se factura (encendido = facturable)' },
-           ayuda = '<strong>💲</strong> = se factura') }}
-      {{ catalogo('🔀', 'Estados', 'estados', config.estados, 'estadoInicial', config.estadoInicial, obligatoria = true,
-           marca = { campo: 'avisarClienteEstados', lista: config.avisarClienteEstados, icono: '📧', titulo: 'Avisar al cliente por correo al pasar a este estado', multi: true },
-           ayuda = 'En orden del flujo. <strong>★</strong> = estado inicial · <strong>📧</strong> = avisa al cliente (Resuelto y Cerrado siempre avisan, con encuesta)') }}
-      {{ catalogo('⚡', 'Prioridades', 'prioridades', config.prioridades, 'predPrioridad', pred.prioridad, sla = config.slaHoras,
-           ayuda = 'Con sus <strong>horas de SLA</strong>') }}
-      {{ catalogo('👥', 'Grupos', 'grupos', config.grupos, 'predGrupo', pred.grupo) }}
-      {{ catalogo('💻', 'Sistemas', 'sistemas', config.sistemas, 'predSistema', pred.sistema) }}
-      {% call eleccion('🧑‍💻', 'Agentes', 'predAgenteUid', pred.agenteUid or '', '— Sin asignar —', agentesPred, 'uid', 'nombre') %}
-        <label class="field--check cat-card__extra"><input type="checkbox" name="predAsignarAlCreador" {{ 'checked' if pred.asignarAlCreador }} />
-          <span>Mejor asignar a quien lo crea (técnicos) — gana sobre la ★</span></label>
-        <p class="cat-card__ayuda muted">Los agentes se dan de alta en Usuarios.</p>
-      {% endcall %}
-      {{ catalogo('🧾', 'Facturación', 'facturacion', facturacionLista, 'predFacturacion', predFacturacionTexto, obligatoria = true,
-           ayuda = 'Opciones del campo Facturación del ticket. <strong>★</strong> = con la que nace un ticket nuevo') }}
-      {{ catalogo('🤝', 'Distribuidores', 'distribuidores', config.distribuidores or ['DATTASOFT'],
-           ayuda = 'Quién atiende el ticket. DATTASOFT siempre está y es el que se usa si no se elige otro.') }}
-    </div>
+        {% set pred = config.predeterminados or {} %}
+        <div class="cat-grid">
+          {{ catalogo('🏷️', 'Tipos de Ticket', 'tipos', config.tipos, 'predTipo', pred.tipo,
+               marca = { campo: 'tiposFacturables', lista: config.tiposFacturables, icono: '💲', titulo: 'Se factura (encendido = facturable)' },
+               ayuda = '<strong>💲</strong> = se factura') }}
+          {{ catalogo('🔀', 'Estados', 'estados', config.estados, 'estadoInicial', config.estadoInicial, obligatoria = true,
+               marca = { campo: 'avisarClienteEstados', lista: config.avisarClienteEstados, icono: '📧', titulo: 'Avisar al cliente por correo al pasar a este estado', multi: true },
+               ayuda = 'En orden del flujo. <strong>★</strong> = estado inicial · <strong>📧</strong> = avisa al cliente (Resuelto y Cerrado siempre avisan, con encuesta)') }}
+          {{ catalogo('⚡', 'Prioridades', 'prioridades', config.prioridades, 'predPrioridad', pred.prioridad, sla = config.slaHoras,
+               ayuda = 'Con sus <strong>horas de SLA</strong>') }}
+          {{ catalogo('👥', 'Grupos', 'grupos', config.grupos, 'predGrupo', pred.grupo) }}
+          {{ catalogo('💻', 'Sistemas', 'sistemas', config.sistemas, 'predSistema', pred.sistema) }}
+          {% call eleccion('🧑‍💻', 'Agentes', 'predAgenteUid', pred.agenteUid or '', '— Sin asignar —', agentesPred, 'uid', 'nombre') %}
+            <label class="field--check cat-card__extra"><input type="checkbox" name="predAsignarAlCreador" {{ 'checked' if pred.asignarAlCreador }} />
+              <span>Mejor asignar a quien lo crea (técnicos) — gana sobre la ★</span></label>
+            <p class="cat-card__ayuda muted">Los agentes se dan de alta en Usuarios.</p>
+          {% endcall %}
+          {{ catalogo('🧾', 'Facturación', 'facturacion', facturacionLista, 'predFacturacion', predFacturacionTexto, obligatoria = true,
+               ayuda = 'Opciones del campo Facturación del ticket. <strong>★</strong> = con la que nace un ticket nuevo') }}
+          {{ catalogo('🤝', 'Distribuidores', 'distribuidores', config.distribuidores or ['DATTASOFT'],
+               ayuda = 'Quién atiende el ticket. DATTASOFT siempre está y es el que se usa si no se elige otro.') }}
+        </div>
+      </div>
+    </details>
 
-    <details class="disclosure">
+    <details class="disclosure" data-seccion="cfg-tickets-correos">
       <summary class="disclosure__summary">📨 Correos de notificación de tickets</summary>
       <div class="disclosure__body form">
         <label class="field"><span>Correos (uno por línea)</span><textarea name="correosNotificacion" rows="3">{{ config.correosNotificacion | join('\n') }}</textarea>
@@ -114,7 +121,7 @@
       </div>
     </details>
 
-    <details class="disclosure">
+    <details class="disclosure" data-seccion="cfg-tickets-respuestas">
       <summary class="disclosure__summary">💬 Respuestas guardadas <span class="disclosure__hint">— textos listos para casos repetidos</span></summary>
       <div class="disclosure__body form">
         <label class="field"><span>Respuestas</span>
@@ -130,9 +137,10 @@
     </div>
   </form>
 
-  <form method="post" action="/app/configuracion/tickets/cambiar-estado" class="card cat-card" style="margin-top: var(--space-4)">
+  <details class="disclosure" data-seccion="cfg-tickets-cambiar-estado"{{ ' open data-forzar-abierta' if (cambioEstado or errorCambioEstado) }} style="margin-top: var(--space-4)">
+  <summary class="disclosure__summary">🔁 Cambiar el estado de tickets que traen un nombre viejo</summary>
+  <form method="post" action="/app/configuracion/tickets/cambiar-estado" class="disclosure__body">
     <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
-    <h2 class="cat-card__titulo">🔁 Cambiar el estado de tickets que traen un nombre viejo</h2>
     <p class="cat-card__ayuda muted">Para tickets con un estado que ya no está en la lista (renombrado antes o traído del CRM viejo).
       Escribe el nombre tal como se ve en el ticket (no importan mayúsculas).</p>
     {% if errorCambioEstado %}<p class="alert alert--error">{{ errorCambioEstado }}</p>{% endif %}
@@ -144,6 +152,7 @@
       <button class="btn btn--sm" type="submit">Cambiar</button>
     </div>
   </form>
+  </details>
 
   {#- El resto de Configuración en cascada, para no tener que salir de aquí: cada barra trae su
       apartado la primera vez que se abre (sin su encabezado). Guardar ahí lleva a su página. -#}
