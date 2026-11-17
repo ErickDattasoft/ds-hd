@@ -3570,10 +3570,23 @@
     var sub = document.getElementById(btn.getAttribute('aria-controls'));
     if (sub) sub.hidden = !abierta;
   }
+  /** Mueve el menú lateral (que se desplaza por su cuenta) para que se vea el submenú abierto:
+   *  Configuración está hasta abajo y sus apartados quedaban fuera de la pantalla. */
+  function mostrarSubmenu(btn) {
+    var sub = document.getElementById(btn.getAttribute('aria-controls'));
+    if (!sub || sub.hidden) return;
+    var destino = sub.querySelector('[aria-current="page"]') || sub.lastElementChild || sub;
+    try { destino.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } catch { destino.scrollIntoView(false); }
+  }
   function initNavCascada() {
     var abiertas = navCascadaAbiertas();
     document.querySelectorAll('[data-nav-cascada]').forEach(function (btn) {
-      pintarNavCascada(btn, abiertas.indexOf(btn.getAttribute('data-nav-cascada')) !== -1);
+      var sub = document.getElementById(btn.getAttribute('aria-controls'));
+      // Si estás en uno de sus apartados (p. ej. Configuración → Tickets), se abre solo.
+      var dentro = !!(sub && sub.querySelector('[aria-current="page"]'));
+      var padreActivo = !!(btn.parentElement && btn.parentElement.querySelector(':scope > [aria-current="page"]'));
+      pintarNavCascada(btn, dentro || padreActivo || abiertas.indexOf(btn.getAttribute('data-nav-cascada')) !== -1);
+      if (dentro) mostrarSubmenu(btn);
     });
   }
   document.addEventListener('click', function (e) {
@@ -3585,6 +3598,7 @@
     var abiertas = navCascadaAbiertas().filter(function (k) { return k !== clave; });
     if (abierta) abiertas.push(clave);
     try { localStorage.setItem(NAV_CASCADA_KEY, JSON.stringify(abiertas)); } catch { /* sin storage: solo esta vez */ }
+    if (abierta) mostrarSubmenu(btn);
   });
 
   /**
