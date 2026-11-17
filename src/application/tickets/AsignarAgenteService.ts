@@ -67,13 +67,16 @@ export class AsignarAgenteService {
       payload: { id: ticket.id, numero: ticket.numero, agenteUid: agente.uid, agenteNombre: agente.nombre },
     });
 
-    const historial = historialActividadHtml(await this.tickets.listarEventos(ticket.id), 'interno');
-    await this.email.enviar({
-      para: [{ email: agente.email.value, nombre: agente.nombre }],
-      asunto: `Ticket #${ticket.numero} asignado a ti`,
-      html: `<p>Se te asignó el ticket <strong>#${ticket.numero} — ${ticket.asunto}</strong> (prioridad ${ticket.prioridad}).</p>${historial}`,
-      tags: ['ticket-asignado', `ticket-${ticket.numero}`],
-    });
+    // Sin correo si se lo asignó uno mismo (ya sabe) o si quien llama lo pidió (ver `notificar`).
+    if (input.notificar !== false && agente.uid !== input.actor.uid) {
+      const historial = historialActividadHtml(await this.tickets.listarEventos(ticket.id), 'interno');
+      await this.email.enviar({
+        para: [{ email: agente.email.value, nombre: agente.nombre }],
+        asunto: `Ticket #${ticket.numero} asignado a ti`,
+        html: `<p>Se te asignó el ticket <strong>#${ticket.numero} — ${ticket.asunto}</strong> (prioridad ${ticket.prioridad}).</p>${historial}`,
+        tags: ['ticket-asignado', `ticket-${ticket.numero}`],
+      });
+    }
 
     this.logger.info('Ticket asignado', { numero: ticket.numero, agente: agente.uid, por: input.actor.uid });
     return ticket;

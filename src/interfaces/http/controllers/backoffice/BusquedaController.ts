@@ -10,6 +10,10 @@ export class BusquedaController {
   buscar = async (req: Request, res: Response): Promise<void> => {
     const q = str(req.query.q);
     const resultados = await this.busqueda.buscar(req.user!, q);
-    res.render('partials/busqueda-resultados', { q, resultados });
+    res.render('partials/busqueda-resultados', {
+      q,
+      resultados,
+      puedeKB: req.user!.permisos.includes('kb:leer'),
+    });
   };
 }

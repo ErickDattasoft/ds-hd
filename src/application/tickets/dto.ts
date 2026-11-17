@@ -71,6 +71,9 @@ export interface AsignarAgenteInput {
   agenteUid: string;
   /** Ignora el límite de capacidad del agente. */
   forzar?: boolean;
+  /** `false` = no mandar el correo «asignado a ti» (p. ej. al crear el ticket con «Enviar
+   * correo al cliente», donde el agente ya va en copia de ese correo). */
+  notificar?: boolean;
 }
 
 /** Datos para agregar una nota (pública o interna) a un ticket. */

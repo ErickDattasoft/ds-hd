@@ -7,6 +7,7 @@ import {
   CARPETA_KB_ETIQUETA,
   esCarpetaKB,
   fragmentoKB,
+  relevanciaKB,
   type ArticuloKB,
 } from '../../../core/entities/ArticuloKB.js';
 import { ValidationError } from '../../../core/errors/DomainError.js';
@@ -29,21 +30,6 @@ function corteDesde(valor: string): Date | null {
   return null;
 }
 
-/** Minúsculas y sin acentos (para puntuar la relevancia igual que busca el repositorio). */
-const plano = (t: string): string => t.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
-
-/** Relevancia: nombre del archivo > ruta (empresa/subcarpeta) > solo contenido. */
-function relevancia(a: ArticuloKB, q: string): number {
-  const t = plano(q.trim());
-  const palabras = t.split(/\s+/).filter(Boolean);
-  const titulo = plano(a.titulo);
-  const ruta = plano(a.rutaDestino ?? '');
-  if (titulo.includes(t)) return 4;
-  if (palabras.every((p) => titulo.includes(p))) return 3;
-  if (ruta.includes(t) || palabras.every((p) => ruta.includes(p) || titulo.includes(p))) return 2;
-  return 1;
-}
-
 const porTitulo = (a: ArticuloKB, b: ArticuloKB) =>
   a.titulo.localeCompare(b.titulo, 'es', { numeric: true, sensitivity: 'base' });
 
@@ -52,7 +38,7 @@ function ordenar(articulos: ArticuloKB[], orden: string, q: string): ArticuloKB[
   if (orden === 'za') return out.sort((a, b) => porTitulo(b, a));
   if (orden === 'recientes') return out.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
   if (orden === 'az' || !q) return out.sort(porTitulo);
-  return out.sort((a, b) => relevancia(b, q) - relevancia(a, q) || porTitulo(a, b));
+  return out.sort((a, b) => relevanciaKB(b, q) - relevanciaKB(a, q) || porTitulo(a, b));
 }
 
 /** Contenido del artículo como HTML: Markdown si es `.md`; si no (scripts, .txt), tal cual. */

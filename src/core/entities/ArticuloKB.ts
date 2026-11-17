@@ -143,6 +143,19 @@ function plano(texto: string): string {
   return texto.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 }
 
+/** Relevancia de un artículo para una búsqueda: nombre del archivo > ruta (empresa/subcarpeta)
+ * > solo contenido. Más alto = más arriba. */
+export function relevanciaKB(a: ArticuloKB, q: string): number {
+  const t = plano(q.trim());
+  const palabras = t.split(/\s+/).filter(Boolean);
+  const titulo = plano(a.titulo);
+  const ruta = plano(a.rutaDestino ?? '');
+  if (titulo.includes(t)) return 4;
+  if (palabras.every((p) => titulo.includes(p))) return 3;
+  if (ruta.includes(t) || palabras.every((p) => ruta.includes(p) || titulo.includes(p))) return 2;
+  return 1;
+}
+
 /**
  * ¿El artículo coincide con una búsqueda? Busca en nombre, ruta (empresa/subcarpetas), tags y
  * contenido, sin distinguir mayúsculas ni acentos. Por defecto (`fraseExacta=false`) exige que

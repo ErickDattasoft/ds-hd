@@ -330,7 +330,15 @@ export class TicketController {
       });
 
       if (str(b.agenteUid) && req.user!.permisos.includes('tickets:asignar') && b.asignarAMi !== 'on') {
-        await this.asignar.ejecutar({ actor: req.user!, ticketId: ticket.id, agenteUid: str(b.agenteUid) }).catch(() => {});
+        await this.asignar
+          .ejecutar({
+            actor: req.user!,
+            ticketId: ticket.id,
+            agenteUid: str(b.agenteUid),
+            // Con «Enviar correo al cliente» el agente ya recibe ese correo en copia: un solo correo.
+            notificar: b.enviarCorreo !== 'on',
+          })
+          .catch(() => {});
       }
       await this.subirAdjuntosIniciales(req.user!, ticket.id, b.adjuntosNuevos);
       // Casilla "Enviar correo al cliente" (como en el CRM viejo): el correo con la descripción y

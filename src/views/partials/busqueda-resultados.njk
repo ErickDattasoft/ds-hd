@@ -1,17 +1,25 @@
 {% if q | length < 2 %}
-  <p class="muted busqueda-global__hint">Escribe al menos 2 letras…</p>
+  <p class="muted busqueda-global__hint">Escribe al menos 2 letras…{% if puedeKB %} También busca dentro de la base de conocimiento.{% endif %}</p>
 {% elif resultados | length == 0 %}
   <p class="muted busqueda-global__hint">Sin resultados para "{{ q }}".</p>
 {% else %}
   <ul class="busqueda-global__lista">
     {% for r in resultados %}
       <li>
-        <a href="{{ r.href }}">
-          <span class="badge badge--estado">{{ r.etiquetaTipo }}</span>
-          <span class="busqueda-global__titulo">{{ r.titulo }}</span>
-          {% if r.subtitulo %}<span class="muted busqueda-global__sub">{{ r.subtitulo }}</span>{% endif %}
+        <a href="{{ r.href }}"{% if r.fragmento %} class="busqueda-global__con-fragmento"{% endif %}>
+          <span class="busqueda-global__fila">
+            <span class="badge badge--estado">{{ r.etiquetaTipo }}</span>
+            <span class="busqueda-global__titulo">{{ r.titulo }}</span>
+            {% if r.subtitulo %}<span class="muted busqueda-global__sub">{{ r.subtitulo }}</span>{% endif %}
+          </span>
+          {% if r.fragmento %}
+            <span class="kb-fragmento busqueda-global__fragmento">…{{ r.fragmento.antes }}<mark>{{ r.fragmento.coincidencia }}</mark>{{ r.fragmento.despues }}…</span>
+          {% endif %}
         </a>
       </li>
     {% endfor %}
   </ul>
+{% endif %}
+{% if puedeKB and q | length >= 2 %}
+  <a class="busqueda-global__ver-kb" href="/app/kb?q={{ q | urlencode }}">📚 Buscar «{{ q }}» en toda la base de conocimiento →</a>
 {% endif %}

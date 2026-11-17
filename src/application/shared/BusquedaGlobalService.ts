@@ -3,8 +3,19 @@ import type { IContactoRepository } from '../../core/ports/repositories/IContact
 import type { ITicketQueries } from '../../core/ports/repositories/ITicketQueries.js';
 import type { IKnowledgeRepository } from '../../core/ports/repositories/IKnowledgeRepository.js';
 import type { SessionUser } from './SessionUser.js';
+import {
+  coincideTexto,
+  fragmentoKB,
+  relevanciaKB,
+  type ArticuloKB,
+  type FragmentoKB,
+} from '../../core/entities/ArticuloKB.js';
 
 const LIMITE_POR_TIPO = 5;
+const LIMITE_KB = 8;
+/** La KB solo cambia al reindexar: se guarda un rato en memoria para que cada letra tecleada en
+ * Ctrl+K no vuelva a leer toda la colección de Firestore (cada artículo = 1 lectura). */
+const KB_CACHE_MS = 2 * 60_000;
 
 /** Un resultado de la búsqueda global, ya listo para pintar (título + enlace). */
 export interface ResultadoBusqueda {
@@ -13,6 +24,8 @@ export interface ResultadoBusqueda {
   titulo: string;
   subtitulo: string;
   href: string;
+  /** Solo KB: el pedazo del contenido donde apareció lo buscado. */
+  fragmento?: FragmentoKB | null;
 }
 
 /** Búsqueda global (Ctrl+K): empresas, contactos, tickets y KB, acotada a lo que el usuario
@@ -24,6 +37,21 @@ export class BusquedaGlobalService {
     private readonly tickets: ITicketQueries,
     private readonly kb: IKnowledgeRepository,
   ) {}
+
+  private kbCache: { at: number; articulos: Promise<ArticuloKB[]> } | null = null;
+
+  private articulosKB(): Promise<ArticuloKB[]> {
+    const ahora = Date.now();
+    if (!this.kbCache || ahora - this.kbCache.at > KB_CACHE_MS) {
+      const articulos = this.kb.list();
+      this.kbCache = { at: ahora, articulos };
+      // Si falla, no se queda guardado el error.
+      articulos.catch(() => {
+        if (this.kbCache?.articulos === articulos) this.kbCache = null;
+      });
+    }
+    return this.kbCache.articulos;
+  }
 
   async buscar(user: SessionUser, textoCrudo: string): Promise<ResultadoBusqueda[]> {
     const texto = textoCrudo.trim();
@@ -81,20 +109,28 @@ export class BusquedaGlobalService {
       );
     }
 
+    // kb:leer ya viene filtrado por persona (solo el propietario y a quien él marcó en
+    // Configuración de la KB, ver aplicarAccesoKB); con él se ve toda la KB.
     if (user.permisos.includes('kb:leer')) {
       tareas.push(
-        this.kb
-          .list({ texto })
-          .then((rows) =>
-            // Quien tiene kb:leer ve toda la KB (el acceso es por persona, no por artículo).
-            rows.slice(0, LIMITE_POR_TIPO).map((a) => ({
+        this.articulosKB().then((todos) =>
+          todos
+            .filter((a) => coincideTexto(a, texto, false))
+            .sort(
+              (a, b) =>
+                relevanciaKB(b, texto) - relevanciaKB(a, texto) ||
+                b.updatedAt.getTime() - a.updatedAt.getTime(),
+            )
+            .slice(0, LIMITE_KB)
+            .map((a) => ({
               tipo: 'kb' as const,
-              etiquetaTipo: 'Base de conocimiento',
+              etiquetaTipo: a.esScript ? '⚡ Script' : '📚 KB',
               titulo: a.titulo,
-              subtitulo: a.rutaDestino ?? a.categoria ?? '',
-              href: `/app/kb/${a.slug || a.id}`,
+              subtitulo: a.subcarpeta || a.categoria || '',
+              href: `/app/kb/${a.id}`,
+              fragmento: fragmentoKB(a, texto, 50),
             })),
-          ),
+        ),
       );
     }
 
