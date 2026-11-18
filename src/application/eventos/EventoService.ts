@@ -329,6 +329,25 @@ export class EventoService {
     return ejemplos.length;
   }
 
+  /**
+   * «✉️ Enviarme una prueba»: manda a quien da clic el mismo correo que recibirán los invitados
+   * (asunto «[Prueba]»), con el botón a la vista previa. Funciona en borrador y no lo agrega a la
+   * lista de invitados.
+   */
+  async enviarPrueba(actor: SessionUser, eventoId: string): Promise<string> {
+    const evento = await this.paraGestion(actor, eventoId);
+    const ficticio = {
+      id: 'prueba',
+      nombre: actor.nombre,
+      correo: actor.email,
+      pases: evento.pideConfirmacion ? 2 : 1,
+    } as unknown as InvitadoExterno;
+    await this.mandarCorreoInvitacion(evento, ficticio, {
+      link: `${this.baseUrl}/app/eventos/${evento.id}/vista-previa?nombre=${encodeURIComponent(actor.nombre)}`,
+    });
+    return actor.email;
+  }
+
   /** Borra el evento y todas sus inscripciones. Permanente. */
   async eliminar(actor: SessionUser, id: string): Promise<void> {
     const evento = await this.paraGestion(actor, id);
@@ -747,10 +766,11 @@ export class EventoService {
   private async mandarCorreoInvitacion(
     evento: Evento,
     inv: (InvitacionEmpresa | InvitadoExterno),
+    prueba?: { link: string },
   ): Promise<void> {
     if (!inv.correo) throw new ValidationError('Este invitado no tiene correo; agrégaselo o mándala por WhatsApp');
     const nombre = 'empresaNombre' in inv ? (inv.paraNombre ?? inv.empresaNombre) : inv.nombre || inv.paraNombre || '';
-    const link = this.linkInvitacion(evento, inv);
+    const link = prueba?.link ?? this.linkInvitacion(evento, inv);
     const esc = (t: string) => t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     const fecha = evento.fechaHora.toLocaleString('es-MX', {
       timeZone: ZONA_MEXICO,
@@ -773,7 +793,7 @@ export class EventoService {
     const adorno = est.adorno ? `<p style="font-size:22px;letter-spacing:10px;margin:0 0 6px;color:${est.color}">${est.adorno} ${est.adorno} ${est.adorno}</p>` : '';
     await this.email.enviar({
       para: [{ email: inv.correo, nombre: nombre || undefined }],
-      asunto: evento.tipo === 'felicitacion' ? evento.titulo : `Invitación: ${evento.titulo}`,
+      asunto: `${prueba ? '[Prueba] ' : ''}${evento.tipo === 'felicitacion' ? evento.titulo : `Invitación: ${evento.titulo}`}`,
       html: `<div style="font-family:${est.fuente};max-width:560px;margin:auto;text-align:center;background:${est.fondo};color:${est.texto};padding:28px 22px;border-radius:14px;border-top:6px solid ${est.color}">
         <p style="font-size:16px">¡Hola${nombre ? ` ${esc(nombre)}` : ''}! 👋</p>
         ${adorno}

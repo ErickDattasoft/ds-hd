@@ -8,6 +8,9 @@
       <p>Revisa que el enlace esté completo, o pide que te lo vuelvan a mandar.</p>
     </div>
   {% else %}
+    {% if vistaPrevia %}
+      <p class="alert">👁 <strong>Vista previa</strong>: así verá la invitación cada invitado (con su nombre y sus pases). Aquí no se guarda nada{% if evento.estado == 'borrador' %}; el evento sigue en <strong>borrador</strong>{% endif %}. <a href="/app/eventos/{{ evento.id }}">← Volver al evento</a></p>
+    {% endif %}
     <header class="evento-encabezado inv-portada">
       <p class="inv-saludo">
         {% if evento.tipo == 'felicitacion' %}{% if nombre %}Para <span class="nombre-sensible">{{ nombre }}</span> {% endif %}🎉
@@ -51,7 +54,7 @@
           {% endif %}
         {% elif mostrarFormulario and not evento.yaPaso %}
           {% if errores.general %}<p class="alert alert--error">{{ errores.general }}</p>{% endif %}
-          <form method="post" action="/eventos/{{ evento.id }}/i/{{ inv.token }}" class="form" data-form-rsvp>
+          <form method="post" action="{{ '#' if vistaPrevia else '/eventos/' + evento.id + '/i/' + inv.token }}" class="form" data-form-rsvp>
             <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
             <div class="inv-opciones" role="radiogroup" aria-label="¿Vas a ir?">
               <label class="inv-opcion">
@@ -81,7 +84,7 @@
             <label class="field"><span>¿Algo que quieras decirnos? <span class="muted">(opcional)</span></span>
               <textarea name="mensaje" rows="3" maxlength="1000">{{ valores.mensaje }}</textarea>
             </label>
-            <button class="btn evento-enviar" type="submit">Enviar respuesta</button>
+            <button class="btn evento-enviar" type="submit"{% if vistaPrevia %} disabled title="Es la vista previa: aquí no se envía"{% endif %}>Enviar respuesta</button>
           </form>
         {% elif evento.yaPaso %}
           <p class="muted">Este evento ya pasó.</p>
@@ -89,7 +92,7 @@
       </section>
     {% endif %}
 
-    {% if user and can('eventos:gestionar') %}
+    {% if user and can('eventos:gestionar') and not vistaPrevia %}
       <p class="muted inv-staff">Lo estás viendo como staff (estado: <strong>{{ evento.estado }}</strong>). Lo que contestes aquí cuenta como respuesta del invitado.</p>
     {% endif %}
   {% endif %}

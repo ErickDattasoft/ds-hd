@@ -164,12 +164,30 @@ export class EventoPublicoController {
     }
   };
 
+  /**
+   * 👁 Vista previa (staff, `/app/eventos/:id/vista-previa`): la invitación como la verá un
+   * invitado, con nombre de ejemplo y 2 pases. Sirve en borrador y no guarda nada.
+   */
+  vistaPrevia = async (req: Request, res: Response): Promise<void> => {
+    const evento = await this.eventos.obtener(str(req.params.id));
+    const inv = {
+      pases: evento.pideConfirmacion ? 2 : 1,
+      respuesta: 'pendiente',
+      personas: null,
+      respondioNombre: null,
+      mensaje: null,
+      token: 'vista-previa',
+    };
+    const nombre = str(req.query.nombre).trim().slice(0, 60) || 'Juan Pérez';
+    this.renderInvitacion(res, evento, nombre, inv, { vistaPrevia: true });
+  };
+
   private renderInvitacion(
     res: Response,
     evento: Evento,
     nombre: string,
     inv: { pases: number; respuesta: string; personas: number | null; respondioNombre: string | null; mensaje: string | null; token: string | null },
-    extra: { cambiar?: boolean; recienEnviada?: boolean; valores?: Record<string, unknown>; errores?: Record<string, string> },
+    extra: { cambiar?: boolean; recienEnviada?: boolean; valores?: Record<string, unknown>; errores?: Record<string, string>; vistaPrevia?: boolean },
   ): void {
     const contesto = inv.respuesta === 'asistira' || inv.respuesta === 'no_asistira';
     res.render('pages/public/invitacion-evento', {
@@ -187,6 +205,7 @@ export class EventoPublicoController {
         mensaje: inv.mensaje ?? '',
       },
       errores: extra.errores ?? {},
+      vistaPrevia: extra.vistaPrevia ?? false,
       navMinima: true,
       volverA: `/app/eventos/${evento.id}#invitaciones`,
       ...this.vista(evento),

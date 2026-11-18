@@ -21,6 +21,26 @@ const PNG_1X1 =
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=';
 
 describe('eventos / webinars', () => {
+  it('👁 vista previa y ✉️ enviarme una prueba: funcionan en borrador y no agregan invitados', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    t.eventoRepo.items.set('ev1', new Evento({ id: 'ev1', titulo: 'Cena de gala', tipo: 'presencial', estilo: 'elegante', fechaHora: enUnaSemana(), estado: 'borrador' }));
+    const { agent, csrf } = await login(t.app, ADMIN.email, ADMIN.password);
+    const vista = await agent.get('/app/eventos/ev1/vista-previa');
+    expect(vista.status).toBe(200);
+    expect(vista.text).toContain('Vista previa');
+    expect(vista.text).toContain('Juan Pérez');
+    expect(vista.text).toContain('inv-estilo--elegante');
+    expect(vista.text).toMatch(/action="#"/);
+    expect((await request(t.app).get('/app/eventos/ev1/vista-previa')).status).toBe(302); // sin sesión, al login
+    const res = await agent.post('/app/eventos/ev1/enviarme-prueba').type('form').send({ _csrf: csrf });
+    expect(res.status).toBe(302);
+    const correo = t.emailSender.enviados.at(-1)!;
+    expect(correo.para[0]?.email).toBe(ADMIN.email);
+    expect(correo.asunto).toBe('[Prueba] Invitación: Cena de gala');
+    expect(correo.html).toContain('/app/eventos/ev1/vista-previa');
+    expect(t.eventoRepo.items.get('ev1')!.invitadosExternos).toHaveLength(0);
+  });
+
   it('🧪 eventos de ejemplo: crea uno por estilo, te manda las invitaciones y no salen en la lista pública', async () => {
     const t = makeTestApp({ usuarios: [ADMIN] });
     const { agent, csrf } = await login(t.app, ADMIN.email, ADMIN.password);

@@ -381,6 +381,10 @@ export function backofficeRoutes(container: Container): Router {
   r.post('/eventos/ejemplos/eliminar', requirePermission('eventos:gestionar'), (req, res) => eventos().ejemplosEliminarPost(req, res));
   r.post('/eventos', requirePermission('eventos:gestionar'), (req, res) => eventos().guardarPost(req, res));
   r.get('/eventos/:id', requirePermission('eventos:leer'), (req, res) => eventos().ver(req, res));
+  r.get('/eventos/:id/vista-previa', requirePermission('eventos:leer'), (req, res) =>
+    container.resolve('eventoPublicoController').vistaPrevia(req, res),
+  );
+  r.post('/eventos/:id/enviarme-prueba', requirePermission('eventos:gestionar'), (req, res) => eventos().enviarPruebaPost(req, res));
   r.get('/eventos/:id/editar', requirePermission('eventos:gestionar'), (req, res) => eventos().editar(req, res));
   r.post('/eventos/:id', requirePermission('eventos:gestionar'), (req, res) => eventos().guardarPost(req, res));
   r.post('/eventos/:id/eliminar', requirePermission('eventos:gestionar'), (req, res) => eventos().eliminarPost(req, res));

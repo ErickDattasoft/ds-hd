@@ -294,6 +294,17 @@ export class EventoController {
   };
 
   /** ✉️ Manda la invitación por correo a UN invitado (empresa o externo). */
+  /** ✉️ Enviarme una prueba: el correo de la invitación a quien da clic. */
+  enviarPruebaPost = async (req: Request, res: Response): Promise<void> => {
+    const id = str(req.params.id);
+    try {
+      const correo = await this.eventos.enviarPrueba(req.user!, id);
+      res.redirect(`/app/eventos/${id}?aviso=${encodeURIComponent(`✉️ Prueba enviada a ${correo}. Revisa tu correo (y spam).`)}#invitaciones`);
+    } catch (err) {
+      this.avisar(res, id, err);
+    }
+  };
+
   invitacionEnviarPost = async (req: Request, res: Response): Promise<void> => {
     const id = str(req.params.id);
     try {
