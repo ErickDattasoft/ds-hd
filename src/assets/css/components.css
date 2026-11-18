@@ -1810,3 +1810,79 @@ fieldset.field { border: 0; padding: 0; margin: 0; }
 .inv-estado { display: flex; flex-wrap: wrap; gap: var(--space-3); font-size: .78em; margin-top: 4px; }
 .inv-estado__mensaje { font-style: italic; }
 .inv-acciones { display: inline-flex; gap: 2px; }
+
+/* ── Estilos de invitación (🎨 Estilo del evento) ────────────────────────────
+   Cada estilo redefine los tokens dentro de la invitación: bloques, botones y formulario
+   toman sus colores sin reglas aparte. «Corporativo» deja los del sitio (claro/oscuro). */
+.inv-estilo {
+  --inv-fuente-titulo: inherit;
+  background: var(--color-bg);
+  color: var(--color-text);
+  border-radius: var(--radius-lg);
+  border-top: 6px solid var(--brand);
+  padding: var(--space-2) var(--space-5) var(--space-5);
+  margin-block: var(--space-4);
+}
+.inv-estilo .evento-encabezado { text-align: center; border-bottom-color: color-mix(in srgb, var(--brand) 35%, transparent); }
+.inv-estilo .evento-encabezado h1 { font-family: var(--inv-fuente-titulo); color: var(--brand); font-size: clamp(1.6rem, 5vw, 2.3rem); }
+.inv-estilo .evento-encabezado__descripcion { margin-inline: auto; }
+.inv-estilo .evento-datos { justify-content: center; }
+.inv-estilo .inv-bloque { border-color: color-mix(in srgb, var(--brand) 25%, var(--color-border)); }
+.inv-estilo .inv-bloque__titulo { color: var(--brand); }
+.inv-adorno { font-size: 1.4rem; letter-spacing: 0.6em; margin: var(--space-3) 0 0 !important; color: var(--brand); }
+.inv-estilo--elegante {
+  --color-bg: #17171b; --color-surface: #202026; --color-surface-2: #2a2a31;
+  --color-border: #3a3730; --color-border-strong: #4a463c;
+  --color-text: #f3eee2; --color-text-muted: #cfc7b4; --color-text-subtle: #a59d8a;
+  --brand: #c9a24a; --brand-contrast: #17171b; --brand-weak: #3a3222;
+  --inv-fuente-titulo: Georgia, 'Times New Roman', serif;
+  color-scheme: dark;
+  box-shadow: inset 0 0 0 1px #3a3730, inset 0 0 0 6px #17171b, inset 0 0 0 7px #c9a24a55;
+}
+.inv-estilo--elegante .evento-encabezado h1 { letter-spacing: 0.04em; font-weight: 500; }
+.inv-estilo--fiesta {
+  --color-bg: #fff4e6; --color-surface: #ffffff; --color-surface-2: #ffe8cc;
+  --color-border: #f5d0b0; --color-border-strong: #eab48a;
+  --color-text: #2b1b3a; --color-text-muted: #5b4a66; --color-text-subtle: #7d6a85;
+  --brand: #d6336c; --brand-contrast: #ffffff; --brand-weak: #fde2ea;
+  --inv-fuente-titulo: 'Trebuchet MS', ui-rounded, system-ui, sans-serif;
+  color-scheme: light;
+  background:
+    radial-gradient(circle at 8% 6%, #f59f0033 0 10px, transparent 11px),
+    radial-gradient(circle at 92% 10%, #20c99733 0 8px, transparent 9px),
+    radial-gradient(circle at 85% 92%, #7950f233 0 12px, transparent 13px),
+    radial-gradient(circle at 6% 88%, #d6336c33 0 9px, transparent 10px),
+    #fff4e6;
+}
+.inv-estilo--cumpleanos {
+  --color-bg: #fdf2f8; --color-surface: #ffffff; --color-surface-2: #f6e8f8;
+  --color-border: #ecd3ea; --color-border-strong: #dcb5da;
+  --color-text: #3a2a48; --color-text-muted: #64547a; --color-text-subtle: #85769a;
+  --brand: #8b5cc7; --brand-contrast: #ffffff; --brand-weak: #efe5fb;
+  --inv-fuente-titulo: 'Trebuchet MS', ui-rounded, system-ui, sans-serif;
+  color-scheme: light;
+  background: linear-gradient(180deg, #fde2f1 0%, #fdf2f8 35%, #eef6ff 100%);
+}
+.inv-estilo--navidad {
+  --color-bg: #f3f8ef; --color-surface: #ffffff; --color-surface-2: #e7f0e1;
+  --color-border: #d3e2c9; --color-border-strong: #b7cfa8;
+  --color-text: #1f3324; --color-text-muted: #45594a; --color-text-subtle: #66796a;
+  --brand: #b3262e; --brand-contrast: #ffffff; --brand-weak: #f8e0e1;
+  --inv-fuente-titulo: Georgia, 'Times New Roman', serif;
+  color-scheme: light;
+  border-top: 0;
+  padding-top: calc(var(--space-2) + 6px);
+  background: repeating-linear-gradient(90deg, #b3262e 0 18px, #2f7a3b 18px 36px, #d4a72c 36px 42px) top / 100% 6px no-repeat, #f3f8ef;
+}
+@media (max-width: 480px) { .inv-estilo { padding-inline: var(--space-3); } }
+
+/* Selector de estilo en el formulario del evento: tarjeta con muestra de colores. */
+.inv-opciones--estilos { grid-template-columns: repeat(5, 1fr); margin: var(--space-2) 0; }
+.inv-opciones--estilos .inv-opcion span { display: flex; flex-direction: column; gap: 2px; padding: var(--space-2); }
+.inv-muestra {
+  display: grid; place-items: center; height: 3.2rem; border-radius: calc(var(--radius) - 2px);
+  border-top: 4px solid var(--_c); background: var(--_f); color: var(--_c);
+  font-family: var(--_fuente); font-size: 1.05rem; margin-bottom: 4px;
+}
+.inv-opciones--estilos small { font-weight: 400; color: var(--color-text-subtle); font-size: var(--text-xs); }
+@media (max-width: 760px) { .inv-opciones--estilos { grid-template-columns: repeat(2, 1fr); } }

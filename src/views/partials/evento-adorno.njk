@@ -1,0 +1,4 @@
+{# Adorno discreto arriba del título según el estilo del evento (🎨 Estilo). #}
+{% set adornosEstilo = { elegante: '✦', fiesta: '🎉', cumpleanos: '🎈', navidad: '🎄' } %}
+{% set adornoEstilo = adornosEstilo[evento.estilo] %}
+{% if adornoEstilo %}<p class="inv-adorno" aria-hidden="true">{{ adornoEstilo }} {{ adornoEstilo }} {{ adornoEstilo }}</p>{% endif %}

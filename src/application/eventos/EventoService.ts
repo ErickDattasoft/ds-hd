@@ -13,6 +13,7 @@ import type { ICaptchaVerifier } from '../../core/ports/services/ICaptchaVerifie
 import type { IExcelIO } from '../../core/ports/services/IExcelIO.js';
 import {
   Evento,
+  ESTILO_EVENTO_INFO,
   resolverComodinesEvento,
   resolverPlantillaEvento,
   PLANTILLA_EVENTO_DEFAULT,
@@ -23,6 +24,7 @@ import {
   type CambiosDestinatario,
   type DatosRsvp,
   type TipoEvento,
+  type EstiloEvento,
   itinerarioDeTexto,
   type InvitacionEmpresa,
   type InvitadoExterno,
@@ -40,6 +42,7 @@ import { ZONA_MEXICO, instanteDeDatetimeLocal } from '../../core/entities/value-
 export interface DatosEvento {
   titulo: string;
   tipo?: TipoEvento;
+  estilo?: EstiloEvento;
   lugarNombre?: string;
   lugarDireccion?: string;
   lugarMapsUrl?: string;
@@ -161,6 +164,7 @@ export class EventoService {
       id: id ?? this.ids.newId(),
       titulo: datos.titulo,
       tipo: datos.tipo ?? previo?.tipo ?? 'webinar',
+      estilo: datos.estilo ?? previo?.estilo ?? null,
       lugarNombre: datos.lugarNombre ?? previo?.lugarNombre ?? null,
       lugarDireccion: datos.lugarDireccion ?? previo?.lugarDireccion ?? null,
       lugarMapsUrl: datos.lugarMapsUrl ?? previo?.lugarMapsUrl ?? null,
@@ -639,17 +643,20 @@ export class EventoService {
       ? `<p><img src="${this.baseUrl}/eventos/${evento.id}/flayer?v=${evento.flayer.tamano}" alt="" style="max-width:100%;border-radius:10px"></p>`
       : '';
     const boton = evento.pideConfirmacion ? 'Ver mi invitación y confirmar' : 'Abrir';
+    const est = ESTILO_EVENTO_INFO[evento.estilo];
+    const adorno = est.adorno ? `<p style="font-size:22px;letter-spacing:10px;margin:0 0 6px;color:${est.color}">${est.adorno} ${est.adorno} ${est.adorno}</p>` : '';
     await this.email.enviar({
       para: [{ email: inv.correo, nombre: nombre || undefined }],
       asunto: evento.tipo === 'felicitacion' ? evento.titulo : `Invitación: ${evento.titulo}`,
-      html: `<div style="font-family:Arial,sans-serif;max-width:560px;margin:auto;text-align:center">
+      html: `<div style="font-family:${est.fuente};max-width:560px;margin:auto;text-align:center;background:${est.fondo};color:${est.texto};padding:28px 22px;border-radius:14px;border-top:6px solid ${est.color}">
         <p style="font-size:16px">¡Hola${nombre ? ` ${esc(nombre)}` : ''}! 👋</p>
-        <h2 style="margin:8px 0 16px">${esc(evento.titulo)}</h2>
+        ${adorno}
+        <h2 style="margin:8px 0 16px;color:${est.color};font-size:26px">${esc(evento.titulo)}</h2>
         ${flayer}
-        ${evento.descripcion ? `<p style="white-space:pre-wrap;color:#444">${esc(evento.descripcion)}</p>` : ''}
+        ${evento.descripcion ? `<p style="white-space:pre-wrap;opacity:.85">${esc(evento.descripcion)}</p>` : ''}
         <p style="font-size:15px;line-height:1.7">${renglones.join('<br>')}</p>
-        <p style="margin:24px 0"><a href="${link}" style="background:#111;color:#fff;padding:12px 22px;border-radius:8px;text-decoration:none;font-weight:bold">${boton}</a></p>
-        <p style="color:#888;font-size:12px">Si el botón no abre, copia este link: ${link}</p>
+        <p style="margin:24px 0"><a href="${link}" style="background:${est.color};color:#fff;padding:12px 22px;border-radius:8px;text-decoration:none;font-weight:bold">${boton}</a></p>
+        <p style="opacity:.6;font-size:12px">Si el botón no abre, copia este link: ${link}</p>
       </div>`,
       tags: ['evento-invitacion', `evento-${evento.id}`],
     });

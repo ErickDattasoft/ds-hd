@@ -5,7 +5,7 @@
 {% endblock %}
 {% block content %}
 {% set presencial = evento and evento.tipo == 'presencial' %}
-<div class="evento-landing">
+<div class="evento-landing{% if evento %} inv-estilo inv-estilo--{{ evento.estilo }}{% endif %}">
   {% if not evento %}
     <div class="evento-resultado">
       <h1>Evento no encontrado</h1>
@@ -33,6 +33,7 @@
       <p class="evento-encabezado__antetitulo">
         {% if evento.tipo == 'presencial' %}¡Te invitamos!{% elif evento.tipo == 'felicitacion' %}🎉{% else %}Registro al evento{% endif %}
       </p>
+      {% include "partials/evento-adorno.njk" %}
       <h1>{{ evento.titulo }}</h1>
       {% if evento.tipo == 'webinar' and (evento.sistema or evento.contactoNombre) %}
         <dl class="evento-datos">

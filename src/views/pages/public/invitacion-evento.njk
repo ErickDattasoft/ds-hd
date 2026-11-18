@@ -1,7 +1,7 @@
 {% extends "layouts/public-page.njk" %}
 {% block title %}{{ evento.titulo if evento else 'Invitación' }}{% endblock %}
 {% block content %}
-<div class="evento-landing invitacion">
+<div class="evento-landing invitacion{% if evento %} inv-estilo inv-estilo--{{ evento.estilo }}{% endif %}">
   {% if not evento %}
     <div class="evento-resultado">
       <h1>Invitación no encontrada</h1>
@@ -14,6 +14,7 @@
         {% elif nombre %}¡Hola, <span class="nombre-sensible">{{ nombre }}</span>! Te invitamos a…
         {% else %}¡Hola! Te invitamos a…{% endif %}
       </p>
+      {% include "partials/evento-adorno.njk" %}
       <h1>{{ evento.titulo }}</h1>
       {% if evento.flayer %}
         <img class="evento-flayer" src="/eventos/{{ evento.id }}/flayer?v={{ evento.flayer.tamano }}" alt="{{ evento.titulo }}" />

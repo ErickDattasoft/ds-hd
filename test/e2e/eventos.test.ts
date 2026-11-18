@@ -21,6 +21,24 @@ const PNG_1X1 =
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=';
 
 describe('eventos / webinars', () => {
+  it('estilo de la invitación: se elige en el formulario y se ve en la página', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    const { agent, csrf } = await login(t.app, ADMIN.email, ADMIN.password);
+    const form = await agent.get('/app/eventos/nuevo?tipo=felicitacion');
+    expect(form.status).toBe(200);
+    expect(form.text).toContain('🎨 Estilo de la invitación');
+    expect(form.text).toMatch(/name="estilo" value="fiesta" checked/);
+    const res = await agent.post('/app/eventos').type('form').send({
+      _csrf: csrf, titulo: 'Posada 2026', tipo: 'presencial', estilo: 'navidad', fechaHora: '2026-12-12T20:00', estado: 'publicado',
+    });
+    expect(res.status).toBe(302);
+    const ev = [...t.eventoRepo.items.values()].find((e) => e.titulo === 'Posada 2026')!;
+    expect(ev.estilo).toBe('navidad');
+    const pub = await request(t.app).get(`/eventos/${ev.id}`);
+    expect(pub.text).toContain('inv-estilo--navidad');
+    expect(pub.text).toContain('🎄');
+  });
+
   it('registro público: crea inscripción, envía confirmación y bloquea duplicados', async () => {
     const t = makeTestApp({ usuarios: [ADMIN] });
     t.eventoRepo.items.set(

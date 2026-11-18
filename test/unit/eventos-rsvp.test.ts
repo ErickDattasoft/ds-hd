@@ -98,6 +98,13 @@ describe('Evento — invitación personal con pases', () => {
     expect(itinerarioATexto(it)).toBe('9:00 AM - Registro\n10:00 AM - Conferencia\nComida libre');
   });
 
+  it('estilo: por defecto según el tipo y uno inválido no se guarda', () => {
+    expect(nuevo().estilo).toBe('corporativo');
+    expect(nuevo({ tipo: 'felicitacion' }).estilo).toBe('fiesta');
+    expect(nuevo({ estilo: 'navidad' }).estilo).toBe('navidad');
+    expect(nuevo({ estilo: 'raro' as never }).estilo).toBe('corporativo');
+  });
+
   it('el link de Maps debe ser https', () => {
     expect(() => nuevo({ lugarMapsUrl: 'javascript:alert(1)' })).toThrow(ValidationError);
     expect(nuevo({ lugarMapsUrl: 'https://maps.app.goo.gl/x' }).lugarMapsUrl).toBe('https://maps.app.goo.gl/x');
@@ -144,11 +151,20 @@ describe('EventoService — enviar invitaciones y contestar', () => {
     expect(email.ultimo?.para[0]?.email).toBe('juan@x.mx');
     expect(email.ultimo?.html).toContain(`https://ds-hd.test/eventos/ev1/i/${juan.token}`);
     expect(email.ultimo?.html).toContain('2 pases');
+    expect(email.ultimo?.html).toContain('#1f5fae'); // color del estilo corporativo
     expect(juan.enviadaAt).toBe(AHORA.toISOString());
     expect((await service.enviarInvitacionesPendientes(actor, 'ev1')).enviadas).toBe(0);
     const wa = service.mensajeWhatsAppInvitacion(ev, ev.invitadosExternos[1]!, 'Sin correo');
     expect(wa).toContain('Hotel Centro');
     expect(wa).toContain('/eventos/ev1/i/');
+  });
+
+  it('el correo toma los colores y el adorno del estilo', async () => {
+    eventos.items.set('ev1', nuevo({ estilo: 'navidad' }));
+    await service.agregarInvitadoExterno(actor, 'ev1', { nombre: 'Ana', correo: 'ana@x.mx' });
+    await service.enviarInvitacionesPendientes(actor, 'ev1');
+    expect(email.ultimo?.html).toContain('#b3262e');
+    expect(email.ultimo?.html).toContain('🎄');
   });
 
   it('no manda si el evento está en borrador', async () => {

@@ -9,9 +9,12 @@ import {
   resolverPlantillaEvento,
   itinerarioATexto,
   TIPOS_EVENTO,
+  ESTILOS_EVENTO,
+  ESTILO_EVENTO_INFO,
   TIPO_EVENTO_ETIQUETA,
   MAX_PASES,
   type TipoEvento,
+  type EstiloEvento,
   type EstadoEvento,
   type RespuestaInvitacion,
 } from '../../../../core/entities/Evento.js';
@@ -30,7 +33,7 @@ const waLink = (tel: string | null | undefined, texto: string): string => {
 };
 /** Texto de fábrica del mensaje de confirmación según el tipo de evento. */
 const plantillaDe = (tipo: unknown): string => (tipo === 'presencial' ? PLANTILLA_PRESENCIAL_DEFAULT : PLANTILLA_EVENTO_DEFAULT);
-const datosFormulario = { TIPOS_EVENTO, TIPO_EVENTO_ETIQUETA };
+const datosFormulario = { TIPOS_EVENTO, TIPO_EVENTO_ETIQUETA, ESTILOS_EVENTO, ESTILO_EVENTO_INFO };
 const respuesta = (v: unknown): RespuestaInvitacion | undefined =>
   RESPUESTAS_INVITACION.includes(v as RespuestaInvitacion) ? (v as RespuestaInvitacion) : undefined;
 
@@ -86,6 +89,7 @@ export class EventoController {
         {
           titulo: str(b.titulo),
           tipo: (TIPOS_EVENTO.includes(str(b.tipo) as TipoEvento) ? str(b.tipo) : 'webinar') as TipoEvento,
+          estilo: ESTILOS_EVENTO.includes(str(b.estilo) as EstiloEvento) ? (str(b.estilo) as EstiloEvento) : undefined,
           lugarNombre: str(b.lugarNombre),
           lugarDireccion: str(b.lugarDireccion),
           lugarMapsUrl: str(b.lugarMapsUrl),

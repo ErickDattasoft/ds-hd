@@ -17,6 +17,31 @@ export const TIPO_EVENTO_ETIQUETA: Record<TipoEvento, string> = {
 const esTipoEvento = (v: unknown): v is TipoEvento =>
   typeof v === 'string' && (TIPOS_EVENTO as readonly string[]).includes(v);
 
+/** Diseño de la invitación: colores, letra del título y un adorno discreto. */
+export type EstiloEvento = 'corporativo' | 'elegante' | 'fiesta' | 'cumpleanos' | 'navidad';
+
+export const ESTILOS_EVENTO: readonly EstiloEvento[] = ['corporativo', 'elegante', 'fiesta', 'cumpleanos', 'navidad'];
+
+/** Datos de cada estilo (los mismos colores que `.inv-estilo--*` en el CSS; aquí para el correo). */
+export const ESTILO_EVENTO_INFO: Record<
+  EstiloEvento,
+  { nombre: string; adorno: string; ayuda: string; color: string; fondo: string; texto: string; fuente: string }
+> = {
+  corporativo: { nombre: 'Corporativo', adorno: '', ayuda: 'Webinars y cursos', color: '#1f5fae', fondo: '#eef4fb', texto: '#16243a', fuente: 'Arial,Helvetica,sans-serif' },
+  elegante: { nombre: 'Elegante', adorno: '✦', ayuda: 'Cenas y eventos formales', color: '#c9a24a', fondo: '#17171b', texto: '#f3eee2', fuente: 'Georgia,"Times New Roman",serif' },
+  fiesta: { nombre: 'Fiesta', adorno: '🎉', ayuda: 'Celebraciones y aniversarios', color: '#d6336c', fondo: '#fff4e6', texto: '#2b1b3a', fuente: '"Trebuchet MS",Arial,sans-serif' },
+  cumpleanos: { nombre: 'Cumpleaños', adorno: '🎈', ayuda: 'Felicitaciones', color: '#8b5cc7', fondo: '#fdf2f8', texto: '#3a2a48', fuente: '"Trebuchet MS",Arial,sans-serif' },
+  navidad: { nombre: 'Navidad', adorno: '🎄', ayuda: 'Posadas y felicitación navideña', color: '#b3262e', fondo: '#f3f8ef', texto: '#1f3324', fuente: 'Georgia,"Times New Roman",serif' },
+};
+
+const esEstiloEvento = (v: unknown): v is EstiloEvento =>
+  typeof v === 'string' && (ESTILOS_EVENTO as readonly string[]).includes(v);
+
+/** Estilo que toca por defecto según el tipo (eventos viejos no traen estilo). */
+export function estiloPorDefecto(tipo: TipoEvento): EstiloEvento {
+  return tipo === 'felicitacion' ? 'fiesta' : 'corporativo';
+}
+
 /** Máximo de pases que se le pueden dar a una sola invitación. */
 export const MAX_PASES = 20;
 
@@ -239,6 +264,8 @@ export interface EventoProps {
   id: string;
   titulo: string;
   tipo?: TipoEvento;
+  /** Diseño de la invitación; si falta, el de su tipo. */
+  estilo?: EstiloEvento | null;
   /** Presencial: dónde. */
   lugarNombre?: string | null;
   lugarDireccion?: string | null;
@@ -287,6 +314,7 @@ export class Evento {
   readonly id: string;
   titulo: string;
   tipo: TipoEvento;
+  estilo: EstiloEvento;
   lugarNombre: string | null;
   lugarDireccion: string | null;
   lugarMapsUrl: string | null;
@@ -320,6 +348,7 @@ export class Evento {
     this.id = props.id;
     this.titulo = props.titulo.trim();
     this.tipo = esTipoEvento(props.tipo) ? props.tipo : 'webinar';
+    this.estilo = esEstiloEvento(props.estilo) ? props.estilo : estiloPorDefecto(this.tipo);
     this.lugarNombre = props.lugarNombre?.trim() || null;
     this.lugarDireccion = props.lugarDireccion?.trim() || null;
     const maps = props.lugarMapsUrl?.trim() || null;

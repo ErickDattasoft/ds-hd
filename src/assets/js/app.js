@@ -3296,6 +3296,26 @@
     var form = e.target.closest && e.target.closest('[data-form-rsvp]');
     if (form && e.target.name === 'asistira') rsvpPersonasVisible(form);
   });
+  /**
+   * Formulario del evento: al elegir «Felicitación» se propone el estilo Fiesta (y al volver,
+   * Corporativo), mientras la persona no haya escogido un estilo a mano.
+   */
+  function initEstiloEvento() {
+    const caja = document.querySelector('[data-estilos]');
+    if (!caja || caja.dataset.listo) return;
+    caja.dataset.listo = '1';
+    let tocado = false;
+    caja.addEventListener('change', () => { tocado = true; });
+    document.querySelectorAll('input[name="tipo"]').forEach((r) => {
+      r.addEventListener('change', () => {
+        if (tocado || !r.checked) return;
+        const valor = r.value === 'felicitacion' ? 'fiesta' : 'corporativo';
+        const op = caja.querySelector(`input[value="${valor}"]`);
+        if (op) op.checked = true;
+      });
+    });
+  }
+
   function initRsvp() {
     document.querySelectorAll('[data-form-rsvp]').forEach(rsvpPersonasVisible);
   }
@@ -3730,6 +3750,7 @@
     kbPintarRecordadas();
     initCuentaRegresiva();
     initRsvp();
+    initEstiloEvento();
   }
   document.addEventListener('DOMContentLoaded', iniciarPagina);
   window.addEventListener('resize', medirTopbar);

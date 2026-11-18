@@ -17,6 +17,23 @@
       </div>
       <span class="muted">Webinar: con liga de acceso. Presencial: con lugar, mapa y programa. Felicitación: una tarjeta para leer, sin confirmar asistencia.</span>
     </fieldset>
+    <fieldset class="field" style="grid-column: 1 / -1">
+      <span>🎨 Estilo de la invitación</span>
+      <div class="inv-opciones inv-opciones--estilos" data-estilos>
+        {% for e in ESTILOS_EVENTO %}
+          {% set info = ESTILO_EVENTO_INFO[e] %}
+          <label class="inv-opcion">
+            <input type="radio" name="estilo" value="{{ e }}" {{ 'checked' if (valores.estilo or ('fiesta' if valores.tipo == 'felicitacion' else 'corporativo')) == e }} />
+            <span>
+              <i class="inv-muestra" style="--_c:{{ info.color }};--_f:{{ info.fondo }};--_fuente:{{ info.fuente }}">{{ info.adorno or 'Aa' }}</i>
+              {{ info.nombre }}
+              <small>{{ info.ayuda }}</small>
+            </span>
+          </label>
+        {% endfor %}
+      </div>
+      <span class="muted">Cambia colores, letra del título y un adorno en la invitación, la página del evento y el correo. La imagen (flayer) sigue saliendo como portada.</span>
+    </fieldset>
     <label class="field"><span>Título</span><input name="titulo" value="{{ valores.titulo }}" required />
       {% if errores.titulo %}<em class="field__error">{{ errores.titulo }}</em>{% endif %}</label>
     <label class="field"><span>Fecha y hora</span><input type="datetime-local" name="fechaHora" value="{{ valores.fechaHora }}" required />
