@@ -266,6 +266,8 @@ export interface EventoProps {
   tipo?: TipoEvento;
   /** Diseño de la invitación; si falta, el de su tipo. */
   estilo?: EstiloEvento | null;
+  /** Evento de ejemplo (botón «🧪 Crear eventos de ejemplo»): no sale en la lista pública. */
+  esPrueba?: boolean;
   /** Presencial: dónde. */
   lugarNombre?: string | null;
   lugarDireccion?: string | null;
@@ -315,6 +317,7 @@ export class Evento {
   titulo: string;
   tipo: TipoEvento;
   estilo: EstiloEvento;
+  esPrueba: boolean;
   lugarNombre: string | null;
   lugarDireccion: string | null;
   lugarMapsUrl: string | null;
@@ -349,6 +352,7 @@ export class Evento {
     this.titulo = props.titulo.trim();
     this.tipo = esTipoEvento(props.tipo) ? props.tipo : 'webinar';
     this.estilo = esEstiloEvento(props.estilo) ? props.estilo : estiloPorDefecto(this.tipo);
+    this.esPrueba = props.esPrueba === true;
     this.lugarNombre = props.lugarNombre?.trim() || null;
     this.lugarDireccion = props.lugarDireccion?.trim() || null;
     const maps = props.lugarMapsUrl?.trim() || null;

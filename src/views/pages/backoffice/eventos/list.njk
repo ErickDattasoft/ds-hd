@@ -3,8 +3,23 @@
 {% block content %}
   <div class="page-head">
     <h1>Eventos</h1>
-    {% if can('eventos:gestionar') %}<a class="btn btn--sm" href="/app/eventos/nuevo">Nuevo evento</a>{% endif %}
+    {% if can('eventos:gestionar') %}
+      <div class="page-head__acciones" style="display:flex;gap:var(--space-2);flex-wrap:wrap">
+        <form method="post" action="/app/eventos/ejemplos" data-confirm="{{ 'Se borran los ejemplos actuales y se crean de nuevo. ' if hayEjemplos }}Se crean 5 eventos de ejemplo (webinar, cena elegante, aniversario, posada y cumpleaños) y te llega la invitación de cada uno a tu correo. ¿Continuar?">
+          <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+          <button class="btn btn--sm btn--ghost" title="Para probar las invitaciones con tu propio correo: uno de cada tipo y estilo. No salen en la lista pública.">🧪 {{ 'Volver a crear ejemplos' if hayEjemplos else 'Crear eventos de ejemplo' }}</button>
+        </form>
+        {% if hayEjemplos %}
+          <form method="post" action="/app/eventos/ejemplos/eliminar" data-confirm="¿Borrar todos los eventos de ejemplo (🧪) con sus registros?">
+            <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+            <button class="btn btn--sm btn--ghost">🗑 Borrar ejemplos</button>
+          </form>
+        {% endif %}
+        <a class="btn btn--sm" href="/app/eventos/nuevo">Nuevo evento</a>
+      </div>
+    {% endif %}
   </div>
+  {% if aviso %}<p class="alert alert--ok">{{ aviso }}</p>{% endif %}
   <table class="data-table">
     <thead><tr><th>Título</th><th>Fecha</th><th>Estado</th><th>Cupo</th></tr></thead>
     <tbody>

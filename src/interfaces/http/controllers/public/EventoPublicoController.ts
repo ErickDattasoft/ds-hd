@@ -78,7 +78,7 @@ export class EventoPublicoController {
   }
 
   listar = async (_req: Request, res: Response): Promise<void> => {
-    const eventos = (await this.eventos.listar(true)).filter((e) => e.abiertoARegistro);
+    const eventos = (await this.eventos.listar(true)).filter((e) => e.abiertoARegistro && !e.esPrueba);
     res.render('pages/public/eventos-list', { titulo: 'Próximos eventos', eventos });
   };
 

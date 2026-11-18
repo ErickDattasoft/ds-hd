@@ -21,6 +21,27 @@ const PNG_1X1 =
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=';
 
 describe('eventos / webinars', () => {
+  it('🧪 eventos de ejemplo: crea uno por estilo, te manda las invitaciones y no salen en la lista pública', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    const { agent, csrf } = await login(t.app, ADMIN.email, ADMIN.password);
+    const res = await agent.post('/app/eventos/ejemplos').type('form').send({ _csrf: csrf });
+    expect(res.status).toBe(302);
+    const ejemplos = [...t.eventoRepo.items.values()].filter((e) => e.esPrueba);
+    expect(ejemplos.map((e) => e.estilo).sort()).toEqual(['corporativo', 'cumpleanos', 'elegante', 'fiesta', 'navidad']);
+    const invitaciones = t.emailSender.enviados.filter((c) => c.para[0]?.email === ADMIN.email);
+    expect(invitaciones).toHaveLength(5);
+    expect(ejemplos.every((e) => e.invitadosExternos[0]?.enviadaAt)).toBe(true);
+    const lista = await agent.get('/app/eventos');
+    expect(lista.text).toContain('🗑 Borrar ejemplos');
+    const publica = await request(t.app).get('/eventos');
+    expect(publica.text).not.toContain('🧪');
+    // Volver a crear no duplica; borrar los quita todos.
+    await agent.post('/app/eventos/ejemplos').type('form').send({ _csrf: csrf });
+    expect([...t.eventoRepo.items.values()].filter((e) => e.esPrueba)).toHaveLength(5);
+    await agent.post('/app/eventos/ejemplos/eliminar').type('form').send({ _csrf: csrf });
+    expect([...t.eventoRepo.items.values()].filter((e) => e.esPrueba)).toHaveLength(0);
+  });
+
   it('estilo de la invitación: se elige en el formulario y se ve en la página', async () => {
     const t = makeTestApp({ usuarios: [ADMIN] });
     const { agent, csrf } = await login(t.app, ADMIN.email, ADMIN.password);

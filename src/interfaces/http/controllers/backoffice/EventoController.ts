@@ -41,9 +41,25 @@ const respuesta = (v: unknown): RespuestaInvitacion | undefined =>
 export class EventoController {
   constructor(private readonly eventos: EventoService) {}
 
-  listar = async (_req: Request, res: Response): Promise<void> => {
+  listar = async (req: Request, res: Response): Promise<void> => {
     const eventos = await this.eventos.listar();
-    res.render('pages/backoffice/eventos/list', { titulo: 'Eventos', eventos });
+    res.render('pages/backoffice/eventos/list', {
+      titulo: 'Eventos',
+      eventos,
+      hayEjemplos: eventos.some((e) => e.esPrueba),
+      aviso: str(req.query.aviso),
+    });
+  };
+
+  ejemplosCrearPost = async (req: Request, res: Response): Promise<void> => {
+    const { creados, enviadas } = await this.eventos.crearEjemplos(req.user!);
+    const aviso = `🧪 ${creados} eventos de ejemplo creados; ${enviadas} invitaciones enviadas a ${req.user!.email}. Revisa tu correo (y spam).`;
+    res.redirect(`/app/eventos?aviso=${encodeURIComponent(aviso)}`);
+  };
+
+  ejemplosEliminarPost = async (req: Request, res: Response): Promise<void> => {
+    const n = await this.eventos.eliminarEjemplos(req.user!);
+    res.redirect(`/app/eventos?aviso=${encodeURIComponent(`🗑 ${n} eventos de ejemplo borrados.`)}`);
   };
 
   nuevo = (_req: Request, res: Response): void => {

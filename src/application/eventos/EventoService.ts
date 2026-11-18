@@ -208,6 +208,98 @@ export class EventoService {
     return evento;
   }
 
+  /**
+   * «🧪 Crear eventos de ejemplo»: uno por estilo (webinar, cena elegante, aniversario, posada y
+   * felicitación de cumpleaños), publicados, con quien los crea como invitado (2 pases) y su
+   * invitación ya enviada a su correo, para probar todo con correos reales. No salen en la lista
+   * pública. Si ya había ejemplos, se borran y se crean de nuevo.
+   */
+  async crearEjemplos(actor: SessionUser): Promise<{ creados: number; enviadas: number }> {
+    if (!actor.permisos.includes('eventos:gestionar')) throw new ForbiddenError('No puedes gestionar eventos');
+    await this.eliminarEjemplos(actor);
+    const enDias = (dias: number, hora: number): Date => {
+      // Hora de México (UTC-6, sin horario de verano desde 2022).
+      const d = new Date(this.clock.now().getTime() + dias * 86_400_000);
+      return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), hora + 6, 0, 0));
+    };
+    const lugar = { lugarNombre: 'Hotel Fiesta Americana Mérida', lugarDireccion: 'Paseo de Montejo 451, Centro, Mérida, Yuc.' };
+    const ejemplos: Array<ConstructorParameters<typeof Evento>[0]> = [
+      {
+        id: '', titulo: '🧪 Webinar: Cierre fiscal 2026 en CONTPAQi', tipo: 'webinar', estilo: 'corporativo',
+        fechaHora: enDias(7, 10), urlWebinar: 'https://meet.google.com/ejemplo-prueba', sistema: 'CONTPAQi Contabilidad',
+        contactoNombre: actor.nombre, descripcion: 'Repasamos paso a paso el cierre del ejercicio y las novedades del SAT.',
+        itinerario: [{ hora: '10:00 AM', actividad: 'Bienvenida' }, { hora: '10:15 AM', actividad: 'Cierre contable paso a paso' }, { hora: '11:15 AM', actividad: 'Preguntas y respuestas' }],
+      },
+      {
+        id: '', titulo: '🧪 Cena de fin de año', tipo: 'presencial', estilo: 'elegante', fechaHora: enDias(14, 20), ...lugar,
+        vestimenta: 'Formal', maxPersonasRegistro: 3, contactoNombre: actor.nombre,
+        descripcion: 'Queremos agradecerte un año más de confianza. Nos encantará verte.',
+        itinerario: [{ hora: '8:00 PM', actividad: 'Recepción' }, { hora: '9:00 PM', actividad: 'Cena' }, { hora: '10:30 PM', actividad: 'Brindis y rifa' }],
+      },
+      {
+        id: '', titulo: '🧪 Aniversario 15 años DATTASOFT', tipo: 'presencial', estilo: 'fiesta', fechaHora: enDias(21, 18), ...lugar,
+        vestimenta: 'Casual', maxPersonasRegistro: 2, contactoNombre: actor.nombre,
+        descripcion: '¡Cumplimos 15 años y lo queremos celebrar contigo!',
+        itinerario: [{ hora: '6:00 PM', actividad: 'Bienvenida' }, { hora: '7:00 PM', actividad: 'Pastel y música' }],
+      },
+      {
+        id: '', titulo: '🧪 Posada DATTASOFT', tipo: 'presencial', estilo: 'navidad', fechaHora: enDias(28, 19), ...lugar,
+        vestimenta: 'Algo navideño 🎅', maxPersonasRegistro: 4, contactoNombre: actor.nombre,
+        descripcion: 'Piñata, ponche y tamales. ¡Trae a tu familia!',
+        itinerario: [{ hora: '7:00 PM', actividad: 'Posada y piñata' }, { hora: '8:30 PM', actividad: 'Cena navideña' }],
+      },
+      {
+        id: '', titulo: '🧪 ¡Feliz cumpleaños!', tipo: 'felicitacion', estilo: 'cumpleanos', fechaHora: enDias(1, 9),
+        descripcion: 'Todo el equipo de DATTASOFT te desea un día increíble. ¡Gracias por ser parte de nuestra historia!',
+      },
+    ];
+    let enviadas = 0;
+    for (const datos of ejemplos) {
+      const evento = new Evento({
+        ...datos,
+        id: this.ids.newId(),
+        estado: 'publicado',
+        esPrueba: true,
+        horasRecordatorio: 0,
+        creadoPorUid: actor.uid,
+      });
+      evento.agregarInvitadoExterno({
+        id: this.ids.newId(),
+        nombre: actor.nombre,
+        correo: actor.email,
+        token: this.ids.newToken().slice(0, 22),
+        pases: evento.pideConfirmacion ? 2 : 1,
+      });
+      await this.eventos.save(evento);
+      try {
+        const r = await this.enviarInvitacionesPendientes(actor, evento.id);
+        enviadas += r.enviadas;
+      } catch (err) {
+        this.logger.warn('Evento de ejemplo: no salió la invitación', { id: evento.id, error: (err as Error).message });
+      }
+    }
+    await this.bitacora.registrar({
+      actor,
+      accion: 'crear',
+      modulo: 'eventos',
+      entidadTipo: 'Evento',
+      entidadId: 'ejemplos',
+      resumen: `Eventos de ejemplo creados (${ejemplos.length})`,
+    });
+    return { creados: ejemplos.length, enviadas };
+  }
+
+  /** Borra todos los eventos de ejemplo (🧪) con sus inscripciones. */
+  async eliminarEjemplos(actor: SessionUser): Promise<number> {
+    if (!actor.permisos.includes('eventos:gestionar')) throw new ForbiddenError('No puedes gestionar eventos');
+    const ejemplos = (await this.eventos.list()).filter((e) => e.esPrueba);
+    for (const e of ejemplos) {
+      await this.inscripciones.eliminarPorEvento(e.id);
+      await this.eventos.eliminar(e.id);
+    }
+    return ejemplos.length;
+  }
+
   /** Borra el evento y todas sus inscripciones. Permanente. */
   async eliminar(actor: SessionUser, id: string): Promise<void> {
     const evento = await this.paraGestion(actor, id);
