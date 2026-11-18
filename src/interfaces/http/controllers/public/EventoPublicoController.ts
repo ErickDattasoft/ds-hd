@@ -192,6 +192,7 @@ export class EventoPublicoController {
         telefono: str(b.telefono),
         empresa: str(b.empresa),
         asistira: str(b.asistira),
+        personas: Number(str(b.personas) || 1),
         usaSistema: str(b.usaSistema),
         fuente: str(b.fuente),
         deseaCanalWhatsapp: b.deseaCanalWhatsapp === 'on' || b.deseaCanalWhatsapp === 'true',

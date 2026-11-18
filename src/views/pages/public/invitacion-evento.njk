@@ -10,8 +10,9 @@
   {% else %}
     <header class="evento-encabezado inv-portada">
       <p class="inv-saludo">
-        {% if evento.tipo == 'felicitacion' %}Para <span class="nombre-sensible">{{ nombre }}</span> 🎉
-        {% else %}¡Hola, <span class="nombre-sensible">{{ nombre }}</span>! Te invitamos a…{% endif %}
+        {% if evento.tipo == 'felicitacion' %}{% if nombre %}Para <span class="nombre-sensible">{{ nombre }}</span> {% endif %}🎉
+        {% elif nombre %}¡Hola, <span class="nombre-sensible">{{ nombre }}</span>! Te invitamos a…
+        {% else %}¡Hola! Te invitamos a…{% endif %}
       </p>
       <h1>{{ evento.titulo }}</h1>
       {% if evento.flayer %}

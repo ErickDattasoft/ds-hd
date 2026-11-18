@@ -4,6 +4,7 @@
   {% if turnstileSiteKey %}<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>{% endif %}
 {% endblock %}
 {% block content %}
+{% set presencial = evento and evento.tipo == 'presencial' %}
 <div class="evento-landing">
   {% if not evento %}
     <div class="evento-resultado">
@@ -12,11 +13,20 @@
     </div>
   {% elif registrado %}
     <div class="evento-resultado">
-      <h1>Registro confirmado</h1>
-      <p>
-        Gracias por inscribirte a <strong>{{ evento.titulo }}</strong>.
-        Te enviamos los detalles de acceso; si no los encuentras, revisa tu carpeta de spam o correo no deseado.
-      </p>
+      {% if presencial %}
+        <h1>¡Listo, te esperamos! 🎉</h1>
+        <p>
+          Quedó tu confirmación para <strong>{{ evento.titulo }}</strong>.
+          Si dejaste correo, te mandamos los datos del lugar (revisa también spam o correo no deseado).
+        </p>
+        <p><a class="btn btn--sm btn--secondary" href="/eventos/{{ evento.id }}">Ver la invitación otra vez</a></p>
+      {% else %}
+        <h1>Registro confirmado</h1>
+        <p>
+          Gracias por inscribirte a <strong>{{ evento.titulo }}</strong>.
+          Te enviamos los detalles de acceso; si no los encuentras, revisa tu carpeta de spam o correo no deseado.
+        </p>
+      {% endif %}
     </div>
   {% else %}
     <header class="evento-encabezado">
@@ -42,11 +52,11 @@
       <div class="card">
         <p class="alert alert--ok">Ya estás registrado en este evento. Te esperamos.</p>
         <p class="muted">
-          El acceso se envía al correo o al WhatsApp que registraste. Si es por correo, revisa también spam o correo no deseado.
+          {% if presencial %}La confirmación se envía{% else %}El acceso se envía{% endif %} al correo o al WhatsApp que registraste. Si es por correo, revisa también spam o correo no deseado.
         </p>
         {% if valores.email %}
           <button type="button" class="btn btn--secondary" data-reenviar-link data-evento-id="{{ evento.id }}" data-correo="{{ valores.email }}">
-            Reenviarme el acceso
+            {{ 'Reenviarme la confirmación' if presencial else 'Reenviarme el acceso' }}
           </button>
           <p id="reenviar-link-mensaje" class="muted"></p>
         {% endif %}
@@ -56,7 +66,7 @@
     {% elif evento.abiertoARegistro %}
       <div class="card">
         {% if errores.general %}<p class="alert alert--error">{{ errores.general }}</p>{% endif %}
-        <form method="post" action="/eventos/{{ evento.id }}" class="form" data-form-registro-evento>
+        <form method="post" action="/eventos/{{ evento.id }}" class="form" data-form-registro-evento data-form-rsvp>
           <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
 
           <fieldset class="evento-seccion">
@@ -77,7 +87,7 @@
                 <input type="tel" inputmode="tel" name="telefono" value="{{ valores.telefono }}" autocomplete="tel" placeholder="55 1234 5678" />
                 {% if errores.telefono %}<em class="field__error">{{ errores.telefono }}</em>{% endif %}
               </label>
-              <p class="evento-nota">Indica al menos uno de los dos, correo o teléfono: por ese medio te enviamos el acceso.</p>
+              <p class="evento-nota">Indica al menos uno de los dos, correo o teléfono: por ese medio te {{ 'confirmamos y avisamos cualquier cambio' if presencial else 'enviamos el acceso' }}.</p>
             </div>
           </fieldset>
 
@@ -85,13 +95,23 @@
             <legend>Tu asistencia</legend>
             <div class="evento-campos">
               <label class="field"><span>¿Asistirás?</span>
-                <select name="asistira" required>
+                <select name="asistira" required data-asistira>
                   <option value="">Selecciona una opción</option>
                   <option value="Sí" {{ 'selected' if valores.asistira == 'Sí' }}>Sí, ahí estaré</option>
                   <option value="No" {{ 'selected' if valores.asistira == 'No' }}>No podré asistir</option>
                   <option value="Tal vez" {{ 'selected' if valores.asistira == 'Tal vez' }}>Aún no estoy seguro</option>
                 </select>
               </label>
+              {% if evento.maxPersonasRegistro > 1 %}
+                <label class="field" data-rsvp-personas><span>¿Cuántos van? <span class="muted">(contándote a ti)</span></span>
+                  <select name="personas">
+                    {% for n in range(1, evento.maxPersonasRegistro + 1) %}
+                      <option value="{{ n }}" {{ 'selected' if valores.personas == n | string }}>{{ n }} {{ 'persona' if n == 1 else 'personas' }}</option>
+                    {% endfor %}
+                  </select>
+                  {% if errores.personas %}<em class="field__error">{{ errores.personas }}</em>{% endif %}
+                </label>
+              {% endif %}
               {% if evento.sistema %}
                 <label class="field"><span>¿Actualmente utilizas {{ evento.sistema }}?</span>
                   <select name="usaSistema" required>
@@ -131,8 +151,8 @@
             </div>
           {% endif %}
 
-          <button class="btn evento-enviar" type="submit">Confirmar mi registro</button>
-          <p class="evento-pie">Usaremos tus datos únicamente para darte acceso a este evento y darte seguimiento.</p>
+          <button class="btn evento-enviar" type="submit">{{ 'Confirmar mi asistencia' if presencial else 'Confirmar mi registro' }}</button>
+          <p class="evento-pie">Usaremos tus datos únicamente para {{ 'este evento' if presencial else 'darte acceso a este evento' }} y darte seguimiento.</p>
         </form>
       </div>
     {% else %}

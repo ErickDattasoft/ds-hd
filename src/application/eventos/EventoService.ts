@@ -15,6 +15,8 @@ import {
   Evento,
   resolverComodinesEvento,
   resolverPlantillaEvento,
+  PLANTILLA_EVENTO_DEFAULT,
+  PLANTILLA_PRESENCIAL_DEFAULT,
   type EstadoEvento,
   type EventoFlayer,
   type RespuestaRsvp,
@@ -44,6 +46,7 @@ export interface DatosEvento {
   vestimenta?: string;
   /** Un renglón por actividad: «3:00 PM - Recepción». */
   itinerario?: string;
+  maxPersonasRegistro?: number;
   descripcion?: string;
   fechaHora: string;
   cupo?: number;
@@ -78,12 +81,33 @@ export interface RegistroPublicoInput {
   empresa?: string;
   /** "Sí" / "No" / "Tal vez". */
   asistira?: string;
+  /** Cuántos van con este registro (solo si el evento permite más de 1). */
+  personas?: number;
   /** Solo tiene sentido si el evento tiene `sistema`. */
   usaSistema?: string;
   fuente?: string;
   deseaCanalWhatsapp?: boolean;
   captchaToken?: string;
   ip?: string;
+}
+
+/** Si la plantilla es idéntica a una de las de fábrica, no se guarda: así un evento creado con
+ *  el texto de webinar que luego pasa a presencial usa el texto de presencial (y viceversa). */
+function plantillaPropia(texto: string | null): string | null {
+  const t = (texto ?? '').replace(/\r\n/g, '\n').trim();
+  if (!t || t === PLANTILLA_EVENTO_DEFAULT.trim() || t === PLANTILLA_PRESENCIAL_DEFAULT.trim()) return null;
+  return t;
+}
+
+/** Personas de un registro público: solo cuenta si dijo que sí va y el evento deja anotar a más. */
+function personasRegistro(max: number, input: { asistira?: string; personas?: number }): number | null {
+  if (max <= 1 || (input.asistira ?? '').trim().toLowerCase() === 'no') return null;
+  const n = Math.trunc(Number(input.personas ?? 1));
+  if (!Number.isFinite(n) || n < 1) return 1;
+  if (n > max) {
+    throw new ValidationError(`Puedes registrar hasta ${max} personas`, { personas: `Máximo ${max}` });
+  }
+  return n;
 }
 
 /** Máximo de invitaciones por correo en un solo clic (presupuesto por petición del Worker). */
@@ -142,6 +166,7 @@ export class EventoService {
       lugarMapsUrl: datos.lugarMapsUrl ?? previo?.lugarMapsUrl ?? null,
       vestimenta: datos.vestimenta ?? previo?.vestimenta ?? null,
       itinerario: datos.itinerario !== undefined ? itinerarioDeTexto(datos.itinerario) : (previo?.itinerario ?? []),
+      maxPersonasRegistro: datos.maxPersonasRegistro ?? previo?.maxPersonasRegistro ?? 1,
       descripcion: datos.descripcion ?? null,
       fechaHora: instanteDeDatetimeLocal(datos.fechaHora),
       cupo: datos.cupo ?? previo?.cupo ?? 0,
@@ -159,7 +184,7 @@ export class EventoService {
       sistema: datos.sistema ?? previo?.sistema ?? null,
       contactoNombre: datos.contactoNombre ?? previo?.contactoNombre ?? null,
       contactoWhatsapp: datos.contactoWhatsapp ?? previo?.contactoWhatsapp ?? null,
-      plantilla: datos.plantilla ?? previo?.plantilla ?? null,
+      plantilla: plantillaPropia(datos.plantilla ?? previo?.plantilla ?? null),
       mensajeSeguimiento: datos.mensajeSeguimiento ?? previo?.mensajeSeguimiento ?? null,
       horasSeguimiento:
         datos.horasSeguimiento !== undefined ? datos.horasSeguimiento : (previo?.horasSeguimiento ?? null),
@@ -354,6 +379,7 @@ export class EventoService {
       { header: 'Ya asistió antes a otro evento', key: 'antes', width: 28 },
       { header: 'Teléfono', key: 'telefono', width: 16 },
       { header: '¿Asistirá?', key: 'asistira', width: 12 },
+      { header: 'Personas', key: 'personas', width: 10 },
       { header: 'Asistió (real)', key: 'asistioReal', width: 12 },
       { header: 'Cómo se enteró', key: 'fuente', width: 18 },
       { header: `Usa ${sistema}`, key: 'usaSistema', width: 16 },
@@ -375,6 +401,7 @@ export class EventoService {
       antes: (i.email ? historial[i.email.toLowerCase()] : undefined) ?? (i.telefono ? historial[i.telefono.trim()] ?? '' : ''),
       telefono: i.telefono ?? '',
       asistira: i.asistira ?? '',
+      personas: String(i.personas ?? 1),
       asistioReal: si(i.asistioReal),
       fuente: i.fuente ?? '',
       usaSistema: i.usaSistema ?? '',
@@ -834,6 +861,7 @@ export class EventoService {
       ip,
       correoSospechoso: correo ? esCorreoDesechable(correo.value) : false,
       asistira: input.asistira?.trim() || null,
+      personas: personasRegistro(evento.maxPersonasRegistro, input),
       usaSistema: evento.sistema ? input.usaSistema?.trim() || null : null,
       fuente: input.fuente?.trim() || null,
       deseaCanalWhatsapp: Boolean(input.deseaCanalWhatsapp),
@@ -953,7 +981,8 @@ export class EventoService {
   private async enviarConfirmacion(evento: Evento, ins: Inscripcion): Promise<void> {
     // Quien se registró solo con teléfono no recibe correo: el staff lo contacta por WhatsApp.
     if (!ins.email) return;
-    const mensajePersonalizado = evento.plantilla
+    // En presenciales siempre va el texto (con lugar y dirección), aunque no tenga uno propio.
+    const mensajePersonalizado = evento.plantilla || evento.tipo === 'presencial'
       ? `<p style="white-space:pre-wrap">${resolverPlantillaEvento(evento, ins).replace(/\n/g, '<br>')}</p>`
       : '';
     await this.email.enviar({

@@ -7,7 +7,7 @@
       {% if can('eventos:gestionar') %}<a class="btn btn--sm" href="/app/eventos/{{ evento.id }}/editar">Editar</a>{% endif %}
       <button type="button" class="btn btn--sm btn--secondary" data-copiar-link
               data-link="{{ config.baseUrl }}/eventos/{{ evento.id }}"
-              title="Copiar el link de registro público para compartirlo en redes o por correo">🔗 Link Registro</button>
+              title="Link SIN nombre para compartir en redes, grupos o por correo: cada quien llena sus datos al confirmar (salen en «Inscritos»). Para invitados con nombre y pases usa el 🔗 de cada uno en «Invitaciones».">🔗 Link público</button>
       <a class="btn btn--sm btn--ghost" href="/eventos/{{ evento.id }}" target="_blank" rel="noopener">Ver página pública</a>
       {% if can('eventos:gestionar') %}
         <form method="post" action="/app/eventos/{{ evento.id }}/eliminar" class="inline"
@@ -96,6 +96,12 @@
     <p class="alert">El evento está en <strong>borrador</strong>: puedes armar la lista y ver las invitaciones (👁), pero para mandarlas ponlo en <strong>publicado</strong> desde <a href="/app/eventos/{{ evento.id }}/editar">Editar</a>.</p>
   {% endif %}
 
+  {% if evento.pideConfirmacion and inscritos | length %}
+    <p class="muted">
+      👥 <strong>Total que van: {{ resumen.personas + personasInscritos }}</strong>
+      — {{ resumen.personas }} por invitación con nombre + {{ personasInscritos }} del link público (Inscritos que dijeron «Sí»).
+    </p>
+  {% endif %}
   <div class="inv-resumen">
     <div><strong>{{ resumen.invitados }}</strong><span>invitaciones</span></div>
     {% if evento.pideConfirmacion %}
@@ -187,7 +193,7 @@
   {% if puedeGestionar %}
     <form method="post" action="/app/eventos/{{ evento.id }}/externos" class="filterbar">
       <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
-      <input name="nombre" placeholder="Nombre" required />
+      <input name="nombre" placeholder="Nombre (opcional: sin nombre saluda «¡Hola!»)" size="28" />
       <input type="email" name="correo" placeholder="Correo (opcional)" />
       <input type="tel" name="telefono" placeholder="Celular (opcional)" />
       {% if evento.pideConfirmacion %}<input type="number" name="pases" min="1" max="{{ MAX_PASES }}" value="1" title="Pases" style="width:5em" />{% endif %}
@@ -290,7 +296,7 @@
                 {% else %}<span title="Aún sin confirmar entrega (Brevo puede tardar unos minutos)">🟡</span>{% endif %}
                 {% if i.correoSospechoso %}<span title="Dominio de correo temporal/desechable conocido — probablemente no es un prospecto real">🚩</span>{% endif %}
                 <input type="tel" name="telefono" value="{{ i.telefono or '' }}" placeholder="Teléfono" size="12" autocomplete="off" />
-                <span class="muted" title="Lo que declaró al registrarse">{{ i.asistira or '—' }}</span>
+                <span class="muted" title="Lo que declaró al registrarse">{{ i.asistira or '—' }}{% if i.personas and i.personas > 1 %} · 👥 {{ i.personas }}{% endif %}</span>
                 <label class="field--check" title="Asistencia real confirmada"><input type="checkbox" name="asistioReal" {{ 'checked' if i.asistioReal }} /> ✅</label>
                 <label class="field--check" title="Ya se le mandó el mensaje por WhatsApp"><input type="checkbox" name="contactadoWsp" {{ 'checked' if i.contactadoWsp }} /> 💬</label>
                 <button class="btn btn--sm" type="submit">Guardar</button>
@@ -349,7 +355,7 @@
             <td>{{ i.correoEstado or '—' }}</td>
             <td>{% if i.enListaNegra %}🚫{% else %}—{% endif %}</td>
             <td class="sensible">{{ i.telefono or '—' }}</td>
-            <td>{{ i.asistira or '—' }}</td>
+            <td>{{ i.asistira or '—' }}{% if i.personas and i.personas > 1 %} · 👥 {{ i.personas }}{% endif %}</td>
             <td>{{ 'Sí' if i.asistioReal else '—' }}</td>
             <td>{{ 'Sí' if i.contactadoWsp else '—' }}</td>
             <td>{{ i.estado }}</td>

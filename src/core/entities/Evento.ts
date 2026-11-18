@@ -52,6 +52,11 @@ export const PLANTILLA_EVENTO_DEFAULT =
   'Hola [nombre] 👋\n\nQuedaste registrado en [evento].\n📅 [fecha] [hora]\n🔗 Liga de acceso: [link]\n\n' +
   'Para mayores informes, contáctanos por WhatsApp: [contacto_whatsapp]\n\n¡Nos vemos ahí!\n\n— [contacto_nombre]';
 
+/** Texto de partida para eventos PRESENCIALES: sin liga de acceso, con el lugar. */
+export const PLANTILLA_PRESENCIAL_DEFAULT =
+  'Hola [nombre] 👋\n\n¡Gracias por confirmar! Te esperamos en [evento].\n📅 [fecha] [hora]\n📍 [lugar]\n[direccion]\n\n' +
+  'Cualquier duda, escríbenos por WhatsApp: [contacto_whatsapp]\n\n— [contacto_nombre]';
+
 /**
  * Resuelve los comodines `[nombre] [evento] [fecha] [hora] [sistema] [link] [contacto_nombre]
  * [contacto_whatsapp]` de un texto cualquiera (plantilla de confirmación o mensaje de
@@ -59,7 +64,8 @@ export const PLANTILLA_EVENTO_DEFAULT =
  */
 export function resolverComodinesEvento(
   texto: string,
-  evento: Pick<Evento, 'titulo' | 'fechaHora' | 'sistema' | 'urlWebinar' | 'contactoNombre' | 'contactoWhatsapp'>,
+  evento: Pick<Evento, 'titulo' | 'fechaHora' | 'sistema' | 'urlWebinar' | 'contactoNombre' | 'contactoWhatsapp'> &
+    Partial<Pick<Evento, 'lugarNombre' | 'lugarDireccion' | 'lugarMapsUrl'>>,
   inscrito: { nombre: string },
 ): string {
   const fechaFmt = evento.fechaHora.toLocaleDateString('es-MX', {
@@ -78,17 +84,22 @@ export function resolverComodinesEvento(
     .replace(/\[sistema\]/g, evento.sistema || '')
     .replace(/\[link\]/g, evento.urlWebinar || '')
     .replace(/\[contacto_nombre\]/g, evento.contactoNombre || '')
-    .replace(/\[contacto_whatsapp\]/g, evento.contactoWhatsapp || '');
+    .replace(/\[contacto_whatsapp\]/g, evento.contactoWhatsapp || '')
+    .replace(/\[lugar\]/g, evento.lugarNombre || '')
+    .replace(/\[direccion\]/g, evento.lugarDireccion || '')
+    .replace(/\[mapa\]/g, evento.lugarMapsUrl || '');
 }
 
 /** Resuelve la plantilla de CONFIRMACIÓN del evento (o {@link PLANTILLA_EVENTO_DEFAULT} si no
  *  tiene una propia) — usada tanto por el correo automático como por el botón manual de
  *  WhatsApp por inscrito. */
 export function resolverPlantillaEvento(
-  evento: Pick<Evento, 'titulo' | 'fechaHora' | 'sistema' | 'urlWebinar' | 'contactoNombre' | 'contactoWhatsapp' | 'plantilla'>,
+  evento: Pick<Evento, 'titulo' | 'fechaHora' | 'sistema' | 'urlWebinar' | 'contactoNombre' | 'contactoWhatsapp' | 'plantilla'> &
+    Partial<Pick<Evento, 'tipo' | 'lugarNombre' | 'lugarDireccion' | 'lugarMapsUrl'>>,
   inscrito: { nombre: string },
 ): string {
-  return resolverComodinesEvento(evento.plantilla || PLANTILLA_EVENTO_DEFAULT, evento, inscrito);
+  const porDefecto = evento.tipo === 'presencial' ? PLANTILLA_PRESENCIAL_DEFAULT : PLANTILLA_EVENTO_DEFAULT;
+  return resolverComodinesEvento(evento.plantilla || porDefecto, evento, inscrito);
 }
 
 /** Respuesta de una empresa/persona invitada de forma dirigida a un evento. */
@@ -236,6 +247,8 @@ export interface EventoProps {
   /** Código de vestimenta o «qué llevar». */
   vestimenta?: string | null;
   itinerario?: RenglonItinerario[];
+  /** Registro público (link sin nombre): cuántas personas puede anotar cada quien (1 = solo él). */
+  maxPersonasRegistro?: number;
   descripcion?: string | null;
   fechaHora: Date;
   cupo?: number;
@@ -279,6 +292,7 @@ export class Evento {
   lugarMapsUrl: string | null;
   vestimenta: string | null;
   itinerario: RenglonItinerario[];
+  maxPersonasRegistro: number;
   descripcion: string | null;
   fechaHora: Date;
   cupo: number;
@@ -317,6 +331,7 @@ export class Evento {
     this.itinerario = (props.itinerario ?? [])
       .map((r) => ({ hora: String(r?.hora ?? '').trim(), actividad: String(r?.actividad ?? '').trim() }))
       .filter((r) => r.actividad);
+    this.maxPersonasRegistro = sanearPases(props.maxPersonasRegistro ?? 1);
     this.descripcion = props.descripcion?.trim() || null;
     this.fechaHora = props.fechaHora;
     this.cupo = props.cupo ?? 0;

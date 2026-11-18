@@ -41,6 +41,9 @@
           <textarea name="itinerario" rows="4" placeholder="9:00 AM - Registro y café&#10;9:30 AM - Bienvenida&#10;10:00 AM - Novedades CONTPAQi">{{ valores.itinerario }}</textarea>
         </label>
         <label class="field"><span>Vestimenta / qué llevar</span><input name="vestimenta" value="{{ valores.vestimenta }}" placeholder="Ej. Casual · Trae tu laptop" /></label>
+        <label class="field"><span>Personas por registro <span class="muted">(link público: cuántos puede anotar cada quien; 1 = solo él)</span></span>
+          <input type="number" name="maxPersonasRegistro" value="{{ valores.maxPersonasRegistro or 1 }}" min="1" max="20" />
+        </label>
       </div>
     </details>
 
@@ -64,9 +67,9 @@
       <div class="disclosure__body form">
         <label class="field"><span>Contacto de este evento (nombre)</span><input name="contactoNombre" value="{{ valores.contactoNombre }}" /></label>
         <label class="field"><span>WhatsApp del contacto</span><input type="tel" name="contactoWhatsapp" value="{{ valores.contactoWhatsapp }}" /></label>
-        <label class="field"><span>Plantilla de confirmación <span class="muted">(vacío = usa el texto por defecto)</span></span>
+        <label class="field"><span>Plantilla de confirmación <span class="muted">(vacío = usa el texto por defecto del tipo de evento, el que ves en gris)</span></span>
           <textarea name="plantilla" rows="6" placeholder="{{ plantillaPorDefecto }}">{{ valores.plantilla }}</textarea>
-          <span class="muted">Comodines: [nombre] [evento] [fecha] [hora] [sistema] [link] [contacto_nombre] [contacto_whatsapp]. Se usa en el correo de confirmación y en el botón 💬 WhatsApp por inscrito (en Inscritos, dentro del detalle del evento).</span>
+          <span class="muted">Comodines: [nombre] [evento] [fecha] [hora] [sistema] [link] [lugar] [direccion] [mapa] [contacto_nombre] [contacto_whatsapp]. Se usa en el correo de confirmación y en el botón 💬 WhatsApp por inscrito (en Inscritos, dentro del detalle del evento).</span>
         </label>
         <label class="field"><span>Mensaje de seguimiento <span class="muted">(después del evento; vacío = no se manda)</span></span>
           <textarea name="mensajeSeguimiento" rows="4" placeholder="Déjalo vacío si no quieres mandar seguimiento para este evento. Ej: Gracias por tu interés en [evento]. Aquí está la grabación: [link]...">{{ valores.mensajeSeguimiento }}</textarea>

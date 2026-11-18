@@ -810,4 +810,43 @@ describe('página pública de un evento — es una landing, no el sitio navegabl
     expect(ics.text).toContain('LOCATION:Hotel Centro\\, Calle 60\\, Mérida');
     expect((await anon.get('/eventos/ev1/i/inventado')).status).toBe(404);
   });
+
+  it('link público de un presencial: sin nombre, pregunta cuántos van y suma al total', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    t.eventoRepo.items.set(
+      'ev1',
+      new Evento({
+        id: 'ev1', titulo: 'Posada DATTASOFT', tipo: 'presencial', fechaHora: enUnaSemana(), estado: 'publicado',
+        lugarNombre: 'Salón Jardín', lugarDireccion: 'Calle 20, Mérida', maxPersonasRegistro: 4,
+      }),
+    );
+    const anon = request.agent(t.app);
+    const page = await anon.get('/eventos/ev1');
+    expect(page.text).toContain('¿Cuántos van?');
+    expect(page.text).toContain('Confirmar mi asistencia');
+    expect(page.text).not.toContain('te enviamos el acceso');
+    const csrf = cookieValor(page.headers['set-cookie'] as unknown as string[], 'x-csrf-token')!;
+
+    const demas = await anon.post('/eventos/ev1').type('form')
+      .send({ _csrf: csrf, nombre: 'Laura Méndez', email: 'laura@x.mx', asistira: 'Sí', personas: '9' });
+    expect(demas.status).toBe(422);
+    const ok = await anon.post('/eventos/ev1').type('form')
+      .send({ _csrf: csrf, nombre: 'Laura Méndez', email: 'laura@x.mx', asistira: 'Sí', personas: '3' });
+    expect(ok.text).toContain('te esperamos');
+    expect(t.inscripcionRepo.items[0]!.personas).toBe(3);
+    // El correo de confirmación de un presencial lleva el lugar, no una «liga de acceso».
+    const correo = t.emailSender.enviados.at(-1)!;
+    expect(correo.html).toContain('Salón Jardín');
+    expect(correo.html).not.toContain('Liga de acceso');
+
+    const admin = await login(t.app, ADMIN.email, ADMIN.password);
+    await admin.agent.post('/app/eventos/ev1/externos').type('form').send({ _csrf: admin.csrf, nombre: '', pases: '2' });
+    const ev = await t.eventoRepo.findById('ev1');
+    const sinNombre = await anon.get(`/eventos/ev1/i/${ev!.invitadosExternos[0]!.token}`);
+    expect(sinNombre.text).toContain('¡Hola! Te invitamos');
+    await anon.post(`/eventos/ev1/i/${ev!.invitadosExternos[0]!.token}`).type('form')
+      .send({ _csrf: csrf, asistira: 'si', personas: '2' });
+    const detalle = await admin.agent.get('/app/eventos/ev1');
+    expect(detalle.text).toContain('Total que van: 5');
+  });
 });

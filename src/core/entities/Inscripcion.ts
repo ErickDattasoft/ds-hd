@@ -23,6 +23,9 @@ export interface Inscripcion {
   correoSospechoso: boolean;
   /** Respuesta libre del formulario público — "Sí"/"No"/"Tal vez". `null` para altas de staff. */
   asistira: string | null;
+  /** Cuántas personas van con este registro (contándolo a él); solo si el evento permite
+   *  más de 1 por registro. Ausente/`null` = 1. */
+  personas?: number | null;
   /** Respuesta a "¿usas [sistema]?" — solo si el evento tiene `sistema`; si no, `null`. */
   usaSistema: string | null;
   /** Cómo se enteró del evento (Facebook/Instagram/LinkedIn/...), texto libre. */

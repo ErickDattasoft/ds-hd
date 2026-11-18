@@ -3286,8 +3286,11 @@
   }
   function rsvpPersonasVisible(form) {
     var personas = form.querySelector('[data-rsvp-personas]');
+    if (!personas) return;
     var no = form.querySelector('input[name="asistira"][value="no"]');
-    if (personas && no) personas.hidden = no.checked;
+    var sel = form.querySelector('select[name="asistira"]');
+    // Invitación personal: radios «Ahí estaré / No podré ir»; registro público: select Sí/No/Tal vez.
+    personas.hidden = no ? no.checked : sel ? sel.value === 'No' : false;
   }
   document.addEventListener('change', function (e) {
     var form = e.target.closest && e.target.closest('[data-form-rsvp]');

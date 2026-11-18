@@ -5,6 +5,7 @@ import {
   RESPUESTAS_INVITACION,
   RESPUESTA_INVITACION_ETIQUETA,
   PLANTILLA_EVENTO_DEFAULT,
+  PLANTILLA_PRESENCIAL_DEFAULT,
   resolverPlantillaEvento,
   itinerarioATexto,
   TIPOS_EVENTO,
@@ -27,6 +28,8 @@ const waLink = (tel: string | null | undefined, texto: string): string => {
   const t = (tel ?? '').replace(/[^\d]/g, '');
   return `https://wa.me/${t ? `${t.length === 10 ? '52' : ''}${t}` : ''}?text=${encodeURIComponent(texto)}`;
 };
+/** Texto de fábrica del mensaje de confirmación según el tipo de evento. */
+const plantillaDe = (tipo: unknown): string => (tipo === 'presencial' ? PLANTILLA_PRESENCIAL_DEFAULT : PLANTILLA_EVENTO_DEFAULT);
 const datosFormulario = { TIPOS_EVENTO, TIPO_EVENTO_ETIQUETA };
 const respuesta = (v: unknown): RespuestaInvitacion | undefined =>
   RESPUESTAS_INVITACION.includes(v as RespuestaInvitacion) ? (v as RespuestaInvitacion) : undefined;
@@ -49,9 +52,9 @@ export class EventoController {
         estado: 'borrador',
         tipo: str(_req.query.tipo) || 'webinar',
         horasRecordatorio: 24,
-        plantilla: PLANTILLA_EVENTO_DEFAULT,
+        maxPersonasRegistro: 1,
       },
-      plantillaPorDefecto: PLANTILLA_EVENTO_DEFAULT,
+      plantillaPorDefecto: plantillaDe(str(_req.query.tipo)),
       errores: {},
       ...datosFormulario,
     });
@@ -68,7 +71,7 @@ export class EventoController {
         fechaHora: datetimeLocalMexico(evento.fechaHora),
         itinerario: itinerarioATexto(evento.itinerario),
       },
-      plantillaPorDefecto: PLANTILLA_EVENTO_DEFAULT,
+      plantillaPorDefecto: plantillaDe(evento.tipo),
       errores: {},
       ...datosFormulario,
     });
@@ -88,6 +91,7 @@ export class EventoController {
           lugarMapsUrl: str(b.lugarMapsUrl),
           vestimenta: str(b.vestimenta),
           itinerario: str(b.itinerario),
+          maxPersonasRegistro: pases(b.maxPersonasRegistro) ?? 1,
           descripcion: str(b.descripcion),
           fechaHora: str(b.fechaHora),
           cupo: n(b.cupo),
@@ -112,7 +116,7 @@ export class EventoController {
         modo: id ? 'editar' : 'crear',
         evento: id ? { id } : null,
         valores: b,
-        plantillaPorDefecto: PLANTILLA_EVENTO_DEFAULT,
+        plantillaPorDefecto: plantillaDe(b.tipo),
         errores: camposDeError(err),
         ...datosFormulario,
       });
@@ -177,6 +181,10 @@ export class EventoController {
       resumen: evento.resumenInvitaciones,
       invitacionesVM,
       externosVM,
+      // Del link público cuentan quienes dijeron «Sí» (cada uno con sus acompañantes).
+      personasInscritos: inscritos
+        .filter((i) => (i.asistira ?? '').trim().toLowerCase() === 'sí' || (i.asistira ?? '').trim().toLowerCase() === 'si')
+        .reduce((t, i) => t + (i.personas ?? 1), 0),
       avisoInvitaciones: str(req.query.aviso),
       MAX_PASES,
       TIPO_EVENTO_ETIQUETA,
