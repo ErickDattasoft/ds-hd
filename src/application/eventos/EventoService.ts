@@ -289,6 +289,35 @@ export class EventoService {
     return { creados: ejemplos.length, enviadas };
   }
 
+  /**
+   * Agrega a una persona como invitada en TODOS los eventos de ejemplo y le manda cada
+   * invitación, para que otros del equipo vean las pruebas. Si ya estaba (mismo correo), no se
+   * duplica ni se le reenvía.
+   */
+  async invitarAEjemplos(
+    actor: SessionUser,
+    datos: { nombre?: string; correo: string },
+  ): Promise<{ eventos: number; enviadas: number }> {
+    if (!actor.permisos.includes('eventos:gestionar')) throw new ForbiddenError('No puedes gestionar eventos');
+    const correo = datos.correo.trim().toLowerCase();
+    if (!correo) throw new ValidationError('Escribe el correo de la persona', { correo: 'Requerido' });
+    const ejemplos = (await this.eventos.list()).filter((e) => e.esPrueba);
+    if (!ejemplos.length) throw new ValidationError('Primero crea los eventos de ejemplo');
+    let enviadas = 0;
+    for (const e of ejemplos) {
+      if (e.invitadosExternos.some((x) => x.correo === correo)) continue;
+      const ext = await this.agregarInvitadoExterno(actor, e.id, {
+        nombre: datos.nombre,
+        correo,
+        pases: e.pideConfirmacion ? 2 : 1,
+        fuente: 'Prueba',
+      });
+      await this.enviarInvitacion(actor, e.id, ext.id);
+      enviadas++;
+    }
+    return { eventos: ejemplos.length, enviadas };
+  }
+
   /** Borra todos los eventos de ejemplo (🧪) con sus inscripciones. */
   async eliminarEjemplos(actor: SessionUser): Promise<number> {
     if (!actor.permisos.includes('eventos:gestionar')) throw new ForbiddenError('No puedes gestionar eventos');

@@ -19,7 +19,16 @@
       </div>
     {% endif %}
   </div>
-  {% if aviso %}<p class="alert alert--ok">{{ aviso }}</p>{% endif %}
+  {% if aviso %}<p class="alert {{ 'alert--error' if aviso.startsWith('⚠') else 'alert--ok' }}">{{ aviso }}</p>{% endif %}
+  {% if hayEjemplos and can('eventos:gestionar') %}
+    <form method="post" action="/app/eventos/ejemplos/invitar" class="filterbar" style="margin-bottom:var(--space-4)">
+      <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+      <strong>🧪 Invitar a alguien más a los ejemplos:</strong>
+      <input name="nombre" placeholder="Nombre (opcional)" autocomplete="off" />
+      <input type="email" name="correo" placeholder="Correo" required autocomplete="off" />
+      <button class="btn btn--sm" type="submit">✉️ Agregar y enviar a los 5</button>
+    </form>
+  {% endif %}
   <table class="data-table">
     <thead><tr><th>Título</th><th>Fecha</th><th>Estado</th><th>Cupo</th></tr></thead>
     <tbody>

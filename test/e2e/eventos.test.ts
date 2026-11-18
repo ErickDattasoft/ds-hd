@@ -35,6 +35,14 @@ describe('eventos / webinars', () => {
     expect(lista.text).toContain('🗑 Borrar ejemplos');
     const publica = await request(t.app).get('/eventos');
     expect(publica.text).not.toContain('🧪');
+    // Invitar a otra persona a todos los ejemplos (sin duplicar si se repite).
+    const antes = t.emailSender.enviados.length;
+    await agent.post('/app/eventos/ejemplos/invitar').type('form').send({ _csrf: csrf, nombre: 'Arturo', correo: 'arturo@dattasoft.mx' });
+    expect(t.emailSender.enviados.length - antes).toBe(5);
+    expect(t.emailSender.enviados.at(-1)?.para[0]?.email).toBe('arturo@dattasoft.mx');
+    await agent.post('/app/eventos/ejemplos/invitar').type('form').send({ _csrf: csrf, correo: 'arturo@dattasoft.mx' });
+    expect(t.emailSender.enviados.length - antes).toBe(5);
+    expect([...t.eventoRepo.items.values()].filter((e) => e.esPrueba).every((e) => e.invitadosExternos.length === 2)).toBe(true);
     // Volver a crear no duplica; borrar los quita todos.
     await agent.post('/app/eventos/ejemplos').type('form').send({ _csrf: csrf });
     expect([...t.eventoRepo.items.values()].filter((e) => e.esPrueba)).toHaveLength(5);

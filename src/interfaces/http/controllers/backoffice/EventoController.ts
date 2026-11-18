@@ -57,6 +57,20 @@ export class EventoController {
     res.redirect(`/app/eventos?aviso=${encodeURIComponent(aviso)}`);
   };
 
+  ejemplosInvitarPost = async (req: Request, res: Response): Promise<void> => {
+    const correo = str(req.body?.correo);
+    let aviso: string;
+    try {
+      const { enviadas } = await this.eventos.invitarAEjemplos(req.user!, { nombre: str(req.body?.nombre), correo });
+      aviso = enviadas
+        ? `✉️ ${correo} quedó invitado a los ejemplos: ${enviadas} invitaciones enviadas.`
+        : `${correo} ya estaba invitado a todos los ejemplos; no se reenvió nada.`;
+    } catch (err) {
+      aviso = `⚠ ${(err as Error).message}`;
+    }
+    res.redirect(`/app/eventos?aviso=${encodeURIComponent(aviso)}`);
+  };
+
   ejemplosEliminarPost = async (req: Request, res: Response): Promise<void> => {
     const n = await this.eventos.eliminarEjemplos(req.user!);
     res.redirect(`/app/eventos?aviso=${encodeURIComponent(`🗑 ${n} eventos de ejemplo borrados.`)}`);
