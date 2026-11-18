@@ -1,0 +1,80 @@
+{# Contenido de la invitación (página general y link personal): cuenta regresiva, cuándo,
+   dónde, itinerario, vestimenta y botones de calendario. Cada sección sale solo si tiene datos.
+   Espera: evento, googleCalendar, fechaIso. #}
+{% set esFelicitacion = evento.tipo == 'felicitacion' %}
+<div class="inv-contenido">
+  {% if not esFelicitacion and not evento.yaPaso and evento.estado != 'cancelado' %}
+    <section class="inv-bloque inv-cuenta" data-cuenta-regresiva="{{ fechaIso }}" aria-label="Cuenta regresiva">
+      <p class="inv-bloque__titulo">Faltan</p>
+      <div class="inv-cuenta__numeros">
+        <div><strong data-cr="d">–</strong><span>días</span></div>
+        <div><strong data-cr="h">–</strong><span>horas</span></div>
+        <div><strong data-cr="m">–</strong><span>min</span></div>
+        <div><strong data-cr="s">–</strong><span>seg</span></div>
+      </div>
+    </section>
+  {% endif %}
+
+  {% if not esFelicitacion %}
+    <section class="inv-bloque">
+      <p class="inv-bloque__titulo">📅 Cuándo</p>
+      <p class="inv-grande">{{ evento.fechaHora | fechalarga }}</p>
+      <p>{{ evento.fechaHora | hora }}</p>
+      {% if not evento.yaPaso %}
+        <div class="inv-botones">
+          <a class="btn btn--sm btn--secondary" href="{{ googleCalendar }}" target="_blank" rel="noopener">＋ Google Calendar</a>
+          <a class="btn btn--sm btn--ghost" href="/eventos/{{ evento.id }}/calendario.ics">＋ Outlook / Apple</a>
+        </div>
+      {% endif %}
+    </section>
+  {% endif %}
+
+  {% if evento.tipo == 'presencial' and (evento.lugarNombre or evento.lugarDireccion) %}
+    <section class="inv-bloque">
+      <p class="inv-bloque__titulo">📍 Dónde</p>
+      {% if evento.lugarNombre %}<p class="inv-grande">{{ evento.lugarNombre }}</p>{% endif %}
+      {% if evento.lugarDireccion %}<p>{{ evento.lugarDireccion }}</p>{% endif %}
+      {% if evento.lugarMapsUrl %}
+        <div class="inv-botones">
+          <a class="btn btn--sm btn--secondary" href="{{ evento.lugarMapsUrl }}" target="_blank" rel="noopener">🗺 Cómo llegar</a>
+        </div>
+      {% elif evento.lugarDireccion %}
+        <div class="inv-botones">
+          <a class="btn btn--sm btn--secondary" href="https://www.google.com/maps/search/?api=1&query={{ ((evento.lugarNombre or '') + ' ' + evento.lugarDireccion) | urlencode }}" target="_blank" rel="noopener">🗺 Cómo llegar</a>
+        </div>
+      {% endif %}
+    </section>
+  {% endif %}
+
+  {% if evento.itinerario | length %}
+    <section class="inv-bloque">
+      <p class="inv-bloque__titulo">🕒 Programa</p>
+      <ol class="inv-itinerario">
+        {% for r in evento.itinerario %}
+          <li>{% if r.hora %}<span class="inv-itinerario__hora">{{ r.hora }}</span>{% endif %}<span>{{ r.actividad }}</span></li>
+        {% endfor %}
+      </ol>
+    </section>
+  {% endif %}
+
+  {% if evento.vestimenta %}
+    <section class="inv-bloque">
+      <p class="inv-bloque__titulo">👕 Vestimenta / qué llevar</p>
+      <p>{{ evento.vestimenta }}</p>
+    </section>
+  {% endif %}
+
+  {# En webinars el contacto es quien imparte y ya sale arriba. #}
+  {% if evento.tipo != 'webinar' and (evento.contactoNombre or evento.contactoWhatsapp) %}
+    <section class="inv-bloque">
+      <p class="inv-bloque__titulo">🙋 ¿Dudas?</p>
+      <p>{{ evento.contactoNombre or 'Escríbenos' }}</p>
+      {% if evento.contactoWhatsapp %}
+        {% set telInv = evento.contactoWhatsapp | replace(' ', '') | replace('-', '') | replace('(', '') | replace(')', '') | replace('+', '') %}
+        <div class="inv-botones">
+          <a class="btn btn--sm btn--secondary" href="https://wa.me/{{ '52' if telInv | length == 10 }}{{ telInv }}" target="_blank" rel="noopener">💬 WhatsApp</a>
+        </div>
+      {% endif %}
+    </section>
+  {% endif %}
+</div>

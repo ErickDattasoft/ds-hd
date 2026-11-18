@@ -4,6 +4,7 @@ import type {
   IListaNegraRepository,
 } from '../../core/ports/repositories/IEventoRepository.js';
 import type { IEmpresaRepository } from '../../core/ports/repositories/IEmpresaRepository.js';
+import type { IContactoRepository } from '../../core/ports/repositories/IContactoRepository.js';
 import type { IClock } from '../../core/ports/services/IClock.js';
 import type { IIdGenerator } from '../../core/ports/services/IIdGenerator.js';
 import type { ILogger } from '../../core/ports/services/ILogger.js';
@@ -16,6 +17,11 @@ import {
   resolverPlantillaEvento,
   type EstadoEvento,
   type EventoFlayer,
+  type RespuestaRsvp,
+  type CambiosDestinatario,
+  type DatosRsvp,
+  type TipoEvento,
+  itinerarioDeTexto,
   type InvitacionEmpresa,
   type InvitadoExterno,
 } from '../../core/entities/Evento.js';
@@ -31,6 +37,13 @@ import { ZONA_MEXICO, instanteDeDatetimeLocal } from '../../core/entities/value-
 /** Datos editables de un evento (alta o edición, uso staff). */
 export interface DatosEvento {
   titulo: string;
+  tipo?: TipoEvento;
+  lugarNombre?: string;
+  lugarDireccion?: string;
+  lugarMapsUrl?: string;
+  vestimenta?: string;
+  /** Un renglón por actividad: «3:00 PM - Recepción». */
+  itinerario?: string;
   descripcion?: string;
   fechaHora: string;
   cupo?: number;
@@ -73,6 +86,9 @@ export interface RegistroPublicoInput {
   ip?: string;
 }
 
+/** Máximo de invitaciones por correo en un solo clic (presupuesto por petición del Worker). */
+const ENVIOS_POR_LOTE = 25;
+
 /** Eventos/webinars: gestión (staff), registro público, lista negra. */
 export class EventoService {
   constructor(
@@ -90,6 +106,8 @@ export class EventoService {
     private readonly baseUrl: string,
     /** En producción, sin Turnstile configurado el registro público se rechaza. */
     private readonly exigirCaptcha: boolean = false,
+    /** Para tomar el contacto principal (correo/celular) al invitar una empresa de la cartera. */
+    private readonly contactos?: IContactoRepository,
   ) {}
 
   // ── Consulta ─────────────────────────────────────────────────────────────
@@ -118,6 +136,12 @@ export class EventoService {
     const evento = new Evento({
       id: id ?? this.ids.newId(),
       titulo: datos.titulo,
+      tipo: datos.tipo ?? previo?.tipo ?? 'webinar',
+      lugarNombre: datos.lugarNombre ?? previo?.lugarNombre ?? null,
+      lugarDireccion: datos.lugarDireccion ?? previo?.lugarDireccion ?? null,
+      lugarMapsUrl: datos.lugarMapsUrl ?? previo?.lugarMapsUrl ?? null,
+      vestimenta: datos.vestimenta ?? previo?.vestimenta ?? null,
+      itinerario: datos.itinerario !== undefined ? itinerarioDeTexto(datos.itinerario) : (previo?.itinerario ?? []),
       descripcion: datos.descripcion ?? null,
       fechaHora: instanteDeDatetimeLocal(datos.fechaHora),
       cupo: datos.cupo ?? previo?.cupo ?? 0,
@@ -396,19 +420,26 @@ export class EventoService {
   async agregarEmpresaInvitada(
     actor: SessionUser,
     eventoId: string,
-    datos: { empresaNombre: string; invitadoPor?: string },
+    datos: { empresaNombre: string; invitadoPor?: string; pases?: number } & CambiosDestinatario,
   ): Promise<InvitacionEmpresa> {
     const evento = await this.paraGestion(actor, eventoId);
     const nombre = datos.empresaNombre.trim();
     const enCartera = (await this.empresas.list({ activa: true })).find(
       (e) => e.nombre.toLowerCase() === nombre.toLowerCase(),
     );
+    const contacto = enCartera ? await this.contactoParaInvitar(enCartera.id, enCartera.contactoPrincipalId) : null;
     const inv = evento.agregarEmpresaInvitada({
       id: this.ids.newId(),
       empresaId: enCartera?.id ?? null,
       empresaNombre: enCartera?.nombre ?? nombre,
       sistemas: enCartera?.sistemasContratados ?? [],
       invitadoPor: datos.invitadoPor?.trim() || actor.nombre,
+      token: this.nuevoTokenInvitacion(),
+      pases: datos.pases,
+      // Lo que el staff escriba gana; si no, el contacto principal de la empresa.
+      paraNombre: datos.paraNombre?.trim() || contacto?.nombre || null,
+      correo: datos.correo?.trim() || contacto?.email || null,
+      telefono: datos.telefono?.trim() || contacto?.telefono || contacto?.celular || null,
     });
     await this.persistirPanel(actor, evento, `Invitó a «${inv.empresaNombre}»`);
     return inv;
@@ -418,7 +449,7 @@ export class EventoService {
     actor: SessionUser,
     eventoId: string,
     invId: string,
-    cambios: Partial<Pick<InvitacionEmpresa, 'invitadoPor' | 'contactado' | 'respuesta' | 'notas'>>,
+    cambios: Partial<Pick<InvitacionEmpresa, 'invitadoPor' | 'contactado' | 'respuesta' | 'notas' | 'pases' | 'personas'>> & CambiosDestinatario,
   ): Promise<void> {
     const evento = await this.paraGestion(actor, eventoId);
     evento.actualizarEmpresaInvitada(invId, cambios);
@@ -434,10 +465,18 @@ export class EventoService {
   async agregarInvitadoExterno(
     actor: SessionUser,
     eventoId: string,
-    datos: { nombre?: string; fuente?: string },
+    datos: { nombre?: string; fuente?: string; pases?: number; correo?: string; telefono?: string },
   ): Promise<InvitadoExterno> {
     const evento = await this.paraGestion(actor, eventoId);
-    const ext = evento.agregarInvitadoExterno({ id: this.ids.newId(), nombre: datos.nombre, fuente: datos.fuente });
+    const ext = evento.agregarInvitadoExterno({
+      id: this.ids.newId(),
+      nombre: datos.nombre,
+      fuente: datos.fuente,
+      token: this.nuevoTokenInvitacion(),
+      pases: datos.pases,
+      correo: datos.correo,
+      telefono: datos.telefono,
+    });
     await this.persistirPanel(actor, evento);
     return ext;
   }
@@ -446,7 +485,7 @@ export class EventoService {
     actor: SessionUser,
     eventoId: string,
     extId: string,
-    cambios: Partial<Pick<InvitadoExterno, 'nombre' | 'fuente' | 'contactado' | 'respuesta' | 'notas'>>,
+    cambios: Partial<Pick<InvitadoExterno, 'nombre' | 'fuente' | 'contactado' | 'respuesta' | 'notas' | 'pases' | 'personas'>> & CambiosDestinatario,
   ): Promise<void> {
     const evento = await this.paraGestion(actor, eventoId);
     evento.actualizarInvitadoExterno(extId, cambios);
@@ -457,6 +496,183 @@ export class EventoService {
     const evento = await this.paraGestion(actor, eventoId);
     evento.quitarInvitadoExterno(extId);
     await this.persistirPanel(actor, evento);
+  }
+
+  // ── Link personal de cada invitado (RSVP) ──────────────────────────────
+  /** Clave del link personal: 128 bits al azar, corta para que el link quepa en un WhatsApp. */
+  private nuevoTokenInvitacion(): string {
+    return this.ids.newToken().slice(0, 22);
+  }
+
+  /** Contacto principal de la empresa (o el primero activo con correo) para mandarle la invitación. */
+  private async contactoParaInvitar(
+    empresaId: string,
+    principalId: string | null,
+  ): Promise<{ nombre: string; email: string | null; telefono: string | null; celular: string | null } | null> {
+    if (!this.contactos) return null;
+    try {
+      const principal = principalId ? await this.contactos.findById(principalId) : null;
+      if (principal?.activo !== false && principal) return principal;
+      const todos = (await this.contactos.list({ empresaId, activo: true })).filter((c) => c.email);
+      return todos[0] ?? null;
+    } catch (err) {
+      this.logger.warn('No se pudo leer el contacto de la empresa invitada', { err: String(err), empresaId });
+      return null;
+    }
+  }
+
+  /** Link personal de un invitado (lo que se manda por correo o WhatsApp). */
+  linkInvitacion(evento: Evento, inv: Pick<DatosRsvp, 'token'>): string {
+    return `${this.baseUrl}/eventos/${evento.id}/i/${inv.token}`;
+  }
+
+  /** Texto para mandar la invitación por WhatsApp (corto, con el link personal). */
+  mensajeWhatsAppInvitacion(evento: Evento, inv: DatosRsvp & { id: string }, nombre: string): string {
+    const cuando =
+      evento.tipo === 'felicitacion'
+        ? ''
+        : `\n📅 ${evento.fechaHora.toLocaleString('es-MX', { timeZone: ZONA_MEXICO, weekday: 'long', day: 'numeric', month: 'long', hour: 'numeric', minute: '2-digit' })}`;
+    const donde = evento.tipo === 'presencial' && evento.lugarNombre ? `\n📍 ${evento.lugarNombre}` : '';
+    const pases = evento.pideConfirmacion ? `\n🎟 ${inv.pases} ${inv.pases === 1 ? 'pase' : 'pases'}` : '';
+    const accion = evento.pideConfirmacion ? 'Aquí tu invitación, ¿nos confirmas?' : 'Te dejamos esto:';
+    return `¡Hola${nombre ? ` ${nombre}` : ''}! 👋\n${evento.titulo}${cuando}${donde}${pases}\n\n${accion}\n${this.linkInvitacion(evento, inv)}`;
+  }
+
+  /** Manda por correo la invitación de UN invitado (empresa o externo). */
+  async enviarInvitacion(actor: SessionUser, eventoId: string, invId: string): Promise<void> {
+    const evento = await this.paraGestion(actor, eventoId);
+    if (evento.estado === 'borrador') {
+      throw new ValidationError('Publica el evento antes de mandar invitaciones (está en borrador)');
+    }
+    evento.asignarTokensFaltantes(() => this.nuevoTokenInvitacion());
+    const inv = evento.buscarInvitado(invId);
+    if (!inv) throw new NotFoundError('Invitado', invId);
+    await this.mandarCorreoInvitacion(evento, inv);
+    evento.marcarEnviada(invId, this.clock.now());
+    await this.persistirPanel(actor, evento);
+  }
+
+  /** Manda la invitación a todos los que tienen correo y aún no se les ha mandado. */
+  async enviarInvitacionesPendientes(
+    actor: SessionUser,
+    eventoId: string,
+  ): Promise<{ enviadas: number; fallidas: number; sinCorreo: number; faltan: number }> {
+    const evento = await this.paraGestion(actor, eventoId);
+    if (evento.estado === 'borrador') {
+      throw new ValidationError('Publica el evento antes de mandar invitaciones (está en borrador)');
+    }
+    evento.asignarTokensFaltantes(() => this.nuevoTokenInvitacion());
+    const todos = [...evento.invitaciones, ...evento.invitadosExternos];
+    const porMandar = todos.filter((i) => i.correo && !i.enviadaAt && i.respuesta === 'pendiente');
+    // Tope por clic: el Worker tiene presupuesto por petición; con más, se vuelve a picar.
+    const lote = porMandar.slice(0, ENVIOS_POR_LOTE);
+    let enviadas = 0;
+    let fallidas = 0;
+    for (const inv of lote) {
+      try {
+        await this.mandarCorreoInvitacion(evento, inv);
+        evento.marcarEnviada(inv.id, this.clock.now());
+        enviadas++;
+      } catch (err) {
+        fallidas++;
+        this.logger.warn('No se pudo mandar una invitación', { err: String(err), eventoId, invId: inv.id });
+      }
+    }
+    await this.persistirPanel(actor, evento, `invitaciones enviadas por correo: ${enviadas}`);
+    return {
+      enviadas,
+      fallidas,
+      sinCorreo: todos.filter((i) => !i.correo && i.respuesta === 'pendiente').length,
+      faltan: porMandar.length - lote.length,
+    };
+  }
+
+  private async mandarCorreoInvitacion(
+    evento: Evento,
+    inv: (InvitacionEmpresa | InvitadoExterno),
+  ): Promise<void> {
+    if (!inv.correo) throw new ValidationError('Este invitado no tiene correo; agrégaselo o mándala por WhatsApp');
+    const nombre = 'empresaNombre' in inv ? (inv.paraNombre ?? inv.empresaNombre) : inv.nombre || inv.paraNombre || '';
+    const link = this.linkInvitacion(evento, inv);
+    const esc = (t: string) => t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    const fecha = evento.fechaHora.toLocaleString('es-MX', {
+      timeZone: ZONA_MEXICO,
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      hour: 'numeric',
+      minute: '2-digit',
+    });
+    const renglones = [
+      evento.tipo !== 'felicitacion' ? `📅 ${esc(fecha)}` : '',
+      evento.tipo === 'presencial' && evento.lugarNombre ? `📍 ${esc(evento.lugarNombre)}` : '',
+      evento.pideConfirmacion ? `🎟 ${inv.pases} ${inv.pases === 1 ? 'pase' : 'pases'}` : '',
+    ].filter(Boolean);
+    const flayer = evento.flayer
+      ? `<p><img src="${this.baseUrl}/eventos/${evento.id}/flayer?v=${evento.flayer.tamano}" alt="" style="max-width:100%;border-radius:10px"></p>`
+      : '';
+    const boton = evento.pideConfirmacion ? 'Ver mi invitación y confirmar' : 'Abrir';
+    await this.email.enviar({
+      para: [{ email: inv.correo, nombre: nombre || undefined }],
+      asunto: evento.tipo === 'felicitacion' ? evento.titulo : `Invitación: ${evento.titulo}`,
+      html: `<div style="font-family:Arial,sans-serif;max-width:560px;margin:auto;text-align:center">
+        <p style="font-size:16px">¡Hola${nombre ? ` ${esc(nombre)}` : ''}! 👋</p>
+        <h2 style="margin:8px 0 16px">${esc(evento.titulo)}</h2>
+        ${flayer}
+        ${evento.descripcion ? `<p style="white-space:pre-wrap;color:#444">${esc(evento.descripcion)}</p>` : ''}
+        <p style="font-size:15px;line-height:1.7">${renglones.join('<br>')}</p>
+        <p style="margin:24px 0"><a href="${link}" style="background:#111;color:#fff;padding:12px 22px;border-radius:8px;text-decoration:none;font-weight:bold">${boton}</a></p>
+        <p style="color:#888;font-size:12px">Si el botón no abre, copia este link: ${link}</p>
+      </div>`,
+      tags: ['evento-invitacion', `evento-${evento.id}`],
+    });
+  }
+
+  /** Las invitaciones de antes de esta función no tienen link: se les da al abrir el evento. */
+  async asegurarLinksInvitados(evento: Evento): Promise<void> {
+    if (evento.asignarTokensFaltantes(() => this.nuevoTokenInvitacion())) {
+      await this.eventos.save(evento);
+    }
+  }
+
+  /** Abre la invitación personal (sin sesión). Registra la primera apertura. */
+  async abrirInvitacion(
+    eventoId: string,
+    token: string,
+    /** El equipo revisando la invitación: ve borradores y no cuenta como «abierta». */
+    vistaStaff = false,
+  ): Promise<{ evento: Evento; nombre: string; inv: InvitacionEmpresa | InvitadoExterno }> {
+    const evento = await this.obtener(eventoId);
+    const r = evento.buscarPorToken(token);
+    if (!r) throw new NotFoundError('Invitación', token);
+    if (evento.estado === 'borrador' && !vistaStaff) throw new NotFoundError('Invitación', token);
+    if (!vistaStaff && evento.marcarAbierta(token, this.clock.now())) {
+      // Solo la primera vez escribe: abrirla cien veces no gasta cuota de Firestore.
+      await this.eventos.save(evento).catch((err) =>
+        this.logger.warn('No se pudo registrar la apertura de la invitación', { err: String(err), eventoId }),
+      );
+    }
+    return { evento, nombre: r.nombre, inv: r.inv };
+  }
+
+  /** El invitado contesta desde su link personal. */
+  async responderInvitacion(
+    eventoId: string,
+    token: string,
+    resp: RespuestaRsvp,
+  ): Promise<{ evento: Evento; nombre: string; inv: InvitacionEmpresa | InvitadoExterno }> {
+    const evento = await this.obtener(eventoId);
+    if (evento.estado === 'borrador') throw new NotFoundError('Invitación', token);
+    const inv = evento.responderInvitacion(token, resp, this.clock.now());
+    evento.updatedAt = this.clock.now();
+    await this.eventos.save(evento);
+    const nombre = evento.buscarPorToken(token)!.nombre;
+    this.logger.info('Invitado contestó su invitación', {
+      eventoId,
+      asistira: resp.asistira,
+      personas: inv.personas,
+    });
+    return { evento, nombre, inv };
   }
 
   // ── Flayer (imagen promocional) ─────────────────────────────────────────

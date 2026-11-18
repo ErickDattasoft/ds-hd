@@ -6,6 +6,11 @@ import {
   RESPUESTA_INVITACION_ETIQUETA,
   PLANTILLA_EVENTO_DEFAULT,
   resolverPlantillaEvento,
+  itinerarioATexto,
+  TIPOS_EVENTO,
+  TIPO_EVENTO_ETIQUETA,
+  MAX_PASES,
+  type TipoEvento,
   type EstadoEvento,
   type RespuestaInvitacion,
 } from '../../../../core/entities/Evento.js';
@@ -15,6 +20,14 @@ import { datetimeLocalMexico } from '../../../../core/entities/value-objects/hor
 const str = (v: unknown): string => (typeof v === 'string' ? v : '');
 const n = (v: unknown): number => (Number.isFinite(Number(v)) ? Number(v) : 0);
 const bool = (v: unknown): boolean => v === 'on' || v === 'true' || v === true;
+const pases = (v: unknown): number | undefined => (str(v).trim() ? Math.max(1, Math.trunc(n(v))) : undefined);
+const opcional = (v: unknown): string | undefined => (v !== undefined ? str(v) : undefined);
+/** Teléfono → link de WhatsApp (10 dígitos = México). */
+const waLink = (tel: string | null | undefined, texto: string): string => {
+  const t = (tel ?? '').replace(/[^\d]/g, '');
+  return `https://wa.me/${t ? `${t.length === 10 ? '52' : ''}${t}` : ''}?text=${encodeURIComponent(texto)}`;
+};
+const datosFormulario = { TIPOS_EVENTO, TIPO_EVENTO_ETIQUETA };
 const respuesta = (v: unknown): RespuestaInvitacion | undefined =>
   RESPUESTAS_INVITACION.includes(v as RespuestaInvitacion) ? (v as RespuestaInvitacion) : undefined;
 
@@ -32,9 +45,15 @@ export class EventoController {
       titulo: 'Nuevo evento',
       modo: 'crear',
       // La plantilla arranca con el texto por defecto para editarle el link y el contacto, como en el viejo.
-      valores: { estado: 'borrador', horasRecordatorio: 24, plantilla: PLANTILLA_EVENTO_DEFAULT },
+      valores: {
+        estado: 'borrador',
+        tipo: str(_req.query.tipo) || 'webinar',
+        horasRecordatorio: 24,
+        plantilla: PLANTILLA_EVENTO_DEFAULT,
+      },
       plantillaPorDefecto: PLANTILLA_EVENTO_DEFAULT,
       errores: {},
+      ...datosFormulario,
     });
   };
 
@@ -44,9 +63,14 @@ export class EventoController {
       titulo: `Editar ${evento.titulo}`,
       modo: 'editar',
       evento,
-      valores: { ...evento, fechaHora: datetimeLocalMexico(evento.fechaHora) },
+      valores: {
+        ...evento,
+        fechaHora: datetimeLocalMexico(evento.fechaHora),
+        itinerario: itinerarioATexto(evento.itinerario),
+      },
       plantillaPorDefecto: PLANTILLA_EVENTO_DEFAULT,
       errores: {},
+      ...datosFormulario,
     });
   };
 
@@ -58,6 +82,12 @@ export class EventoController {
         req.user!,
         {
           titulo: str(b.titulo),
+          tipo: (TIPOS_EVENTO.includes(str(b.tipo) as TipoEvento) ? str(b.tipo) : 'webinar') as TipoEvento,
+          lugarNombre: str(b.lugarNombre),
+          lugarDireccion: str(b.lugarDireccion),
+          lugarMapsUrl: str(b.lugarMapsUrl),
+          vestimenta: str(b.vestimenta),
+          itinerario: str(b.itinerario),
           descripcion: str(b.descripcion),
           fechaHora: str(b.fechaHora),
           cupo: n(b.cupo),
@@ -84,6 +114,7 @@ export class EventoController {
         valores: b,
         plantillaPorDefecto: PLANTILLA_EVENTO_DEFAULT,
         errores: camposDeError(err),
+        ...datosFormulario,
       });
     }
   };
@@ -98,6 +129,17 @@ export class EventoController {
         this.eventos.historialEmpresas(id),
         this.eventos.historialAsistencias(id),
       ]);
+    // Las invitaciones de antes del link personal reciben el suyo aquí (una sola vez).
+    await this.eventos.asegurarLinksInvitados(evento);
+    const conLink = <T extends { id: string; token: string | null; telefono: string | null; pases: number; respuesta: string; personas: number | null; mensaje: string | null; respondioNombre: string | null; paraNombre: string | null; correo: string | null; enviadaAt: string | null; abiertaAt: string | null; respondioAt: string | null }>(
+      inv: T,
+      nombre: string,
+    ) => ({
+      link: this.eventos.linkInvitacion(evento, inv),
+      waInvitacion: waLink(inv.telefono, this.eventos.mensajeWhatsAppInvitacion(evento, inv, nombre)),
+    });
+    const invitacionesVM = evento.invitaciones.map((i) => ({ ...i, ...conLink(i, i.paraNombre ?? i.empresaNombre) }));
+    const externosVM = evento.invitadosExternos.map((i) => ({ ...i, ...conLink(i, i.nombre) }));
     // Cruce en vivo contra la lista negra (no solo lo que se grabó al registrarse) — si a alguien
     // se le marca DESPUÉS de haberse inscrito, su fila lo refleja de inmediato.
     const correosNegra = new Map(listaNegra.map((e) => [e.email, e]));
@@ -133,6 +175,11 @@ export class EventoController {
       pendientesWsp: inscritosVM.filter((i) => i.waLink && !i.contactadoWsp).length,
       errorInscrito: str(req.query.error),
       resumen: evento.resumenInvitaciones,
+      invitacionesVM,
+      externosVM,
+      avisoInvitaciones: str(req.query.aviso),
+      MAX_PASES,
+      TIPO_EVENTO_ETIQUETA,
       RESPUESTAS_INVITACION,
       RESPUESTA_INVITACION_ETIQUETA,
     });
@@ -144,8 +191,12 @@ export class EventoController {
     await this.eventos.agregarEmpresaInvitada(req.user!, id, {
       empresaNombre: str(req.body?.empresaNombre),
       invitadoPor: str(req.body?.invitadoPor) || undefined,
-    });
-    res.redirect(`/app/eventos/${id}#invitaciones`);
+      pases: pases(req.body?.pases),
+      paraNombre: str(req.body?.paraNombre) || undefined,
+      correo: str(req.body?.correo) || undefined,
+      telefono: str(req.body?.telefono) || undefined,
+    }).catch((err) => this.avisar(res, id, err));
+    if (!res.headersSent) res.redirect(`/app/eventos/${id}#invitaciones`);
   };
 
   empresaActualizarPost = async (req: Request, res: Response): Promise<void> => {
@@ -156,8 +207,13 @@ export class EventoController {
       respuesta: respuesta(b.respuesta),
       invitadoPor: b.invitadoPor !== undefined ? str(b.invitadoPor) : undefined,
       notas: b.notas !== undefined ? str(b.notas) : undefined,
-    });
-    res.redirect(`/app/eventos/${id}#invitaciones`);
+      pases: pases(b.pases),
+      personas: str(b.personas).trim() ? n(b.personas) : undefined,
+      paraNombre: opcional(b.paraNombre),
+      correo: opcional(b.correo),
+      telefono: opcional(b.telefono),
+    }).catch((err) => this.avisar(res, id, err));
+    if (!res.headersSent) res.redirect(`/app/eventos/${id}#invitaciones`);
   };
 
   empresaQuitarPost = async (req: Request, res: Response): Promise<void> => {
@@ -171,8 +227,11 @@ export class EventoController {
     await this.eventos.agregarInvitadoExterno(req.user!, id, {
       nombre: str(req.body?.nombre) || undefined,
       fuente: str(req.body?.fuente) || undefined,
-    });
-    res.redirect(`/app/eventos/${id}#invitaciones`);
+      pases: pases(req.body?.pases),
+      correo: str(req.body?.correo) || undefined,
+      telefono: str(req.body?.telefono) || undefined,
+    }).catch((err) => this.avisar(res, id, err));
+    if (!res.headersSent) res.redirect(`/app/eventos/${id}#invitaciones`);
   };
 
   externoActualizarPost = async (req: Request, res: Response): Promise<void> => {
@@ -184,9 +243,46 @@ export class EventoController {
       contactado: bool(b.contactado),
       respuesta: respuesta(b.respuesta),
       notas: b.notas !== undefined ? str(b.notas) : undefined,
-    });
-    res.redirect(`/app/eventos/${id}#invitaciones`);
+      pases: pases(b.pases),
+      personas: str(b.personas).trim() ? n(b.personas) : undefined,
+      correo: opcional(b.correo),
+      telefono: opcional(b.telefono),
+    }).catch((err) => this.avisar(res, id, err));
+    if (!res.headersSent) res.redirect(`/app/eventos/${id}#invitaciones`);
   };
+
+  /** ✉️ Manda la invitación por correo a UN invitado (empresa o externo). */
+  invitacionEnviarPost = async (req: Request, res: Response): Promise<void> => {
+    const id = str(req.params.id);
+    try {
+      await this.eventos.enviarInvitacion(req.user!, id, str(req.params.invId));
+      res.redirect(`/app/eventos/${id}?aviso=${encodeURIComponent('✉️ Invitación enviada')}#invitaciones`);
+    } catch (err) {
+      this.avisar(res, id, err);
+    }
+  };
+
+  /** ✉️ Manda la invitación a todos los que tienen correo y no se les ha mandado. */
+  invitacionesEnviarPost = async (req: Request, res: Response): Promise<void> => {
+    const id = str(req.params.id);
+    try {
+      const r = await this.eventos.enviarInvitacionesPendientes(req.user!, id);
+      const partes = [`✉️ ${r.enviadas} invitación(es) enviada(s)`];
+      if (r.fallidas) partes.push(`${r.fallidas} no se pudieron mandar`);
+      if (r.faltan) partes.push(`faltan ${r.faltan}: vuelve a picar «Enviar»`);
+      if (r.sinCorreo) partes.push(`${r.sinCorreo} sin correo (mándalas por 💬 WhatsApp)`);
+      res.redirect(`/app/eventos/${id}?aviso=${encodeURIComponent(partes.join(' · '))}#invitaciones`);
+    } catch (err) {
+      this.avisar(res, id, err);
+    }
+  };
+
+  /** Regresa al panel de invitaciones con el error a la vista (en vez de una página de error). */
+  private avisar(res: Response, id: string, err: unknown): void {
+    if (res.headersSent) return;
+    const msg = err instanceof Error ? err.message : 'No se pudo completar';
+    res.redirect(`/app/eventos/${id}?aviso=${encodeURIComponent('⚠ ' + msg)}#invitaciones`);
+  }
 
   externoQuitarPost = async (req: Request, res: Response): Promise<void> => {
     const id = str(req.params.id);

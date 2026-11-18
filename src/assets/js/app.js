@@ -3263,6 +3263,40 @@
       });
   });
 
+  // ── Invitación a evento: cuenta regresiva y «¿cuántos van?» solo si asiste ──
+  var cuentaTimer = null;
+  function initCuentaRegresiva() {
+    clearInterval(cuentaTimer);
+    var caja = document.querySelector('[data-cuenta-regresiva]');
+    if (!caja) return;
+    var meta = new Date(caja.getAttribute('data-cuenta-regresiva')).getTime();
+    if (!meta) return;
+    function pintar() {
+      var falta = Math.max(0, meta - Date.now());
+      var s = Math.floor(falta / 1000);
+      var valores = { d: Math.floor(s / 86400), h: Math.floor((s % 86400) / 3600), m: Math.floor((s % 3600) / 60), s: s % 60 };
+      Object.keys(valores).forEach(function (k) {
+        var el = caja.querySelector('[data-cr="' + k + '"]');
+        if (el) el.textContent = k === 'd' ? String(valores[k]) : String(valores[k]).padStart(2, '0');
+      });
+      if (!falta) clearInterval(cuentaTimer);
+    }
+    pintar();
+    cuentaTimer = setInterval(pintar, 1000);
+  }
+  function rsvpPersonasVisible(form) {
+    var personas = form.querySelector('[data-rsvp-personas]');
+    var no = form.querySelector('input[name="asistira"][value="no"]');
+    if (personas && no) personas.hidden = no.checked;
+  }
+  document.addEventListener('change', function (e) {
+    var form = e.target.closest && e.target.closest('[data-form-rsvp]');
+    if (form && e.target.name === 'asistira') rsvpPersonasVisible(form);
+  });
+  function initRsvp() {
+    document.querySelectorAll('[data-form-rsvp]').forEach(rsvpPersonasVisible);
+  }
+
   // ── Login / invitación: mostrar/ocultar contraseña ───────────────────────
   document.addEventListener('click', function (e) {
     var btn = e.target.closest('[data-toggle-password]');
@@ -3691,6 +3725,8 @@
     initChat();
     pintarEstadoNotificaciones();
     kbPintarRecordadas();
+    initCuentaRegresiva();
+    initRsvp();
   }
   document.addEventListener('DOMContentLoaded', iniciarPagina);
   window.addEventListener('resize', medirTopbar);

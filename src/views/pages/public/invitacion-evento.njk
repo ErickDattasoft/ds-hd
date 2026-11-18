@@ -1,0 +1,95 @@
+{% extends "layouts/public-page.njk" %}
+{% block title %}{{ evento.titulo if evento else 'Invitación' }}{% endblock %}
+{% block content %}
+<div class="evento-landing invitacion">
+  {% if not evento %}
+    <div class="evento-resultado">
+      <h1>Invitación no encontrada</h1>
+      <p>Revisa que el enlace esté completo, o pide que te lo vuelvan a mandar.</p>
+    </div>
+  {% else %}
+    <header class="evento-encabezado inv-portada">
+      <p class="inv-saludo">
+        {% if evento.tipo == 'felicitacion' %}Para <span class="nombre-sensible">{{ nombre }}</span> 🎉
+        {% else %}¡Hola, <span class="nombre-sensible">{{ nombre }}</span>! Te invitamos a…{% endif %}
+      </p>
+      <h1>{{ evento.titulo }}</h1>
+      {% if evento.flayer %}
+        <img class="evento-flayer" src="/eventos/{{ evento.id }}/flayer?v={{ evento.flayer.tamano }}" alt="{{ evento.titulo }}" />
+      {% endif %}
+      {% if evento.descripcion %}<p class="evento-encabezado__descripcion">{{ evento.descripcion }}</p>{% endif %}
+    </header>
+
+    {% if evento.estado == 'cancelado' %}
+      <p class="alert alert--error">Este evento fue cancelado. Una disculpa por las molestias.</p>
+    {% endif %}
+
+    {% include "partials/evento-contenido.njk" %}
+
+    {% if evento.pideConfirmacion %}
+      <section class="inv-bloque inv-rsvp" id="confirmar">
+        <p class="inv-bloque__titulo">🎟 Tu invitación</p>
+        <p class="inv-pases">{{ inv.pases }} {{ 'persona' if inv.pases == 1 else 'personas' }}</p>
+
+        {% if recienEnviada %}
+          <p class="alert alert--ok">¡Gracias! Ya quedó tu respuesta.</p>
+        {% endif %}
+
+        {% if contesto and not mostrarFormulario %}
+          <p class="inv-respuesta">
+            {% if inv.respuesta == 'asistira' %}
+              ✅ Confirmaste: van <strong>{{ inv.personas or 1 }}</strong> {{ 'persona' if (inv.personas or 1) == 1 else 'personas' }}. ¡Nos vemos!
+            {% else %}
+              ❌ Nos dijiste que no podrás ir. ¡Te extrañaremos!
+            {% endif %}
+          </p>
+          {% if inv.mensaje %}<p class="muted">«{{ inv.mensaje }}»</p>{% endif %}
+          {% if not evento.yaPaso and evento.estado != 'cancelado' %}
+            <a class="btn btn--sm btn--ghost" href="?cambiar=1#confirmar">Cambiar mi respuesta</a>
+          {% endif %}
+        {% elif mostrarFormulario and not evento.yaPaso %}
+          {% if errores.general %}<p class="alert alert--error">{{ errores.general }}</p>{% endif %}
+          <form method="post" action="/eventos/{{ evento.id }}/i/{{ inv.token }}" class="form" data-form-rsvp>
+            <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+            <div class="inv-opciones" role="radiogroup" aria-label="¿Vas a ir?">
+              <label class="inv-opcion">
+                <input type="radio" name="asistira" value="si" {{ 'checked' if valores.asistira != 'no' }} />
+                <span>✅ ¡Ahí estaré!</span>
+              </label>
+              <label class="inv-opcion">
+                <input type="radio" name="asistira" value="no" {{ 'checked' if valores.asistira == 'no' }} />
+                <span>❌ No podré ir</span>
+              </label>
+            </div>
+            {% if inv.pases > 1 %}
+              <label class="field" data-rsvp-personas><span>¿Cuántos van? <span class="muted">(contándote a ti)</span></span>
+                <select name="personas">
+                  {% for n in range(1, inv.pases + 1) %}
+                    <option value="{{ n }}" {{ 'selected' if valores.personas == n or valores.personas == n | string }}>{{ n }} {{ 'persona' if n == 1 else 'personas' }}</option>
+                  {% endfor %}
+                </select>
+                {% if errores.personas %}<em class="field__error">{{ errores.personas }}</em>{% endif %}
+              </label>
+            {% else %}
+              <input type="hidden" name="personas" value="1" />
+            {% endif %}
+            <label class="field"><span>Tu nombre <span class="muted">(opcional)</span></span>
+              <input name="nombre" value="{{ valores.nombre }}" maxlength="120" autocomplete="name" />
+            </label>
+            <label class="field"><span>¿Algo que quieras decirnos? <span class="muted">(opcional)</span></span>
+              <textarea name="mensaje" rows="3" maxlength="1000">{{ valores.mensaje }}</textarea>
+            </label>
+            <button class="btn evento-enviar" type="submit">Enviar respuesta</button>
+          </form>
+        {% elif evento.yaPaso %}
+          <p class="muted">Este evento ya pasó.</p>
+        {% endif %}
+      </section>
+    {% endif %}
+
+    {% if user and can('eventos:gestionar') %}
+      <p class="muted inv-staff">Lo estás viendo como staff (estado: <strong>{{ evento.estado }}</strong>). Lo que contestes aquí cuenta como respuesta del invitado.</p>
+    {% endif %}
+  {% endif %}
+</div>
+{% endblock %}

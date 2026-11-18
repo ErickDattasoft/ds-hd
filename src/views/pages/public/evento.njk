@@ -20,19 +20,23 @@
     </div>
   {% else %}
     <header class="evento-encabezado">
-      <p class="evento-encabezado__antetitulo">Registro al evento</p>
+      <p class="evento-encabezado__antetitulo">
+        {% if evento.tipo == 'presencial' %}¡Te invitamos!{% elif evento.tipo == 'felicitacion' %}🎉{% else %}Registro al evento{% endif %}
+      </p>
       <h1>{{ evento.titulo }}</h1>
-      <dl class="evento-datos">
-        <div><dt>Fecha</dt><dd>{{ evento.fechaHora | fechalarga }}</dd></div>
-        <div><dt>Hora</dt><dd>{{ evento.fechaHora | hora }}</dd></div>
-        {% if evento.sistema %}<div><dt>Tema</dt><dd>{{ evento.sistema }}</dd></div>{% endif %}
-        {% if evento.contactoNombre %}<div><dt>Imparte</dt><dd>{{ evento.contactoNombre }}</dd></div>{% endif %}
-      </dl>
+      {% if evento.tipo == 'webinar' and (evento.sistema or evento.contactoNombre) %}
+        <dl class="evento-datos">
+          {% if evento.sistema %}<div><dt>Tema</dt><dd>{{ evento.sistema }}</dd></div>{% endif %}
+          {% if evento.contactoNombre %}<div><dt>Imparte</dt><dd>{{ evento.contactoNombre }}</dd></div>{% endif %}
+        </dl>
+      {% endif %}
       {% if evento.flayer %}
         <img class="evento-flayer" src="/eventos/{{ evento.id }}/flayer?v={{ evento.flayer.tamano }}" alt="{{ evento.titulo }}" />
       {% endif %}
       {% if evento.descripcion %}<p class="evento-encabezado__descripcion">{{ evento.descripcion }}</p>{% endif %}
     </header>
+
+    {% include "partials/evento-contenido.njk" %}
 
     {% if duplicado %}
       <div class="card">
@@ -47,6 +51,8 @@
           <p id="reenviar-link-mensaje" class="muted"></p>
         {% endif %}
       </div>
+    {% elif evento.tipo == 'felicitacion' %}
+      {# Una felicitación solo se lee: no hay registro. #}
     {% elif evento.abiertoARegistro %}
       <div class="card">
         {% if errores.general %}<p class="alert alert--error">{{ errores.general }}</p>{% endif %}

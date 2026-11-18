@@ -3,6 +3,47 @@ import { ZONA_MEXICO } from './value-objects/horaMexico.js';
 
 export type EstadoEvento = 'borrador' | 'publicado' | 'finalizado' | 'cancelado';
 
+/** Qué clase de evento es: decide qué secciones muestra la invitación y si pide confirmación. */
+export type TipoEvento = 'webinar' | 'presencial' | 'felicitacion';
+
+export const TIPOS_EVENTO: readonly TipoEvento[] = ['webinar', 'presencial', 'felicitacion'];
+
+export const TIPO_EVENTO_ETIQUETA: Record<TipoEvento, string> = {
+  webinar: '💻 Webinar',
+  presencial: '📍 Presencial',
+  felicitacion: '🎉 Felicitación',
+};
+
+const esTipoEvento = (v: unknown): v is TipoEvento =>
+  typeof v === 'string' && (TIPOS_EVENTO as readonly string[]).includes(v);
+
+/** Máximo de pases que se le pueden dar a una sola invitación. */
+export const MAX_PASES = 20;
+
+/** Un renglón del itinerario («3:00 PM — Recepción»). */
+export interface RenglonItinerario {
+  hora: string;
+  actividad: string;
+}
+
+/** Convierte el texto del formulario («hora - actividad» por renglón) en el itinerario. */
+export function itinerarioDeTexto(texto: string | null | undefined): RenglonItinerario[] {
+  return String(texto ?? '')
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter(Boolean)
+    .slice(0, 30)
+    .map((l) => {
+      const m = l.match(/^(.{1,20}?)\s+[-–—|·]\s+(.+)$/);
+      return m ? { hora: m[1]!.trim(), actividad: m[2]!.trim() } : { hora: '', actividad: l };
+    });
+}
+
+/** Lo inverso de {@link itinerarioDeTexto}, para volver a llenar el formulario. */
+export function itinerarioATexto(it: RenglonItinerario[]): string {
+  return it.map((r) => (r.hora ? `${r.hora} - ${r.actividad}` : r.actividad)).join('\n');
+}
+
 /** Tope de inscripciones por IP y evento cuando el evento no fija uno propio. */
 export const LIMITE_REGISTROS_POR_IP_DEFECTO = 5;
 
@@ -67,8 +108,38 @@ export const RESPUESTA_INVITACION_ETIQUETA: Record<RespuestaInvitacion, string> 
   no_localizado: '📵 No localizado',
 };
 
+/**
+ * Lo que comparte toda invitación dirigida para que el invitado confirme SOLO desde su link
+ * personal (`/eventos/:id/i/:token`): sus pases y lo que contestó. Las fechas van como texto ISO
+ * porque viven dentro de un arreglo en Firestore (ahí un Date regresa como Timestamp).
+ */
+export interface DatosRsvp {
+  /** Clave del link personal; `null` en invitaciones viejas hasta que se les asigna. */
+  token: string | null;
+  /** Personas que puede llevar esta invitación (incluido el invitado). */
+  pases: number;
+  /** Cuántas personas confirmó que van; `null` si no ha contestado o no asiste. */
+  personas: number | null;
+  /** Nombre de quien contestó desde el link (puede no ser el invitado mismo). */
+  respondioNombre: string | null;
+  /** Mensaje que dejó al confirmar. */
+  mensaje: string | null;
+  respondioAt: string | null;
+  /** Primera vez que se abrió el link personal. */
+  abiertaAt: string | null;
+  /** A quién va dirigida (en empresas: su contacto principal al invitarla). */
+  paraNombre: string | null;
+  correo: string | null;
+  telefono: string | null;
+  /** Última vez que se le mandó la invitación por correo desde el CRM. */
+  enviadaAt: string | null;
+}
+
+/** Campos de destinatario que el staff edita a mano. */
+export type CambiosDestinatario = Partial<Pick<DatosRsvp, 'paraNombre' | 'correo' | 'telefono'>>;
+
 /** Empresa de la cartera invitada de forma dirigida a un evento (paridad con el CRM viejo). */
-export interface InvitacionEmpresa {
+export interface InvitacionEmpresa extends DatosRsvp {
   /** Id estable de la entrada (para editar/quitar sin depender del índice del arreglo). */
   id: string;
   /** Empresa de la cartera, si se eligió de ahí; `null` si es un nombre suelto. */
@@ -85,7 +156,7 @@ export interface InvitacionEmpresa {
 }
 
 /** Invitado externo (redes sociales, referidos) que no es una empresa de la cartera. */
-export interface InvitadoExterno {
+export interface InvitadoExterno extends DatosRsvp {
   id: string;
   nombre: string;
   fuente: string | null;
@@ -102,6 +173,20 @@ export interface ResumenInvitaciones {
   noAsistiran: number;
   noLocalizados: number;
   pendientes: number;
+  /** Pases repartidos entre todas las invitaciones. */
+  pases: number;
+  /** Personas que confirmaron que van (suma de lo que contestó cada quien). */
+  personas: number;
+  /** Invitaciones cuyo link ya se abrió. */
+  abiertas: number;
+}
+
+/** Lo que el invitado contesta desde su link personal. */
+export interface RespuestaRsvp {
+  asistira: boolean;
+  personas?: number;
+  nombre?: string;
+  mensaje?: string;
 }
 
 /** Imagen promocional del evento (poster/flayer), mostrada en la página pública de registro. */
@@ -136,10 +221,21 @@ function validarFlayer(contentType: string, tamano: number): void {
 const esRespuesta = (v: unknown): v is RespuestaInvitacion =>
   typeof v === 'string' && (RESPUESTAS_INVITACION as readonly string[]).includes(v);
 
+type ConRsvpOpcional<T extends DatosRsvp> = Omit<T, keyof DatosRsvp> & Partial<DatosRsvp>;
+
 /** Props para construir un {@link Evento}. */
 export interface EventoProps {
   id: string;
   titulo: string;
+  tipo?: TipoEvento;
+  /** Presencial: dónde. */
+  lugarNombre?: string | null;
+  lugarDireccion?: string | null;
+  /** Link de Google Maps («Cómo llegar»). */
+  lugarMapsUrl?: string | null;
+  /** Código de vestimenta o «qué llevar». */
+  vestimenta?: string | null;
+  itinerario?: RenglonItinerario[];
   descripcion?: string | null;
   fechaHora: Date;
   cupo?: number;
@@ -149,10 +245,11 @@ export interface EventoProps {
   horasRecordatorio?: number;
   /** Máximo de inscripciones desde una misma IP; `null` = usar {@link LIMITE_REGISTROS_POR_IP_DEFECTO}. */
   limiteRegistrosPorIp?: number | null;
-  /** Empresas de la cartera invitadas de forma dirigida. */
-  invitaciones?: InvitacionEmpresa[];
+  /** Empresas de la cartera invitadas de forma dirigida (los datos de RSVP son opcionales:
+   *  las de antes de esa función, o las importadas del CRM viejo, no los traen). */
+  invitaciones?: ConRsvpOpcional<InvitacionEmpresa>[];
   /** Invitados externos (redes sociales, referidos). */
-  invitadosExternos?: InvitadoExterno[];
+  invitadosExternos?: ConRsvpOpcional<InvitadoExterno>[];
   /** Imagen promocional (poster/flayer) del evento. */
   flayer?: EventoFlayer | null;
   /** Sistema al que aplica el evento (p. ej. "Contabilidad"); dispara la pregunta "¿lo usas?"
@@ -176,6 +273,12 @@ export interface EventoProps {
 export class Evento {
   readonly id: string;
   titulo: string;
+  tipo: TipoEvento;
+  lugarNombre: string | null;
+  lugarDireccion: string | null;
+  lugarMapsUrl: string | null;
+  vestimenta: string | null;
+  itinerario: RenglonItinerario[];
   descripcion: string | null;
   fechaHora: Date;
   cupo: number;
@@ -202,6 +305,18 @@ export class Evento {
     }
     this.id = props.id;
     this.titulo = props.titulo.trim();
+    this.tipo = esTipoEvento(props.tipo) ? props.tipo : 'webinar';
+    this.lugarNombre = props.lugarNombre?.trim() || null;
+    this.lugarDireccion = props.lugarDireccion?.trim() || null;
+    const maps = props.lugarMapsUrl?.trim() || null;
+    if (maps && !/^https:\/\//i.test(maps)) {
+      throw new ValidationError('El link del mapa debe empezar con https://', { lugarMapsUrl: 'Link no válido' });
+    }
+    this.lugarMapsUrl = maps;
+    this.vestimenta = props.vestimenta?.trim() || null;
+    this.itinerario = (props.itinerario ?? [])
+      .map((r) => ({ hora: String(r?.hora ?? '').trim(), actividad: String(r?.actividad ?? '').trim() }))
+      .filter((r) => r.actividad);
     this.descripcion = props.descripcion?.trim() || null;
     this.fechaHora = props.fechaHora;
     this.cupo = props.cupo ?? 0;
@@ -257,7 +372,88 @@ export class Evento {
       noAsistiran: todos.filter((i) => i.respuesta === 'no_asistira').length,
       noLocalizados: todos.filter((i) => i.respuesta === 'no_localizado').length,
       pendientes: todos.filter((i) => i.respuesta === 'pendiente').length,
+      pases: todos.reduce((t, i) => t + i.pases, 0),
+      personas: todos.reduce((t, i) => t + (i.respuesta === 'asistira' ? (i.personas ?? 1) : 0), 0),
+      abiertas: todos.filter((i) => i.abiertaAt).length,
     };
+  }
+
+  /** Las felicitaciones solo se leen; los demás tipos piden confirmar asistencia. */
+  get pideConfirmacion(): boolean {
+    return this.tipo !== 'felicitacion';
+  }
+
+  // ── Link personal de cada invitado ─────────────────────────────────────
+  /** Busca la invitación (empresa o externo) dueña del token. */
+  buscarPorToken(token: string): { clase: 'empresa' | 'externo'; inv: InvitacionEmpresa | InvitadoExterno; nombre: string } | null {
+    if (!token) return null;
+    const emp = this.invitaciones.find((i) => i.token === token);
+    if (emp) return { clase: 'empresa', inv: emp, nombre: emp.paraNombre ?? emp.empresaNombre };
+    const ext = this.invitadosExternos.find((i) => i.token === token);
+    if (ext) return { clase: 'externo', inv: ext, nombre: ext.nombre || ext.paraNombre || '' };
+    return null;
+  }
+
+  /** Busca una invitación (empresa o externo) por su id. */
+  buscarInvitado(id: string): InvitacionEmpresa | InvitadoExterno | null {
+    return this.invitaciones.find((i) => i.id === id) ?? this.invitadosExternos.find((i) => i.id === id) ?? null;
+  }
+
+  /** Registra que se le mandó la invitación por correo. */
+  marcarEnviada(id: string, ahora: Date): void {
+    const inv = this.buscarInvitado(id);
+    if (!inv) throw new NotFoundError('Invitado', id);
+    inv.enviadaAt = ahora.toISOString();
+    inv.contactado = true;
+  }
+
+  /** Da link a las invitaciones que aún no tienen (las de antes de esta función). */
+  asignarTokensFaltantes(generar: () => string): boolean {
+    let cambio = false;
+    for (const i of [...this.invitaciones, ...this.invitadosExternos]) {
+      if (!i.token) {
+        i.token = generar();
+        cambio = true;
+      }
+    }
+    return cambio;
+  }
+
+  /** Marca que el invitado abrió su link. Solo la primera vez (devuelve si hubo cambio). */
+  marcarAbierta(token: string, ahora: Date): boolean {
+    const r = this.buscarPorToken(token);
+    if (!r || r.inv.abiertaAt) return false;
+    r.inv.abiertaAt = ahora.toISOString();
+    return true;
+  }
+
+  /** El invitado contesta desde su link: asiste (con cuántos, hasta sus pases) o no. */
+  responderInvitacion(token: string, resp: RespuestaRsvp, ahora: Date): InvitacionEmpresa | InvitadoExterno {
+    const r = this.buscarPorToken(token);
+    if (!r) throw new NotFoundError('Invitación', token);
+    if (!this.pideConfirmacion) throw new ValidationError('Esta invitación no pide confirmación');
+    if (this.estado === 'cancelado') throw new ValidationError('El evento fue cancelado');
+    const inv = r.inv;
+    if (resp.asistira) {
+      const personas = Math.trunc(Number(resp.personas ?? 1));
+      if (!Number.isFinite(personas) || personas < 1 || personas > inv.pases) {
+        throw new ValidationError(
+          inv.pases === 1 ? 'Tu invitación es para 1 persona' : `Elige de 1 a ${inv.pases} personas`,
+          { personas: 'Fuera de tus pases' },
+        );
+      }
+      inv.respuesta = 'asistira';
+      inv.personas = personas;
+    } else {
+      inv.respuesta = 'no_asistira';
+      inv.personas = null;
+    }
+    inv.respondioNombre = resp.nombre?.trim().slice(0, 120) || null;
+    inv.mensaje = resp.mensaje?.trim().slice(0, 1000) || null;
+    inv.respondioAt = ahora.toISOString();
+    inv.abiertaAt ??= inv.respondioAt;
+    inv.contactado = true;
+    return inv;
   }
 
   // ── Invitación dirigida a empresas ─────────────────────────────────────
@@ -267,6 +463,11 @@ export class Evento {
     empresaNombre: string;
     sistemas?: string[];
     invitadoPor?: string | null;
+    token?: string | null;
+    pases?: number;
+    paraNombre?: string | null;
+    correo?: string | null;
+    telefono?: string | null;
   }): InvitacionEmpresa {
     const nombre = entrada.empresaNombre.trim();
     if (nombre.length < 2) {
@@ -284,6 +485,11 @@ export class Evento {
       contactado: false,
       respuesta: 'pendiente',
       notas: null,
+      token: entrada.token ?? null,
+      pases: entrada.pases ?? 1,
+      paraNombre: entrada.paraNombre ?? null,
+      correo: sanearCorreo(entrada.correo),
+      telefono: entrada.telefono ?? null,
     });
     this.invitaciones.push(inv);
     return inv;
@@ -291,7 +497,7 @@ export class Evento {
 
   actualizarEmpresaInvitada(
     id: string,
-    cambios: Partial<Pick<InvitacionEmpresa, 'invitadoPor' | 'contactado' | 'respuesta' | 'notas'>>,
+    cambios: Partial<Pick<InvitacionEmpresa, 'invitadoPor' | 'contactado' | 'respuesta' | 'notas' | 'pases' | 'personas'>> & CambiosDestinatario,
   ): void {
     const inv = this.invitaciones.find((i) => i.id === id);
     if (!inv) throw new NotFoundError('Empresa invitada', id);
@@ -305,7 +511,15 @@ export class Evento {
   }
 
   // ── Invitados externos ────────────────────────────────────────────────
-  agregarInvitadoExterno(entrada: { id: string; nombre?: string; fuente?: string | null }): InvitadoExterno {
+  agregarInvitadoExterno(entrada: {
+    id: string;
+    nombre?: string;
+    fuente?: string | null;
+    token?: string | null;
+    pases?: number;
+    correo?: string | null;
+    telefono?: string | null;
+  }): InvitadoExterno {
     const ext = sanearInvitadoExterno({
       id: entrada.id,
       nombre: entrada.nombre ?? '',
@@ -313,6 +527,10 @@ export class Evento {
       contactado: false,
       respuesta: 'pendiente',
       notas: null,
+      token: entrada.token ?? null,
+      pases: entrada.pases ?? 1,
+      correo: sanearCorreo(entrada.correo),
+      telefono: entrada.telefono ?? null,
     });
     this.invitadosExternos.push(ext);
     return ext;
@@ -320,7 +538,7 @@ export class Evento {
 
   actualizarInvitadoExterno(
     id: string,
-    cambios: Partial<Pick<InvitadoExterno, 'nombre' | 'fuente' | 'contactado' | 'respuesta' | 'notas'>>,
+    cambios: Partial<Pick<InvitadoExterno, 'nombre' | 'fuente' | 'contactado' | 'respuesta' | 'notas' | 'pases' | 'personas'>> & CambiosDestinatario,
   ): void {
     const ext = this.invitadosExternos.find((i) => i.id === id);
     if (!ext) throw new NotFoundError('Invitado externo', id);
@@ -344,9 +562,20 @@ export class Evento {
 
 /** Aplica los campos comunes de edición (contactado/respuesta/notas/invitadoPor) a una entrada. */
 function aplicarCambiosInvitado(
-  destino: { contactado: boolean; respuesta: RespuestaInvitacion; notas: string | null; invitadoPor?: string | null },
-  cambios: { contactado?: boolean; respuesta?: RespuestaInvitacion; notas?: string | null; invitadoPor?: string | null },
+  destino: DatosRsvp & { contactado: boolean; respuesta: RespuestaInvitacion; notas: string | null; invitadoPor?: string | null },
+  cambios: {
+    contactado?: boolean;
+    respuesta?: RespuestaInvitacion;
+    notas?: string | null;
+    invitadoPor?: string | null;
+    pases?: number;
+    personas?: number | null;
+  } & CambiosDestinatario,
 ): void {
+  if (cambios.pases !== undefined) destino.pases = sanearPases(cambios.pases);
+  if (cambios.paraNombre !== undefined) destino.paraNombre = textoONull(cambios.paraNombre);
+  if (cambios.telefono !== undefined) destino.telefono = textoONull(cambios.telefono);
+  if (cambios.correo !== undefined) destino.correo = sanearCorreo(cambios.correo);
   if (cambios.contactado !== undefined) destino.contactado = Boolean(cambios.contactado);
   if (cambios.respuesta !== undefined) {
     if (!esRespuesta(cambios.respuesta)) {
@@ -358,6 +587,48 @@ function aplicarCambiosInvitado(
   if ('invitadoPor' in cambios && destino.invitadoPor !== undefined) {
     destino.invitadoPor = cambios.invitadoPor?.trim() || null;
   }
+  if (cambios.personas !== undefined) {
+    destino.personas = cambios.personas && cambios.personas > 0 ? Math.trunc(cambios.personas) : null;
+  }
+  // Coherencia: si no asiste no lleva personas; si asiste, nunca más que sus pases.
+  if (destino.respuesta !== 'asistira') destino.personas = null;
+  else if (destino.personas !== null) destino.personas = Math.min(destino.personas, destino.pases);
+}
+
+/** Pases válidos: entero de 1 a {@link MAX_PASES}; cualquier otra cosa cuenta como 1. */
+function sanearPases(v: unknown): number {
+  const n = Math.trunc(Number(v));
+  return Number.isFinite(n) && n >= 1 ? Math.min(n, MAX_PASES) : 1;
+}
+
+const textoONull = (v: unknown): string | null => (typeof v === 'string' && v.trim() ? v.trim() : null);
+
+/** Correo del invitado: minúsculas y con forma de correo; si no la tiene, error claro. */
+function sanearCorreo(v: unknown): string | null {
+  const c = textoONull(v)?.toLowerCase() ?? null;
+  if (c && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(c)) {
+    throw new ValidationError(`«${c}» no parece un correo`, { correo: 'Correo no válido' });
+  }
+  return c;
+}
+
+/** Normaliza los campos de RSVP leídos de la BD o del formulario. */
+function sanearRsvp(d: Partial<DatosRsvp>): DatosRsvp {
+  const personas = Math.trunc(Number(d.personas));
+  return {
+    token: textoONull(d.token),
+    pases: sanearPases(d.pases ?? 1),
+    personas: Number.isFinite(personas) && personas > 0 ? personas : null,
+    respondioNombre: textoONull(d.respondioNombre),
+    mensaje: textoONull(d.mensaje),
+    respondioAt: textoONull(d.respondioAt),
+    abiertaAt: textoONull(d.abiertaAt),
+    paraNombre: textoONull(d.paraNombre),
+    // Al leer de la BD no se valida (un correo raro no debe tumbar el evento entero).
+    correo: textoONull(d.correo)?.toLowerCase() ?? null,
+    telefono: textoONull(d.telefono),
+    enviadaAt: textoONull(d.enviadaAt),
+  };
 }
 
 /** Normaliza una entrada de empresa invitada leída de la BD o del formulario. */
@@ -371,6 +642,7 @@ function sanearInvitacionEmpresa(d: Partial<InvitacionEmpresa> & { id: string })
     contactado: d.contactado === true,
     respuesta: esRespuesta(d.respuesta) ? d.respuesta : 'pendiente',
     notas: d.notas?.trim() || null,
+    ...sanearRsvp(d),
   };
 }
 
@@ -383,5 +655,6 @@ function sanearInvitadoExterno(d: Partial<InvitadoExterno> & { id: string }): In
     contactado: d.contactado === true,
     respuesta: esRespuesta(d.respuesta) ? d.respuesta : 'pendiente',
     notas: d.notas?.trim() || null,
+    ...sanearRsvp(d),
   };
 }

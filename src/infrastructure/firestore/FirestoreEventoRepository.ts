@@ -10,6 +10,8 @@ import {
   Evento,
   type EstadoEvento,
   type EventoFlayer,
+  type RenglonItinerario,
+  type TipoEvento,
   type InvitacionEmpresa,
   type InvitadoExterno,
 } from '../../core/entities/Evento.js';
@@ -23,6 +25,12 @@ const eventoToDomain = (id: string, d: DocumentData): Evento =>
   new Evento({
     id,
     titulo: String(d.titulo ?? ''),
+    tipo: (d.tipo ?? 'webinar') as TipoEvento,
+    lugarNombre: d.lugarNombre ?? null,
+    lugarDireccion: d.lugarDireccion ?? null,
+    lugarMapsUrl: d.lugarMapsUrl ?? null,
+    vestimenta: d.vestimenta ?? null,
+    itinerario: Array.isArray(d.itinerario) ? (d.itinerario as RenglonItinerario[]) : [],
     descripcion: d.descripcion ?? null,
     fechaHora: fecha(d.fechaHora),
     cupo: Number(d.cupo ?? 0),
@@ -79,6 +87,12 @@ export class FirestoreEventoRepository implements IEventoRepository {
     await this.db.collection('eventos').doc(e.id).set(
       {
         titulo: e.titulo,
+        tipo: e.tipo,
+        lugarNombre: e.lugarNombre,
+        lugarDireccion: e.lugarDireccion,
+        lugarMapsUrl: e.lugarMapsUrl,
+        vestimenta: e.vestimenta,
+        itinerario: e.itinerario,
         descripcion: e.descripcion,
         fechaHora: Timestamp.fromDate(e.fechaHora),
         cupo: e.cupo,

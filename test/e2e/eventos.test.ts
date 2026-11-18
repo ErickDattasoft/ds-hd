@@ -180,7 +180,9 @@ describe('eventos / webinars', () => {
 
     const detalle = await agent.get('/app/eventos/ev1');
     expect(detalle.text).toContain('INFOXPERT');
-    expect(detalle.text).toContain('Invitación dirigida');
+    expect(detalle.text).toContain('Invitaciones');
+    // Cada invitado trae su link personal (🔗) para mandarlo por correo o WhatsApp.
+    expect(detalle.text).toContain('/eventos/ev1/i/');
 
     const del = await agent.post(`/app/eventos/ev1/empresas/${invId}/quitar`).type('form').send({ _csrf: csrf });
     expect(del.status).toBe(302);
@@ -193,7 +195,9 @@ describe('eventos / webinars', () => {
     const { agent, csrf } = await login(t.app, ADMIN.email, ADMIN.password);
     await agent.post('/app/eventos/ev1/empresas').type('form').send({ _csrf: csrf, empresaNombre: 'ACME SA' });
     const dup = await agent.post('/app/eventos/ev1/empresas').type('form').send({ _csrf: csrf, empresaNombre: 'acme sa' });
-    expect(dup.status).toBe(409);
+    // Regresa al panel con el aviso del duplicado, en vez de una página de error.
+    expect(dup.status).toBe(302);
+    expect(decodeURIComponent(dup.headers.location ?? '')).toContain('ya está invitada');
     expect((await t.eventoRepo.findById('ev1'))!.invitaciones).toHaveLength(1);
   });
 
@@ -750,5 +754,60 @@ describe('página pública de un evento — es una landing, no el sitio navegabl
     expect(conSesion.text).toContain('Volver al CRM');
     // Regresa al evento del que saliste, no al inicio del CRM.
     expect(conSesion.text).toContain('href="/app/eventos/ev1"');
+  });
+
+  it('invitación presencial: link personal con pases, el invitado confirma y el CRM lo ve', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    t.eventoRepo.items.set(
+      'ev1',
+      new Evento({
+        id: 'ev1',
+        titulo: 'Desayuno DATTASOFT',
+        tipo: 'presencial',
+        fechaHora: enUnaSemana(),
+        estado: 'publicado',
+        lugarNombre: 'Hotel Centro',
+        lugarDireccion: 'Calle 60, Mérida',
+        vestimenta: 'Casual',
+        itinerario: [{ hora: '9:00 AM', actividad: 'Café' }],
+      }),
+    );
+    const admin = await login(t.app, ADMIN.email, ADMIN.password);
+    await admin.agent.post('/app/eventos/ev1/externos').type('form')
+      .send({ _csrf: admin.csrf, nombre: 'Juan Pérez', correo: 'juan@x.mx', pases: '3' });
+    const token = (await t.eventoRepo.findById('ev1'))!.invitadosExternos[0]!.token!;
+    expect(token).toBeTruthy();
+
+    // Enviar desde el CRM: le llega su link personal.
+    const env = await admin.agent.post('/app/eventos/ev1/invitaciones/enviar').type('form').send({ _csrf: admin.csrf });
+    expect(env.status).toBe(302);
+    expect(t.emailSender.enviados.some((c) => c.html.includes(`/eventos/ev1/i/${token}`))).toBe(true);
+
+    const anon = request.agent(t.app);
+    const page = await anon.get(`/eventos/ev1/i/${token}`);
+    expect(page.status).toBe(200);
+    expect(page.text).toContain('Juan Pérez');
+    expect(page.text).toContain('Hotel Centro');
+    expect(page.text).toContain('3 personas');
+    expect(page.text).toContain('data-cuenta-regresiva');
+    const csrf = cookieValor(page.headers['set-cookie'] as unknown as string[], 'x-csrf-token')!;
+
+    const malo = await anon.post(`/eventos/ev1/i/${token}`).type('form').send({ _csrf: csrf, asistira: 'si', personas: '5' });
+    expect(malo.status).toBe(422);
+
+    const ok = await anon.post(`/eventos/ev1/i/${token}`).type('form')
+      .send({ _csrf: csrf, asistira: 'si', personas: '2', mensaje: '¡Ahí estaremos!' });
+    expect(ok.status).toBe(303);
+    const despues = await anon.get(`/eventos/ev1/i/${token}?ok=1`);
+    expect(despues.text).toContain('Confirmaste');
+
+    const ev = await t.eventoRepo.findById('ev1');
+    expect(ev!.resumenInvitaciones.personas).toBe(2);
+    const detalle = await admin.agent.get('/app/eventos/ev1');
+    expect(detalle.text).toContain('¡Ahí estaremos!');
+
+    const ics = await anon.get('/eventos/ev1/calendario.ics');
+    expect(ics.text).toContain('LOCATION:Hotel Centro\\, Calle 60\\, Mérida');
+    expect((await anon.get('/eventos/ev1/i/inventado')).status).toBe(404);
   });
 });

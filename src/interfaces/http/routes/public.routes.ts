@@ -34,6 +34,9 @@ export function publicRoutes(container: Container): Router {
   r.get('/eventos', (req, res) => eventos().listar(req, res));
   r.get('/eventos/:id', (req, res) => eventos().detalle(req, res));
   r.get('/eventos/:id/flayer', (req, res) => eventos().flayerGet(req, res));
+  r.get('/eventos/:id/calendario.ics', (req, res) => eventos().calendarioIcs(req, res));
+  r.get('/eventos/:id/i/:token', (req, res) => eventos().invitacion(req, res));
+  r.post('/eventos/:id/i/:token', (req, res) => eventos().invitacionPost(req, res));
   r.post('/eventos/:id', (req, res) => eventos().registrarPost(req, res));
   r.post('/eventos/:id/reenviar-link', (req, res) => eventos().reenviarLinkPost(req, res));
 

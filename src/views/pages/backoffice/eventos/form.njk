@@ -5,6 +5,18 @@
   {% if errores.general %}<p class="alert alert--error">{{ errores.general }}</p>{% endif %}
   <form method="post" action="{{ '/app/eventos' if modo == 'crear' else '/app/eventos/' + evento.id }}" class="form form--wide">
     <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+    <fieldset class="field" style="grid-column: 1 / -1">
+      <span>¿Qué tipo de evento es?</span>
+      <div class="inv-opciones inv-opciones--3">
+        {% for t in TIPOS_EVENTO %}
+          <label class="inv-opcion">
+            <input type="radio" name="tipo" value="{{ t }}" {{ 'checked' if (valores.tipo or 'webinar') == t }} />
+            <span>{{ TIPO_EVENTO_ETIQUETA[t] }}</span>
+          </label>
+        {% endfor %}
+      </div>
+      <span class="muted">Webinar: con liga de acceso. Presencial: con lugar, mapa y programa. Felicitación: una tarjeta para leer, sin confirmar asistencia.</span>
+    </fieldset>
     <label class="field"><span>Título</span><input name="titulo" value="{{ valores.titulo }}" required />
       {% if errores.titulo %}<em class="field__error">{{ errores.titulo }}</em>{% endif %}</label>
     <label class="field"><span>Fecha y hora</span><input type="datetime-local" name="fechaHora" value="{{ valores.fechaHora }}" required />
@@ -16,14 +28,30 @@
       </select>
     </label>
 
-    <details class="disclosure"{{ ' open' if valores.descripcion or valores.urlWebinar }}>
-      <summary class="disclosure__summary">Contenido y recordatorios</summary>
+    <details class="disclosure"{{ ' open' if valores.tipo == 'presencial' or valores.lugarNombre or valores.vestimenta or valores.itinerario }}>
+      <summary class="disclosure__summary">📍 Lugar, programa y vestimenta <span class="disclosure__hint">— lo que ve el invitado (cada parte sale solo si la llenas)</span></summary>
       <div class="disclosure__body form">
-        <label class="field"><span>Descripción</span><textarea name="descripcion" rows="4">{{ valores.descripcion }}</textarea></label>
+        <label class="field"><span>Lugar</span><input name="lugarNombre" value="{{ valores.lugarNombre }}" placeholder="Ej. Hotel Fiesta Americana, Salón Uxmal" /></label>
+        <label class="field"><span>Dirección</span><input name="lugarDireccion" value="{{ valores.lugarDireccion }}" placeholder="Calle, número, colonia, ciudad" /></label>
+        <label class="field"><span>Link de Google Maps <span class="muted">(opcional — si lo dejas vacío, el botón «Cómo llegar» busca la dirección)</span></span>
+          <input name="lugarMapsUrl" value="{{ valores.lugarMapsUrl }}" placeholder="https://maps.app.goo.gl/…" />
+          {% if errores.lugarMapsUrl %}<em class="field__error">{{ errores.lugarMapsUrl }}</em>{% endif %}
+        </label>
+        <label class="field"><span>Programa <span class="muted">(un renglón por actividad: «hora - actividad»)</span></span>
+          <textarea name="itinerario" rows="4" placeholder="9:00 AM - Registro y café&#10;9:30 AM - Bienvenida&#10;10:00 AM - Novedades CONTPAQi">{{ valores.itinerario }}</textarea>
+        </label>
+        <label class="field"><span>Vestimenta / qué llevar</span><input name="vestimenta" value="{{ valores.vestimenta }}" placeholder="Ej. Casual · Trae tu laptop" /></label>
+      </div>
+    </details>
+
+    <details class="disclosure"{{ ' open' if valores.descripcion or valores.urlWebinar }}>
+      <summary class="disclosure__summary">Mensaje, liga y recordatorios</summary>
+      <div class="disclosure__body form">
+        <label class="field"><span>Mensaje / descripción <span class="muted">(lo primero que lee el invitado, debajo de la imagen)</span></span><textarea name="descripcion" rows="4">{{ valores.descripcion }}</textarea></label>
         <label class="field"><span>Sistema <span class="muted">(opcional — agrega la pregunta "¿lo usas?" al registro público)</span></span>
           <input name="sistema" value="{{ valores.sistema }}" placeholder="Ej. Contabilidad" />
         </label>
-        <label class="field"><span>URL del webinar</span><input name="urlWebinar" value="{{ valores.urlWebinar }}" /></label>
+        <label class="field"><span>URL del webinar <span class="muted">(solo webinars)</span></span><input name="urlWebinar" value="{{ valores.urlWebinar }}" /></label>
         <label class="field"><span>Horas antes para recordatorio <span class="muted">(0 = no mandar recordatorio en este evento)</span></span><input type="number" name="horasRecordatorio" value="{{ valores.horasRecordatorio if valores.horasRecordatorio is defined and valores.horasRecordatorio !== '' else 24 }}" min="0" placeholder="24" /></label>
         <label class="field"><span>Límite de registros por IP <span class="muted">(vacío = 5 por defecto)</span></span>
           <input type="number" name="limiteRegistrosPorIp" value="{{ valores.limiteRegistrosPorIp }}" min="1" placeholder="5" />

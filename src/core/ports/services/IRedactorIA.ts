@@ -6,6 +6,7 @@ export interface OpcionRedaccion {
   texto: string;
 }
 
+/** Lo que se le pide al corrector: el texto del agente y su contexto. */
 export interface SolicitudRedaccion {
   /** Lo que escribió el agente (texto plano). */
   texto: string;
@@ -15,6 +16,7 @@ export interface SolicitudRedaccion {
   tips?: boolean;
 }
 
+/** Respuesta del corrector: las versiones propuestas y los consejos. */
 export interface ResultadoRedaccion {
   opciones: OpcionRedaccion[];
   /** Consejos cortos («falta la versión del sistema»…); vacío si no se pidieron o no hay. */
