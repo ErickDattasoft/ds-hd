@@ -1,0 +1,59 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm test)",
+      "Bash(npm run test)",
+      "Bash(npm run lint)",
+      "Bash(npm run lint:fix)",
+      "Bash(npm run typecheck)",
+      "Bash(npm run build)",
+      "Bash(npm run build:assets)",
+      "Bash(npm run build:worker)",
+      "Bash(npm run worker:deploy)",
+      "Bash(npx vitest *)",
+      "Bash(npx tsc *)",
+      "Bash(npx eslint *)",
+      "Bash(git status *)",
+      "Bash(git diff *)",
+      "Bash(git log *)",
+      "Bash(git show *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git push)",
+      "Bash(git push -q)",
+      "Bash(git push origin main)",
+      "Bash(curl -s https://ds-hd.dattasoft.workers.dev/*)",
+      "Read(//mnt/d/ERICK VA DATA/COMPAC/CLAUDE CODE/PROYECTO CRM DATTASOFT/**)"
+    ],
+    "deny": [
+      "Edit(//mnt/d/ERICK VA DATA/COMPAC/CLAUDE CODE/PROYECTO CRM DATTASOFT/**)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write|NotebookEdit|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/proteger-crm-viejo.sh",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/compilar-assets.sh",
+            "timeout": 60,
+            "statusMessage": "Compilando CSS/JS…"
+          }
+        ]
+      }
+    ]
+  }
+}
