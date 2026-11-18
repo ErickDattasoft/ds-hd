@@ -2,6 +2,7 @@ import type { Request, Response } from 'express';
 import type { EventoService } from '../../../../application/eventos/EventoService.js';
 import { ConflictError } from '../../../../core/errors/DomainError.js';
 import type { Evento } from '../../../../core/entities/Evento.js';
+import { ZONA_MEXICO } from '../../../../core/entities/value-objects/horaMexico.js';
 import { camposDeError } from '../../support/errores.js';
 
 const str = (v: unknown): string => (typeof v === 'string' ? v : '');
@@ -52,6 +53,30 @@ export class EventoPublicoController {
     private readonly turnstileSiteKey: string,
   ) {}
 
+  /**
+   * Datos de la página + la tarjeta de vista previa (Open Graph) que muestran Facebook, WhatsApp,
+   * LinkedIn, etc. al pegar el link: título, fecha/lugar y el flayer (o el logo).
+   */
+  private vista(e: Evento) {
+    const fecha = new Intl.DateTimeFormat('es-MX', {
+      timeZone: ZONA_MEXICO, weekday: 'long', day: 'numeric', month: 'long', hour: 'numeric', minute: '2-digit',
+    }).format(e.fechaHora);
+    const partes = [
+      e.tipo !== 'felicitacion' ? `📅 ${fecha}` : '',
+      e.tipo === 'presencial' && e.lugarNombre ? `📍 ${e.lugarNombre}` : '',
+      e.descripcion ? e.descripcion.replace(/\s+/g, ' ').slice(0, 160) : '',
+    ].filter(Boolean);
+    return {
+      ...vistaContenido(e),
+      og: {
+        titulo: e.titulo,
+        descripcion: partes.join(' · '),
+        imagen: this.eventos.urlAbsoluta(e.flayer ? `/eventos/${e.id}/flayer?v=${e.flayer.tamano}` : '/logo'),
+        grande: Boolean(e.flayer),
+      },
+    };
+  }
+
   listar = async (_req: Request, res: Response): Promise<void> => {
     const eventos = (await this.eventos.listar(true)).filter((e) => e.abiertoARegistro);
     res.render('pages/public/eventos-list', { titulo: 'Próximos eventos', eventos });
@@ -68,7 +93,7 @@ export class EventoPublicoController {
       valores: {},
       errores: {},
       registrado: false,
-      ...vistaContenido(evento),
+      ...this.vista(evento),
     });
   };
 
@@ -164,7 +189,7 @@ export class EventoPublicoController {
       errores: extra.errores ?? {},
       navMinima: true,
       volverA: `/app/eventos/${evento.id}#invitaciones`,
-      ...vistaContenido(evento),
+      ...this.vista(evento),
     });
   }
 
@@ -209,7 +234,7 @@ export class EventoPublicoController {
         valores: {},
         errores: {},
         registrado: true,
-        ...vistaContenido(evento),
+        ...this.vista(evento),
       });
     } catch (err) {
       const evento = await this.eventos.obtener(id).catch(() => null);
@@ -223,7 +248,7 @@ export class EventoPublicoController {
         errores: camposDeError(err),
         registrado: false,
         duplicado: err instanceof ConflictError,
-        ...(evento ? vistaContenido(evento) : {}),
+        ...(evento ? this.vista(evento) : {}),
       });
     }
   };

@@ -37,6 +37,9 @@ describe('eventos / webinars', () => {
     const pub = await request(t.app).get(`/eventos/${ev.id}`);
     expect(pub.text).toContain('inv-estilo--navidad');
     expect(pub.text).toContain('🎄');
+    // Vista previa al compartir en redes.
+    expect(pub.text).toContain('<meta property="og:title" content="Posada 2026"');
+    expect(pub.text).toMatch(/og:image" content="https?:\/\/[^"]+\/logo"/);
   });
 
   it('registro público: crea inscripción, envía confirmación y bloquea duplicados', async () => {

@@ -553,6 +553,11 @@ export class EventoService {
   }
 
   /** Link personal de un invitado (lo que se manda por correo o WhatsApp). */
+  /** URL completa de una ruta del sitio (para la vista previa en redes, que pide links absolutos). */
+  urlAbsoluta(ruta: string): string {
+    return `${this.baseUrl}${ruta}`;
+  }
+
   linkInvitacion(evento: Evento, inv: Pick<DatosRsvp, 'token'>): string {
     return `${this.baseUrl}/eventos/${evento.id}/i/${inv.token}`;
   }

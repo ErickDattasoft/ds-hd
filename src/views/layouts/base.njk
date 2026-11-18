@@ -20,6 +20,16 @@
   <link rel="stylesheet" href="/static/build/roles.css" />
   <link rel="stylesheet" href="/static/build/base.css" />
   <link rel="stylesheet" href="/static/build/components.css" />
+  {% if og %}
+    {# Tarjeta de vista previa al compartir el link (Facebook, WhatsApp, LinkedIn, X). #}
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="{{ og.titulo }}" />
+    <meta property="og:description" content="{{ og.descripcion }}" />
+    <meta name="description" content="{{ og.descripcion }}" />
+    <meta property="og:image" content="{{ og.imagen }}" />
+    <meta property="og:locale" content="es_MX" />
+    <meta name="twitter:card" content="{{ 'summary_large_image' if og.grande else 'summary' }}" />
+  {% endif %}
   {% block head %}{% endblock %}
   <!-- Los scripts van en el <head> con defer, NO al final de <body>. El shell navega con
        hx-boost y hx-swap="innerHTML" sobre <body>: dentro del body, htmx los re-ejecutaba en
