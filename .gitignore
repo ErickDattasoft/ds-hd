@@ -50,3 +50,6 @@ docker/caddy_config/
 
 # Ajustes personales de Claude Code (no se comparten)
 .claude/settings.local.json
+
+# Capturas temporales (skill /captura)
+test/zz-*
