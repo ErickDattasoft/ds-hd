@@ -319,7 +319,11 @@ export function backofficeRoutes(container: Container): Router {
   r.get('/versiones/avisos', requirePermission('versiones:editar'), (req, res) => versiones().avisosView(req, res));
   r.post('/versiones/avisos', requirePermission('versiones:editar'), (req, res) => versiones().avisosPost(req, res));
   r.get('/versiones/mercado', requirePermission('versiones:editar'), (req, res) => versiones().mercadoView(req, res));
-  r.post('/versiones/mercado', requirePermission('versiones:editar'), (req, res) => versiones().mercadoPost(req, res));
+  // Guardar versiones cambia el número del menú: se olvida su caché para verlo al momento.
+  r.post('/versiones/mercado', requirePermission('versiones:editar'), async (req, res) => {
+    await versiones().mercadoPost(req, res);
+    cacheContadores.delete(container);
+  });
   r.get('/versiones/historial', requirePermission('versiones:leer'), (req, res) => versiones().historialView(req, res));
   r.get('/versiones/historial.xlsx', requirePermission('versiones:leer'), (req, res) => versiones().historialExcel(req, res));
   r.get('/versiones/reporte', requirePermission('versiones:leer'), (req, res) => versiones().reporteView(req, res));
@@ -327,10 +331,19 @@ export function backofficeRoutes(container: Container): Router {
   r.get('/versiones/reporte/imprimir', requirePermission('versiones:leer'), (req, res) => versiones().reporteImprimir(req, res));
   r.post('/versiones/reporte/enviar', requirePermission('versiones:editar'), (req, res) => versiones().reporteEnviarPost(req, res));
   r.get('/versiones/nueva', requirePermission('versiones:editar'), (req, res) => versiones().nuevo(req, res));
-  r.post('/versiones', requirePermission('versiones:editar'), (req, res) => versiones().guardarPost(req, res));
+  r.post('/versiones', requirePermission('versiones:editar'), async (req, res) => {
+    await versiones().guardarPost(req, res);
+    cacheContadores.delete(container);
+  });
   r.get('/versiones/:id/editar', requirePermission('versiones:editar'), (req, res) => versiones().editar(req, res));
-  r.post('/versiones/:id', requirePermission('versiones:editar'), (req, res) => versiones().guardarPost(req, res));
-  r.post('/versiones/:id/eliminar', requirePermission('versiones:editar'), (req, res) => versiones().eliminarPost(req, res));
+  r.post('/versiones/:id', requirePermission('versiones:editar'), async (req, res) => {
+    await versiones().guardarPost(req, res);
+    cacheContadores.delete(container);
+  });
+  r.post('/versiones/:id/eliminar', requirePermission('versiones:editar'), async (req, res) => {
+    await versiones().eliminarPost(req, res);
+    cacheContadores.delete(container);
+  });
 
   // ── Base de conocimiento ───────────────────────────────────────────────────
   // kb:leer = a quien marcó el propietario; kb:escribir/kb:publicar = solo
