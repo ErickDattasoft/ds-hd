@@ -1,441 +1,388 @@
 {% extends "layouts/backoffice.njk" %}
 {% block title %}{{ evento.titulo }}{% endblock %}
 {% block content %}
+  {#- Página del evento como una guía: ① revisa la invitación, ② elige cómo invitar (con nombre
+      o link abierto), ③ respuestas. Lo que casi no se usa (editar un invitado, lista negra,
+      borrar) queda guardado detrás de ✏️ y «Más opciones». app.js: data-ev-tab, data-abre. -#}
+  {% set puedeGestionar = can('eventos:gestionar') %}
+  {% set linkPublico = config.baseUrl + '/eventos/' + evento.id %}
+
   <div class="page-head">
     <h1>{{ evento.titulo }} <span class="{{ evento.estado | estadoClase }}">{{ evento.estado }}</span></h1>
     <div class="page-head__actions">
-      {% if can('eventos:gestionar') %}<a class="btn btn--sm" href="/app/eventos/{{ evento.id }}/editar">Editar</a>{% endif %}
-      <button type="button" class="btn btn--sm btn--secondary" data-copiar-link
-              data-link="{{ config.baseUrl }}/eventos/{{ evento.id }}"
-              title="Link SIN nombre para compartir en redes, grupos o por correo: cada quien llena sus datos al confirmar (salen en «Inscritos»). Para invitados con nombre y número de personas usa el 🔗 de cada uno en «Invitaciones».">🔗 Link público</button>
-      <a class="btn btn--sm btn--secondary" href="/app/eventos/{{ evento.id }}/vista-previa" target="_blank" rel="noopener"
-         title="La invitación como la verá un invitado (nombre de ejemplo y las personas por invitación del evento). Funciona en borrador y no guarda nada.">👁 Vista previa</a>
-      {% if can('eventos:gestionar') %}
-        <form method="post" action="/app/eventos/{{ evento.id }}/enviarme-prueba" class="inline">
-          <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
-          <button class="btn btn--sm btn--ghost" type="submit" title="Te manda a ti el correo de la invitación, con asunto «[Prueba]». No te agrega a la lista de invitados.">✉️ Enviarme una prueba</button>
-        </form>
-      {% endif %}
-      <a class="btn btn--sm btn--ghost" href="/eventos/{{ evento.id }}" target="_blank" rel="noopener">Ver página pública</a>
-      {% if can('eventos:gestionar') %}
-        <form method="post" action="/app/eventos/{{ evento.id }}/eliminar" class="inline"
-              data-confirm="¿Eliminar «{{ evento.titulo }}» y sus {{ inscritos | length }} inscritos? No se puede deshacer.">
-          <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
-          <button class="btn btn--sm btn--danger" type="submit">Eliminar</button>
-        </form>
-      {% endif %}
+      {% if puedeGestionar %}<a class="btn btn--sm" href="/app/eventos/{{ evento.id }}/editar">✏️ Editar evento</a>{% endif %}
     </div>
   </div>
-  <p class="muted">{{ evento.fechaHora | fechahora }} · {{ inscritos | length }} inscritos{% if evento.cupo %} / {{ evento.cupo }}{% endif %} · límite {{ evento.limiteIpEfectivo }}/IP</p>
+  <p class="muted">📅 {{ evento.fechaHora | fechahora }}{% if evento.lugarNombre %} · 📍 {{ evento.lugarNombre }}{% endif %} · {{ TIPO_EVENTO_ETIQUETA[evento.tipo] }}</p>
 
-  {% set puedeGestionar = can('eventos:gestionar') %}
-
-  <h2>Flayer</h2>
-  <p class="muted">Imagen promocional del evento, se muestra en la página pública de registro. PNG, JPG o WebP, máx. 700 KB.</p>
-  <div id="flayer-preview">
-    {% if evento.flayer %}
-      <img src="/eventos/{{ evento.id }}/flayer?v={{ evento.flayer.tamano }}" alt="Flayer del evento" style="max-height:220px;max-width:100%" />
-    {% else %}
-      <p class="muted">Sin flayer configurado.</p>
-    {% endif %}
-  </div>
-  {% if puedeGestionar %}
-    <form class="form" data-flayer-form action="/app/eventos/{{ evento.id }}/flayer">
-      <label class="field"><span>Archivo</span>
-        <input type="file" accept="image/png,image/jpeg,image/webp" name="archivo" required />
-      </label>
-      <button class="btn btn--sm" type="submit">Subir flayer</button>
-      <p id="flayer-mensaje"></p>
-    </form>
-    {% if evento.flayer %}
-      <form method="post" action="/app/eventos/{{ evento.id }}/flayer/eliminar" data-confirm="¿Quitar el flayer actual?">
-        <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
-        <button class="btn btn--sm btn--danger" type="submit">Quitar flayer</button>
-      </form>
-    {% endif %}
+  {% if evento.estado == 'borrador' %}
+    <p class="alert">📝 <strong>Borrador:</strong> puedes probar todo (mándate invitaciones, ábrelas, confirma). Solo no aparece en la lista pública de eventos.
+      {% if puedeGestionar %}Cuando esté listo, cámbialo a <strong>publicado</strong> en <a href="/app/eventos/{{ evento.id }}/editar">✏️ Editar evento</a>.{% endif %}</p>
   {% endif %}
-  {% macro respuestaSelect(nombre, valor) %}
-    <select name="{{ nombre }}">
-      {% for r in RESPUESTAS_INVITACION %}
-        <option value="{{ r }}" {{ 'selected' if valor == r }}>{{ RESPUESTA_INVITACION_ETIQUETA[r] }}</option>
-      {% endfor %}
-    </select>
-  {% endmacro %}
+  {% if avisoInvitaciones %}<p class="alert {{ 'alert--error' if avisoInvitaciones.startsWith('⚠') else 'alert--ok' }}" id="invitaciones-aviso">{{ avisoInvitaciones }}</p>{% endif %}
+  {% if errorInscrito %}<p class="alert alert--error">{{ errorInscrito }}</p>{% endif %}
 
-  {% macro estadoInvitado(inv) %}
-    <div class="inv-estado muted">
-      {% if inv.enviadaAt %}<span title="Se le mandó por correo">✉️ {{ inv.enviadaAt | fechahora }}</span>{% endif %}
-      {% if inv.abiertaAt %}<span title="Abrió su invitación">👁 {{ inv.abiertaAt | fechahora }}</span>{% else %}<span title="Aún no abre su link">👁 sin abrir</span>{% endif %}
-      {% if inv.respondioAt %}
-        <span title="Contestó desde su link">
-          {% if inv.respuesta == 'asistira' %}✅ van {{ inv.personas or 1 }} de {{ inv.pases }}{% else %}❌ no va{% endif %}
-          {% if inv.respondioNombre %}· {{ inv.respondioNombre }}{% endif %}
-        </span>
-      {% endif %}
-      {% if inv.mensaje %}<span class="inv-estado__mensaje">💬 «{{ inv.mensaje }}»</span>{% endif %}
+  {#- ── Respuestas de un vistazo ─────────────────────────────────────── -#}
+  {% if evento.pideConfirmacion %}
+    <div class="ev-total">
+      <div class="ev-total__grande"><strong>👥 Total que van: {{ resumen.personas + personasInscritos }}</strong>
+        <span class="muted">{{ resumen.personas }} con nombre + {{ personasInscritos }} del link abierto</span></div>
+      <div class="ev-total__chips">
+        <span>✅ {{ resumen.asistiran }} van</span>
+        <span>❌ {{ resumen.noAsistiran }} no van</span>
+        <span>⏳ {{ resumen.pendientes }} sin contestar</span>
+        <span>👁 {{ resumen.abiertas }} la abrieron</span>
+      </div>
     </div>
-  {% endmacro %}
+  {% endif %}
 
-  {% macro accionesInvitado(inv) %}
-    <span class="inv-acciones">
-      <button type="button" class="btn btn--sm btn--ghost" data-copiar-link data-link="{{ inv.link }}" title="Copiar su link personal">🔗</button>
-      <a class="btn btn--sm btn--ghost" href="{{ inv.link }}" target="_blank" rel="noopener" title="Ver su invitación como la verá él">👁</a>
-        {% if inv.correo %}
-          <form method="post" action="/app/eventos/{{ evento.id }}/invitaciones/{{ inv.id }}/enviar" class="inline"
-                {% if inv.enviadaAt %}data-confirm="Ya se le mandó el {{ inv.enviadaAt | fechahora }}. ¿Mandarla otra vez?"{% endif %}>
+  {#- ── ① La invitación ─────────────────────────────────────────────── -#}
+  <section class="ev-paso">
+    <h2 class="ev-paso__titulo"><span class="ev-paso__num">1</span> Revisa cómo se ve la invitación</h2>
+    <div class="ev-invitacion">
+      <div class="ev-invitacion__img" id="flayer-preview">
+        {% if evento.flayer %}
+          <img src="/eventos/{{ evento.id }}/flayer?v={{ evento.flayer.tamano }}" alt="Imagen de la invitación" />
+        {% else %}
+          <span class="muted">Sin imagen</span>
+        {% endif %}
+      </div>
+      <div class="ev-invitacion__acciones">
+        <a class="btn" href="/app/eventos/{{ evento.id }}/vista-previa" target="_blank" rel="noopener">👁 Ver cómo se ve</a>
+        {% if puedeGestionar %}
+          <form method="post" action="/app/eventos/{{ evento.id }}/enviarme-prueba" class="inline">
             <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
-            <button class="btn btn--sm btn--ghost" type="submit" title="Mandar la invitación a {{ inv.correo }}">✉️</button>
+            <button class="btn btn--secondary" type="submit" title="Te llega a ti el correo con asunto «[Prueba]». No te agrega a la lista.">✉️ Mandarme una prueba</button>
+          </form>
+          <a class="btn btn--ghost" href="/app/eventos/{{ evento.id }}/editar">✏️ Cambiar texto, fecha o lugar</a>
+          <button type="button" class="btn btn--ghost" data-abre="ev-imagen">🖼 {{ 'Cambiar imagen' if evento.flayer else 'Poner imagen' }}</button>
+        {% endif %}
+      </div>
+    </div>
+    {% if puedeGestionar %}
+      <div class="ev-panel" id="ev-imagen" hidden>
+        <form class="form" data-flayer-form action="/app/eventos/{{ evento.id }}/flayer">
+          <label class="field"><span>Imagen de la invitación <span class="muted">(PNG, JPG o WebP, máx. 700 KB)</span></span>
+            <input type="file" accept="image/png,image/jpeg,image/webp" name="archivo" required />
+          </label>
+          <button class="btn btn--sm" type="submit">Subir imagen</button>
+          <p id="flayer-mensaje"></p>
+        </form>
+        {% if evento.flayer %}
+          <form method="post" action="/app/eventos/{{ evento.id }}/flayer/eliminar" data-confirm="¿Quitar la imagen?">
+            <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+            <button class="btn btn--sm btn--ghost" type="submit">Quitar imagen</button>
           </form>
         {% endif %}
-        <a class="btn btn--sm btn--ghost" href="{{ inv.waInvitacion }}" target="_blank" rel="noopener"
-           title="{{ 'Mandar por WhatsApp a ' + inv.telefono if inv.telefono else 'Mandar por WhatsApp (eliges el chat)' }}">💬</a>
-    </span>
-  {% endmacro %}
-
-  <h2 id="invitaciones">Invitaciones <span class="muted">({{ TIPO_EVENTO_ETIQUETA[evento.tipo] }})</span></h2>
-  <p class="muted">
-    Cada invitado tiene su <strong>link personal</strong> con sus personas (🎟). Desde ahí confirma y aquí ves su respuesta.
-    Agrega empresas de la cartera (toma su contacto principal) o a cualquier otra persona en «Otros invitados».
-  </p>
-  {% if avisoInvitaciones %}<p class="alert {{ 'alert--error' if avisoInvitaciones.startsWith('⚠') else 'alert--ok' }}">{{ avisoInvitaciones }}</p>{% endif %}
-  {% if evento.estado == 'borrador' %}
-    <p class="alert">📝 El evento está en <strong>borrador</strong>: todo funciona para probar (agregar, mandar ✉️/💬, abrir links, confirmar y registrarse por el link público), pero <strong>no aparece en la lista pública de eventos</strong>. Cuando esté listo, ponlo en <strong>publicado</strong> desde <a href="/app/eventos/{{ evento.id }}/editar">Editar</a>.</p>
-  {% endif %}
-
-  {% if evento.pideConfirmacion and inscritos | length %}
-    <p class="muted">
-      👥 <strong>Total que van: {{ resumen.personas + personasInscritos }}</strong>
-      — {{ resumen.personas }} por invitación con nombre + {{ personasInscritos }} del link público (Inscritos que dijeron «Sí»).
-    </p>
-  {% endif %}
-  <div class="inv-resumen">
-    <div><strong>{{ resumen.invitados }}</strong><span>invitaciones</span></div>
-    {% if evento.pideConfirmacion %}
-      <div><strong>{{ resumen.pases }}</strong><span>personas invitadas</span></div>
-      <div><strong>{{ resumen.personas }}</strong><span>personas confirmadas</span></div>
-      <div><strong>✅ {{ resumen.asistiran }}</strong><span>van</span></div>
-      <div><strong>❌ {{ resumen.noAsistiran }}</strong><span>no van</span></div>
-      <div><strong>⏳ {{ resumen.pendientes }}</strong><span>sin contestar</span></div>
+      </div>
     {% endif %}
-    <div><strong>👁 {{ resumen.abiertas }}</strong><span>abiertas</span></div>
-  </div>
-  {% if puedeGestionar and resumen.invitados %}
-    <form method="post" action="/app/eventos/{{ evento.id }}/invitaciones/enviar" class="filterbar"
-          data-confirm="{{ '⚠️ El evento sigue en BORRADOR. ' if evento.estado == 'borrador' }}¿Mandar la invitación por correo a todos los que tienen correo y aún no se les ha mandado?">
-      <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
-      <button class="btn btn--sm" type="submit">✉️ Enviar a los que faltan</button>
-      <span class="muted">Solo a quien tiene correo, no se le ha mandado y no ha contestado.</span>
-    </form>
-  {% endif %}
+  </section>
 
-  <h3>🏢 Empresas de la cartera</h3>
-  {% if puedeGestionar %}
-    <form method="post" action="/app/eventos/{{ evento.id }}/empresas" class="filterbar">
-      <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
-      <input name="empresaNombre" list="empresas-cartera" placeholder="Empresa de la cartera" required autocomplete="off" />
-      <datalist id="empresas-cartera">
-        {% for e in empresasCartera %}<option value="{{ e.nombre }}">{% endfor %}
-      </datalist>
-      {% if evento.pideConfirmacion %}<label class="inv-pases-alta" title="Cuántas personas incluye ESTA invitación, contando al invitado (viene con el número del evento)">🎟 Personas <input type="number" name="pases" min="1" max="{{ MAX_PASES }}" value="{{ evento.maxPersonasRegistro }}" style="width:4.5em" /></label>{% endif %}
-      <input name="invitadoPor" placeholder="Invitado por (opcional)" />
-      <button class="btn btn--sm" type="submit">Agregar</button>
-      <span class="muted">Se llenan solos el nombre, correo y celular del contacto principal; los puedes cambiar.</span>
-    </form>
+  {#- ── ② Cómo invitar ──────────────────────────────────────────────── -#}
+  {% set todosInvitados = [] %}
+  {% for inv in invitacionesVM %}{% set _ = todosInvitados.push({ clase: 'empresa', i: inv }) %}{% endfor %}
+  {% for ext in externosVM %}{% set _ = todosInvitados.push({ clase: 'externo', i: ext }) %}{% endfor %}
+  {% set porMandar = [] %}
+  {% for x in todosInvitados %}{% if x.i.correo and not x.i.enviadaAt and x.i.respuesta == 'pendiente' %}{% set _ = porMandar.push(1) %}{% endif %}{% endfor %}
 
-    {#- Varias de golpe: casillas + buscador (app.js manda de 25 en 25). Las ya invitadas salen deshabilitadas. -#}
-    {% set yaInvitadas = [] %}{% for inv in evento.invitaciones %}{% set _ = yaInvitadas.push(inv.empresaNombre | lower) %}{% endfor %}
-    <details class="disclosure varias" data-seccion="evento-varias">
-      <summary class="disclosure__summary">☑️ Agregar varias de la cartera <span class="disclosure__hint">— márcalas y agrégalas de una vez</span></summary>
-      <form method="post" action="/app/eventos/{{ evento.id }}/empresas/varias" class="disclosure__body" data-varias>
-        <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
-        <div class="varias__barra">
-          <input type="search" placeholder="🔎 Buscar empresa o sistema (ej. Nóminas)" data-varias-buscar aria-label="Buscar empresa o sistema" />
-          <button type="button" class="btn btn--sm btn--ghost" data-varias-todas>☑️ Marcar las visibles</button>
-          <button type="button" class="btn btn--sm btn--ghost" data-varias-ninguna>☐ Desmarcar todo</button>
-        </div>
-        <ul class="varias__lista">
-          {% for e in empresasCartera %}
-            {% set ya = (e.nombre | lower) in yaInvitadas %}
-            <li data-varias-fila data-texto="{{ (e.nombre + ' ' + (e.sistemas | join(' '))) | lower }}">
-              <label class="varias__item{{ ' is-ya' if ya }}">
-                <input type="checkbox" name="empresas" value="{{ e.nombre }}" {{ 'disabled' if ya }} />
-                <span class="varias__nombre">{{ e.nombre }}</span>
-                {% if ya %}<span class="badge">ya invitada</span>{% endif %}
-                {% if e.sistemas | length %}<span class="varias__sistemas muted">{{ e.sistemas | join(' · ') }}</span>{% endif %}
-              </label>
-            </li>
-          {% else %}
-            <li class="muted">No hay empresas activas en la cartera.</li>
-          {% endfor %}
-        </ul>
-        <div class="varias__pie">
-          {% if evento.pideConfirmacion %}<label class="inv-pases-alta" title="Cuántas personas incluye cada una de estas invitaciones">🎟 Personas <input type="number" name="pases" min="1" max="{{ MAX_PASES }}" value="{{ evento.maxPersonasRegistro }}" style="width:4.5em" /></label>{% endif %}
-          <button class="btn" type="submit" data-varias-boton disabled>Agregar <span data-varias-n>0</span> seleccionadas</button>
-          <span class="muted" data-varias-estado>Toman su contacto principal (nombre, correo y celular). Después las mandas con ✉️ o «Enviar a los que faltan».</span>
-        </div>
-      </form>
-    </details>
-  {% endif %}
-  <div class="table-wrap">
-  <table class="data-table">
-    <thead><tr><th>Empresa</th><th>Para / correo / celular</th>{% if evento.pideConfirmacion %}<th title="Personas que incluye la invitación">🎟 Personas</th>{% endif %}<th>Respuesta</th><th>Notas</th><th></th></tr></thead>
-    <tbody>
-      {% for inv in invitacionesVM %}
-        {% set hist = historialEmpresas[inv.empresaNombre | lower] %}
-        <tr>
-          <td>
-            <span class="nombre-sensible">{{ inv.empresaNombre }}</span>
-            {% if hist %}<span class="muted" title="Participó en {{ hist.eventos }} evento(s) anteriores{% if hist.asistio %}, asistió a {{ hist.asistio }}{% endif %}">🔁 {{ hist.eventos }}{% if hist.asistio %}·✅{{ hist.asistio }}{% endif %}</span>{% endif %}
-            {% if inv.sistemas | length %}<div class="muted" style="font-size:.78em">{{ inv.sistemas | join(', ') }}</div>{% endif %}
-          </td>
-          {% if puedeGestionar %}
-            <td colspan="{{ 4 if evento.pideConfirmacion else 3 }}">
-              <form method="post" action="/app/eventos/{{ evento.id }}/empresas/{{ inv.id }}" class="inline-form">
-                <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
-                <input name="paraNombre" value="{{ inv.paraNombre or '' }}" placeholder="Para (nombre)" size="14" class="nombre-sensible" />
-                <input type="email" name="correo" value="{{ inv.correo or '' }}" placeholder="Correo" size="18" class="sensible" />
-                <input type="tel" name="telefono" value="{{ inv.telefono or '' }}" placeholder="Celular" size="11" class="sensible" />
-                {% if evento.pideConfirmacion %}
-                  <input type="number" name="pases" value="{{ inv.pases }}" min="1" max="{{ MAX_PASES }}" title="Personas que incluye la invitación" style="width:4.5em" />
-                {% endif %}
-                {{ respuestaSelect('respuesta', inv.respuesta) }}
-                {% if evento.pideConfirmacion %}
-                  <input type="number" name="personas" value="{{ inv.personas or '' }}" min="1" max="{{ inv.pases }}" placeholder="¿cuántos?" title="Personas que van (si contestó por teléfono)" style="width:5.5em" />
-                {% endif %}
-                <input name="invitadoPor" value="{{ inv.invitadoPor or '' }}" placeholder="Invitado por" size="10" />
-                <label class="field--check"><input type="checkbox" name="contactado" {{ 'checked' if inv.contactado }} /> contactado</label>
-                <input name="notas" value="{{ inv.notas or '' }}" placeholder="Notas" size="14" />
-                <button class="btn btn--sm" type="submit">Guardar</button>
-              </form>
-              {{ estadoInvitado(inv) }}
-            </td>
-            <td style="white-space:nowrap">
-              {{ accionesInvitado(inv) }}
-              <form method="post" action="/app/eventos/{{ evento.id }}/empresas/{{ inv.id }}/quitar" class="inline" data-confirm="¿Quitar «{{ inv.empresaNombre }}» del evento?">
-                <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
-                <button class="btn btn--sm btn--ghost" type="submit" title="Quitar">🗑️</button>
-              </form>
-            </td>
-          {% else %}
-            <td><span class="nombre-sensible">{{ inv.paraNombre or '—' }}</span><div class="muted sensible">{{ inv.correo or '' }} {{ inv.telefono or '' }}</div></td>
-            {% if evento.pideConfirmacion %}<td>{{ inv.pases }}</td>{% endif %}
-            <td>{{ RESPUESTA_INVITACION_ETIQUETA[inv.respuesta] }}{{ estadoInvitado(inv) }}</td>
-            <td class="muted">{{ inv.notas or '—' }}</td>
-            <td><button type="button" class="btn btn--sm btn--ghost" data-copiar-link data-link="{{ inv.link }}" title="Copiar su link personal">🔗</button></td>
-          {% endif %}
-        </tr>
-      {% else %}<tr><td colspan="6" class="muted">Ninguna empresa invitada todavía.</td></tr>{% endfor %}
-    </tbody>
-  </table>
-  </div>
-
-  <h3>👤 Otros invitados <span class="muted">(quien no está en la cartera: amigos, prospectos, referidos)</span></h3>
-  {% if puedeGestionar %}
-    <form method="post" action="/app/eventos/{{ evento.id }}/externos" class="filterbar">
-      <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
-      <input name="nombre" placeholder="Nombre (opcional: sin nombre saluda «¡Hola!»)" size="28" />
-      <input type="email" name="correo" placeholder="Correo (opcional)" />
-      <input type="tel" name="telefono" placeholder="Celular (opcional)" />
-      {% if evento.pideConfirmacion %}<label class="inv-pases-alta" title="Cuántas personas incluye ESTA invitación, contando al invitado (viene con el número del evento)">🎟 Personas <input type="number" name="pases" min="1" max="{{ MAX_PASES }}" value="{{ evento.maxPersonasRegistro }}" style="width:4.5em" /></label>{% endif %}
-      <input name="fuente" placeholder="Fuente (referido, redes…)" />
-      <button class="btn btn--sm" type="submit">Agregar</button>
-    </form>
-
-    <details class="disclosure varias" data-seccion="evento-lista">
-      <summary class="disclosure__summary">📄 Cargar lista <span class="disclosure__hint">— muchas invitaciones personalizadas de golpe (CSV o pegar de Excel)</span></summary>
-      <form method="post" action="/app/eventos/{{ evento.id }}/externos/lista" class="disclosure__body form" data-lista-invitados>
-        <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
-        <p class="muted">Un renglón por invitación con <strong>nombre, correo, celular, personas</strong> (correo o celular, al menos uno). Puede traer encabezado en cualquier orden.
-          Cada renglón queda con su link personal. Quien ya está invitado (mismo correo o celular) se salta.</p>
-        <pre class="lista-ejemplo">nombre, correo, celular, personas
-Ana López, ana@correo.com, 9991234567, 2
-Familia Canul, canul@correo.com, , 4
-Luis Mena, , 9997654321, 1</pre>
-        <label class="field"><span>📎 Archivo CSV <span class="muted">(en Excel: Archivo → Guardar como → CSV)</span></span>
-          <input type="file" accept=".csv,.txt,text/csv,text/plain" data-lista-archivo />
-        </label>
-        <label class="field"><span>…o pega aquí las celdas copiadas de Excel</span>
-          <textarea name="lista" rows="6" required placeholder="Ana López	ana@correo.com	9991234567	2" data-lista-texto></textarea>
-          <em class="field__hint" data-lista-conteo></em>
-        </label>
-        <div class="varias__pie">
-          {% if evento.pideConfirmacion %}<label class="inv-pases-alta" title="Para los renglones que no traen personas">🎟 Personas si no lo trae <input type="number" name="pases" min="1" max="{{ MAX_PASES }}" value="{{ evento.maxPersonasRegistro }}" style="width:4.5em" /></label>{% endif %}
-          <input name="fuente" placeholder="Fuente (opcional, ej. Expo 2026)" />
-          <button class="btn" type="submit">📄 Crear invitaciones</button>
-        </div>
-      </form>
-    </details>
-  {% endif %}
-  <div class="table-wrap">
-  <table class="data-table">
-    <thead><tr><th>Nombre / correo / celular</th>{% if evento.pideConfirmacion %}<th title="Personas que incluye la invitación">🎟 Personas</th>{% endif %}<th>Respuesta</th><th>Notas</th><th></th></tr></thead>
-    <tbody>
-      {% for ext in externosVM %}
-        <tr>
-          {% if puedeGestionar %}
-            <td colspan="{{ 4 if evento.pideConfirmacion else 3 }}">
-              <form method="post" action="/app/eventos/{{ evento.id }}/externos/{{ ext.id }}" class="inline-form">
-                <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
-                <input name="nombre" value="{{ ext.nombre }}" placeholder="Nombre" size="14" class="nombre-sensible" />
-                <input type="email" name="correo" value="{{ ext.correo or '' }}" placeholder="Correo" size="18" class="sensible" />
-                <input type="tel" name="telefono" value="{{ ext.telefono or '' }}" placeholder="Celular" size="11" class="sensible" />
-                {% if evento.pideConfirmacion %}
-                  <input type="number" name="pases" value="{{ ext.pases }}" min="1" max="{{ MAX_PASES }}" title="Personas que incluye la invitación" style="width:4.5em" />
-                {% endif %}
-                {{ respuestaSelect('respuesta', ext.respuesta) }}
-                {% if evento.pideConfirmacion %}
-                  <input type="number" name="personas" value="{{ ext.personas or '' }}" min="1" max="{{ ext.pases }}" placeholder="¿cuántos?" title="Personas que van (si contestó por teléfono)" style="width:5.5em" />
-                {% endif %}
-                <input name="fuente" value="{{ ext.fuente or '' }}" placeholder="Fuente" size="10" />
-                <label class="field--check"><input type="checkbox" name="contactado" {{ 'checked' if ext.contactado }} /> contactado</label>
-                <input name="notas" value="{{ ext.notas or '' }}" placeholder="Notas" size="14" />
-                <button class="btn btn--sm" type="submit">Guardar</button>
-              </form>
-              {{ estadoInvitado(ext) }}
-            </td>
-            <td style="white-space:nowrap">
-              {{ accionesInvitado(ext) }}
-              <form method="post" action="/app/eventos/{{ evento.id }}/externos/{{ ext.id }}/quitar" class="inline" data-confirm="¿Quitar a «{{ ext.nombre }}» del evento?">
-                <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
-                <button class="btn btn--sm btn--ghost" type="submit" title="Quitar">🗑️</button>
-              </form>
-            </td>
-          {% else %}
-            <td><span class="nombre-sensible">{{ ext.nombre or '—' }}</span><div class="muted sensible">{{ ext.correo or '' }} {{ ext.telefono or '' }}</div></td>
-            {% if evento.pideConfirmacion %}<td>{{ ext.pases }}</td>{% endif %}
-            <td>{{ RESPUESTA_INVITACION_ETIQUETA[ext.respuesta] }}{{ estadoInvitado(ext) }}</td>
-            <td class="muted">{{ ext.notas or '—' }}</td>
-            <td><button type="button" class="btn btn--sm btn--ghost" data-copiar-link data-link="{{ ext.link }}" title="Copiar su link personal">🔗</button></td>
-          {% endif %}
-        </tr>
-      {% else %}<tr><td colspan="5" class="muted">Nadie más invitado.</td></tr>{% endfor %}
-    </tbody>
-  </table>
-  </div>
-
-  <h2 id="inscritos">Inscritos <span class="muted">(registro público)</span></h2>
-  {% if errorInscrito %}<p class="alert alert--error">{{ errorInscrito }}</p>{% endif %}
-  <div class="filterbar">
-    <span class="muted">{{ inscritos | length }} persona(s) registrada(s)</span>
-    {% if puedeGestionar %}
-      <button class="btn btn--sm btn--ghost" type="button" data-wsp-masivo
-              data-pendientes="{{ pendientesWsp }}"
-              title="Abre WhatsApp uno por uno para quien tenga teléfono y no esté marcado como contactado">
-        💬 WhatsApp a pendientes ({{ pendientesWsp }})
+  <section class="ev-paso" id="invitaciones">
+    <h2 class="ev-paso__titulo"><span class="ev-paso__num">2</span> Invitaciones: elige cómo invitar</h2>
+    <div class="ev-tabs" role="tablist" data-ev-tabs="{{ evento.id }}"
+         data-ev-tab-inicial="{{ 'abierto' if (inscritos | length) and not (todosInvitados | length) else 'nombre' }}">
+      <button type="button" role="tab" class="ev-tab" data-ev-tab="nombre">
+        <strong>👥 Con nombre</strong>
+        <span>Cada quien recibe su propia invitación: «¡Hola, Ana!» · {{ todosInvitados | length }} invitado(s)</span>
       </button>
-    {% endif %}
-    {% if inscritos | length %}
-      <a class="btn btn--sm btn--ghost" href="/app/eventos/{{ evento.id }}/inscritos.xlsx">📥 Exportar Excel</a>
-    {% endif %}
-  </div>
-  <div class="table-wrap">
-  <table class="data-table">
-    <thead><tr>
-      <th>Nombre</th><th>Empresa</th>
-      <th title="Ya asistió de verdad a otro evento antes — no tiene mucho caso reinvitarlo si este webinar se repite">🔁 Antes</th>
-      <th>Correo</th>
-      <th title="🟢 entregado · 🟡 pendiente · 🔴 rebotó">📧</th>
-      <th title="Marcado como problemático en algún evento">🚫</th>
-      <th>Teléfono</th><th>¿Asistirá?</th>
-      <th title="Asistencia real confirmada, no solo la intención declarada al registrarse">✅ Asistió</th>
-      <th title="Ya se le mandó el mensaje por WhatsApp">Contactado</th>
-      <th>Estado</th><th></th>
-    </tr></thead>
-    <tbody>
-      {% for i in inscritos %}
-        <tr id="inscrito-{{ i.id }}">
-          {% if puedeGestionar %}
-            {# Una sola fila = un solo formulario: los datos editables y las dos marcas se guardan juntos. #}
-            <td colspan="10">
-              <form method="post" action="/app/eventos/{{ evento.id }}/inscritos/{{ i.id }}" class="inline-form">
-                <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
-                <input type="hidden" name="marcasPresentes" value="1" />
-                <input name="nombre" value="{{ i.nombre }}" placeholder="Nombre" size="16" autocomplete="off" spellcheck="false" required />
-                <input name="empresa" value="{{ i.empresa or '' }}" placeholder="Empresa" size="14" autocomplete="off" spellcheck="false" />
-                {% if i.asistioAntes %}
-                  <span title="Ya asistió a: {{ i.asistioAntes }}">🔁 {{ i.asistioAntes }}</span>
-                {% else %}<span class="muted">—</span>{% endif %}
-                <input type="email" name="email" value="{{ i.email }}" placeholder="Correo" size="22" autocomplete="off" required />
-                {% if i.correoEstado == 'entregado' %}<span title="Entregado">🟢</span>
-                {% elif i.correoEstado == 'rebotado' %}<span title="Rebotó — probablemente un correo falso o inexistente">🔴</span>
-                {% else %}<span title="Aún sin confirmar entrega (Brevo puede tardar unos minutos)">🟡</span>{% endif %}
-                {% if i.correoSospechoso %}<span title="Dominio de correo temporal/desechable conocido — probablemente no es un prospecto real">🚩</span>{% endif %}
-                <input type="tel" name="telefono" value="{{ i.telefono or '' }}" placeholder="Teléfono" size="12" autocomplete="off" />
-                <span class="muted" title="Lo que declaró al registrarse">{{ i.asistira or '—' }}{% if i.personas and i.personas > 1 %} · 👥 {{ i.personas }}{% endif %}</span>
-                <label class="field--check" title="Asistencia real confirmada"><input type="checkbox" name="asistioReal" {{ 'checked' if i.asistioReal }} /> ✅</label>
-                <label class="field--check" title="Ya se le mandó el mensaje por WhatsApp"><input type="checkbox" name="contactadoWsp" {{ 'checked' if i.contactadoWsp }} /> 💬</label>
-                <button class="btn btn--sm" type="submit">Guardar</button>
-              </form>
-              {% if i.asistira or i.usaSistema or i.fuente or i.deseaCanalWhatsapp %}
-                <div class="muted" style="font-size:.78em">
-                  {% if i.usaSistema %}¿Usa {{ evento.sistema }}? {{ i.usaSistema }} · {% endif %}
-                  {% if i.fuente %}Se enteró: {{ i.fuente }} · {% endif %}
-                  {% if i.deseaCanalWhatsapp %}💬 quiere el canal de WhatsApp · {% endif %}
-                  IP {{ i.ip or '—' }}
-                </div>
-              {% endif %}
-            </td>
-            <td>
-              <form method="post" action="/app/eventos/{{ evento.id }}/inscritos/{{ i.id }}/marcar" class="inline">
-                <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
-                <select name="estado">
-                  {% for e in ['registrado','confirmado','asistio','no_asistio'] %}<option {{ 'selected' if i.estado == e }}>{{ e }}</option>{% endfor %}
-                </select>
-                <button class="btn btn--sm btn--ghost" type="submit">↵</button>
-              </form>
-            </td>
-            <td style="white-space:nowrap">
-              {% if i.waLink %}
-                <a class="btn btn--sm btn--ghost" target="_blank" rel="noopener" href="{{ i.waLink }}"
-                   data-wsp-inscrito data-marcar="/app/eventos/{{ evento.id }}/inscritos/{{ i.id }}/contactado"
-                   title="Manda el mensaje de la plantilla de este evento por WhatsApp">💬</a>
-              {% endif %}
-              <form method="post" action="/app/eventos/{{ evento.id }}/inscritos/{{ i.id }}/reenviar" class="inline">
-                <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
-                <button class="btn btn--sm btn--ghost" type="submit" title="Reenviar el correo de confirmación">✉️</button>
-              </form>
-              {% if i.enListaNegra %}
-                <span title="{{ i.enListaNegra }}">🚫</span>
-              {% else %}
-                <form method="post" action="/app/eventos/{{ evento.id }}/inscritos/{{ i.id }}/lista-negra" class="inline"
-                      data-prompt-motivo
-                      data-confirm="¿Marcar a «{{ i.nombre }}» como problemático? Quedará señalado con 🚫 si se vuelve a registrar en cualquier evento futuro.">
-                  <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
-                  <input type="hidden" name="motivo" value="" />
-                  <button class="btn btn--sm btn--ghost" type="submit" style="opacity:.45"
-                          title="Marcar como problemático (ej. mala conducta en una videollamada)">🚫</button>
-                </form>
-              {% endif %}
-              <form method="post" action="/app/eventos/{{ evento.id }}/inscritos/{{ i.id }}/eliminar" class="inline"
-                    data-confirm="¿Eliminar el registro de «{{ i.nombre }}»? No se puede deshacer.">
-                <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
-                <button class="btn btn--sm btn--danger" type="submit" title="Eliminar este registro">🗑️</button>
-              </form>
-            </td>
-          {% else %}
-            <td>{{ i.nombre }}</td>
-            <td class="nombre-sensible">{{ i.empresa or '—' }}</td>
-            <td>{% if i.asistioAntes %}🔁 {{ i.asistioAntes }}{% else %}—{% endif %}</td>
-            <td><span class="sensible">{{ i.email }}</span>{% if i.correoSospechoso %} 🚩{% endif %}</td>
-            <td>{{ i.correoEstado or '—' }}</td>
-            <td>{% if i.enListaNegra %}🚫{% else %}—{% endif %}</td>
-            <td class="sensible">{{ i.telefono or '—' }}</td>
-            <td>{{ i.asistira or '—' }}{% if i.personas and i.personas > 1 %} · 👥 {{ i.personas }}{% endif %}</td>
-            <td>{{ 'Sí' if i.asistioReal else '—' }}</td>
-            <td>{{ 'Sí' if i.contactadoWsp else '—' }}</td>
-            <td>{{ i.estado }}</td>
-            <td></td>
-          {% endif %}
-        </tr>
-      {% else %}<tr><td colspan="12" class="muted">Sin inscritos.</td></tr>{% endfor %}
-    </tbody>
-  </table>
-  </div>
+      <button type="button" role="tab" class="ev-tab" data-ev-tab="abierto">
+        <strong>🌐 Link abierto</strong>
+        <span>Un solo link para redes o grupos; cada quien pone sus datos · {{ inscritos | length }} registrado(s)</span>
+      </button>
+    </div>
 
-  {% if can('eventos:gestionar') %}
-    <details class="disclosure"{{ ' open' if listaNegra | length }}>
-      <summary class="disclosure__summary">Lista negra <span class="disclosure__hint">— {{ listaNegra | length }} bloqueado(s)</span></summary>
+    {#- Pestaña A: invitados con nombre -#}
+    <div class="ev-tabpanel" data-ev-panel="nombre">
+      {% if puedeGestionar %}
+        <div class="ev-agregar" data-paneles>
+          <span class="ev-agregar__label">Agregar invitados:</span>
+          <button type="button" class="btn btn--secondary" data-abre="ev-add-clientes">🏢 De mis clientes</button>
+          <button type="button" class="btn btn--secondary" data-abre="ev-add-persona">👤 Otra persona</button>
+          <button type="button" class="btn btn--secondary" data-abre="ev-add-lista">📄 Lista de Excel</button>
+        </div>
+
+        {#- De mis clientes: casillas + buscador (de 25 en 25 por JS). Las ya invitadas, deshabilitadas. -#}
+        {% set yaInvitadas = [] %}{% for inv in evento.invitaciones %}{% set _ = yaInvitadas.push(inv.empresaNombre | lower) %}{% endfor %}
+        <div class="ev-panel" id="ev-add-clientes" data-panel hidden>
+          <form method="post" action="/app/eventos/{{ evento.id }}/empresas/varias" data-varias>
+            <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+            <p class="ev-panel__ayuda">Marca los clientes que quieres invitar. Se usa su <strong>contacto principal</strong> (nombre, correo y celular).</p>
+            <div class="varias__barra">
+              <input type="search" placeholder="🔎 Buscar cliente o sistema (ej. Nóminas)" data-varias-buscar aria-label="Buscar cliente o sistema" />
+              <button type="button" class="btn btn--sm btn--ghost" data-varias-todas>☑️ Marcar los que se ven</button>
+              <button type="button" class="btn btn--sm btn--ghost" data-varias-ninguna>☐ Desmarcar</button>
+            </div>
+            <ul class="varias__lista">
+              {% for e in empresasCartera %}
+                {% set ya = (e.nombre | lower) in yaInvitadas %}
+                <li data-varias-fila data-texto="{{ (e.nombre + ' ' + (e.sistemas | join(' '))) | lower }}">
+                  <label class="varias__item{{ ' is-ya' if ya }}">
+                    <input type="checkbox" name="empresas" value="{{ e.nombre }}" {{ 'disabled' if ya }} />
+                    <span class="varias__nombre">{{ e.nombre }}</span>
+                    {% if ya %}<span class="badge">ya invitado</span>{% endif %}
+                    {% if e.sistemas | length %}<span class="varias__sistemas muted">{{ e.sistemas | join(' · ') }}</span>{% endif %}
+                  </label>
+                </li>
+              {% else %}
+                <li class="muted" style="padding:8px 12px">No hay clientes activos.</li>
+              {% endfor %}
+            </ul>
+            <div class="varias__pie">
+              {% if evento.pideConfirmacion %}<label class="inv-pases-alta" title="Cuántas personas incluye cada invitación, contando al invitado">🎟 Personas por invitación <input type="number" name="pases" min="1" max="{{ MAX_PASES }}" value="{{ evento.maxPersonasRegistro }}" style="width:4.5em" /></label>{% endif %}
+              <button class="btn" type="submit" data-varias-boton disabled>Agregar <span data-varias-n>0</span> marcados</button>
+              <span class="muted" data-varias-estado></span>
+            </div>
+          </form>
+        </div>
+
+        <div class="ev-panel" id="ev-add-persona" data-panel hidden>
+          <form method="post" action="/app/eventos/{{ evento.id }}/externos" class="ev-persona">
+            <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+            <p class="ev-panel__ayuda">Para alguien que no está en tus clientes (amigos, prospectos, referidos). Pon su correo, su celular o los dos.</p>
+            <label class="field"><span>Nombre</span><input name="nombre" placeholder="Ej. Ana López" autocomplete="off" /></label>
+            <label class="field"><span>Correo</span><input type="email" name="correo" placeholder="ana@correo.com" autocomplete="off" /></label>
+            <label class="field"><span>Celular</span><input type="tel" name="telefono" placeholder="999 123 4567" autocomplete="off" /></label>
+            {% if evento.pideConfirmacion %}<label class="field"><span>🎟 Personas</span><input type="number" name="pases" min="1" max="{{ MAX_PASES }}" value="{{ evento.maxPersonasRegistro }}" /></label>{% endif %}
+            <button class="btn" type="submit">＋ Agregar</button>
+          </form>
+        </div>
+
+        <div class="ev-panel" id="ev-add-lista" data-panel hidden>
+          <form method="post" action="/app/eventos/{{ evento.id }}/externos/lista" class="form" data-lista-invitados>
+            <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+            <p class="ev-panel__ayuda">Para muchas personas a la vez. En Excel, una persona por renglón con estas columnas (correo o celular, al menos uno):</p>
+            <pre class="lista-ejemplo">nombre       correo              celular      personas
+Ana López    ana@correo.com      9991234567   2
+Luis Mena                        9997654321   1</pre>
+            <label class="field"><span>Selecciona las celdas en Excel, cópialas (Ctrl+C) y pégalas aquí (Ctrl+V)</span>
+              <textarea name="lista" rows="5" required placeholder="Pega aquí…" data-lista-texto></textarea>
+              <em class="field__hint" data-lista-conteo></em>
+            </label>
+            <label class="field"><span class="muted">…o sube el archivo guardado como CSV</span>
+              <input type="file" accept=".csv,.txt,text/csv,text/plain" data-lista-archivo />
+            </label>
+            <div class="varias__pie">
+              {% if evento.pideConfirmacion %}<label class="inv-pases-alta" title="Para los renglones que no traen personas">🎟 Personas si no lo trae <input type="number" name="pases" min="1" max="{{ MAX_PASES }}" value="{{ evento.maxPersonasRegistro }}" style="width:4.5em" /></label>{% endif %}
+              <button class="btn" type="submit">📄 Agregar a todos</button>
+            </div>
+          </form>
+        </div>
+      {% endif %}
+
+      {% if puedeGestionar and todosInvitados | length %}
+        <div class="ev-mandar">
+          {% if porMandar | length %}
+            <form method="post" action="/app/eventos/{{ evento.id }}/invitaciones/enviar" class="inline"
+                  data-confirm="{{ '⚠️ El evento sigue en BORRADOR. ' if evento.estado == 'borrador' }}¿Mandar la invitación por correo a los {{ porMandar | length }} que faltan?">
+              <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+              <button class="btn" type="submit">✉️ Enviar a los que faltan ({{ porMandar | length }})</button>
+            </form>
+            <span class="muted">Por correo, a quien todavía no se le ha mandado. Para WhatsApp usa el 💬 de cada uno.</span>
+          {% else %}
+            <span class="muted">✔️ Ya se les mandó por correo a todos los que tienen correo. Usa 💬 para mandar por WhatsApp.</span>
+          {% endif %}
+        </div>
+      {% endif %}
+
+      <ul class="ev-lista">
+        {% for x in todosInvitados %}
+          {% set inv = x.i %}
+          {% set esEmpresa = x.clase == 'empresa' %}
+          {% set nombreVisible = (inv.paraNombre or inv.empresaNombre) if esEmpresa else (inv.nombre or 'Sin nombre') %}
+          {% set hist = historialEmpresas[inv.empresaNombre | lower] if esEmpresa else none %}
+          <li class="ev-invitado">
+            <div class="ev-invitado__fila">
+              <div class="ev-invitado__quien">
+                <strong class="nombre-sensible">{{ nombreVisible }}</strong>
+                {% if esEmpresa and inv.paraNombre %}<span class="muted nombre-sensible"> · {{ inv.empresaNombre }}</span>{% endif %}
+                {% if hist %}<span class="muted" title="Invitado a {{ hist.eventos }} evento(s) antes{% if hist.asistio %}, fue a {{ hist.asistio }}{% endif %}"> 🔁{{ hist.eventos }}</span>{% endif %}
+                <div class="muted ev-invitado__contacto sensible">{{ inv.correo or '' }}{% if inv.correo and inv.telefono %} · {% endif %}{{ inv.telefono or '' }}{% if not inv.correo and not inv.telefono %}⚠️ sin correo ni celular{% endif %}</div>
+                {% if inv.mensaje %}<div class="ev-invitado__mensaje">💬 «{{ inv.mensaje }}»</div>{% endif %}
+              </div>
+              {% if evento.pideConfirmacion %}<div class="ev-invitado__pases" title="Personas que incluye su invitación">🎟 {{ inv.pases }}</div>{% endif %}
+              <div class="ev-invitado__estado">
+                {% if inv.respuesta == 'asistira' %}<span class="ev-chip ev-chip--si">✅ {% if evento.pideConfirmacion %}Van {{ inv.personas or 1 }} de {{ inv.pases }}{% else %}Confirmó{% endif %}</span>
+                {% elif inv.respuesta == 'no_asistira' %}<span class="ev-chip ev-chip--no">❌ No va</span>
+                {% elif inv.respuesta == 'no_localizado' %}<span class="ev-chip">📵 No localizado</span>
+                {% elif inv.abiertaAt %}<span class="ev-chip ev-chip--abrio" title="La abrió el {{ inv.abiertaAt | fechahora }}">👁 La abrió</span>
+                {% elif inv.enviadaAt %}<span class="ev-chip" title="Se le mandó el {{ inv.enviadaAt | fechahora }}">✉️ Enviada</span>
+                {% else %}<span class="ev-chip ev-chip--pend">⏳ Sin mandar</span>{% endif %}
+              </div>
+              <div class="ev-invitado__acciones">
+                {% if puedeGestionar %}
+                  <a class="btn btn--sm btn--ghost" href="{{ inv.waInvitacion }}" target="_blank" rel="noopener"
+                     title="{{ 'Mandar por WhatsApp a ' + inv.telefono if inv.telefono else 'Mandar por WhatsApp (eliges el chat)' }}">💬</a>
+                  {% if inv.correo %}
+                    <form method="post" action="/app/eventos/{{ evento.id }}/invitaciones/{{ inv.id }}/enviar" class="inline"
+                          {% if inv.enviadaAt %}data-confirm="Ya se le mandó el {{ inv.enviadaAt | fechahora }}. ¿Mandarla otra vez?"{% endif %}>
+                      <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+                      <button class="btn btn--sm btn--ghost" type="submit" title="Mandar por correo a {{ inv.correo }}">✉️</button>
+                    </form>
+                  {% endif %}
+                {% endif %}
+                <a class="btn btn--sm btn--ghost" href="{{ inv.link }}" target="_blank" rel="noopener" title="Ver su invitación">👁</a>
+                <button type="button" class="btn btn--sm btn--ghost" data-copiar-link data-link="{{ inv.link }}" title="Copiar su link">🔗</button>
+                {% if puedeGestionar %}<button type="button" class="btn btn--sm btn--ghost" data-abre="ed-{{ inv.id }}" title="Cambiar sus datos o su respuesta">✏️</button>{% endif %}
+              </div>
+            </div>
+            {% if puedeGestionar %}
+              <div class="ev-panel ev-invitado__editar" id="ed-{{ inv.id }}" hidden>
+                <form method="post" action="/app/eventos/{{ evento.id }}/{{ 'empresas' if esEmpresa else 'externos' }}/{{ inv.id }}" class="ev-persona">
+                  <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+                  {% if esEmpresa %}
+                    <label class="field"><span>Para (nombre)</span><input name="paraNombre" value="{{ inv.paraNombre or '' }}" class="nombre-sensible" /></label>
+                  {% else %}
+                    <label class="field"><span>Nombre</span><input name="nombre" value="{{ inv.nombre }}" class="nombre-sensible" /></label>
+                  {% endif %}
+                  <label class="field"><span>Correo</span><input type="email" name="correo" value="{{ inv.correo or '' }}" class="sensible" /></label>
+                  <label class="field"><span>Celular</span><input type="tel" name="telefono" value="{{ inv.telefono or '' }}" class="sensible" /></label>
+                  {% if evento.pideConfirmacion %}
+                    <label class="field"><span>🎟 Personas</span><input type="number" name="pases" value="{{ inv.pases }}" min="1" max="{{ MAX_PASES }}" /></label>
+                  {% endif %}
+                  <label class="field"><span>Respuesta <span class="muted">(si te contestó por teléfono)</span></span>
+                    <select name="respuesta">
+                      {% for r in RESPUESTAS_INVITACION %}<option value="{{ r }}" {{ 'selected' if inv.respuesta == r }}>{{ RESPUESTA_INVITACION_ETIQUETA[r] }}</option>{% endfor %}
+                    </select>
+                  </label>
+                  {% if evento.pideConfirmacion %}
+                    <label class="field"><span>¿Cuántos van?</span><input type="number" name="personas" value="{{ inv.personas or '' }}" min="1" max="{{ inv.pases }}" /></label>
+                  {% endif %}
+                  <label class="field"><span>Notas</span><input name="notas" value="{{ inv.notas or '' }}" /></label>
+                  {% if esEmpresa %}<input type="hidden" name="invitadoPor" value="{{ inv.invitadoPor or '' }}" />{% else %}<input type="hidden" name="fuente" value="{{ inv.fuente or '' }}" />{% endif %}
+                  {% if inv.contactado %}<input type="hidden" name="contactado" value="on" />{% endif %}
+                  <button class="btn btn--sm" type="submit">💾 Guardar</button>
+                </form>
+                <form method="post" action="/app/eventos/{{ evento.id }}/{{ 'empresas' if esEmpresa else 'externos' }}/{{ inv.id }}/quitar" class="inline" data-confirm="¿Quitar a «{{ nombreVisible }}» de las invitaciones?">
+                  <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+                  <button class="btn btn--sm btn--ghost" type="submit">🗑 Quitar de la lista</button>
+                </form>
+              </div>
+            {% endif %}
+          </li>
+        {% else %}
+          <li class="ev-vacio">Todavía no hay invitados. {% if puedeGestionar %}Agrégalos con los botones de arriba.{% endif %}</li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    {#- Pestaña B: link abierto (sin nombre) -#}
+    <div class="ev-tabpanel" data-ev-panel="abierto" id="inscritos">
+      <p class="ev-panel__ayuda">Compártelo en Facebook, en un grupo de WhatsApp o en un correo masivo. Quien entra pone su nombre y sus datos{% if evento.pideConfirmacion %}, y cuántos van (hasta {{ evento.maxPersonasRegistro }}){% endif %}. Aparecen abajo.</p>
+      <div class="ev-link">
+        <input type="text" readonly value="{{ linkPublico }}" aria-label="Link abierto" data-seleccionar />
+        <button type="button" class="btn" data-copiar-link data-link="{{ linkPublico }}">📋 Copiar link</button>
+        <a class="btn btn--secondary" href="https://wa.me/?text={{ (evento.titulo + ' — ' + linkPublico) | urlencode }}" target="_blank" rel="noopener">💬 Compartir por WhatsApp</a>
+        <a class="btn btn--ghost" href="/eventos/{{ evento.id }}" target="_blank" rel="noopener">👁 Ver cómo se ve</a>
+      </div>
+
+      <div class="ev-subtitulo">
+        <h3>Quién se ha registrado ({{ inscritos | length }})</h3>
+        <span class="ev-subtitulo__acciones">
+          {% if puedeGestionar and pendientesWsp %}
+            <button class="btn btn--sm btn--ghost" type="button" data-wsp-masivo data-pendientes="{{ pendientesWsp }}"
+                    title="Abre WhatsApp uno por uno para quien tenga teléfono y no esté marcado como contactado">💬 WhatsApp a pendientes ({{ pendientesWsp }})</button>
+          {% endif %}
+          {% if inscritos | length %}<a class="btn btn--sm btn--ghost" href="/app/eventos/{{ evento.id }}/inscritos.xlsx">📥 Excel</a>{% endif %}
+        </span>
+      </div>
+      <ul class="ev-lista">
+        {% for i in inscritos %}
+          <li class="ev-invitado" id="inscrito-{{ i.id }}">
+            <div class="ev-invitado__fila">
+              <div class="ev-invitado__quien">
+                <strong>{{ i.nombre }}</strong>{% if i.empresa %}<span class="muted nombre-sensible"> · {{ i.empresa }}</span>{% endif %}
+                {% if i.asistioAntes %}<span class="muted" title="Ya asistió a: {{ i.asistioAntes }}"> 🔁</span>{% endif %}
+                {% if i.enListaNegra %}<span title="{{ i.enListaNegra }}"> 🚫</span>{% endif %}
+                <div class="muted ev-invitado__contacto sensible">{{ i.email }}{% if i.correoSospechoso %} 🚩{% endif %}{% if i.telefono %} · {{ i.telefono }}{% endif %}</div>
+              </div>
+              <div class="ev-invitado__estado">
+                {% if i.asistira == 'No' %}<span class="ev-chip ev-chip--no">❌ No va</span>
+                {% elif i.asistira %}<span class="ev-chip ev-chip--si">✅ {{ i.asistira }}{% if i.personas and i.personas > 1 %} · 👥 {{ i.personas }}{% endif %}</span>
+                {% else %}<span class="ev-chip ev-chip--si">✅ Registrado</span>{% endif %}
+              </div>
+              <div class="ev-invitado__acciones">
+                {% if puedeGestionar and i.waLink %}
+                  <a class="btn btn--sm btn--ghost" target="_blank" rel="noopener" href="{{ i.waLink }}"
+                     data-wsp-inscrito data-marcar="/app/eventos/{{ evento.id }}/inscritos/{{ i.id }}/contactado"
+                     title="Mandarle un WhatsApp">💬</a>
+                {% endif %}
+                {% if puedeGestionar %}<button type="button" class="btn btn--sm btn--ghost" data-abre="ins-{{ i.id }}" title="Ver y cambiar sus datos">✏️</button>{% endif %}
+              </div>
+            </div>
+            {% if puedeGestionar %}
+              <div class="ev-panel ev-invitado__editar" id="ins-{{ i.id }}" hidden>
+                <form method="post" action="/app/eventos/{{ evento.id }}/inscritos/{{ i.id }}" class="ev-persona">
+                  <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+                  <input type="hidden" name="marcasPresentes" value="1" />
+                  <label class="field"><span>Nombre</span><input name="nombre" value="{{ i.nombre }}" autocomplete="off" spellcheck="false" required /></label>
+                  <label class="field"><span>Empresa</span><input name="empresa" value="{{ i.empresa or '' }}" autocomplete="off" spellcheck="false" /></label>
+                  <label class="field"><span>Correo
+                    {% if i.correoEstado == 'entregado' %}<span title="Le llegó">🟢</span>{% elif i.correoEstado == 'rebotado' %}<span title="Rebotó — probablemente un correo falso o inexistente">🔴</span>{% else %}<span title="Aún sin confirmar entrega">🟡</span>{% endif %}</span>
+                    <input type="email" name="email" value="{{ i.email }}" autocomplete="off" required /></label>
+                  <label class="field"><span>Teléfono</span><input type="tel" name="telefono" value="{{ i.telefono or '' }}" autocomplete="off" /></label>
+                  <label class="field--check" title="Asistencia real confirmada"><input type="checkbox" name="asistioReal" {{ 'checked' if i.asistioReal }} /> ✅ Sí asistió</label>
+                  <label class="field--check" title="Ya se le mandó el mensaje por WhatsApp"><input type="checkbox" name="contactadoWsp" {{ 'checked' if i.contactadoWsp }} /> 💬 Ya lo contacté</label>
+                  <button class="btn btn--sm" type="submit">💾 Guardar</button>
+                </form>
+                <div class="muted ev-inscrito__extra">
+                  Dijo: <span class="muted" title="Lo que declaró al registrarse">{{ i.asistira or '—' }}</span>{% if i.personas and i.personas > 1 %} · 👥 {{ i.personas }}{% endif %}
+                  {% if i.asistioAntes %} · Ya asistió a: {{ i.asistioAntes }}{% endif %}
+                  {% if i.usaSistema %} · ¿Usa {{ evento.sistema }}? {{ i.usaSistema }}{% endif %}
+                  {% if i.fuente %} · Se enteró: {{ i.fuente }}{% endif %}
+                  {% if i.deseaCanalWhatsapp %} · 💬 quiere el canal de WhatsApp{% endif %}
+                  · IP {{ i.ip or '—' }}
+                </div>
+                <div class="ev-inscrito__mas">
+                  <form method="post" action="/app/eventos/{{ evento.id }}/inscritos/{{ i.id }}/marcar" class="inline">
+                    <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+                    <select name="estado" aria-label="Estado">
+                      {% for e in ['registrado','confirmado','asistio','no_asistio'] %}<option {{ 'selected' if i.estado == e }}>{{ e }}</option>{% endfor %}
+                    </select>
+                    <button class="btn btn--sm btn--ghost" type="submit">Cambiar estado</button>
+                  </form>
+                  <form method="post" action="/app/eventos/{{ evento.id }}/inscritos/{{ i.id }}/reenviar" class="inline">
+                    <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+                    <button class="btn btn--sm btn--ghost" type="submit">✉️ Reenviar su confirmación</button>
+                  </form>
+                  {% if not i.enListaNegra %}
+                    <form method="post" action="/app/eventos/{{ evento.id }}/inscritos/{{ i.id }}/lista-negra" class="inline" data-prompt-motivo
+                          data-confirm="¿Marcar a «{{ i.nombre }}» como problemático? Quedará señalado con 🚫 si se vuelve a registrar.">
+                      <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+                      <input type="hidden" name="motivo" value="" />
+                      <button class="btn btn--sm btn--ghost" type="submit">🚫 Bloquear</button>
+                    </form>
+                  {% endif %}
+                  <form method="post" action="/app/eventos/{{ evento.id }}/inscritos/{{ i.id }}/eliminar" class="inline"
+                        data-confirm="¿Eliminar el registro de «{{ i.nombre }}»? No se puede deshacer.">
+                    <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+                    <button class="btn btn--sm btn--ghost" type="submit">🗑 Eliminar</button>
+                  </form>
+                </div>
+              </div>
+            {% endif %}
+          </li>
+        {% else %}
+          <li class="ev-vacio">Nadie se ha registrado todavía por el link abierto.</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </section>
+
+  {#- ── Más opciones (casi no se usan) ───────────────────────────────── -#}
+  {% if puedeGestionar %}
+    <details class="disclosure ev-mas">
+      <summary class="disclosure__summary">⚙️ Más opciones <span class="disclosure__hint">— bloqueados ({{ listaNegra | length }}), eliminar evento</span></summary>
       <div class="disclosure__body">
+        <h3>🚫 Personas bloqueadas</h3>
+        <p class="muted">Si alguien bloqueado se vuelve a registrar por el link abierto, sale marcado con 🚫.</p>
         <form method="post" action="/app/eventos/{{ evento.id }}/lista-negra" class="filterbar">
           <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
           <input type="email" name="email" autocomplete="email" placeholder="correo@ejemplo.com" required />
@@ -453,8 +400,14 @@ Luis Mena, , 9997654321, 1</pre>
                 <button class="btn btn--sm btn--ghost" type="submit">Quitar</button>
               </form>
             </li>
-          {% else %}<li class="muted">Vacía.</li>{% endfor %}
+          {% else %}<li class="muted">Nadie bloqueado.</li>{% endfor %}
         </ul>
+        <h3>🗑 Eliminar el evento</h3>
+        <form method="post" action="/app/eventos/{{ evento.id }}/eliminar" class="inline"
+              data-confirm="¿Eliminar «{{ evento.titulo }}» con sus invitados y sus {{ inscritos | length }} registrados? No se puede deshacer.">
+          <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+          <button class="btn btn--sm btn--danger" type="submit">Eliminar evento</button>
+        </form>
       </div>
     </details>
   {% endif %}

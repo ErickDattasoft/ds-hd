@@ -2030,6 +2030,62 @@
     });
   }, true);
 
+  // ── Eventos: pestañas «👥 Con nombre / 🌐 Link abierto» (recordada por evento) y paneles ✏️ ──
+  function evTabs() {
+    document.querySelectorAll('[data-ev-tabs]').forEach(function (tabs) {
+      if (tabs.dataset.listo) return;
+      tabs.dataset.listo = '1';
+      var clave = 'evTab:' + tabs.getAttribute('data-ev-tabs');
+      var guardada = null;
+      try { guardada = localStorage.getItem(clave); } catch (e) { void e; }
+      evMostrarTab(tabs, guardada || tabs.getAttribute('data-ev-tab-inicial') || 'nombre');
+    });
+  }
+  function evMostrarTab(tabs, cual) {
+    var seccion = tabs.parentNode;
+    tabs.querySelectorAll('[data-ev-tab]').forEach(function (b) {
+      var on = b.getAttribute('data-ev-tab') === cual;
+      b.classList.toggle('is-activa', on);
+      b.setAttribute('aria-selected', on ? 'true' : 'false');
+    });
+    seccion.querySelectorAll('[data-ev-panel]').forEach(function (p) {
+      p.hidden = p.getAttribute('data-ev-panel') !== cual;
+    });
+  }
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-ev-tab]');
+    if (b) {
+      var tabs = b.closest('[data-ev-tabs]');
+      var cual = b.getAttribute('data-ev-tab');
+      evMostrarTab(tabs, cual);
+      try { localStorage.setItem('evTab:' + tabs.getAttribute('data-ev-tabs'), cual); } catch (err) { void err; }
+      return;
+    }
+    // data-abre="id": abre/cierra ese panel; dentro de [data-paneles] solo uno abierto a la vez.
+    var a = e.target.closest('[data-abre]');
+    if (!a) return;
+    var panel = document.getElementById(a.getAttribute('data-abre'));
+    if (!panel) return;
+    var abrir = panel.hidden;
+    var grupo = a.closest('[data-paneles]');
+    if (grupo) {
+      grupo.querySelectorAll('[data-abre]').forEach(function (otro) {
+        var p = document.getElementById(otro.getAttribute('data-abre'));
+        if (p) p.hidden = true;
+        otro.classList.remove('is-activa');
+      });
+    }
+    panel.hidden = !abrir;
+    a.classList.toggle('is-activa', abrir);
+    if (abrir) {
+      var foco = panel.querySelector('input:not([type=hidden]):not([type=checkbox]), textarea');
+      if (foco) foco.focus({ preventScroll: true });
+    }
+  });
+  document.addEventListener('focusin', function (e) {
+    if (e.target.matches && e.target.matches('[data-seleccionar]')) e.target.select();
+  });
+
   // ── Eventos: «☑️ Agregar varias de la cartera» (buscador, marcar visibles, lotes de 25) ──
   function variasContar(form) {
     var n = form.querySelectorAll('input[name=empresas]:checked').length;
@@ -3993,6 +4049,7 @@
     initCuentaRegresiva();
     initRsvp();
     initEstiloEvento();
+    evTabs();
   }
   document.addEventListener('DOMContentLoaded', iniciarPagina);
   window.addEventListener('resize', medirTopbar);
