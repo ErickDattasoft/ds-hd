@@ -32,6 +32,7 @@ import { alcanceTickets } from '../../../../application/tickets/alcance.js';
 import { ROLES_ASIGNABLES } from '../../../../core/entities/value-objects/Rol.js';
 import {
   esEstadoFacturacion,
+  esFacturacionCompletada,
   opcionesFacturacion,
   parseEstadoFacturacion,
   valorFacturacion,
@@ -538,6 +539,12 @@ export class TicketController {
   };
 
   cambiarEstadoPost = async (req: Request, res: Response): Promise<void> => {
+    // «¿Ya se facturó?» al cerrar: primero la facturación y luego el cierre, así el aviso
+    // [FACTURADO] sale una sola vez (al cerrar) junto con el correo de cierre al cliente.
+    const facturarCon = str(req.body?.facturarCon);
+    if (facturarCon && esFacturacionCompletada(facturarCon) && esEstadoCerrado(str(req.body?.estado))) {
+      await this.facturar.ejecutar({ actor: req.user!, ticketId: str(req.params.id), estado: facturarCon });
+    }
     await this.cambiarEstado.ejecutar({
       actor: req.user!,
       ticketId: str(req.params.id),

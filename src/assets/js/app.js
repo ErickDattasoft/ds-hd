@@ -1968,6 +1968,68 @@
     if (primero) primero.focus();
   }, true);
 
+  // ── Ticket: al CERRAR uno que sigue en «No facturado», «💲 ¿Ya se facturó?» ──
+  // data-cerrar-cobro = «facturado|Facturado;factura_mensual|Factura mensual» (las del catálogo).
+  // alElegir(valor): valor de facturación, '' = cerrar sin facturar; Cancelar no lo llama.
+  function preguntarCobro(cobro, numero, alElegir, alCancelar) {
+    var opciones = String(cobro || '').split(';').filter(Boolean).map(function (o) { return o.split('|'); });
+    var dlg = document.createElement('dialog');
+    dlg.className = 'card facturar-cerrar';
+    var h = document.createElement('h2');
+    h.textContent = '💲 ¿Ya se facturó?';
+    var p = document.createElement('p');
+    p.textContent = 'El ticket' + (numero ? ' #' + numero : '') + ' sigue en «No facturado». Si ya se facturó, márcalo de una vez al cerrarlo.';
+    var botones = document.createElement('div');
+    botones.className = 'facturar-cerrar__botones';
+    function boton(texto, clase, accion) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = clase;
+      b.textContent = texto;
+      b.addEventListener('click', function () {
+        dlg.dataset.elegido = '1';
+        dlg.close();
+        accion();
+      });
+      botones.appendChild(b);
+      return b;
+    }
+    opciones.forEach(function (o, i) {
+      var icono = o[0] === 'factura_mensual' ? '🗓 ' : '💲 ';
+      boton(icono + (i === 0 ? 'Sí, ' : '') + o[1] + ' y cerrar', i === 0 ? 'btn' : 'btn btn--secondary', function () { alElegir(o[0]); });
+    });
+    boton('Cerrar sin facturar', 'btn btn--ghost', function () { alElegir(''); });
+    boton('Cancelar', 'btn btn--ghost', function () { if (alCancelar) alCancelar(); });
+    dlg.appendChild(h);
+    dlg.appendChild(p);
+    dlg.appendChild(botones);
+    document.body.appendChild(dlg);
+    dlg.addEventListener('close', function () {
+      if (!dlg.dataset.elegido && alCancelar) alCancelar(); // Esc
+      dlg.remove();
+    });
+    dlg.showModal();
+    botones.firstChild.focus();
+  }
+  function esCerrado(estado) { return String(estado || '').trim().toLowerCase() === 'cerrado'; }
+  document.addEventListener('submit', function (e) {
+    var form = e.target.closest('form[data-cerrar-cobro]');
+    if (!form || form.dataset.decidido) return;
+    var selEstado = form.querySelector('select[name=estado]');
+    if (!selEstado || !esCerrado(selEstado.value)) return;
+    // En ✏️ Editar la facturación está en el mismo formulario; en el detalle, en otro.
+    var selFact = form.querySelector('select[name=estadoFacturacion]');
+    if (selFact && selFact.value !== 'no_facturado') return;
+    e.preventDefault();
+    e.stopPropagation();
+    preguntarCobro(form.getAttribute('data-cerrar-cobro'), form.getAttribute('data-ticket-numero'), function (valor) {
+      if (selFact) { if (valor) selFact.value = valor; }
+      else form.querySelector('input[name=facturarCon]').value = valor;
+      form.dataset.decidido = '1';
+      if (form.requestSubmit) form.requestSubmit(); else form.submit();
+    });
+  }, true);
+
   // ── Configuración → Tickets: ¿quién recibe los avisos de cerrado/facturado? ──
   // Cada casilla tiene junto un <input hidden> con 1/0, para que las tres listas lleguen parejas.
   function avisoPendiente() {

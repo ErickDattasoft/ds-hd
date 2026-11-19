@@ -748,3 +748,49 @@ describe('facturar y cerrar en un paso', () => {
     expect(t.ticketStore.tickets.get(id)!.estado).not.toBe('Resuelto');
   });
 });
+
+describe('«¿Ya se facturó?» al cerrar', () => {
+  const nuevo = async (agent: request.Agent, csrf: string): Promise<string> => {
+    const crear = await agent.post('/app/tickets').type('form').send({
+      _csrf: csrf, asunto: 'Cerrar y facturar', descripcion: 'descripción de prueba larga', tipo: 'General', prioridad: 'Media', estadoFacturacion: 'no_facturado',
+    });
+    return String(crear.headers.location).split('/').pop()!;
+  };
+
+  it('las pantallas traen el aviso solo con el ticket en «No facturado»', async () => {
+    const t = makeTestApp({ usuarios: [SUP] });
+    const { agent, csrf } = await login(t.app, SUP.email, SUP.password);
+    const id = await nuevo(agent, csrf);
+    const cobro = 'data-cerrar-cobro="facturado|Facturado;factura_mensual|Factura mensual"';
+    expect((await agent.get(`/app/tickets/${id}`)).text).toContain(cobro);
+    expect((await agent.get(`/app/tickets/${id}/editar`)).text).toContain(cobro);
+
+    await agent.post(`/app/tickets/${id}/facturar`).type('form').send({ _csrf: csrf, estado: 'consulta_sin_costo' });
+    expect((await agent.get(`/app/tickets/${id}`)).text).not.toMatch(/action="\/app\/tickets\/[^"]+\/estado" class="card form" data-cerrar-cobro/);
+  });
+
+  it('cerrar con facturarCon factura y cierra, con un solo [FACTURADO]', async () => {
+    const t = makeTestApp({ usuarios: [SUP] });
+    t.configuracionRepo.config = { ...t.configuracionRepo.config, correosNotificacion: ['soporte@dattasoft.mx'] };
+    const { agent, csrf } = await login(t.app, SUP.email, SUP.password);
+    const id = await nuevo(agent, csrf);
+    const r = await agent.post(`/app/tickets/${id}/estado`).type('form').send({ _csrf: csrf, estado: 'Cerrado', facturarCon: 'facturado' });
+    expect(r.status).toBe(302);
+    const tk = t.ticketStore.tickets.get(id)!;
+    expect(tk.esCerrado).toBe(true);
+    expect(tk.facturacion.estado).toBe('facturado');
+    expect(t.emailSender.enviados.filter((c) => c.asunto.includes('FACTURADO'))).toHaveLength(1);
+  });
+
+  it('«Cerrar sin facturar» y facturarCon con un estado que no es de cierre no tocan la facturación', async () => {
+    const t = makeTestApp({ usuarios: [SUP] });
+    const { agent, csrf } = await login(t.app, SUP.email, SUP.password);
+    const id = await nuevo(agent, csrf);
+    await agent.post(`/app/tickets/${id}/estado`).type('form').send({ _csrf: csrf, estado: 'Pendiente', facturarCon: 'facturado' });
+    expect(t.ticketStore.tickets.get(id)!.facturacion.estado).toBe('no_facturado');
+    await agent.post(`/app/tickets/${id}/estado`).type('form').send({ _csrf: csrf, estado: 'Cerrado', facturarCon: '' });
+    const tk = t.ticketStore.tickets.get(id)!;
+    expect(tk.esCerrado).toBe(true);
+    expect(tk.facturacion.estado).toBe('no_facturado');
+  });
+});

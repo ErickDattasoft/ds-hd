@@ -167,3 +167,11 @@
     <p class="muted" style="margin-left:1.6rem">Sin números de WhatsApp del equipo — configúralos en Configuración → Integraciones.</p>
   {% endif %}
 {% endmacro %}
+
+{#- «facturado|Facturado;factura_mensual|Factura mensual»: las opciones que cuentan como facturadas
+    (con su nombre en el catálogo), para el aviso «¿Ya se facturó?» al cerrar (app.js). -#}
+{% macro opcionesCobro(estadosFacturacion) -%}
+{%- set cobro = [] -%}
+{%- for ef in estadosFacturacion %}{% if ef.valor == 'facturado' or ef.valor == 'factura_mensual' %}{% set _ = cobro.push(ef.valor + '|' + ef.etiqueta) %}{% endif %}{% endfor -%}
+{{ cobro | join(';') }}
+{%- endmacro %}
