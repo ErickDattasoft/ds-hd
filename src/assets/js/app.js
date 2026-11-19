@@ -1916,6 +1916,58 @@
     if (aviso && !aviso.hidden) { e.preventDefault(); e.returnValue = ''; }
   });
 
+  // ── Ticket: al marcar Facturado/Factura mensual con el ticket abierto, «¿Lo cierras también?» ──
+  // Si se facturó es porque el trabajo ya terminó; dejarlo abierto queda como opción explícita.
+  var FACTURACION_CIERRA = ['facturado', 'factura_mensual'];
+  document.addEventListener('submit', function (e) {
+    var form = e.target.closest('[data-facturar-cerrar]');
+    if (!form || form.dataset.decidido) return;
+    // En el detalle el select de facturación se llama «estado»; en ✏️ Editar, «estadoFacturacion»
+    // (y ahí el «estado» es el del ticket: se cambia a Cerrado en vez del campo cerrarCon).
+    var campo = form.getAttribute('data-facturar-campo') || 'estado';
+    var sel = form.querySelector('select[name=' + campo + ']');
+    if (!sel || FACTURACION_CIERRA.indexOf(sel.value) < 0) return;
+    if (form.hasAttribute('data-facturar-original') && form.getAttribute('data-facturar-original') === sel.value) return;
+    var selEstado = campo !== 'estado' ? form.querySelector('select[name=estado]') : null;
+    if (selEstado && selEstado.value === form.dataset.facturarCerrar) return; // ya lo están cerrando ellos
+    e.preventDefault();
+    e.stopPropagation(); // que htmx (hx-boost) no lo mande antes de decidir
+    var etiqueta = sel.options[sel.selectedIndex].text;
+    var puede = form.hasAttribute('data-puede-cerrar');
+    var dlg = document.createElement('dialog');
+    dlg.className = 'card facturar-cerrar';
+    dlg.innerHTML =
+      '<h2>💲 Este ticket sigue abierto</h2>' +
+      '<p>Lo vas a marcar como <strong></strong>. Si ya se facturó es porque el trabajo terminó: ¿lo cierras también?</p>' +
+      (puede
+        ? '<p class="muted">Al cerrar, el cliente recibe su aviso de cierre y salen los avisos de ✔️ Cerrado y 💲 Facturado.</p>'
+        : '<p class="alert alert--error">No tienes permiso para cerrar tickets: se guarda la facturación y un técnico debe cerrarlo.</p>') +
+      '<div class="facturar-cerrar__botones">' +
+      (puede ? '<button type="button" class="btn" data-fc="cerrar">✅ Facturar y cerrar</button>' : '') +
+      '<button type="button" class="btn btn--ghost" data-fc="solo">Solo facturar, dejarlo abierto</button>' +
+      '<button type="button" class="btn btn--ghost" data-fc="cancelar">Cancelar</button></div>';
+    dlg.querySelector('strong').textContent = etiqueta;
+    document.body.appendChild(dlg);
+    dlg.addEventListener('close', function () { dlg.remove(); });
+    dlg.addEventListener('click', function (ev) {
+      var b = ev.target.closest('[data-fc]');
+      if (!b) return;
+      var accion = b.getAttribute('data-fc');
+      dlg.close();
+      if (accion === 'cancelar') return;
+      if (selEstado) {
+        if (accion === 'cerrar') selEstado.value = form.dataset.facturarCerrar;
+      } else {
+        form.querySelector('input[name=cerrarCon]').value = accion === 'cerrar' ? form.dataset.facturarCerrar : '';
+      }
+      form.dataset.decidido = '1';
+      if (form.requestSubmit) form.requestSubmit(); else form.submit();
+    });
+    dlg.showModal();
+    var primero = dlg.querySelector('[data-fc]');
+    if (primero) primero.focus();
+  }, true);
+
   // ── Configuración → Tickets: ¿quién recibe los avisos de cerrado/facturado? ──
   // Cada casilla tiene junto un <input hidden> con 1/0, para que las tres listas lleguen parejas.
   function avisoPendiente() {

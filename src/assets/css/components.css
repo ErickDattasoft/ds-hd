@@ -1905,3 +1905,8 @@ fieldset.field { border: 0; padding: 0; margin: 0; }
   .avisos__tabla input[type=email] { font-size: .85rem; padding-left: 6px; padding-right: 6px; }
   .avisos__check { padding: 4px; }
 }
+
+/* Ticket: «¿Lo cierras también?» al marcar Facturado */
+dialog.facturar-cerrar { width: min(480px, calc(100vw - 32px)); }
+dialog.facturar-cerrar h2 { margin: 0 0 var(--space-2); font-size: 1.2rem; }
+.facturar-cerrar__botones { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-3); }

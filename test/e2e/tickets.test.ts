@@ -692,3 +692,59 @@ describe('avisos de cerrado y facturado por persona (Configuración → Tickets)
     expect((await t.configuracionRepo.obtenerTickets()).avisosCierre).toBeUndefined();
   });
 });
+
+describe('facturar y cerrar en un paso', () => {
+  const nuevo = async (agent: request.Agent, csrf: string): Promise<string> => {
+    const crear = await agent.post('/app/tickets').type('form').send({
+      _csrf: csrf, asunto: 'Facturar y cerrar', descripcion: 'descripción de prueba larga', tipo: 'General', prioridad: 'Media',
+    });
+    return String(crear.headers.location).split('/').pop()!;
+  };
+
+  it('el formulario trae el aviso solo con el ticket abierto', async () => {
+    const t = makeTestApp({ usuarios: [SUP] });
+    const { agent, csrf } = await login(t.app, SUP.email, SUP.password);
+    const id = await nuevo(agent, csrf);
+    expect((await agent.get(`/app/tickets/${id}`)).text).toMatch(/data-facturar-cerrar="Cerrado" data-puede-cerrar/);
+    await agent.post(`/app/tickets/${id}/estado`).type('form').send({ _csrf: csrf, estado: 'Cerrado' });
+    expect((await agent.get(`/app/tickets/${id}`)).text).not.toContain('data-facturar-cerrar');
+  });
+
+  it('✏️ Editar también trae el aviso mientras el ticket esté abierto', async () => {
+    const t = makeTestApp({ usuarios: [SUP] });
+    const { agent, csrf } = await login(t.app, SUP.email, SUP.password);
+    const id = await nuevo(agent, csrf);
+    const editar = await agent.get(`/app/tickets/${id}/editar`);
+    expect(editar.text).toMatch(/data-facturar-cerrar="Cerrado" data-facturar-campo="estadoFacturacion"/);
+    expect(editar.text).toContain('data-puede-cerrar');
+  });
+
+  it('«Facturar y cerrar» deja el ticket cerrado y facturado, con un solo aviso [FACTURADO]', async () => {
+    const t = makeTestApp({ usuarios: [SUP] });
+    t.configuracionRepo.config = { ...t.configuracionRepo.config, correosNotificacion: ['soporte@dattasoft.mx'] };
+    const { agent, csrf } = await login(t.app, SUP.email, SUP.password);
+    const id = await nuevo(agent, csrf);
+    const r = await agent.post(`/app/tickets/${id}/facturar`).type('form').send({ _csrf: csrf, estado: 'factura_mensual', cerrarCon: 'Cerrado' });
+    expect(r.status).toBe(302);
+    const ticket = t.ticketStore.tickets.get(id)!;
+    expect(ticket.esCerrado).toBe(true);
+    expect(ticket.facturacion.estado).toBe('factura_mensual');
+    expect(t.emailSender.enviados.filter((c) => c.asunto.includes('FACTURADO'))).toHaveLength(1);
+    expect(t.emailSender.enviados.some((c) => c.tags?.includes('ticket-cerrado'))).toBe(true);
+
+    // Reenviar lo mismo (doble clic) no truena ni repite avisos.
+    const otra = await agent.post(`/app/tickets/${id}/facturar`).type('form').send({ _csrf: csrf, estado: 'factura_mensual', cerrarCon: 'Cerrado' });
+    expect(otra.status).toBe(302);
+    expect(t.emailSender.enviados.filter((c) => c.asunto.includes('FACTURADO'))).toHaveLength(1);
+  });
+
+  it('«Solo facturar» lo deja abierto y cerrarCon con un estado que no es de cierre se ignora', async () => {
+    const t = makeTestApp({ usuarios: [SUP] });
+    const { agent, csrf } = await login(t.app, SUP.email, SUP.password);
+    const id = await nuevo(agent, csrf);
+    await agent.post(`/app/tickets/${id}/facturar`).type('form').send({ _csrf: csrf, estado: 'facturado', cerrarCon: '' });
+    expect(t.ticketStore.tickets.get(id)!.esCerrado).toBe(false);
+    await agent.post(`/app/tickets/${id}/facturar`).type('form').send({ _csrf: csrf, estado: 'facturado', cerrarCon: 'Resuelto' });
+    expect(t.ticketStore.tickets.get(id)!.estado).not.toBe('Resuelto');
+  });
+});

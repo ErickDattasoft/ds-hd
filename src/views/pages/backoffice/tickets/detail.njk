@@ -273,8 +273,10 @@
 
         <details class="disclosure">
           <summary class="disclosure__summary">Facturación <span class="disclosure__hint">— {{ vm.facturacion.etiqueta }}</span></summary>
-          <form method="post" action="/app/tickets/{{ ticket.id }}/facturar" class="form">
+          <form method="post" action="/app/tickets/{{ ticket.id }}/facturar" class="form"
+            {%- if not ticket.esCerrado and estadoCerrado %} data-facturar-cerrar="{{ estadoCerrado }}"{{ ' data-puede-cerrar' if permisos.cambiarEstado }}{% endif %}>
             <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+            <input type="hidden" name="cerrarCon" value="" />
             <label class="field"><span>Estado</span>
               <select name="estado">
                 {% for ef in estadosFacturacion %}<option value="{{ ef.valor }}" {{ 'selected' if ticket.facturacion.estado == ef.valor }}>{{ ef.etiqueta }}</option>{% endfor %}

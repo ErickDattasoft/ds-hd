@@ -42,6 +42,7 @@ import { ticketVM, type TicketVM } from '../../presenters/TicketPresenter.js';
 import type { RespuestasSinLeerService } from '../../../../application/tickets/RespuestasSinLeerService.js';
 import { camposDeError } from '../../support/errores.js';
 import { ValidationError } from '../../../../core/errors/DomainError.js';
+import { esEstadoCerrado } from '../../../../core/entities/value-objects/EstadoTicket.js';
 
 /** Valores de casillas con el mismo `name` (llegan como string o como arreglo). */
 const casillas = (v: unknown): string[] =>
@@ -514,6 +515,8 @@ export class TicketController {
       adjuntos: d.adjuntos,
       config: d.config,
       estadosFacturacion: catalogoFacturacion(d.config?.facturacion, d.ticket.facturacion.estado),
+      // Para el aviso «¿Lo cierras también?» al marcar Facturado/Factura mensual con el ticket abierto.
+      estadoCerrado: d.config?.estados.find((e) => esEstadoCerrado(e)) ?? '',
       permisos: {
         editar: d.puedeEditar,
         asignar: d.puedeAsignar,
@@ -706,11 +709,23 @@ export class TicketController {
   };
 
   facturarPost = async (req: Request, res: Response): Promise<void> => {
+    const ticketId = str(req.params.id);
     await this.facturar.ejecutar({
       actor: req.user!,
-      ticketId: str(req.params.id),
+      ticketId,
       estado: parseEstadoFacturacion(req.body?.estado),
     });
+    // «✅ Facturar y cerrar»: primero la facturación y luego el cierre, así el aviso [FACTURADO]
+    // sale una sola vez (al cerrar) junto con el correo de cierre al cliente.
+    const cerrarCon = str(req.body?.cerrarCon);
+    if (cerrarCon && esEstadoCerrado(cerrarCon)) {
+      try {
+        await this.cambiarEstado.ejecutar({ actor: req.user!, ticketId, nuevoEstado: cerrarCon });
+      } catch (err) {
+        // Ya estaba cerrado (doble clic, otra pestaña): la facturación sí quedó, no es error.
+        if (!(err instanceof ValidationError)) throw err;
+      }
+    }
     res.redirect(`/app/tickets/${str(req.params.id)}`);
   };
 
