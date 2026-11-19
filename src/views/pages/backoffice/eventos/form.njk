@@ -1,24 +1,63 @@
 {% extends "layouts/backoffice.njk" %}
 {% block title %}{{ titulo }}{% endblock %}
 {% block content %}
-  <h1>{{ titulo }}</h1>
+  {#
+    Formulario del evento en pasos: ① qué es, ② lo básico, ③ cómo se ve. Lo que casi no se usa
+    queda en dos desplegables al final. Los campos que no aplican al tipo elegido se esconden
+    (data-solo-tipo / data-sin-tipo) pero se siguen mandando, para no perder lo ya capturado.
+  #}
+  <div class="page-head">
+    <h1>{{ titulo }}</h1>
+    {% if modo != 'crear' %}<a class="btn btn--ghost" href="/app/eventos/{{ evento.id }}">← Volver al evento</a>{% endif %}
+  </div>
+  <p class="muted">Solo llena lo básico. Lo demás es opcional y puedes cambiarlo cuando quieras.</p>
   {% if errores.general %}<p class="alert alert--error">{{ errores.general }}</p>{% endif %}
-  <form method="post" action="{{ '/app/eventos' if modo == 'crear' else '/app/eventos/' + evento.id }}" class="form form--wide">
+  {% set tipoActual = valores.tipo or 'webinar' %}
+  <form method="post" action="{{ '/app/eventos' if modo == 'crear' else '/app/eventos/' + evento.id }}" class="evf" data-form-evento>
     <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
-    <fieldset class="field" style="grid-column: 1 / -1">
-      <span>¿Qué tipo de evento es?</span>
+
+    <section class="ev-paso">
+      <h2 class="ev-paso__titulo"><span class="ev-paso__num">1</span> ¿Qué vas a hacer?</h2>
+      {% set ayudaTipo = { webinar: 'En línea, con liga para entrar', presencial: 'En un lugar, con mapa y programa', felicitacion: 'Una tarjeta para leer, sin confirmar' } %}
       <div class="inv-opciones inv-opciones--3">
         {% for t in TIPOS_EVENTO %}
           <label class="inv-opcion">
-            <input type="radio" name="tipo" value="{{ t }}" {{ 'checked' if (valores.tipo or 'webinar') == t }} />
-            <span>{{ TIPO_EVENTO_ETIQUETA[t] }}</span>
+            <input type="radio" name="tipo" value="{{ t }}" {{ 'checked' if tipoActual == t }} />
+            <span>{{ TIPO_EVENTO_ETIQUETA[t] }}<small class="evf-ayuda">{{ ayudaTipo[t] }}</small></span>
           </label>
         {% endfor %}
       </div>
-      <span class="muted">Webinar: con liga de acceso. Presencial: con lugar, mapa y programa. Felicitación: una tarjeta para leer, sin confirmar asistencia.</span>
-    </fieldset>
-    <fieldset class="field" style="grid-column: 1 / -1">
-      <span>🎨 Estilo de la invitación</span>
+    </section>
+
+    <section class="ev-paso">
+      <h2 class="ev-paso__titulo"><span class="ev-paso__num">2</span> Lo básico</h2>
+      <div class="evf-campos">
+        <label class="field evf-ancho"><span>Nombre del evento</span>
+          <input type="text" name="titulo" value="{{ valores.titulo }}" required placeholder="Ej. Posada DattaSoft 2026" />
+          {% if errores.titulo %}<em class="field__error">{{ errores.titulo }}</em>{% endif %}</label>
+        <label class="field"><span>Fecha y hora</span>
+          <input type="datetime-local" name="fechaHora" value="{{ valores.fechaHora }}" required />
+          {% if errores.fechaHora %}<em class="field__error">{{ errores.fechaHora }}</em>{% endif %}</label>
+        <label class="field" data-sin-tipo="felicitacion"><span>🎟 Personas por invitación</span>
+          <input type="number" name="maxPersonasRegistro" value="{{ valores.maxPersonasRegistro or 1 }}" min="1" max="20" />
+          <em class="field__hint">1 = solo el invitado. Con 2, el invitado elige «dos», «solo yo» o «ninguno».</em>
+        </label>
+        <label class="field evf-ancho"><span>Mensaje para el invitado</span>
+          <textarea name="descripcion" rows="5" placeholder="Ej. Queremos celebrar contigo este fin de año…">{{ valores.descripcion }}</textarea>
+          <em class="field__hint">Es lo primero que lee, debajo de la imagen. Los saltos de línea se respetan.</em>
+        </label>
+        <label class="field evf-ancho" data-solo-tipo="webinar"><span>💻 Liga para entrar al webinar</span>
+          <input type="text" name="urlWebinar" value="{{ valores.urlWebinar }}" placeholder="https://zoom.us/j/…" /></label>
+        <label class="field" data-solo-tipo="presencial"><span>📍 Lugar</span>
+          <input type="text" name="lugarNombre" value="{{ valores.lugarNombre }}" placeholder="Ej. Hotel Fiesta Americana, Salón Uxmal" /></label>
+        <label class="field" data-solo-tipo="presencial"><span>Dirección</span>
+          <input type="text" name="lugarDireccion" value="{{ valores.lugarDireccion }}" placeholder="Calle, número, colonia, ciudad" /></label>
+      </div>
+    </section>
+
+    <section class="ev-paso">
+      <h2 class="ev-paso__titulo"><span class="ev-paso__num">3</span> ¿Cómo se ve?</h2>
+      <p class="muted evf-nota">🎨 Estilo de la invitación: cambia colores, letra y adorno. La imagen se pone después, en la página del evento.</p>
       <div class="inv-opciones inv-opciones--estilos" data-estilos>
         {% for e in ESTILOS_EVENTO %}
           {% set info = ESTILO_EVENTO_INFO[e] %}
@@ -32,75 +71,67 @@
           </label>
         {% endfor %}
       </div>
-      <span class="muted">Cambia colores, letra del título y un adorno en la invitación, la página del evento y el correo. La imagen (flayer) sigue saliendo como portada.</span>
-    </fieldset>
-    <label class="field"><span>Título</span><input name="titulo" value="{{ valores.titulo }}" required />
-      {% if errores.titulo %}<em class="field__error">{{ errores.titulo }}</em>{% endif %}</label>
-    <label class="field"><span>Fecha y hora</span><input type="datetime-local" name="fechaHora" value="{{ valores.fechaHora }}" required />
-      {% if errores.fechaHora %}<em class="field__error">{{ errores.fechaHora }}</em>{% endif %}</label>
-    <label class="field"><span>Cupo (0 = sin límite)</span><input type="number" name="cupo" value="{{ valores.cupo or 0 }}" min="0" /></label>
-    <label class="field"><span>Estado</span>
-      <select name="estado">
-        {% for s in ['borrador','publicado','finalizado','cancelado'] %}<option {{ 'selected' if valores.estado == s }}>{{ s }}</option>{% endfor %}
-      </select>
-    </label>
+    </section>
 
-    <details class="disclosure"{{ ' open' if valores.tipo == 'presencial' or valores.lugarNombre or valores.vestimenta or valores.itinerario }}>
-      <summary class="disclosure__summary">📍 Lugar, programa y vestimenta <span class="disclosure__hint">— lo que ve el invitado (cada parte sale solo si la llenas)</span></summary>
-      <div class="disclosure__body form">
-        <label class="field"><span>Lugar</span><input name="lugarNombre" value="{{ valores.lugarNombre }}" placeholder="Ej. Hotel Fiesta Americana, Salón Uxmal" /></label>
-        <label class="field"><span>Dirección</span><input name="lugarDireccion" value="{{ valores.lugarDireccion }}" placeholder="Calle, número, colonia, ciudad" /></label>
-        <label class="field"><span>Link de Google Maps <span class="muted">(opcional — si lo dejas vacío, el botón «Cómo llegar» busca la dirección)</span></span>
-          <input name="lugarMapsUrl" value="{{ valores.lugarMapsUrl }}" placeholder="https://maps.app.goo.gl/…" />
+    <details class="disclosure evf-mas"{{ ' open' if valores.itinerario or valores.vestimenta or valores.lugarMapsUrl or valores.contactoNombre or valores.contactoWhatsapp or errores.lugarMapsUrl }}>
+      <summary class="disclosure__summary">➕ Más detalles <span class="disclosure__hint">— opcional: programa, vestimenta, mapa y a quién contactar</span></summary>
+      <div class="disclosure__body evf-campos">
+        <label class="field evf-ancho" data-solo-tipo="presencial"><span>Programa <span class="muted">(un renglón por actividad)</span></span>
+          <textarea name="itinerario" rows="4" placeholder="8:00 PM - Bienvenida&#10;9:00 PM - Cena&#10;10:30 PM - Rifa">{{ valores.itinerario }}</textarea>
+        </label>
+        <label class="field" data-solo-tipo="presencial"><span>Vestimenta / qué llevar</span>
+          <input type="text" name="vestimenta" value="{{ valores.vestimenta }}" placeholder="Ej. Casual · Trae tu laptop" /></label>
+        <label class="field" data-solo-tipo="presencial"><span>Link de Google Maps</span>
+          <input type="text" name="lugarMapsUrl" value="{{ valores.lugarMapsUrl }}" placeholder="https://maps.app.goo.gl/…" />
+          <em class="field__hint">Si lo dejas vacío, «Cómo llegar» busca la dirección.</em>
           {% if errores.lugarMapsUrl %}<em class="field__error">{{ errores.lugarMapsUrl }}</em>{% endif %}
         </label>
-        <label class="field"><span>Programa <span class="muted">(un renglón por actividad: «hora - actividad»)</span></span>
-          <textarea name="itinerario" rows="4" placeholder="9:00 AM - Registro y café&#10;9:30 AM - Bienvenida&#10;10:00 AM - Novedades CONTPAQi">{{ valores.itinerario }}</textarea>
-        </label>
-        <label class="field"><span>Vestimenta / qué llevar</span><input name="vestimenta" value="{{ valores.vestimenta }}" placeholder="Ej. Casual · Trae tu laptop" /></label>
-        <label class="field"><span>🎟 Personas por invitación <span class="muted">(contando al invitado; 1 = solo él)</span></span>
-          <input type="number" name="maxPersonasRegistro" value="{{ valores.maxPersonasRegistro or 1 }}" min="1" max="20" />
-          <em class="field__hint">Con este número nace cada invitado nuevo y el invitado elige cuántos van (p. ej. con 2: «dos», «solo yo» o «ninguno»). A cada invitado se le puede cambiar en «Invitaciones». En el link público es cuántos puede anotar cada quien.</em>
-        </label>
+        <label class="field"><span>¿A quién contactan? (nombre)</span>
+          <input type="text" name="contactoNombre" value="{{ valores.contactoNombre }}" placeholder="Ej. Gaby" /></label>
+        <label class="field"><span>WhatsApp de esa persona</span>
+          <input type="tel" name="contactoWhatsapp" value="{{ valores.contactoWhatsapp }}" placeholder="999 123 4567" /></label>
       </div>
     </details>
 
-    <details class="disclosure"{{ ' open' if valores.descripcion or valores.urlWebinar }}>
-      <summary class="disclosure__summary">Mensaje, liga y recordatorios</summary>
-      <div class="disclosure__body form">
-        <label class="field"><span>Mensaje / descripción <span class="muted">(lo primero que lee el invitado, debajo de la imagen)</span></span><textarea name="descripcion" rows="4">{{ valores.descripcion }}</textarea></label>
-        <label class="field"><span>Sistema <span class="muted">(opcional — agrega la pregunta "¿lo usas?" al registro público)</span></span>
-          <input name="sistema" value="{{ valores.sistema }}" placeholder="Ej. Contabilidad" />
+    <details class="disclosure evf-mas"{{ ' open' if errores.cupo or errores.plantilla or errores.mensajeSeguimiento }}>
+      <summary class="disclosure__summary">⚙️ Opciones avanzadas <span class="disclosure__hint">— casi nunca se tocan</span></summary>
+      <div class="disclosure__body evf-campos">
+        <label class="field"><span>Cupo máximo <span class="muted">(0 = sin límite)</span></span>
+          <input type="number" name="cupo" value="{{ valores.cupo or 0 }}" min="0" /></label>
+        <label class="field"><span>Recordatorio: horas antes <span class="muted">(0 = no mandar)</span></span>
+          <input type="number" name="horasRecordatorio" value="{{ valores.horasRecordatorio if valores.horasRecordatorio is defined and valores.horasRecordatorio !== '' else 24 }}" min="0" placeholder="24" /></label>
+        <label class="field" data-sin-tipo="felicitacion"><span>Sistema <span class="muted">(agrega «¿lo usas?» al link abierto)</span></span>
+          <input type="text" name="sistema" value="{{ valores.sistema }}" placeholder="Ej. Contabilidad" /></label>
+        <label class="field" data-sin-tipo="felicitacion"><span>Registros por IP en el link abierto <span class="muted">(vacío = 5)</span></span>
+          <input type="number" name="limiteRegistrosPorIp" value="{{ valores.limiteRegistrosPorIp }}" min="1" placeholder="5" /></label>
+        <label class="field evf-ancho"><span>Correo de confirmación <span class="muted">(vacío = el texto de siempre, el que ves en gris)</span></span>
+          <textarea name="plantilla" rows="5" placeholder="{{ plantillaPorDefecto }}">{{ valores.plantilla }}</textarea>
+          <em class="field__hint">Comodines: [nombre] [evento] [fecha] [hora] [sistema] [link] [lugar] [direccion] [mapa] [contacto_nombre] [contacto_whatsapp]. También se usa en el 💬 WhatsApp de cada registrado.</em>
         </label>
-        <label class="field"><span>URL del webinar <span class="muted">(solo webinars)</span></span><input name="urlWebinar" value="{{ valores.urlWebinar }}" /></label>
-        <label class="field"><span>Horas antes para recordatorio <span class="muted">(0 = no mandar recordatorio en este evento)</span></span><input type="number" name="horasRecordatorio" value="{{ valores.horasRecordatorio if valores.horasRecordatorio is defined and valores.horasRecordatorio !== '' else 24 }}" min="0" placeholder="24" /></label>
-        <label class="field"><span>Límite de registros por IP <span class="muted">(vacío = 5 por defecto)</span></span>
-          <input type="number" name="limiteRegistrosPorIp" value="{{ valores.limiteRegistrosPorIp }}" min="1" placeholder="5" />
+        <label class="field evf-ancho"><span>Mensaje de seguimiento <span class="muted">(después del evento; vacío = no se manda)</span></span>
+          <textarea name="mensajeSeguimiento" rows="3" placeholder="Ej. Gracias por acompañarnos en [evento]. Aquí está la grabación: [link]">{{ valores.mensajeSeguimiento }}</textarea>
         </label>
+        <label class="field"><span>Seguimiento: horas después</span>
+          <input type="number" name="horasSeguimiento" value="{{ valores.horasSeguimiento }}" min="1" placeholder="24" /></label>
       </div>
     </details>
 
-    <details class="disclosure"{{ ' open' if valores.contactoNombre or valores.plantilla or valores.mensajeSeguimiento }}>
-      <summary class="disclosure__summary">Contacto, plantilla y seguimiento <span class="disclosure__hint">— mensaje de confirmación y WhatsApp por inscrito</span></summary>
-      <div class="disclosure__body form">
-        <label class="field"><span>Contacto de este evento (nombre)</span><input name="contactoNombre" value="{{ valores.contactoNombre }}" /></label>
-        <label class="field"><span>WhatsApp del contacto</span><input type="tel" name="contactoWhatsapp" value="{{ valores.contactoWhatsapp }}" /></label>
-        <label class="field"><span>Plantilla de confirmación <span class="muted">(vacío = usa el texto por defecto del tipo de evento, el que ves en gris)</span></span>
-          <textarea name="plantilla" rows="6" placeholder="{{ plantillaPorDefecto }}">{{ valores.plantilla }}</textarea>
-          <span class="muted">Comodines: [nombre] [evento] [fecha] [hora] [sistema] [link] [lugar] [direccion] [mapa] [contacto_nombre] [contacto_whatsapp]. Se usa en el correo de confirmación y en el botón 💬 WhatsApp por inscrito (en Inscritos, dentro del detalle del evento).</span>
-        </label>
-        <label class="field"><span>Mensaje de seguimiento <span class="muted">(después del evento; vacío = no se manda)</span></span>
-          <textarea name="mensajeSeguimiento" rows="4" placeholder="Déjalo vacío si no quieres mandar seguimiento para este evento. Ej: Gracias por tu interés en [evento]. Aquí está la grabación: [link]...">{{ valores.mensajeSeguimiento }}</textarea>
-        </label>
-        <label class="field"><span>Horas después del evento para el seguimiento</span>
-          <input type="number" name="horasSeguimiento" value="{{ valores.horasSeguimiento }}" min="1" placeholder="24 (por defecto)" />
-        </label>
+    {% set estadosEvento = [
+      ['borrador', '📝 En preparación (no sale en la lista pública; ya puedes mandar y probar)'],
+      ['publicado', '✅ Publicado (sale en la lista pública)'],
+      ['finalizado', '🏁 Ya pasó'],
+      ['cancelado', '❌ Cancelado']
+    ] %}
+    <div class="evf-guardar">
+      <label class="field"><span>¿Cómo está?</span>
+        <select name="estado">
+          {% for s in estadosEvento %}<option value="{{ s[0] }}" {{ 'selected' if (valores.estado or 'borrador') == s[0] }}>{{ s[1] }}</option>{% endfor %}
+        </select>
+      </label>
+      <div class="evf-guardar__botones">
+        <button class="btn" type="submit">💾 Guardar</button>
+        <a class="btn btn--ghost" href="{{ '/app/eventos' if modo == 'crear' else '/app/eventos/' + evento.id }}">Cancelar</a>
       </div>
-    </details>
-
-    <div class="page-head__actions">
-      <button class="btn" type="submit">Guardar</button>
-      <a class="btn btn--ghost" href="/app/eventos">Cancelar</a>
     </div>
   </form>
 {% endblock %}

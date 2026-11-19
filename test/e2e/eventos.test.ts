@@ -70,6 +70,18 @@ describe('eventos / webinars', () => {
     expect([...t.eventoRepo.items.values()].filter((e) => e.esPrueba)).toHaveLength(0);
   });
 
+  it('formulario en pasos: lo básico arriba, campos por tipo y estado con nombres claros', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    const { agent } = await login(t.app, ADMIN.email, ADMIN.password);
+    const form = await agent.get('/app/eventos/nuevo');
+    expect(form.status).toBe(200);
+    expect(form.text).toContain('Lo básico');
+    expect(form.text).toContain('Opciones avanzadas');
+    expect(form.text).toMatch(/data-solo-tipo="webinar"><span>💻 Liga/);
+    expect(form.text).toMatch(/data-solo-tipo="presencial"><span>📍 Lugar/);
+    expect(form.text).toMatch(/<option value="borrador" selected>📝 En preparación/);
+  });
+
   it('estilo de la invitación: se elige en el formulario y se ve en la página', async () => {
     const t = makeTestApp({ usuarios: [ADMIN] });
     const { agent, csrf } = await login(t.app, ADMIN.email, ADMIN.password);

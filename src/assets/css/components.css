@@ -2001,3 +2001,29 @@ dialog.facturar-cerrar h2 { margin: 0 0 var(--space-2); font-size: 1.2rem; }
   .ev-invitado__fila { grid-template-columns: minmax(0, 1fr) auto; }
   .ev-invitado__acciones { grid-column: 1 / -1; justify-content: flex-end; }
 }
+
+/* ── Formulario del evento en pasos (eventos/form.njk) ─────────────────── */
+.evf { display: flex; flex-direction: column; gap: 0; }
+.evf .ev-paso { margin: 0 0 var(--space-4); }
+.evf-campos { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: var(--space-3) var(--space-4); }
+.evf-campos .evf-ancho, .evf-campos .field:has(textarea) { grid-column: 1 / -1; }
+.evf-ayuda { display: block; font-weight: 400; font-size: var(--text-sm); color: var(--color-text-muted); margin-top: 2px; }
+.evf-nota { margin: 0 0 var(--space-2); }
+.evf .inv-opciones { margin: 0; }
+.evf-mas { margin: 0 0 var(--space-3); }
+.evf-mas .disclosure__body { padding-top: var(--space-3); }
+.evf-guardar {
+  display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--space-3) var(--space-4);
+  margin-top: var(--space-2);
+  padding: var(--space-3) var(--space-4); background: var(--color-surface);
+  border: 1px solid var(--color-border); border-radius: var(--radius);
+}
+.evf-guardar .field { flex: 1 1 320px; min-width: 0; margin: 0; }
+.evf-guardar select { width: 100%; max-width: 100%; text-overflow: ellipsis; }
+.evf-guardar__botones { display: flex; gap: var(--space-2); }
+@media (max-width: 640px) {
+  .evf .inv-opciones--estilos { grid-template-columns: repeat(2, 1fr); }
+  .evf-guardar { padding: var(--space-3); }
+  .evf-guardar__botones { width: 100%; }
+  .evf-guardar__botones .btn { flex: 1; }
+}

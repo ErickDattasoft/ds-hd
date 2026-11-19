@@ -3614,6 +3614,26 @@
     });
   }
 
+  /**
+   * Formulario del evento: esconde los campos que no aplican al tipo elegido (liga solo en
+   * webinar, lugar/programa solo en presencial, personas no en felicitación). Solo se esconden:
+   * se siguen mandando para no perder lo capturado.
+   */
+  function aplicarTipoEvento(form) {
+    const marcado = form.querySelector('input[name="tipo"]:checked');
+    const tipo = marcado ? marcado.value : 'webinar';
+    form.querySelectorAll('[data-solo-tipo]').forEach((el) => {
+      el.hidden = !el.dataset.soloTipo.split(' ').includes(tipo);
+    });
+    form.querySelectorAll('[data-sin-tipo]').forEach((el) => {
+      el.hidden = el.dataset.sinTipo.split(' ').includes(tipo);
+    });
+  }
+  document.addEventListener('change', (e) => {
+    const form = e.target.closest && e.target.closest('[data-form-evento]');
+    if (form && e.target.name === 'tipo') aplicarTipoEvento(form);
+  });
+
   function initRsvp() {
     document.querySelectorAll('[data-form-rsvp]').forEach(rsvpPersonasVisible);
   }
@@ -4049,6 +4069,7 @@
     initCuentaRegresiva();
     initRsvp();
     initEstiloEvento();
+    document.querySelectorAll('[data-form-evento]').forEach(aplicarTipoEvento);
     evTabs();
   }
   document.addEventListener('DOMContentLoaded', iniciarPagina);
