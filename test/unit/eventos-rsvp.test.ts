@@ -167,10 +167,14 @@ describe('EventoService — enviar invitaciones y contestar', () => {
     expect(email.ultimo?.html).toContain('🎄');
   });
 
-  it('no manda si el evento está en borrador', async () => {
+  it('en borrador también manda y el invitado puede abrir y contestar (sirve para probar)', async () => {
     eventos.items.set('ev1', nuevo({ estado: 'borrador' }));
-    await service.agregarInvitadoExterno(actor, 'ev1', { nombre: 'Juan', correo: 'juan@x.mx' });
-    await expect(service.enviarInvitacionesPendientes(actor, 'ev1')).rejects.toThrow(ValidationError);
+    const ext = await service.agregarInvitadoExterno(actor, 'ev1', { nombre: 'Juan', correo: 'juan@x.mx', pases: 2 });
+    const r = await service.enviarInvitacionesPendientes(actor, 'ev1');
+    expect(r.enviadas).toBe(1);
+    await service.abrirInvitacion('ev1', ext.token!);
+    await service.responderInvitacion('ev1', ext.token!, { asistira: true, personas: 2 });
+    expect((await service.obtener('ev1')).resumenInvitaciones.personas).toBe(2);
   });
 
   it('el invitado abre y contesta por su link; el equipo puede ver sin marcar abierta', async () => {

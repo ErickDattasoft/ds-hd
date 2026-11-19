@@ -808,9 +808,6 @@ export class EventoService {
   /** Manda por correo la invitación de UN invitado (empresa o externo). */
   async enviarInvitacion(actor: SessionUser, eventoId: string, invId: string): Promise<void> {
     const evento = await this.paraGestion(actor, eventoId);
-    if (evento.estado === 'borrador') {
-      throw new ValidationError('Publica el evento antes de mandar invitaciones (está en borrador)');
-    }
     evento.asignarTokensFaltantes(() => this.nuevoTokenInvitacion());
     const inv = evento.buscarInvitado(invId);
     if (!inv) throw new NotFoundError('Invitado', invId);
@@ -825,9 +822,6 @@ export class EventoService {
     eventoId: string,
   ): Promise<{ enviadas: number; fallidas: number; sinCorreo: number; faltan: number }> {
     const evento = await this.paraGestion(actor, eventoId);
-    if (evento.estado === 'borrador') {
-      throw new ValidationError('Publica el evento antes de mandar invitaciones (está en borrador)');
-    }
     evento.asignarTokensFaltantes(() => this.nuevoTokenInvitacion());
     const todos = [...evento.invitaciones, ...evento.invitadosExternos];
     const porMandar = todos.filter((i) => i.correo && !i.enviadaAt && i.respuesta === 'pendiente');
@@ -910,13 +904,12 @@ export class EventoService {
   async abrirInvitacion(
     eventoId: string,
     token: string,
-    /** El equipo revisando la invitación: ve borradores y no cuenta como «abierta». */
+    /** El equipo revisando la invitación: no cuenta como «abierta». (En borrador también funciona: sirve para probar.) */
     vistaStaff = false,
   ): Promise<{ evento: Evento; nombre: string; inv: InvitacionEmpresa | InvitadoExterno }> {
     const evento = await this.obtener(eventoId);
     const r = evento.buscarPorToken(token);
     if (!r) throw new NotFoundError('Invitación', token);
-    if (evento.estado === 'borrador' && !vistaStaff) throw new NotFoundError('Invitación', token);
     if (!vistaStaff && evento.marcarAbierta(token, this.clock.now())) {
       // Solo la primera vez escribe: abrirla cien veces no gasta cuota de Firestore.
       await this.eventos.save(evento).catch((err) =>
@@ -933,7 +926,6 @@ export class EventoService {
     resp: RespuestaRsvp,
   ): Promise<{ evento: Evento; nombre: string; inv: InvitacionEmpresa | InvitadoExterno }> {
     const evento = await this.obtener(eventoId);
-    if (evento.estado === 'borrador') throw new NotFoundError('Invitación', token);
     const inv = evento.responderInvitacion(token, resp, this.clock.now());
     evento.updatedAt = this.clock.now();
     await this.eventos.save(evento);

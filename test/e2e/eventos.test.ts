@@ -1015,3 +1015,22 @@ describe('agregar muchos invitados', () => {
     expect(page.text).not.toContain('name="nombre"');
   });
 });
+
+describe('borrador = para probar', () => {
+  it('funciona el link público y el personal, pero no sale en la lista pública de eventos', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    t.eventoRepo.items.set('ev1', new Evento({ id: 'ev1', titulo: 'Posada en pruebas', tipo: 'presencial', fechaHora: enUnaSemana(), estado: 'borrador' }));
+    const admin = await login(t.app, ADMIN.email, ADMIN.password);
+    await admin.agent.post('/app/eventos/ev1/externos').type('form').send({ _csrf: admin.csrf, nombre: 'Erick', correo: 'erick@x.mx' });
+    const detalle = await admin.agent.get('/app/eventos/ev1');
+    expect(detalle.text).toContain('Enviar a los que faltan');
+    expect(detalle.text).toContain('/invitaciones/');
+
+    const anon = request.agent(t.app);
+    expect((await anon.get('/eventos')).text).not.toContain('Posada en pruebas');
+    const publica = await anon.get('/eventos/ev1');
+    expect(publica.text).toContain('data-form-registro-evento');
+    const token = (await t.eventoRepo.findById('ev1'))!.invitadosExternos[0]!.token!;
+    expect((await anon.get(`/eventos/ev1/i/${token}`)).status).toBe(200);
+  });
+});

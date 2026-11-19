@@ -393,7 +393,8 @@ export class Evento {
   }
 
   get abiertoARegistro(): boolean {
-    return this.estado === 'publicado' && this.fechaHora.getTime() > Date.now();
+    // En borrador también, para probar el link público; lo que lo esconde es no salir en la lista.
+    return (this.estado === 'publicado' || this.estado === 'borrador') && this.fechaHora.getTime() > Date.now();
   }
 
   /** La fecha del evento ya quedó atrás — para explicar por qué cerró el registro. */

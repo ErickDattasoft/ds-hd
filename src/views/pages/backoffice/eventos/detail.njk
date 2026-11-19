@@ -80,7 +80,6 @@
     <span class="inv-acciones">
       <button type="button" class="btn btn--sm btn--ghost" data-copiar-link data-link="{{ inv.link }}" title="Copiar su link personal">🔗</button>
       <a class="btn btn--sm btn--ghost" href="{{ inv.link }}" target="_blank" rel="noopener" title="Ver su invitación como la verá él">👁</a>
-      {% if evento.estado != 'borrador' %}
         {% if inv.correo %}
           <form method="post" action="/app/eventos/{{ evento.id }}/invitaciones/{{ inv.id }}/enviar" class="inline"
                 {% if inv.enviadaAt %}data-confirm="Ya se le mandó el {{ inv.enviadaAt | fechahora }}. ¿Mandarla otra vez?"{% endif %}>
@@ -90,7 +89,6 @@
         {% endif %}
         <a class="btn btn--sm btn--ghost" href="{{ inv.waInvitacion }}" target="_blank" rel="noopener"
            title="{{ 'Mandar por WhatsApp a ' + inv.telefono if inv.telefono else 'Mandar por WhatsApp (eliges el chat)' }}">💬</a>
-      {% endif %}
     </span>
   {% endmacro %}
 
@@ -101,7 +99,7 @@
   </p>
   {% if avisoInvitaciones %}<p class="alert {{ 'alert--error' if avisoInvitaciones.startsWith('⚠') else 'alert--ok' }}">{{ avisoInvitaciones }}</p>{% endif %}
   {% if evento.estado == 'borrador' %}
-    <p class="alert">El evento está en <strong>borrador</strong>: puedes armar la lista y ver las invitaciones (👁), pero para mandarlas ponlo en <strong>publicado</strong> desde <a href="/app/eventos/{{ evento.id }}/editar">Editar</a>.</p>
+    <p class="alert">📝 El evento está en <strong>borrador</strong>: todo funciona para probar (agregar, mandar ✉️/💬, abrir links, confirmar y registrarse por el link público), pero <strong>no aparece en la lista pública de eventos</strong>. Cuando esté listo, ponlo en <strong>publicado</strong> desde <a href="/app/eventos/{{ evento.id }}/editar">Editar</a>.</p>
   {% endif %}
 
   {% if evento.pideConfirmacion and inscritos | length %}
@@ -121,9 +119,9 @@
     {% endif %}
     <div><strong>👁 {{ resumen.abiertas }}</strong><span>abiertas</span></div>
   </div>
-  {% if puedeGestionar and evento.estado != 'borrador' and resumen.invitados %}
+  {% if puedeGestionar and resumen.invitados %}
     <form method="post" action="/app/eventos/{{ evento.id }}/invitaciones/enviar" class="filterbar"
-          data-confirm="¿Mandar la invitación por correo a todos los que tienen correo y aún no se les ha mandado?">
+          data-confirm="{{ '⚠️ El evento sigue en BORRADOR. ' if evento.estado == 'borrador' }}¿Mandar la invitación por correo a todos los que tienen correo y aún no se les ha mandado?">
       <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
       <button class="btn btn--sm" type="submit">✉️ Enviar a los que faltan</button>
       <span class="muted">Solo a quien tiene correo, no se le ha mandado y no ha contestado.</span>
