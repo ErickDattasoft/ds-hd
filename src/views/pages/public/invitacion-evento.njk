@@ -9,7 +9,7 @@
     </div>
   {% else %}
     {% if vistaPrevia %}
-      <p class="alert">👁 <strong>Vista previa</strong>: así verá la invitación cada invitado (con su nombre y sus pases). Aquí no se guarda nada{% if evento.estado == 'borrador' %}; el evento sigue en <strong>borrador</strong>{% endif %}. <a href="/app/eventos/{{ evento.id }}">← Volver al evento</a></p>
+      <p class="alert">👁 <strong>Vista previa</strong>: así verá la invitación cada invitado. <strong>«{{ nombre }}» es un nombre de ejemplo</strong>: cada quien verá el suyo y sus personas. Aquí no se guarda nada{% if evento.estado == 'borrador' %}; el evento sigue en <strong>borrador</strong>{% endif %}. <a href="/app/eventos/{{ evento.id }}">← Volver al evento</a></p>
     {% endif %}
     <header class="evento-encabezado inv-portada">
       <p class="inv-saludo">

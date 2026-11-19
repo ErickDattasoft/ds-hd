@@ -1280,6 +1280,8 @@ tr.fila--sla-vencido > td { background: color-mix(in srgb, var(--danger) 6%, tra
   margin-top: var(--space-4);
   color: var(--color-text-muted);
   max-width: 38rem;
+  /* Respeta los saltos de línea del mensaje tal como se escribió (o se pegó). */
+  white-space: pre-line;
 }
 
 /* Datos del evento como lista de definiciones: se lee como una ficha, no como texto suelto. */
