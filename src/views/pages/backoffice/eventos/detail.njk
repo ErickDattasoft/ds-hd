@@ -7,7 +7,7 @@
       {% if can('eventos:gestionar') %}<a class="btn btn--sm" href="/app/eventos/{{ evento.id }}/editar">Editar</a>{% endif %}
       <button type="button" class="btn btn--sm btn--secondary" data-copiar-link
               data-link="{{ config.baseUrl }}/eventos/{{ evento.id }}"
-              title="Link SIN nombre para compartir en redes, grupos o por correo: cada quien llena sus datos al confirmar (salen en «Inscritos»). Para invitados con nombre y pases usa el 🔗 de cada uno en «Invitaciones».">🔗 Link público</button>
+              title="Link SIN nombre para compartir en redes, grupos o por correo: cada quien llena sus datos al confirmar (salen en «Inscritos»). Para invitados con nombre y número de personas usa el 🔗 de cada uno en «Invitaciones».">🔗 Link público</button>
       <a class="btn btn--sm btn--secondary" href="/app/eventos/{{ evento.id }}/vista-previa" target="_blank" rel="noopener"
          title="La invitación como la verá un invitado (nombre de ejemplo y las personas por invitación del evento). Funciona en borrador y no guarda nada.">👁 Vista previa</a>
       {% if can('eventos:gestionar') %}
@@ -96,7 +96,7 @@
 
   <h2 id="invitaciones">Invitaciones <span class="muted">({{ TIPO_EVENTO_ETIQUETA[evento.tipo] }})</span></h2>
   <p class="muted">
-    Cada invitado tiene su <strong>link personal</strong> con sus pases. Desde ahí confirma y aquí ves su respuesta.
+    Cada invitado tiene su <strong>link personal</strong> con sus personas (🎟). Desde ahí confirma y aquí ves su respuesta.
     Agrega empresas de la cartera (toma su contacto principal) o a cualquier otra persona en «Otros invitados».
   </p>
   {% if avisoInvitaciones %}<p class="alert {{ 'alert--error' if avisoInvitaciones.startsWith('⚠') else 'alert--ok' }}">{{ avisoInvitaciones }}</p>{% endif %}
