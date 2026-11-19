@@ -36,6 +36,7 @@ import { esTelefonoPlausible } from '../../core/entities/value-objects/Telefono.
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '../../core/errors/DomainError.js';
 import type { BitacoraService } from '../shared/BitacoraService.js';
 import type { SessionUser } from '../shared/SessionUser.js';
+import { leerListaInvitados } from './listaInvitados.js';
 import { ZONA_MEXICO, instanteDeDatetimeLocal } from '../../core/entities/value-objects/horaMexico.js';
 
 /** Datos editables de un evento (alta o edición, uso staff). */
@@ -616,6 +617,51 @@ export class EventoService {
     return inv;
   }
 
+  /**
+   * Agrega de golpe varias empresas de la cartera (casillas en el detalle del evento), cada una
+   * con su contacto principal. Las que ya están invitadas o no existen se saltan. Máximo
+   * {@link ENVIOS_POR_LOTE} por llamada (lecturas por petición del Worker): el JS manda lotes.
+   */
+  async agregarEmpresasInvitadas(
+    actor: SessionUser,
+    eventoId: string,
+    datos: { nombres: string[]; pases?: number },
+  ): Promise<{ agregadas: number; yaEstaban: number; sobrantes: number }> {
+    const evento = await this.paraGestion(actor, eventoId);
+    const cartera = await this.empresas.list({ activa: true });
+    const porNombre = new Map(cartera.map((e) => [e.nombre.toLowerCase(), e]));
+    const invitadas = new Set(evento.invitaciones.map((i) => i.empresaNombre.toLowerCase()));
+    const pedidas = [...new Set(datos.nombres.map((n) => n.trim()).filter(Boolean))];
+    const lote = pedidas.slice(0, ENVIOS_POR_LOTE);
+    let agregadas = 0;
+    let yaEstaban = 0;
+    for (const nombre of lote) {
+      const emp = porNombre.get(nombre.toLowerCase());
+      if (!emp) continue;
+      if (invitadas.has(emp.nombre.toLowerCase())) {
+        yaEstaban++;
+        continue;
+      }
+      const contacto = await this.contactoParaInvitar(emp.id, emp.contactoPrincipalId);
+      evento.agregarEmpresaInvitada({
+        id: this.ids.newId(),
+        empresaId: emp.id,
+        empresaNombre: emp.nombre,
+        sistemas: emp.sistemasContratados ?? [],
+        invitadoPor: actor.nombre,
+        token: this.nuevoTokenInvitacion(),
+        pases: datos.pases,
+        paraNombre: contacto?.nombre || null,
+        correo: contacto?.email || null,
+        telefono: contacto?.telefono || contacto?.celular || null,
+      });
+      invitadas.add(emp.nombre.toLowerCase());
+      agregadas++;
+    }
+    if (agregadas) await this.persistirPanel(actor, evento, `Invitó a ${agregadas} empresa${agregadas === 1 ? '' : 's'} de la cartera`);
+    return { agregadas, yaEstaban, sobrantes: pedidas.length - lote.length };
+  }
+
   async actualizarEmpresaInvitada(
     actor: SessionUser,
     eventoId: string,
@@ -650,6 +696,51 @@ export class EventoService {
     });
     await this.persistirPanel(actor, evento);
     return ext;
+  }
+
+  /**
+   * «📄 Cargar lista» de Otros invitados: una invitación personalizada por renglón (CSV o pegado
+   * de Excel). Se salta a quien ya está invitado (mismo correo o celular) y se informa lo que no
+   * se pudo leer. Un solo guardado para toda la lista.
+   */
+  async cargarListaExternos(
+    actor: SessionUser,
+    eventoId: string,
+    datos: { texto: string; pases?: number; fuente?: string },
+  ): Promise<{ agregados: number; repetidos: number; errores: string[] }> {
+    const evento = await this.paraGestion(actor, eventoId);
+    const { renglones, errores } = leerListaInvitados(datos.texto);
+    const clave = (v: string | null | undefined): string => (v ?? '').trim().toLowerCase();
+    const tel = (v: string | null | undefined): string => (v ?? '').replace(/\D/g, '').slice(-10);
+    const correos = new Set([...evento.invitadosExternos, ...evento.invitaciones].map((i) => clave(i.correo)).filter(Boolean));
+    const telefonos = new Set([...evento.invitadosExternos, ...evento.invitaciones].map((i) => tel(i.telefono)).filter(Boolean));
+    let agregados = 0;
+    let repetidos = 0;
+    for (const r of renglones) {
+      if ((r.correo && correos.has(clave(r.correo))) || (r.telefono && telefonos.has(tel(r.telefono)))) {
+        repetidos++;
+        continue;
+      }
+      try {
+        evento.agregarInvitadoExterno({
+          id: this.ids.newId(),
+          nombre: r.nombre,
+          fuente: datos.fuente?.trim() || 'Lista cargada',
+          token: this.nuevoTokenInvitacion(),
+          pases: r.personas ?? datos.pases,
+          correo: r.correo,
+          telefono: r.telefono,
+        });
+      } catch (err) {
+        errores.push(`«${r.nombre || r.correo || r.telefono}»: ${err instanceof Error ? err.message : 'no se pudo agregar'}`);
+        continue;
+      }
+      if (r.correo) correos.add(clave(r.correo));
+      if (r.telefono) telefonos.add(tel(r.telefono));
+      agregados++;
+    }
+    if (agregados) await this.persistirPanel(actor, evento, `Cargó una lista con ${agregados} invitado${agregados === 1 ? '' : 's'}`);
+    return { agregados, repetidos, errores };
   }
 
   async actualizarInvitadoExterno(

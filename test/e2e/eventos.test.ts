@@ -966,3 +966,52 @@ describe('personas por invitación', () => {
     expect(unaPersona.text).not.toContain('Asistiremos');
   });
 });
+
+describe('agregar muchos invitados', () => {
+  const evento = () =>
+    new Evento({ id: 'ev1', titulo: 'Posada', tipo: 'presencial', fechaHora: enUnaSemana(), estado: 'publicado', maxPersonasRegistro: 2 });
+
+  it('☑️ varias empresas de la cartera de un jalón, con su contacto principal y sin repetir', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    t.eventoRepo.items.set('ev1', evento());
+    for (const nombre of ['ACME', 'BETA', 'GAMA']) {
+      await t.empresaRepo.save(new Empresa({ id: `e-${nombre}`, nombre }));
+    }
+    const admin = await login(t.app, ADMIN.email, ADMIN.password);
+    const vista = await admin.agent.get('/app/eventos/ev1');
+    expect(vista.text).toContain('name="empresas" value="ACME"');
+
+    await admin.agent.post('/app/eventos/ev1/empresas').type('form').send({ _csrf: admin.csrf, empresaNombre: 'ACME' });
+    const r = await admin.agent.post('/app/eventos/ev1/empresas/varias').type('form')
+      .send({ _csrf: admin.csrf, empresas: ['ACME', 'BETA', 'GAMA', 'NO EXISTE'], pases: '3' });
+    expect(r.status).toBe(302);
+    expect(decodeURIComponent(String(r.headers.location))).toContain('Se agregaron 2 empresas · 1 ya estaba invitada');
+    const ev = (await t.eventoRepo.findById('ev1'))!;
+    expect(ev.invitaciones.map((i) => [i.empresaNombre, i.pases])).toEqual([['ACME', 2], ['BETA', 3], ['GAMA', 3]]);
+    expect(ev.invitaciones.every((i) => i.token)).toBe(true);
+    // La ya invitada sale deshabilitada en la lista.
+    expect((await admin.agent.get('/app/eventos/ev1')).text).toMatch(/value="ACME" disabled/);
+  });
+
+  it('📄 cargar lista: una invitación personalizada por renglón y la invitación con nombre no le pide el nombre', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    t.eventoRepo.items.set('ev1', evento());
+    const admin = await login(t.app, ADMIN.email, ADMIN.password);
+    const r = await admin.agent.post('/app/eventos/ev1/externos/lista').type('form').send({
+      _csrf: admin.csrf,
+      pases: '1',
+      lista: 'nombre,correo,celular,personas\nAna López,ana@x.mx,,4\nLuis Mena,,9997654321,\nAna otra vez,ANA@x.mx,,\nMal,sin-arroba,,',
+    });
+    expect(r.status).toBe(302);
+    const aviso = decodeURIComponent(String(r.headers.location));
+    expect(aviso).toContain('Se crearon 2 invitaciones');
+    expect(aviso).toContain('1 ya estaba invitado');
+    expect(aviso).toContain('no es un correo válido');
+    const [ana, luis] = (await t.eventoRepo.findById('ev1'))!.invitadosExternos;
+    expect([ana!.nombre, ana!.pases, luis!.nombre, luis!.pases, luis!.telefono]).toEqual(['Ana López', 4, 'Luis Mena', 1, '9997654321']);
+
+    const page = await request(t.app).get(`/eventos/ev1/i/${ana!.token}`);
+    expect(page.text).toContain('Ana López');
+    expect(page.text).not.toContain('name="nombre"');
+  });
+});

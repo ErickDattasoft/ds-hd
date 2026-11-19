@@ -402,8 +402,10 @@ export function backofficeRoutes(container: Container): Router {
   r.post('/eventos/:id/invitaciones/enviar', requirePermission('eventos:gestionar'), (req, res) => eventos().invitacionesEnviarPost(req, res));
   r.post('/eventos/:id/invitaciones/:invId/enviar', requirePermission('eventos:gestionar'), (req, res) => eventos().invitacionEnviarPost(req, res));
   r.post('/eventos/:id/empresas', requirePermission('eventos:gestionar'), (req, res) => eventos().empresaAgregarPost(req, res));
+  r.post('/eventos/:id/empresas/varias', requirePermission('eventos:gestionar'), (req, res) => eventos().empresasVariasPost(req, res));
   r.post('/eventos/:id/empresas/:invId', requirePermission('eventos:gestionar'), (req, res) => eventos().empresaActualizarPost(req, res));
   r.post('/eventos/:id/empresas/:invId/quitar', requirePermission('eventos:gestionar'), (req, res) => eventos().empresaQuitarPost(req, res));
+  r.post('/eventos/:id/externos/lista', requirePermission('eventos:gestionar'), (req, res) => eventos().externosListaPost(req, res));
   r.post('/eventos/:id/externos', requirePermission('eventos:gestionar'), (req, res) => eventos().externoAgregarPost(req, res));
   r.post('/eventos/:id/externos/:extId', requirePermission('eventos:gestionar'), (req, res) => eventos().externoActualizarPost(req, res));
   r.post('/eventos/:id/externos/:extId/quitar', requirePermission('eventos:gestionar'), (req, res) => eventos().externoQuitarPost(req, res));

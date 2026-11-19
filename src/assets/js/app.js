@@ -2030,6 +2030,103 @@
     });
   }, true);
 
+  // ── Eventos: «☑️ Agregar varias de la cartera» (buscador, marcar visibles, lotes de 25) ──
+  function variasContar(form) {
+    var n = form.querySelectorAll('input[name=empresas]:checked').length;
+    form.querySelector('[data-varias-n]').textContent = n;
+    form.querySelector('[data-varias-boton]').disabled = n === 0;
+  }
+  document.addEventListener('input', function (e) {
+    var buscar = e.target.closest('[data-varias-buscar]');
+    if (!buscar) return;
+    var q = buscar.value.trim().toLowerCase();
+    buscar.closest('[data-varias]').querySelectorAll('[data-varias-fila]').forEach(function (li) {
+      li.hidden = q !== '' && li.getAttribute('data-texto').indexOf(q) < 0;
+    });
+  });
+  document.addEventListener('change', function (e) {
+    var form = e.target.closest('[data-varias]');
+    if (form && e.target.name === 'empresas') variasContar(form);
+  });
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-varias-todas], [data-varias-ninguna]');
+    if (!b) return;
+    var form = b.closest('[data-varias]');
+    var marcar = b.hasAttribute('data-varias-todas');
+    form.querySelectorAll('[data-varias-fila]').forEach(function (li) {
+      var c = li.querySelector('input[name=empresas]:not(:disabled)');
+      if (c && (!marcar || !li.hidden)) c.checked = marcar;
+    });
+    variasContar(form);
+  });
+  // Más de 25: se mandan en lotes (el servidor agrega 25 por petición) y al final se recarga.
+  document.addEventListener('submit', function (e) {
+    var form = e.target.closest('[data-varias]');
+    if (!form) return;
+    var marcadas = Array.prototype.map.call(form.querySelectorAll('input[name=empresas]:checked'), function (c) { return c.value; });
+    if (marcadas.length <= 25 || !window.fetch) return;
+    e.preventDefault();
+    e.stopPropagation();
+    var boton = form.querySelector('[data-varias-boton]');
+    var estado = form.querySelector('[data-varias-estado]');
+    var csrf = form.querySelector('input[name=_csrf]').value;
+    var pases = form.querySelector('input[name=pases]');
+    boton.disabled = true;
+    var hechas = 0;
+    (function siguiente() {
+      if (hechas >= marcadas.length) {
+        location.href = location.pathname + '?aviso=' + encodeURIComponent('✅ Se agregaron las ' + marcadas.length + ' empresas marcadas (las que ya estaban se saltaron)') + '#invitaciones';
+        return;
+      }
+      var lote = marcadas.slice(hechas, hechas + 25);
+      var datos = new URLSearchParams();
+      datos.append('_csrf', csrf);
+      if (pases) datos.append('pases', pases.value);
+      lote.forEach(function (n) { datos.append('empresas', n); });
+      estado.textContent = '⏳ Agregando ' + Math.min(hechas + 25, marcadas.length) + ' de ' + marcadas.length + '…';
+      fetch(form.action, { method: 'POST', body: datos, credentials: 'same-origin' })
+        .then(function (r) {
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          hechas += lote.length;
+          siguiente();
+        })
+        .catch(function () {
+          estado.textContent = '⚠️ Se cortó después de ' + hechas + '. Recarga la página y vuelve a marcar las que falten.';
+          boton.disabled = false;
+        });
+    })();
+  }, true);
+
+  // ── Eventos: «📄 Cargar lista» — el CSV elegido se pasa al cuadro de texto (no hay subida de archivos) ──
+  function listaContar(form) {
+    var t = form.querySelector('[data-lista-texto]');
+    var n = t.value.split(/\r?\n/).filter(function (l) { return l.trim(); }).length;
+    form.querySelector('[data-lista-conteo]').textContent = n ? n + ' renglón(es) — si el primero es encabezado, no cuenta como invitado.' : '';
+  }
+  document.addEventListener('change', function (e) {
+    var input = e.target.closest('[data-lista-archivo]');
+    if (!input || !input.files || !input.files[0]) return;
+    var form = input.closest('[data-lista-invitados]');
+    var lector = new FileReader();
+    lector.onload = function () {
+      var texto = String(lector.result || '');
+      // Excel en español guarda CSV en Windows-1252: si salen «�», se relee con esa codificación.
+      if (texto.indexOf('\uFFFD') >= 0 && !input.dataset.releido) {
+        input.dataset.releido = '1';
+        lector.readAsText(input.files[0], 'windows-1252');
+        return;
+      }
+      delete input.dataset.releido;
+      form.querySelector('[data-lista-texto]').value = texto;
+      listaContar(form);
+    };
+    lector.readAsText(input.files[0], 'utf-8');
+  });
+  document.addEventListener('input', function (e) {
+    var t = e.target.closest('[data-lista-texto]');
+    if (t) listaContar(t.closest('[data-lista-invitados]'));
+  });
+
   // ── Configuración → Tickets: ¿quién recibe los avisos de cerrado/facturado? ──
   // Cada casilla tiene junto un <input hidden> con 1/0, para que las tres listas lleguen parejas.
   function avisoPendiente() {

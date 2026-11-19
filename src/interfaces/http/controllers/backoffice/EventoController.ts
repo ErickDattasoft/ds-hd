@@ -241,6 +241,40 @@ export class EventoController {
     if (!res.headersSent) res.redirect(`/app/eventos/${id}#invitaciones`);
   };
 
+  /** «☑️ Agregar varias de la cartera»: las empresas marcadas (de 25 en 25; el JS manda lotes). */
+  empresasVariasPost = async (req: Request, res: Response): Promise<void> => {
+    const id = str(req.params.id);
+    const nombres = ([] as unknown[]).concat(req.body?.empresas ?? []).map((v) => str(v));
+    try {
+      const r = await this.eventos.agregarEmpresasInvitadas(req.user!, id, { nombres, pases: pases(req.body?.pases) });
+      const partes = [`✅ Se agregaron ${r.agregadas} empresa${r.agregadas === 1 ? '' : 's'}`];
+      if (r.yaEstaban) partes.push(`${r.yaEstaban} ya estaba${r.yaEstaban === 1 ? '' : 'n'} invitada${r.yaEstaban === 1 ? '' : 's'}`);
+      if (r.sobrantes) partes.push(`faltan ${r.sobrantes}: vuelve a marcarlas (van de 25 en 25)`);
+      res.redirect(`/app/eventos/${id}?aviso=${encodeURIComponent(partes.join(' · '))}#invitaciones`);
+    } catch (err) {
+      this.avisar(res, id, err);
+    }
+  };
+
+  /** «📄 Cargar lista» de Otros invitados (CSV o celdas pegadas de Excel). */
+  externosListaPost = async (req: Request, res: Response): Promise<void> => {
+    const id = str(req.params.id);
+    try {
+      const r = await this.eventos.cargarListaExternos(req.user!, id, {
+        texto: str(req.body?.lista),
+        pases: pases(req.body?.pases),
+        fuente: str(req.body?.fuente) || undefined,
+      });
+      const partes = [`📄 Se crearon ${r.agregados} ${r.agregados === 1 ? 'invitación' : 'invitaciones'}`];
+      if (r.repetidos) partes.push(`${r.repetidos} ya estaba${r.repetidos === 1 ? '' : 'n'} invitado${r.repetidos === 1 ? '' : 's'}`);
+      if (r.errores.length) partes.push(`⚠ ${r.errores.length} con problema: ${r.errores.slice(0, 5).join('; ')}${r.errores.length > 5 ? '…' : ''}`);
+      if (!r.agregados && !r.repetidos && !r.errores.length) partes.splice(0, 1, '⚠ La lista venía vacía');
+      res.redirect(`/app/eventos/${id}?aviso=${encodeURIComponent(partes.join(' · ').slice(0, 900))}#invitaciones`);
+    } catch (err) {
+      this.avisar(res, id, err);
+    }
+  };
+
   empresaActualizarPost = async (req: Request, res: Response): Promise<void> => {
     const id = str(req.params.id);
     const b = req.body ?? {};

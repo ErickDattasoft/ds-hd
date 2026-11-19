@@ -143,6 +143,40 @@
       <button class="btn btn--sm" type="submit">Agregar</button>
       <span class="muted">Se llenan solos el nombre, correo y celular del contacto principal; los puedes cambiar.</span>
     </form>
+
+    {#- Varias de golpe: casillas + buscador (app.js manda de 25 en 25). Las ya invitadas salen deshabilitadas. -#}
+    {% set yaInvitadas = [] %}{% for inv in evento.invitaciones %}{% set _ = yaInvitadas.push(inv.empresaNombre | lower) %}{% endfor %}
+    <details class="disclosure varias" data-seccion="evento-varias">
+      <summary class="disclosure__summary">☑️ Agregar varias de la cartera <span class="disclosure__hint">— márcalas y agrégalas de una vez</span></summary>
+      <form method="post" action="/app/eventos/{{ evento.id }}/empresas/varias" class="disclosure__body" data-varias>
+        <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+        <div class="varias__barra">
+          <input type="search" placeholder="🔎 Buscar empresa o sistema (ej. Nóminas)" data-varias-buscar aria-label="Buscar empresa o sistema" />
+          <button type="button" class="btn btn--sm btn--ghost" data-varias-todas>☑️ Marcar las visibles</button>
+          <button type="button" class="btn btn--sm btn--ghost" data-varias-ninguna>☐ Desmarcar todo</button>
+        </div>
+        <ul class="varias__lista">
+          {% for e in empresasCartera %}
+            {% set ya = (e.nombre | lower) in yaInvitadas %}
+            <li data-varias-fila data-texto="{{ (e.nombre + ' ' + (e.sistemas | join(' '))) | lower }}">
+              <label class="varias__item{{ ' is-ya' if ya }}">
+                <input type="checkbox" name="empresas" value="{{ e.nombre }}" {{ 'disabled' if ya }} />
+                <span class="varias__nombre">{{ e.nombre }}</span>
+                {% if ya %}<span class="badge">ya invitada</span>{% endif %}
+                {% if e.sistemas | length %}<span class="varias__sistemas muted">{{ e.sistemas | join(' · ') }}</span>{% endif %}
+              </label>
+            </li>
+          {% else %}
+            <li class="muted">No hay empresas activas en la cartera.</li>
+          {% endfor %}
+        </ul>
+        <div class="varias__pie">
+          {% if evento.pideConfirmacion %}<label class="inv-pases-alta" title="Cuántas personas incluye cada una de estas invitaciones">🎟 Personas <input type="number" name="pases" min="1" max="{{ MAX_PASES }}" value="{{ evento.maxPersonasRegistro }}" style="width:4.5em" /></label>{% endif %}
+          <button class="btn" type="submit" data-varias-boton disabled>Agregar <span data-varias-n>0</span> seleccionadas</button>
+          <span class="muted" data-varias-estado>Toman su contacto principal (nombre, correo y celular). Después las mandas con ✉️ o «Enviar a los que faltan».</span>
+        </div>
+      </form>
+    </details>
   {% endif %}
   <div class="table-wrap">
   <table class="data-table">
@@ -208,6 +242,31 @@
       <input name="fuente" placeholder="Fuente (referido, redes…)" />
       <button class="btn btn--sm" type="submit">Agregar</button>
     </form>
+
+    <details class="disclosure varias" data-seccion="evento-lista">
+      <summary class="disclosure__summary">📄 Cargar lista <span class="disclosure__hint">— muchas invitaciones personalizadas de golpe (CSV o pegar de Excel)</span></summary>
+      <form method="post" action="/app/eventos/{{ evento.id }}/externos/lista" class="disclosure__body form" data-lista-invitados>
+        <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+        <p class="muted">Un renglón por invitación con <strong>nombre, correo, celular, personas</strong> (correo o celular, al menos uno). Puede traer encabezado en cualquier orden.
+          Cada renglón queda con su link personal. Quien ya está invitado (mismo correo o celular) se salta.</p>
+        <pre class="lista-ejemplo">nombre, correo, celular, personas
+Ana López, ana@correo.com, 9991234567, 2
+Familia Canul, canul@correo.com, , 4
+Luis Mena, , 9997654321, 1</pre>
+        <label class="field"><span>📎 Archivo CSV <span class="muted">(en Excel: Archivo → Guardar como → CSV)</span></span>
+          <input type="file" accept=".csv,.txt,text/csv,text/plain" data-lista-archivo />
+        </label>
+        <label class="field"><span>…o pega aquí las celdas copiadas de Excel</span>
+          <textarea name="lista" rows="6" required placeholder="Ana López	ana@correo.com	9991234567	2" data-lista-texto></textarea>
+          <em class="field__hint" data-lista-conteo></em>
+        </label>
+        <div class="varias__pie">
+          {% if evento.pideConfirmacion %}<label class="inv-pases-alta" title="Para los renglones que no traen personas">🎟 Personas si no lo trae <input type="number" name="pases" min="1" max="{{ MAX_PASES }}" value="{{ evento.maxPersonasRegistro }}" style="width:4.5em" /></label>{% endif %}
+          <input name="fuente" placeholder="Fuente (opcional, ej. Expo 2026)" />
+          <button class="btn" type="submit">📄 Crear invitaciones</button>
+        </div>
+      </form>
+    </details>
   {% endif %}
   <div class="table-wrap">
   <table class="data-table">

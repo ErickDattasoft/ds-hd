@@ -85,9 +85,12 @@
               </div>
               {% if errores.personas %}<em class="field__error">{{ errores.personas }}</em>{% endif %}
             </fieldset>
+            {#- Con nombre ya sabemos quién es: no se le pide. Solo a una invitación sin nombre. -#}
+            {% if not nombre %}
             <label class="field"><span>Tu nombre <span class="muted">(opcional)</span></span>
               <input name="nombre" value="{{ valores.nombre }}" maxlength="120" autocomplete="name" />
             </label>
+            {% endif %}
             <label class="field"><span>¿Algo que quieras decirnos? <span class="muted">(opcional)</span></span>
               <textarea name="mensaje" rows="3" maxlength="1000">{{ valores.mensaje }}</textarea>
             </label>

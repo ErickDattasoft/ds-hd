@@ -1919,3 +1919,18 @@ dialog.facturar-cerrar h2 { margin: 0 0 var(--space-2); font-size: 1.2rem; }
 .inv-opciones--lista { grid-template-columns: 1fr; gap: var(--space-2); }
 .inv-opcion small { font-weight: 400; opacity: .75; }
 .inv-pases-alta { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+
+/* Eventos: «☑️ Agregar varias de la cartera» */
+.varias { margin: var(--space-3) 0; }
+.varias__barra { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-bottom: var(--space-2); }
+.varias__barra input[type=search] { flex: 1 1 260px; min-width: 0; }
+.varias__lista { list-style: none; margin: 0; padding: 0; max-height: 360px; overflow: auto; border: 1px solid var(--color-border); border-radius: var(--radius); }
+.varias__lista li + li { border-top: 1px solid var(--color-border); }
+.varias__item { display: flex; flex-wrap: wrap; align-items: center; gap: 4px var(--space-2); padding: 8px 12px; cursor: pointer; }
+.varias__item:hover { background: var(--color-surface-2); }
+.varias__item input { width: 18px; height: 18px; accent-color: var(--brand); flex: none; }
+.varias__item.is-ya { opacity: .55; cursor: default; }
+.varias__nombre { font-weight: 600; }
+.varias__sistemas { font-size: .8rem; flex-basis: 100%; padding-left: 26px; }
+.varias__pie { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); margin-top: var(--space-3); }
+.lista-ejemplo { background: var(--color-surface-2); border: 1px solid var(--color-border); border-radius: var(--radius); padding: 8px 12px; font-size: .85rem; overflow-x: auto; margin: 0 0 var(--space-3); }
