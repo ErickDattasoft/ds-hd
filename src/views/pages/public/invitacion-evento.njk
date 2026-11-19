@@ -34,7 +34,7 @@
     {% if evento.pideConfirmacion %}
       <section class="inv-bloque inv-rsvp" id="confirmar">
         <p class="inv-bloque__titulo">🎟 Tu invitación</p>
-        <p class="inv-pases">{{ inv.pases }} {{ 'persona' if inv.pases == 1 else 'personas' }}</p>
+        <p class="inv-pases">Invitación para {{ inv.pases }} {{ 'persona' if inv.pases == 1 else 'personas' }}</p>
 
         {% if recienEnviada %}
           <p class="alert alert--ok">¡Gracias! Ya quedó tu respuesta.</p>
@@ -56,28 +56,35 @@
           {% if errores.general %}<p class="alert alert--error">{{ errores.general }}</p>{% endif %}
           <form method="post" action="{{ '#' if vistaPrevia else '/eventos/' + evento.id + '/i/' + inv.token }}" class="form" data-form-rsvp>
             <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
-            <div class="inv-opciones" role="radiogroup" aria-label="¿Vas a ir?">
-              <label class="inv-opcion">
-                <input type="radio" name="asistira" value="si" {{ 'checked' if valores.asistira != 'no' }} />
-                <span>✅ ¡Ahí estaré!</span>
-              </label>
-              <label class="inv-opcion">
-                <input type="radio" name="asistira" value="no" {{ 'checked' if valores.asistira == 'no' }} />
-                <span>❌ No podré ir</span>
-              </label>
-            </div>
-            {% if inv.pases > 1 %}
-              <label class="field" data-rsvp-personas><span>¿Cuántos van? <span class="muted">(contándote a ti)</span></span>
-                <select name="personas">
-                  {% for n in range(1, inv.pases + 1) %}
-                    <option value="{{ n }}" {{ 'selected' if valores.personas == n or valores.personas == n | string }}>{{ n }} {{ 'persona' if n == 1 else 'personas' }}</option>
+            {#- Una sola elección: con 2 pases → «Asistiremos 2», «Solo yo», «Ninguna». personas=0 = no va. -#}
+            {%- set elegido = '0' if valores.asistira == 'no' else ((valores.personas | string) if valores.personas else '') %}
+            <fieldset class="inv-eleccion">
+              <legend>¿Cuántos asistirán?</legend>
+              <div class="inv-opciones{{ ' inv-opciones--lista' if inv.pases > 1 }}" role="radiogroup">
+                {% if inv.pases > 1 %}
+                  {% for n in range(inv.pases, 0, -1) %}
+                    <label class="inv-opcion">
+                      <input type="radio" name="personas" value="{{ n }}" required {{ 'checked' if elegido == (n | string) }} />
+                      <span>{% if n == 1 %}👤 Asistiré solo yo <small>(1 persona)</small>{% else %}👥 Asistiremos {{ n }} personas{% endif %}</span>
+                    </label>
                   {% endfor %}
-                </select>
-                {% if errores.personas %}<em class="field__error">{{ errores.personas }}</em>{% endif %}
-              </label>
-            {% else %}
-              <input type="hidden" name="personas" value="1" />
-            {% endif %}
+                  <label class="inv-opcion">
+                    <input type="radio" name="personas" value="0" required {{ 'checked' if elegido == '0' }} />
+                    <span>❌ Ninguna, no podremos ir</span>
+                  </label>
+                {% else %}
+                  <label class="inv-opcion">
+                    <input type="radio" name="personas" value="1" required {{ 'checked' if elegido == '1' }} />
+                    <span>✅ ¡Ahí estaré!</span>
+                  </label>
+                  <label class="inv-opcion">
+                    <input type="radio" name="personas" value="0" required {{ 'checked' if elegido == '0' }} />
+                    <span>❌ No podré ir</span>
+                  </label>
+                {% endif %}
+              </div>
+              {% if errores.personas %}<em class="field__error">{{ errores.personas }}</em>{% endif %}
+            </fieldset>
             <label class="field"><span>Tu nombre <span class="muted">(opcional)</span></span>
               <input name="nombre" value="{{ valores.nombre }}" maxlength="120" autocomplete="name" />
             </label>

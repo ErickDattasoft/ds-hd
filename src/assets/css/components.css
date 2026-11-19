@@ -1910,3 +1910,10 @@ fieldset.field { border: 0; padding: 0; margin: 0; }
 dialog.facturar-cerrar { width: min(480px, calc(100vw - 32px)); }
 dialog.facturar-cerrar h2 { margin: 0 0 var(--space-2); font-size: 1.2rem; }
 .facturar-cerrar__botones { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-3); }
+
+/* Invitación: «¿Cuántos asistirán?» en una sola elección */
+.inv-eleccion { border: 0; padding: 0; margin: 0 0 var(--space-2); min-width: 0; }
+.inv-eleccion legend { font-weight: 700; margin-bottom: var(--space-2); text-align: center; width: 100%; }
+.inv-opciones--lista { grid-template-columns: 1fr; gap: var(--space-2); }
+.inv-opcion small { font-weight: 400; opacity: .75; }
+.inv-pases-alta { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }

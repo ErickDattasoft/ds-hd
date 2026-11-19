@@ -709,7 +709,7 @@ export class EventoService {
         ? ''
         : `\n📅 ${evento.fechaHora.toLocaleString('es-MX', { timeZone: ZONA_MEXICO, weekday: 'long', day: 'numeric', month: 'long', hour: 'numeric', minute: '2-digit' })}`;
     const donde = evento.tipo === 'presencial' && evento.lugarNombre ? `\n📍 ${evento.lugarNombre}` : '';
-    const pases = evento.pideConfirmacion ? `\n🎟 ${inv.pases} ${inv.pases === 1 ? 'pase' : 'pases'}` : '';
+    const pases = evento.pideConfirmacion ? `\n🎟 Invitación para ${inv.pases} ${inv.pases === 1 ? 'persona' : 'personas'}` : '';
     const accion = evento.pideConfirmacion ? 'Aquí tu invitación, ¿nos confirmas?' : 'Te dejamos esto:';
     return `¡Hola${nombre ? ` ${nombre}` : ''}! 👋\n${evento.titulo}${cuando}${donde}${pases}\n\n${accion}\n${this.linkInvitacion(evento, inv)}`;
   }
@@ -783,7 +783,7 @@ export class EventoService {
     const renglones = [
       evento.tipo !== 'felicitacion' ? `📅 ${esc(fecha)}` : '',
       evento.tipo === 'presencial' && evento.lugarNombre ? `📍 ${esc(evento.lugarNombre)}` : '',
-      evento.pideConfirmacion ? `🎟 ${inv.pases} ${inv.pases === 1 ? 'pase' : 'pases'}` : '',
+      evento.pideConfirmacion ? `🎟 Invitación para ${inv.pases} ${inv.pases === 1 ? 'persona' : 'personas'}` : '',
     ].filter(Boolean);
     const flayer = evento.flayer
       ? `<p><img src="${this.baseUrl}/eventos/${evento.id}/flayer?v=${evento.flayer.tamano}" alt="" style="max-width:100%;border-radius:10px"></p>`

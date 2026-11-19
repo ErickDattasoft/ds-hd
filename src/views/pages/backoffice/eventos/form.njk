@@ -58,8 +58,9 @@
           <textarea name="itinerario" rows="4" placeholder="9:00 AM - Registro y café&#10;9:30 AM - Bienvenida&#10;10:00 AM - Novedades CONTPAQi">{{ valores.itinerario }}</textarea>
         </label>
         <label class="field"><span>Vestimenta / qué llevar</span><input name="vestimenta" value="{{ valores.vestimenta }}" placeholder="Ej. Casual · Trae tu laptop" /></label>
-        <label class="field"><span>Personas por registro <span class="muted">(link público: cuántos puede anotar cada quien; 1 = solo él)</span></span>
+        <label class="field"><span>🎟 Personas por invitación <span class="muted">(contando al invitado; 1 = solo él)</span></span>
           <input type="number" name="maxPersonasRegistro" value="{{ valores.maxPersonasRegistro or 1 }}" min="1" max="20" />
+          <em class="field__hint">Con este número nace cada invitado nuevo y el invitado elige cuántos van (p. ej. con 2: «dos», «solo yo» o «ninguno»). A cada invitado se le puede cambiar en «Invitaciones». En el link público es cuántos puede anotar cada quien.</em>
         </label>
       </div>
     </details>

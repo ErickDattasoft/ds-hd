@@ -146,9 +146,11 @@ export class EventoPublicoController {
     const token = str(req.params.token);
     const b = req.body ?? {};
     try {
+      // La invitación manda solo «personas» (0 = ninguna, no van); «asistira» queda por compatibilidad.
+      const personas = Number(str(b.personas) || 1);
       await this.eventos.responderInvitacion(id, token, {
-        asistira: str(b.asistira) === 'si',
-        personas: Number(str(b.personas) || 1),
+        asistira: str(b.asistira) ? str(b.asistira) === 'si' : personas > 0,
+        personas: Math.max(1, personas),
         nombre: str(b.nombre),
         mensaje: str(b.mensaje),
       });
@@ -166,12 +168,12 @@ export class EventoPublicoController {
 
   /**
    * 👁 Vista previa (staff, `/app/eventos/:id/vista-previa`): la invitación como la verá un
-   * invitado, con nombre de ejemplo y 2 pases. Sirve en borrador y no guarda nada.
+   * invitado, con nombre de ejemplo y las personas por invitación del evento. Sirve en borrador y no guarda nada.
    */
   vistaPrevia = async (req: Request, res: Response): Promise<void> => {
     const evento = await this.eventos.obtener(str(req.params.id));
     const inv = {
-      pases: evento.pideConfirmacion ? 2 : 1,
+      pases: evento.pideConfirmacion ? evento.maxPersonasRegistro : 1,
       respuesta: 'pendiente',
       personas: null,
       respondioNombre: null,
@@ -198,9 +200,10 @@ export class EventoPublicoController {
       contesto,
       mostrarFormulario: evento.pideConfirmacion && evento.estado !== 'cancelado' && (!contesto || extra.cambiar),
       recienEnviada: extra.recienEnviada ?? false,
+      // Sin contestar no se preselecciona nada: el invitado elige cuántos van (o ninguno).
       valores: extra.valores ?? {
-        asistira: inv.respuesta === 'no_asistira' ? 'no' : 'si',
-        personas: inv.personas ?? inv.pases,
+        asistira: !contesto ? '' : inv.respuesta === 'no_asistira' ? 'no' : 'si',
+        personas: contesto && inv.respuesta === 'asistira' ? (inv.personas ?? 1) : '',
         nombre: inv.respondioNombre ?? '',
         mensaje: inv.mensaje ?? '',
       },

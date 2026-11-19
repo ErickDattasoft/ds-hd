@@ -534,7 +534,8 @@ export class Evento {
       respuesta: 'pendiente',
       notas: null,
       token: entrada.token ?? null,
-      pases: entrada.pases ?? 1,
+      // Sin número propio, toma «🎟 Personas por invitación» del evento.
+      pases: sanearPases(entrada.pases ?? this.maxPersonasRegistro),
       paraNombre: entrada.paraNombre ?? null,
       correo: sanearCorreo(entrada.correo),
       telefono: entrada.telefono ?? null,
@@ -576,7 +577,8 @@ export class Evento {
       respuesta: 'pendiente',
       notas: null,
       token: entrada.token ?? null,
-      pases: entrada.pases ?? 1,
+      // Sin número propio, toma «🎟 Personas por invitación» del evento.
+      pases: sanearPases(entrada.pases ?? this.maxPersonasRegistro),
       correo: sanearCorreo(entrada.correo),
       telefono: entrada.telefono ?? null,
     });

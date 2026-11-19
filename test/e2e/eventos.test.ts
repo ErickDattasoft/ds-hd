@@ -920,3 +920,49 @@ describe('página pública de un evento — es una landing, no el sitio navegabl
     expect(detalle.text).toContain('Total que van: 5');
   });
 });
+
+describe('personas por invitación', () => {
+  it('el invitado nuevo nace con las del evento y elige cuántos van en una sola pregunta (o ninguno)', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    t.eventoRepo.items.set(
+      'ev1',
+      new Evento({ id: 'ev1', titulo: 'Posada', tipo: 'presencial', fechaHora: enUnaSemana(), estado: 'publicado', maxPersonasRegistro: 2 }),
+    );
+    const admin = await login(t.app, ADMIN.email, ADMIN.password);
+    const detalle = await admin.agent.get('/app/eventos/ev1');
+    expect(detalle.text).toMatch(/name="pases" min="1" max="\d+" value="2"/);
+
+    // Sin número propio toma el del evento; con número, el suyo.
+    await admin.agent.post('/app/eventos/ev1/externos').type('form').send({ _csrf: admin.csrf, nombre: 'Ana López' });
+    await admin.agent.post('/app/eventos/ev1/externos').type('form').send({ _csrf: admin.csrf, nombre: 'Luis Mena', pases: '1' });
+    const [ana, luis] = (await t.eventoRepo.findById('ev1'))!.invitadosExternos;
+    expect(ana!.pases).toBe(2);
+    expect(luis!.pases).toBe(1);
+
+    const anon = request.agent(t.app);
+    const page = await anon.get(`/eventos/ev1/i/${ana!.token}`);
+    expect(page.text).toContain('Invitación para 2 personas');
+    expect(page.text).toContain('Asistiremos 2 personas');
+    expect(page.text).toContain('Asistiré solo yo');
+    expect(page.text).toContain('Ninguna, no podremos ir');
+    expect(page.text).not.toMatch(/name="personas" value="\d" required checked/); // nada preseleccionado
+    const csrf = cookieValor(page.headers['set-cookie'] as unknown as string[], 'x-csrf-token')!;
+
+    expect((await anon.post(`/eventos/ev1/i/${ana!.token}`).type('form').send({ _csrf: csrf, personas: '1' })).status).toBe(303);
+    let inv = (await t.eventoRepo.findById('ev1'))!.invitadosExternos[0]!;
+    expect(inv.respuesta).toBe('asistira');
+    expect(inv.personas).toBe(1);
+    // Al cambiar su respuesta, queda marcada la que eligió.
+    expect((await anon.get(`/eventos/ev1/i/${ana!.token}?cambiar=1`)).text).toMatch(/name="personas" value="1" required checked/);
+
+    expect((await anon.post(`/eventos/ev1/i/${ana!.token}`).type('form').send({ _csrf: csrf, personas: '0' })).status).toBe(303);
+    inv = (await t.eventoRepo.findById('ev1'))!.invitadosExternos[0]!;
+    expect(inv.respuesta).toBe('no_asistira');
+    expect((await t.eventoRepo.findById('ev1'))!.resumenInvitaciones.personas).toBe(0);
+
+    // Con 1 persona: «¡Ahí estaré!» / «No podré ir».
+    const unaPersona = await anon.get(`/eventos/ev1/i/${luis!.token}`);
+    expect(unaPersona.text).toContain('¡Ahí estaré!');
+    expect(unaPersona.text).not.toContain('Asistiremos');
+  });
+});

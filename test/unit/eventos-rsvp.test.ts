@@ -150,7 +150,7 @@ describe('EventoService — enviar invitaciones y contestar', () => {
     const juan = ev.invitadosExternos[0]!;
     expect(email.ultimo?.para[0]?.email).toBe('juan@x.mx');
     expect(email.ultimo?.html).toContain(`https://ds-hd.test/eventos/ev1/i/${juan.token}`);
-    expect(email.ultimo?.html).toContain('2 pases');
+    expect(email.ultimo?.html).toContain('Invitación para 2 personas');
     expect(email.ultimo?.html).toContain('#1f5fae'); // color del estilo corporativo
     expect(juan.enviadaAt).toBe(AHORA.toISOString());
     expect((await service.enviarInvitacionesPendientes(actor, 'ev1')).enviadas).toBe(0);

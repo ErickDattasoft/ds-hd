@@ -9,7 +9,7 @@
               data-link="{{ config.baseUrl }}/eventos/{{ evento.id }}"
               title="Link SIN nombre para compartir en redes, grupos o por correo: cada quien llena sus datos al confirmar (salen en «Inscritos»). Para invitados con nombre y pases usa el 🔗 de cada uno en «Invitaciones».">🔗 Link público</button>
       <a class="btn btn--sm btn--secondary" href="/app/eventos/{{ evento.id }}/vista-previa" target="_blank" rel="noopener"
-         title="La invitación como la verá un invitado (nombre de ejemplo y 2 pases). Funciona en borrador y no guarda nada.">👁 Vista previa</a>
+         title="La invitación como la verá un invitado (nombre de ejemplo y las personas por invitación del evento). Funciona en borrador y no guarda nada.">👁 Vista previa</a>
       {% if can('eventos:gestionar') %}
         <form method="post" action="/app/eventos/{{ evento.id }}/enviarme-prueba" class="inline">
           <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
@@ -113,7 +113,7 @@
   <div class="inv-resumen">
     <div><strong>{{ resumen.invitados }}</strong><span>invitaciones</span></div>
     {% if evento.pideConfirmacion %}
-      <div><strong>{{ resumen.pases }}</strong><span>pases</span></div>
+      <div><strong>{{ resumen.pases }}</strong><span>personas invitadas</span></div>
       <div><strong>{{ resumen.personas }}</strong><span>personas confirmadas</span></div>
       <div><strong>✅ {{ resumen.asistiran }}</strong><span>van</span></div>
       <div><strong>❌ {{ resumen.noAsistiran }}</strong><span>no van</span></div>
@@ -138,7 +138,7 @@
       <datalist id="empresas-cartera">
         {% for e in empresasCartera %}<option value="{{ e.nombre }}">{% endfor %}
       </datalist>
-      {% if evento.pideConfirmacion %}<input type="number" name="pases" min="1" max="{{ MAX_PASES }}" value="1" title="Pases (personas que puede llevar)" style="width:5em" />{% endif %}
+      {% if evento.pideConfirmacion %}<label class="inv-pases-alta" title="Cuántas personas incluye ESTA invitación, contando al invitado (viene con el número del evento)">🎟 Personas <input type="number" name="pases" min="1" max="{{ MAX_PASES }}" value="{{ evento.maxPersonasRegistro }}" style="width:4.5em" /></label>{% endif %}
       <input name="invitadoPor" placeholder="Invitado por (opcional)" />
       <button class="btn btn--sm" type="submit">Agregar</button>
       <span class="muted">Se llenan solos el nombre, correo y celular del contacto principal; los puedes cambiar.</span>
@@ -146,7 +146,7 @@
   {% endif %}
   <div class="table-wrap">
   <table class="data-table">
-    <thead><tr><th>Empresa</th><th>Para / correo / celular</th>{% if evento.pideConfirmacion %}<th>Pases</th>{% endif %}<th>Respuesta</th><th>Notas</th><th></th></tr></thead>
+    <thead><tr><th>Empresa</th><th>Para / correo / celular</th>{% if evento.pideConfirmacion %}<th title="Personas que incluye la invitación">🎟 Personas</th>{% endif %}<th>Respuesta</th><th>Notas</th><th></th></tr></thead>
     <tbody>
       {% for inv in invitacionesVM %}
         {% set hist = historialEmpresas[inv.empresaNombre | lower] %}
@@ -164,7 +164,7 @@
                 <input type="email" name="correo" value="{{ inv.correo or '' }}" placeholder="Correo" size="18" class="sensible" />
                 <input type="tel" name="telefono" value="{{ inv.telefono or '' }}" placeholder="Celular" size="11" class="sensible" />
                 {% if evento.pideConfirmacion %}
-                  <input type="number" name="pases" value="{{ inv.pases }}" min="1" max="{{ MAX_PASES }}" title="Pases" style="width:4.5em" />
+                  <input type="number" name="pases" value="{{ inv.pases }}" min="1" max="{{ MAX_PASES }}" title="Personas que incluye la invitación" style="width:4.5em" />
                 {% endif %}
                 {{ respuestaSelect('respuesta', inv.respuesta) }}
                 {% if evento.pideConfirmacion %}
@@ -204,14 +204,14 @@
       <input name="nombre" placeholder="Nombre (opcional: sin nombre saluda «¡Hola!»)" size="28" />
       <input type="email" name="correo" placeholder="Correo (opcional)" />
       <input type="tel" name="telefono" placeholder="Celular (opcional)" />
-      {% if evento.pideConfirmacion %}<input type="number" name="pases" min="1" max="{{ MAX_PASES }}" value="1" title="Pases" style="width:5em" />{% endif %}
+      {% if evento.pideConfirmacion %}<label class="inv-pases-alta" title="Cuántas personas incluye ESTA invitación, contando al invitado (viene con el número del evento)">🎟 Personas <input type="number" name="pases" min="1" max="{{ MAX_PASES }}" value="{{ evento.maxPersonasRegistro }}" style="width:4.5em" /></label>{% endif %}
       <input name="fuente" placeholder="Fuente (referido, redes…)" />
       <button class="btn btn--sm" type="submit">Agregar</button>
     </form>
   {% endif %}
   <div class="table-wrap">
   <table class="data-table">
-    <thead><tr><th>Nombre / correo / celular</th>{% if evento.pideConfirmacion %}<th>Pases</th>{% endif %}<th>Respuesta</th><th>Notas</th><th></th></tr></thead>
+    <thead><tr><th>Nombre / correo / celular</th>{% if evento.pideConfirmacion %}<th title="Personas que incluye la invitación">🎟 Personas</th>{% endif %}<th>Respuesta</th><th>Notas</th><th></th></tr></thead>
     <tbody>
       {% for ext in externosVM %}
         <tr>
@@ -223,7 +223,7 @@
                 <input type="email" name="correo" value="{{ ext.correo or '' }}" placeholder="Correo" size="18" class="sensible" />
                 <input type="tel" name="telefono" value="{{ ext.telefono or '' }}" placeholder="Celular" size="11" class="sensible" />
                 {% if evento.pideConfirmacion %}
-                  <input type="number" name="pases" value="{{ ext.pases }}" min="1" max="{{ MAX_PASES }}" title="Pases" style="width:4.5em" />
+                  <input type="number" name="pases" value="{{ ext.pases }}" min="1" max="{{ MAX_PASES }}" title="Personas que incluye la invitación" style="width:4.5em" />
                 {% endif %}
                 {{ respuestaSelect('respuesta', ext.respuesta) }}
                 {% if evento.pideConfirmacion %}
