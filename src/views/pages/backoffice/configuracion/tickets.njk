@@ -117,7 +117,40 @@
       <summary class="disclosure__summary">📨 Correos de notificación de tickets</summary>
       <div class="disclosure__body form">
         <label class="field"><span>Correos (uno por línea)</span><textarea name="correosNotificacion" rows="3">{{ config.correosNotificacion | join('\n') }}</textarea>
-          <em class="field__hint">Reciben copia de todos los correos de tickets (nuevo del portal, nota pública al cliente, resuelto/cerrado, reenvíos). El primero es la dirección de respuesta.</em></label>
+          <em class="field__hint">Reciben copia de los correos de tickets (ticket nuevo, nota pública al cliente, avances, reenvíos). El primero es la dirección de respuesta. Los de <strong>cerrado</strong> y <strong>facturado</strong> se eligen abajo, persona por persona.</em></label>
+      </div>
+    </details>
+
+    <details class="disclosure" data-seccion="cfg-tickets-avisos-cierre"{{ ' open data-forzar-abierta' if errores.avisosCierre }}>
+      <summary class="disclosure__summary">🔔 ¿Quién recibe los avisos de cerrado y facturado? <span class="disclosure__hint">— cada persona elige</span></summary>
+      <div class="disclosure__body" data-avisos>
+        <input type="hidden" name="avisosEnviado" value="1" />
+        {% if errores.avisosCierre %}<p class="alert alert--error">{{ errores.avisosCierre }} — no se guardó nada, corrígelo y vuelve a guardar.</p>{% endif %}
+        <p class="muted avisos__ayuda"><strong>✔️ Cerrado</strong> = copia del correo que recibe el cliente cuando su ticket se resuelve o se cierra (tenga o no facturación).
+          <strong>💲 Facturado</strong> = aviso interno «✅ Ticket #N cerrado [FACTURADO]», que sale cuando el ticket queda cerrado <em>y</em> facturado.</p>
+        <table class="avisos__tabla">
+          <thead><tr><th>Correo</th><th>✔️ Cerrado</th><th>💲 Facturado</th><th></th></tr></thead>
+          <tbody data-avisos-filas>
+            {% for a in avisosCierreDe(config) %}
+              <tr data-aviso-fila>
+                <td><input type="email" name="avisoCorreo" value="{{ a.correo }}" placeholder="correo@dattasoft.mx" aria-label="Correo" /></td>
+                <td><label class="avisos__check"><input type="checkbox" data-aviso-check {{ 'checked' if a.cerrado }} aria-label="Cerrado" /><input type="hidden" name="avisoCerrado" value="{{ '1' if a.cerrado else '0' }}" /></label></td>
+                <td><label class="avisos__check"><input type="checkbox" data-aviso-check {{ 'checked' if a.facturado }} aria-label="Facturado" /><input type="hidden" name="avisoFacturado" value="{{ '1' if a.facturado else '0' }}" /></label></td>
+                <td><button type="button" class="cat-btn" data-aviso-quitar title="Quitar" aria-label="Quitar">🗑</button></td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        <template data-aviso-plantilla>
+          <tr data-aviso-fila>
+            <td><input type="email" name="avisoCorreo" value="" placeholder="correo@dattasoft.mx" aria-label="Correo" /></td>
+            <td><label class="avisos__check"><input type="checkbox" data-aviso-check checked aria-label="Cerrado" /><input type="hidden" name="avisoCerrado" value="1" /></label></td>
+            <td><label class="avisos__check"><input type="checkbox" data-aviso-check checked aria-label="Facturado" /><input type="hidden" name="avisoFacturado" value="1" /></label></td>
+            <td><button type="button" class="cat-btn" data-aviso-quitar title="Quitar" aria-label="Quitar">🗑</button></td>
+          </tr>
+        </template>
+        <button type="button" class="btn btn--ghost" data-aviso-agregar>＋ Agregar persona</button>
+        <p class="muted avisos__ayuda">Ejemplo: Soporte solo ✔️ Cerrado; Facturación solo 💲 Facturado; el gerente los dos o ninguno. El agente asignado al ticket siempre recibe su copia del cierre.</p>
       </div>
     </details>
 

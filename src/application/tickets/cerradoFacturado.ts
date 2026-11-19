@@ -47,7 +47,7 @@ export async function avisarSiQuedoCerradoYFacturado(input: {
 
   await registrarEvento(input.tickets, input.ids, ticket.id, {
     tipo: 'correo',
-    resumen: `Ticket cerrado y FACTURADO — correo${para.length ? ' enviado' : ' no enviado (sin correo de soporte configurado)'}`,
+    resumen: `Ticket cerrado y FACTURADO — correo${para.length ? ' enviado' : ' no enviado (nadie tiene marcado 💲 Facturado en Configuración → Tickets)'}`,
     actor: null,
     at: ahora,
   });

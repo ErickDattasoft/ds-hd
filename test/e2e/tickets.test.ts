@@ -622,3 +622,73 @@ describe('avisos globales (título de pestaña y buzón público, como el viejo)
     expect(detalle.text).toMatch(/adjuntos\/[\w-]+" alt="Captura 1"/);
   });
 });
+
+describe('avisos de cerrado y facturado por persona (Configuración → Tickets)', () => {
+  const ADMIN = { uid: 'u-adm', email: 'adm@dattasoft.mx', password: 'admin12345', nombre: 'Adm', rol: 'admin' as const };
+  const destinatarios = (c: { para: { email: string }[]; cc?: { email: string }[]; cco?: { email: string }[] }): string[] =>
+    [...c.para, ...(c.cc ?? []), ...(c.cco ?? [])].map((d) => d.email);
+
+  it('se guardan desde el formulario y cada quien recibe solo lo que marcó', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    const cfg = await t.configuracionRepo.obtenerTickets();
+    await t.configuracionRepo.guardarTickets({ ...cfg, correosNotificacion: ['soporte@dattasoft.mx'] });
+    const { agent, csrf } = await login(t.app, ADMIN.email, ADMIN.password);
+
+    // Sin guardar nunca, la tabla muestra la lista de notificación con las dos casillas.
+    const vista = await agent.get('/app/configuracion/tickets');
+    expect(vista.text).toContain('name="avisoCorreo" value="soporte@dattasoft.mx"');
+
+    const guardar = await agent.post('/app/configuracion/tickets').type('form').send({
+      _csrf: csrf,
+      tipos: cfg.tipos.join('\n'),
+      sistemas: cfg.sistemas.join('\n'),
+      grupos: cfg.grupos.join('\n'),
+      estados: cfg.estados.join('\n'),
+      prioridades: cfg.prioridades.join('\n'),
+      tiposFacturables: '',
+      estadoInicial: cfg.estadoInicial,
+      correosNotificacion: 'soporte@dattasoft.mx',
+      avisosEnviado: '1',
+      avisoCorreo: ['soporte@dattasoft.mx', 'factura@dattasoft.mx', 'gerente@dattasoft.mx', '', 'FACTURA@dattasoft.mx'],
+      avisoCerrado: ['1', '0', '0', '1', '1'],
+      avisoFacturado: ['0', '1', '0', '1', '1'],
+    });
+    expect(guardar.status).toBe(200);
+    expect((await t.configuracionRepo.obtenerTickets()).avisosCierre).toEqual([
+      { correo: 'soporte@dattasoft.mx', cerrado: true, facturado: false },
+      { correo: 'factura@dattasoft.mx', cerrado: false, facturado: true },
+      { correo: 'gerente@dattasoft.mx', cerrado: false, facturado: false },
+    ]);
+
+    const crear = await agent.post('/app/tickets').type('form').send({
+      _csrf: csrf, asunto: 'Por persona', descripcion: 'descripción de prueba larga', tipo: 'General', prioridad: 'Media',
+    });
+    const id = String(crear.headers.location).split('/').pop()!;
+    t.emailSender.enviados.length = 0;
+    await agent.post(`/app/tickets/${id}/facturar`).type('form').send({ _csrf: csrf, estado: 'facturado' });
+    await agent.post(`/app/tickets/${id}/estado`).type('form').send({ _csrf: csrf, estado: 'Cerrado' });
+
+    const cierre = t.emailSender.enviados.find((c) => c.tags?.includes('ticket-cerrado'));
+    const facturado = t.emailSender.enviados.find((c) => c.asunto.includes('FACTURADO'));
+    expect(destinatarios(cierre!)).toContain('soporte@dattasoft.mx');
+    expect(destinatarios(cierre!)).not.toContain('factura@dattasoft.mx');
+    expect(destinatarios(cierre!)).not.toContain('gerente@dattasoft.mx');
+    expect(destinatarios(facturado!)).toEqual(['factura@dattasoft.mx']);
+  });
+
+  it('un correo inválido no se guarda y avisa', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    const cfg = await t.configuracionRepo.obtenerTickets();
+    const { agent, csrf } = await login(t.app, ADMIN.email, ADMIN.password);
+    const r = await agent.post('/app/configuracion/tickets').type('form').send({
+      _csrf: csrf,
+      tipos: cfg.tipos.join('\n'), sistemas: cfg.sistemas.join('\n'), grupos: cfg.grupos.join('\n'),
+      estados: cfg.estados.join('\n'), prioridades: cfg.prioridades.join('\n'), tiposFacturables: '',
+      estadoInicial: cfg.estadoInicial, correosNotificacion: '',
+      avisosEnviado: '1', avisoCorreo: 'gaby sin arroba', avisoCerrado: '1', avisoFacturado: '1',
+    });
+    expect(r.status).toBe(422);
+    expect(r.text).toContain('no es un correo válido');
+    expect((await t.configuracionRepo.obtenerTickets()).avisosCierre).toBeUndefined();
+  });
+});

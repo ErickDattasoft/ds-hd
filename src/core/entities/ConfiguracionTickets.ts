@@ -31,6 +31,39 @@ export interface ConfiguracionTickets {
   avisarClienteEstados?: string[];
   /** Respuestas guardadas (macros) que se insertan al redactar. */
   respuestas?: RespuestaGuardada[];
+  /**
+   * Quién recibe los avisos de cierre y de facturado, persona por persona. Sin definir (nadie lo
+   * ha guardado aún) = la lista `correosNotificacion` recibe los dos, como antes.
+   */
+  avisosCierre?: AvisoCierre[];
+}
+
+/** Un renglón de «¿Quién recibe los avisos de cierre?»: a quién y cuáles de los dos. */
+export interface AvisoCierre {
+  correo: string;
+  /** Copia del correo de resuelto/cerrado que se le manda al cliente. */
+  cerrado: boolean;
+  /** Aviso interno «✅ Ticket #N cerrado [FACTURADO]». */
+  facturado: boolean;
+}
+
+/** Los renglones de avisos de cierre; si nunca se han guardado, la lista de notificación con ambos. */
+export function avisosCierreDe(config: Pick<ConfiguracionTickets, 'avisosCierre' | 'correosNotificacion'>): AvisoCierre[] {
+  if (config.avisosCierre) return config.avisosCierre;
+  return config.correosNotificacion
+    .map((c) => c.trim())
+    .filter((c) => c.includes('@'))
+    .map((correo) => ({ correo, cerrado: true, facturado: true }));
+}
+
+/** Correos que reciben copia del aviso de resuelto/cerrado. */
+export function correosAvisoCerrado(config: Pick<ConfiguracionTickets, 'avisosCierre' | 'correosNotificacion'>): string[] {
+  return avisosCierreDe(config).filter((a) => a.cerrado).map((a) => a.correo);
+}
+
+/** Correos que reciben el aviso «[FACTURADO]» (ticket cerrado y facturado). */
+export function correosAvisoFacturado(config: Pick<ConfiguracionTickets, 'avisosCierre' | 'correosNotificacion'>): string[] {
+  return avisosCierreDe(config).filter((a) => a.facturado).map((a) => a.correo);
 }
 
 /** Texto reutilizable para responder casos repetidos. */

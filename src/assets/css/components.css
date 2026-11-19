@@ -1886,3 +1886,22 @@ fieldset.field { border: 0; padding: 0; margin: 0; }
 }
 .inv-opciones--estilos small { font-weight: 400; color: var(--color-text-subtle); font-size: var(--text-xs); }
 @media (max-width: 760px) { .inv-opciones--estilos { grid-template-columns: repeat(2, 1fr); } }
+
+/* Configuración → Tickets: ¿quién recibe los avisos de cerrado/facturado? */
+.avisos__ayuda { margin: 0 0 var(--space-3); font-size: .9rem; }
+.avisos__tabla { width: 100%; border-collapse: collapse; margin-bottom: var(--space-3); }
+.avisos__tabla th { text-align: left; font-size: .85rem; padding: 6px 8px; border-bottom: 1px solid var(--color-border); white-space: nowrap; }
+.avisos__tabla th:nth-child(2), .avisos__tabla th:nth-child(3), .avisos__tabla td:nth-child(2), .avisos__tabla td:nth-child(3) { text-align: center; width: 110px; }
+.avisos__tabla th:last-child, .avisos__tabla td:last-child { width: 44px; text-align: right; }
+.avisos__tabla td { padding: 6px 8px; border-bottom: 1px solid var(--color-border); }
+.avisos__tabla input[type=email] { width: 100%; min-width: 0; }
+.avisos__check { display: inline-flex; justify-content: center; cursor: pointer; padding: 4px 10px; }
+.avisos__check input[type=checkbox] { width: 20px; height: 20px; accent-color: var(--brand); cursor: pointer; }
+@media (max-width: 600px) {
+  .avisos__tabla th:nth-child(2), .avisos__tabla th:nth-child(3), .avisos__tabla td:nth-child(2), .avisos__tabla td:nth-child(3) { width: 52px; }
+  .avisos__tabla th:last-child, .avisos__tabla td:last-child { width: 28px; }
+  .avisos__tabla th, .avisos__tabla td { padding: 6px 2px; }
+  .avisos__tabla th { font-size: .7rem; white-space: normal; }
+  .avisos__tabla input[type=email] { font-size: .85rem; padding-left: 6px; padding-right: 6px; }
+  .avisos__check { padding: 4px; }
+}

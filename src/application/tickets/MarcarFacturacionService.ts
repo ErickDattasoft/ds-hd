@@ -11,6 +11,7 @@ import {
 } from '../../core/entities/value-objects/EstadoFacturacion.js';
 import { ForbiddenError, NotFoundError } from '../../core/errors/DomainError.js';
 import { registrarEvento } from './efectos.js';
+import { correosAvisoFacturado } from '../../core/entities/ConfiguracionTickets.js';
 import { avisarSiQuedoCerradoYFacturado } from './cerradoFacturado.js';
 import type { SessionUser } from '../shared/SessionUser.js';
 
@@ -60,7 +61,7 @@ export class MarcarFacturacionService {
       ids: this.ids,
       webhooks: this.webhooks,
       email: this.email,
-      correosNotificacion: cfg.correosNotificacion,
+      correosNotificacion: correosAvisoFacturado(cfg),
       ticket,
       cumpliaAntes,
       cumpleAhora: ticket.esCerrado && esFacturacionCompletada(input.estado),

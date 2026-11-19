@@ -1916,6 +1916,37 @@
     if (aviso && !aviso.hidden) { e.preventDefault(); e.returnValue = ''; }
   });
 
+  // ── Configuración → Tickets: ¿quién recibe los avisos de cerrado/facturado? ──
+  // Cada casilla tiene junto un <input hidden> con 1/0, para que las tres listas lleguen parejas.
+  function avisoPendiente() {
+    var aviso = document.querySelector('[data-cat-pendiente]');
+    if (aviso) aviso.hidden = false;
+  }
+  document.addEventListener('change', function (e) {
+    var c = e.target.closest('[data-aviso-check]');
+    if (!c) return;
+    c.nextElementSibling.value = c.checked ? '1' : '0';
+    avisoPendiente();
+  });
+  document.addEventListener('input', function (e) {
+    if (e.target.closest('[data-aviso-fila]')) avisoPendiente();
+  });
+  document.addEventListener('click', function (e) {
+    var b;
+    if ((b = e.target.closest('[data-aviso-quitar]'))) {
+      b.closest('[data-aviso-fila]').remove();
+      avisoPendiente();
+    } else if ((b = e.target.closest('[data-aviso-agregar]'))) {
+      var caja = b.closest('[data-avisos]');
+      var tpl = caja.querySelector('[data-aviso-plantilla]');
+      var filas = caja.querySelector('[data-avisos-filas]');
+      filas.appendChild(tpl.content.cloneNode(true));
+      var nuevo = filas.lastElementChild.querySelector('input[type=email]');
+      if (nuevo) nuevo.focus();
+      avisoPendiente();
+    }
+  });
+
   // ── Form de ticket: "Otro" sistema + "Guardar y crear otro" ──────────────
   document.addEventListener('change', function (e) {
     var sel = e.target.closest('[data-sistema-select]');

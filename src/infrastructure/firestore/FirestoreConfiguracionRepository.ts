@@ -61,6 +61,15 @@ export class FirestoreConfiguracionRepository implements IConfiguracionRepositor
       correosNotificacion: arr(d.correosNotificacion, []),
       respuestas: Array.isArray(d.respuestas) ? d.respuestas : [],
       avisarClienteEstados: arr(d.avisarClienteEstados, []),
+      ...(Array.isArray(d.avisosCierre)
+        ? {
+            avisosCierre: (d.avisosCierre as Record<string, unknown>[]).map((a) => ({
+              correo: String(a.correo ?? ''),
+              cerrado: a.cerrado === true,
+              facturado: a.facturado === true,
+            })),
+          }
+        : {}),
       predeterminados: (d.predeterminados as ConfiguracionTickets['predeterminados']) ?? {
         ...CONFIG_TICKETS_POR_DEFECTO.predeterminados,
       },

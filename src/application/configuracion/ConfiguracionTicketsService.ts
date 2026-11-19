@@ -1,7 +1,7 @@
 import type { IConfiguracionRepository } from '../../core/ports/repositories/IConfiguracionRepository.js';
 import type { ILogger } from '../../core/ports/services/ILogger.js';
 import type { ConfiguracionTickets } from '../../core/entities/ConfiguracionTickets.js';
-import type { PredeterminadosTicket } from '../../core/entities/ConfiguracionTickets.js';
+import type { AvisoCierre, PredeterminadosTicket } from '../../core/entities/ConfiguracionTickets.js';
 import { CONFIG_TICKETS_POR_DEFECTO, distribuidoresDe, parsearRespuestas } from '../../core/entities/ConfiguracionTickets.js';
 import { ForbiddenError, ValidationError } from '../../core/errors/DomainError.js';
 import type { SessionUser } from '../shared/SessionUser.js';
@@ -68,6 +68,8 @@ export class ConfiguracionTicketsService {
     respuestas?: string;
     /** Estados marcados para avisar al cliente. */
     avisarClienteEstados?: string[];
+    /** Quién recibe los avisos de cerrado y de facturado; sin definir = se queda lo guardado. */
+    avisosCierre?: AvisoCierre[];
     /** Estados renombrados en su renglón (nombre anterior → nuevo): los tickets que lo tienen se pasan al nuevo. */
     renombresEstados?: Record<string, string>;
   }): Promise<{ ticketsRenombrados: number }> {
@@ -115,6 +117,11 @@ export class ConfiguracionTicketsService {
       const previa = (await this.repo.obtenerTickets()).facturacion;
       if (previa) config.facturacion = previa;
     }
+    if (input.avisosCierre !== undefined) config.avisosCierre = avisosLimpios(input.avisosCierre);
+    else {
+      const previa = (await this.repo.obtenerTickets()).avisosCierre;
+      if (previa) config.avisosCierre = previa;
+    }
     if (input.respuestas !== undefined) config.respuestas = parsearRespuestas(input.respuestas);
     else config.respuestas = (await this.repo.obtenerTickets()).respuestas ?? [];
     if (input.predeterminados) {
@@ -144,4 +151,23 @@ export class ConfiguracionTicketsService {
     this.logger.info('Configuración de tickets actualizada', { por: input.actor.uid, ticketsRenombrados });
     return { ticketsRenombrados };
   }
+}
+
+/** Renglones de avisos de cierre: sin vacíos ni repetidos; un correo sin «@» es error. */
+function avisosLimpios(lista: AvisoCierre[]): AvisoCierre[] {
+  const vistos = new Set<string>();
+  const out: AvisoCierre[] = [];
+  for (const a of lista) {
+    const correo = a.correo.trim();
+    if (!correo) continue;
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo)) {
+      const msg = `«${correo}» no es un correo válido`;
+      throw new ValidationError(msg, { avisosCierre: msg });
+    }
+    const clave = correo.toLowerCase();
+    if (vistos.has(clave)) continue;
+    vistos.add(clave);
+    out.push({ correo, cerrado: Boolean(a.cerrado), facturado: Boolean(a.facturado) });
+  }
+  return out.slice(0, 50);
 }

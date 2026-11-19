@@ -29,14 +29,14 @@ import {
 } from '../../../../core/entities/ConfiguracionIntegraciones.js';
 import { INFO_APP } from '../../../../core/entities/AcercaDe.js';
 import { catalogoFacturacion } from './TicketController.js';
-import type { ConfiguracionTickets } from '../../../../core/entities/ConfiguracionTickets.js';
+import type { AvisoCierre, ConfiguracionTickets } from '../../../../core/entities/ConfiguracionTickets.js';
 
 /** Texto del catálogo que lleva la ★ de Facturación (el predeterminado se guarda como valor). */
 const textoPredFacturacion = (config: ConfiguracionTickets): string => {
   const v = config.predeterminados?.estadoFacturacion;
   return v ? (catalogoFacturacion(config.facturacion).find((o) => o.valor === v)?.etiqueta ?? '') : '';
 };
-import { respuestasATexto } from '../../../../core/entities/ConfiguracionTickets.js';
+import { avisosCierreDe, respuestasATexto } from '../../../../core/entities/ConfiguracionTickets.js';
 import { camposDeError } from '../../support/errores.js';
 
 const str = (v: unknown): string => (typeof v === 'string' ? v : '');
@@ -343,6 +343,7 @@ export class ConfiguracionController {
       facturacionLista: catalogoFacturacion(config.facturacion).map((o) => o.etiqueta),
       agentesPred: await this.configTickets.agentesAsignables(),
       respuestasATexto,
+      avisosCierreDe,
       titulo: 'Configuración de tickets',
       config,
       errores: {},
@@ -386,6 +387,7 @@ export class ConfiguracionController {
         ...(b.facturacion !== undefined ? { facturacion: str(b.facturacion) } : {}),
         estadoInicial: str(b.estadoInicial),
         correosNotificacion: str(b.correosNotificacion),
+        ...(b.avisosEnviado ? { avisosCierre: avisosDelForm(b) } : {}),
         slaHoras,
         respuestas: str(b.respuestas),
         avisarClienteEstados: ([] as string[]).concat((b.avisarClienteEstados as string[]) ?? []).filter(Boolean),
@@ -407,6 +409,7 @@ export class ConfiguracionController {
       facturacionLista: catalogoFacturacion(config.facturacion).map((o) => o.etiqueta),
       agentesPred: await this.configTickets.agentesAsignables(),
       respuestasATexto,
+      avisosCierreDe,
         titulo: 'Configuración de tickets',
         config,
         errores: {},
@@ -421,6 +424,7 @@ export class ConfiguracionController {
       facturacionLista: catalogoFacturacion(config.facturacion).map((o) => o.etiqueta),
       agentesPred: await this.configTickets.agentesAsignables(),
       respuestasATexto,
+      avisosCierreDe,
         titulo: 'Configuración de tickets',
         config,
         errores: camposDeError(err),
@@ -754,4 +758,13 @@ export class ConfiguracionController {
       await this.renderResumen(res, { status: 422, errores: camposDeError(err) });
     }
   };
+}
+
+/** Renglones de «¿Quién recibe los avisos de cierre?»: tres listas paralelas (correo, 1/0, 1/0). */
+function avisosDelForm(b: Record<string, unknown>): AvisoCierre[] {
+  const lista = (v: unknown): string[] => ([] as unknown[]).concat(v ?? []).map((x) => String(x));
+  const correos = lista(b.avisoCorreo);
+  const cerrado = lista(b.avisoCerrado);
+  const facturado = lista(b.avisoFacturado);
+  return correos.map((correo, i) => ({ correo, cerrado: cerrado[i] === '1', facturado: facturado[i] === '1' }));
 }

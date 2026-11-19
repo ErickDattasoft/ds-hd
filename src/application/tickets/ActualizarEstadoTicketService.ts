@@ -7,6 +7,7 @@ import type { ILogger } from '../../core/ports/services/ILogger.js';
 import type { IEmailSender } from '../../core/ports/services/IEmailSender.js';
 import type { IWebhookPublisher } from '../../core/ports/services/IWebhookPublisher.js';
 import type { Ticket } from '../../core/entities/Ticket.js';
+import { correosAvisoCerrado, correosAvisoFacturado } from '../../core/entities/ConfiguracionTickets.js';
 import { esFacturacionCompletada } from '../../core/entities/value-objects/EstadoFacturacion.js';
 import { ForbiddenError, NotFoundError } from '../../core/errors/DomainError.js';
 import { publicarNotaInterna, registrarEvento } from './efectos.js';
@@ -59,7 +60,7 @@ export class ActualizarEstadoTicketService {
       ids: this.ids,
       webhooks: this.webhooks,
       email: this.email,
-      correosNotificacion: cfg.correosNotificacion,
+      correosNotificacion: correosAvisoFacturado(cfg),
       ticket,
       cumpliaAntes,
       cumpleAhora: resultado.quedoCerrado && esFacturacionCompletada(ticket.facturacion.estado),
@@ -175,7 +176,8 @@ export class ActualizarEstadoTicketService {
 
     const cfg = await this.config.obtenerTickets();
     const copiaInterna = await this.emailAgenteOActor(ticket, input.actor.email);
-    const dest = destinatariosTicket(ticket, cfg.correosNotificacion, copiaInterna);
+    // Copia del cierre: solo quien marcó «✔️ Cerrado» en Configuración → Tickets.
+    const dest = destinatariosTicket(ticket, correosAvisoCerrado(cfg), copiaInterna, cfg.correosNotificacion);
     if (dest.para.length === 0) return;
 
     const historial = historialActividadHtml(await this.tickets.listarEventos(ticket.id), 'cliente');

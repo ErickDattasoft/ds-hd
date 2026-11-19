@@ -40,12 +40,15 @@ export function destinatariosTicket(
   ticket: Pick<Ticket, 'contactoCorreo' | 'contactoNombre'> & Partial<Pick<Ticket, 'cc' | 'cco'>>,
   correosNotificacion: readonly string[],
   copiaInterna: string | null,
+  /** De dónde sale la dirección de respuesta (por defecto, la misma lista de copias). */
+  listaRespuesta: readonly string[] = correosNotificacion,
 ): DestinatariosTicket {
   const config = correosValidos(correosNotificacion);
   // El CC del ticket (p. ej. el contacto alternativo que pidió copia) va junto a las copias
   // internas, como en el CRM viejo; el CCO va aparte y nunca repite a quien ya recibe el correo.
   const copias = correosValidos([...config, ...(copiaInterna ? [copiaInterna] : []), ...(ticket.cc ?? [])]);
-  const responderA = config[0] ? { email: config[0] } : undefined;
+  const primero = correosValidos(listaRespuesta)[0];
+  const responderA = primero ? { email: primero } : undefined;
   const contacto = ticket.contactoCorreo?.trim() || '';
 
   const visibles = new Set([contacto, ...copias].map((e) => e.toLowerCase()));
