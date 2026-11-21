@@ -149,6 +149,8 @@ const SECCIONES_BACKUP = [
  */
 function validarFormaBackup(datos: Record<string, unknown>): void {
   if (SECCIONES_BACKUP.some((k) => Array.isArray(datos[k]))) return;
+  // La última tanda de una restauración por partes solo trae la configuración.
+  if (datos._parcial === false && typeof datos.configuracion === 'object' && datos.configuracion !== null) return;
   const esCrmViejo = typeof datos.datos === 'object' && datos.datos !== null && !Array.isArray(datos.datos);
   throw new ValidationError(
     esCrmViejo
@@ -536,26 +538,28 @@ export class BackupService {
     for (const d of arr(datos.tickets)) {
       try {
         const ticket = new Ticket(d as unknown as TicketProps);
-        await this.ticketRepo.save(ticket);
-        maxNumero = Math.max(maxNumero, ticket.numero);
-        resumen.tickets++;
         const det = detalle[ticket.id];
-        if (det && (det.notas?.length || det.eventos?.length)) {
-          conDetalle.push({ ticket, notas: det.notas ?? [], eventos: det.eventos ?? [] });
-        }
+        conDetalle.push({ ticket, notas: det?.notas ?? [], eventos: det?.eventos ?? [] });
       } catch (err) {
         resumen.errores.push(`ticket #${d.numero}: ${err instanceof Error ? err.message : err}`);
       }
     }
-    // Notas y eventos conservan su id: restaurar dos veces no duplica la conversación.
+    // Todos los tickets con su conversación en lotes (un commit por cada 500 escrituras), no uno
+    // por uno: el Worker tiene tope de consultas por petición. Notas y eventos conservan su id,
+    // así que restaurar dos veces no duplica la conversación.
     if (conDetalle.length) {
       try {
         await this.ticketRepo.guardarVariosConDetalle(conDetalle);
+        resumen.tickets += conDetalle.length;
+        maxNumero = Math.max(...conDetalle.map((c) => c.ticket.numero));
       } catch (err) {
-        resumen.errores.push(`conversaciones de tickets: ${err instanceof Error ? err.message : err}`);
+        resumen.errores.push(`tickets: ${err instanceof Error ? err.message : err}`);
       }
     }
-    if (maxNumero > 0) await this.contador.fijar(CONTADOR_TICKETS, maxNumero);
+    // El folio nunca baja: si el sistema ya va más adelante, se respeta (evita folios repetidos).
+    if (maxNumero > 0 && maxNumero > (await this.contador.actual(CONTADOR_TICKETS))) {
+      await this.contador.fijar(CONTADOR_TICKETS, maxNumero);
+    }
     for (const d of arr(datos.cotizaciones)) {
       try {
         await this.cotizaciones.save(new Cotizacion(d as unknown as CotizacionProps));
@@ -636,10 +640,19 @@ export class BackupService {
       });
     }
 
-    await this.bitacora?.registrar({
-      actor, accion: 'restaurar', modulo: 'backup', entidadTipo: 'Backup', entidadId: '-',
-      resumen: `Backup restaurado: ${Object.entries(resumen).filter(([, n]) => typeof n === 'number' && n > 0).map(([k, n]) => `${n} ${k}`).join(', ') || 'sin cambios'}`,
-    });
+    // Restauración por partes (la página manda tandas): solo la última deja huella en la
+    // bitácora, con los totales de todas las tandas que la página le pasa en `_totalesPrevios`.
+    if (datosCrudos._parcial !== true) {
+      const previos = (datosCrudos._totalesPrevios ?? {}) as Record<string, unknown>;
+      const totales: Record<string, number> = {};
+      for (const [k, n] of Object.entries(resumen)) {
+        if (typeof n === 'number') totales[k] = n + (typeof previos[k] === 'number' ? (previos[k] as number) : 0);
+      }
+      await this.bitacora?.registrar({
+        actor, accion: 'restaurar', modulo: 'backup', entidadTipo: 'Backup', entidadId: '-',
+        resumen: `Backup restaurado: ${Object.entries(totales).filter(([, n]) => n > 0).map(([k, n]) => `${n} ${k}`).join(', ') || 'sin cambios'}`,
+      });
+    }
     return resumen;
   }
 }

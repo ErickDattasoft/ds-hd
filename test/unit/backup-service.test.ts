@@ -15,7 +15,7 @@ import {
 import { InMemoryCotizacionRepository } from '../fakes/cotizaciones.js';
 import { InMemoryVersionRepository, InMemoryKnowledgeRepository } from '../fakes/kb.js';
 import { InMemoryUsuarioRepository } from '../fakes/InMemoryUsuarioRepository.js';
-import { FixedClock } from '../fakes/support.js';
+import { FixedClock, silentLogger } from '../fakes/support.js';
 import { Evento } from '../../src/core/entities/Evento.js';
 import { Tarea } from '../../src/core/entities/Tarea.js';
 import {
@@ -263,5 +263,47 @@ describe('BackupService', () => {
     expect((await destino.avisos.listTodos())[0]?.createdAt).toEqual(new Date('2026-10-01T00:00:00Z'));
     // Integraciones: llega el teléfono del respaldo, la clave se queda la que ya había.
     expect(await cfgDestino.obtenerIntegraciones()).toMatchObject({ whatsappTelefono: '999', whatsappApiKey: 'CLAVE-DESTINO' });
+  });
+  it('por partes: la última tanda solo con configuración es válida, el folio no baja y la bitácora se anota una vez con los totales', async () => {
+    const bitacoraRepo = new InMemoryBitacoraRepository();
+    const contador = new InMemoryContadorRepository();
+    await contador.fijar('tickets', 900);
+    const store = new InMemoryTicketStore();
+    const cfg = new InMemoryConfiguracionRepository();
+    const { BitacoraService } = await import('../../src/application/shared/BitacoraService.js');
+    const svc = new BackupService(
+      new InMemoryEmpresaRepository(), new InMemoryContactoRepository(), new InMemoryTicketRepository(store),
+      new InMemoryTicketQueries(store), new InMemoryCotizacionRepository(), new InMemoryVersionRepository(),
+      new InMemoryKnowledgeRepository(), new InMemoryUsuarioRepository(), cfg, contador,
+      new FixedClock(new Date('2026-09-01T12:00:00Z')), undefined, undefined,
+      new BitacoraService(bitacoraRepo, { newId: () => 'b-1', newToken: () => 'tok' }, new FixedClock(new Date('2026-09-01T12:00:00Z')), silentLogger),
+    );
+    const empresa = JSON.parse(JSON.stringify(new Empresa({ id: 'e9', nombre: 'PARTE UNO', createdAt: new Date(), updatedAt: new Date() })));
+    const ticket = JSON.parse(JSON.stringify(Ticket.crear({
+      id: 't9', numero: 501, asunto: 'Viejo', descripcion: 'descripción larga', tipo: 'General', prioridad: 'Alta',
+      estadoInicial: 'Abierto', canal: 'interno', ahora: new Date('2026-03-01T00:00:00Z'),
+    })));
+
+    const r1 = await svc.restaurar(actor(), { version: 1, _parcial: true, empresas: [empresa], tickets: [ticket] });
+    expect(r1).toMatchObject({ empresas: 1, tickets: 1, errores: [] });
+    expect(await bitacoraRepo.listar()).toHaveLength(0);
+    // Un respaldo con folios más bajos no regresa el contador (evita folios repetidos).
+    expect(await contador.actual('tickets')).toBe(900);
+    expect((await new InMemoryTicketRepository(store).findById('t9'))?.numero).toBe(501);
+
+    const r2 = await svc.restaurar(actor(), {
+      version: 1, _parcial: false, _totalesPrevios: r1,
+      configuracion: { acercaDe: { version: 'v2', ultimaActualizacion: 'hoy', notas: '' } },
+    });
+    expect(r2.errores).toEqual([]);
+    expect((await cfg.obtenerAcercaDe()).version).toBe('v2');
+    const log = await bitacoraRepo.listar();
+    expect(log).toHaveLength(1);
+    expect(log[0]!.resumen).toContain('1 empresas');
+    expect(log[0]!.resumen).toContain('1 tickets');
+  });
+
+  it('una tanda sin datos ni configuración sigue sin aceptarse', async () => {
+    await expect(service.restaurar(actor(), { version: 1, _parcial: true })).rejects.toThrow(ValidationError);
   });
 });

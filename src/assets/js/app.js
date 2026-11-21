@@ -426,41 +426,129 @@
     if (btn) { btn.disabled = true; btn.classList.add('is-loading'); }
     var reader = new FileReader();
     reader.onload = function () {
-      salida.innerHTML = '<p class="muted">Restaurando…</p>';
-      fetch(form.getAttribute('action'), {
-        method: 'POST',
-        headers: { 'content-type': 'application/json', 'x-csrf-token': cookie('x-csrf-token') },
-        body: reader.result,
-      })
-        .then(function (r) {
-          return r.json();
+      var datos;
+      try {
+        datos = JSON.parse(reader.result);
+      } catch {
+        salida.innerHTML = '<p class="alert alert--error">El archivo no es un JSON válido.</p>';
+        if (btn) { btn.disabled = false; btn.classList.remove('is-loading'); }
+        return;
+      }
+      var partes = partirRespaldo(datos);
+      var totales = { errores: [] };
+      var i = 0;
+      function terminar(ok, msg) {
+        if (ok) {
+          var r = totales;
+          var n = function (k) { return r[k] || 0; };
+          salida.innerHTML =
+            '<p class="alert alert--ok">Restaurado: ' +
+            n('empresas') + ' empresas, ' + n('contactos') + ' contactos, ' + n('tickets') + ' tickets, ' +
+            n('cotizaciones') + ' cotizaciones, ' + n('versiones') + ' versiones, ' + n('kb') + ' artículos de KB, ' +
+            n('usuarios') + ' usuarios, ' + n('eventos') + ' eventos (con sus invitados), ' +
+            n('inscritos') + ' registros del link abierto, ' + n('avisos') + ' avisos de versiones, ' +
+            n('tareas') + ' tareas, ' + n('interacciones') + ' de seguimiento, ' + n('bitacora') + ' de bitácora.' +
+            (r.errores.length ? ' ' + r.errores.length + ' con error (revisa la consola).' : '') +
+            '</p>';
+          if (r.errores.length) console.warn('Errores al restaurar:', r.errores);
+        } else {
+          salida.innerHTML = '<p class="alert alert--error">' + msg + '</p>';
+        }
+        if (btn) { btn.disabled = false; btn.classList.remove('is-loading'); }
+      }
+      // Una tanda tras otra: el servidor tiene tope de consultas por petición, así que el
+      // respaldo completo no cabe en un solo envío. Restaurar es «agregar o actualizar», así
+      // que si algo se corta a la mitad basta con volver a restaurar el mismo archivo.
+      function siguiente() {
+        if (i >= partes.length) return terminar(true);
+        var parte = partes[i];
+        if (i === partes.length - 1 && partes.length > 1) parte._totalesPrevios = totales;
+        salida.innerHTML = '<p class="muted">Restaurando… parte ' + (i + 1) + ' de ' + partes.length + '</p>';
+        fetch(form.getAttribute('action'), {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', 'x-csrf-token': cookie('x-csrf-token') },
+          body: JSON.stringify(parte),
         })
-        .then(function (data) {
-          if (data.ok) {
-            var r = data.resumen;
-            salida.innerHTML =
-              '<p class="alert alert--ok">Restaurado: ' +
-              r.empresas + ' empresas, ' + r.contactos + ' contactos, ' + r.tickets + ' tickets, ' +
-              r.cotizaciones + ' cotizaciones, ' + r.versiones + ' versiones, ' + r.kb + ' artículos de KB, ' +
-              r.usuarios + ' usuarios, ' + (r.eventos || 0) + ' eventos (con sus invitados), ' +
-              (r.inscritos || 0) + ' registros del link abierto, ' + (r.avisos || 0) + ' avisos de versiones, ' +
-              (r.tareas || 0) + ' tareas, ' + (r.interacciones || 0) + ' de seguimiento, ' + (r.bitacora || 0) + ' de bitácora.' +
-              (r.errores.length ? ' ' + r.errores.length + ' con error (revisa la consola).' : '') +
-              '</p>';
-            if (r.errores.length) console.warn('Errores al restaurar:', r.errores);
-          } else {
-            salida.innerHTML = '<p class="alert alert--error">' + data.error + '</p>';
-          }
-        })
-        .catch(function () {
-          salida.innerHTML = '<p class="alert alert--error">No se pudo restaurar. Revisa tu conexión e inténtalo de nuevo.</p>';
-        })
-        .finally(function () {
-          if (btn) { btn.disabled = false; btn.classList.remove('is-loading'); }
-        });
+          .then(function (r) { return r.json(); })
+          .then(function (data) {
+            if (!data.ok) {
+              return terminar(false, data.error + (i > 0 ? ' (se detuvo en la parte ' + (i + 1) + ' de ' + partes.length + '; lo anterior ya quedó — puedes volver a restaurar el mismo archivo)' : ''));
+            }
+            Object.keys(data.resumen).forEach(function (k) {
+              if (k === 'errores') totales.errores = totales.errores.concat(data.resumen.errores);
+              else totales[k] = (totales[k] || 0) + data.resumen[k];
+            });
+            i++;
+            siguiente();
+          })
+          .catch(function () {
+            terminar(false, 'No se pudo restaurar' + (i > 0 ? ' (se detuvo en la parte ' + (i + 1) + ' de ' + partes.length + ')' : '') + '. Revisa tu conexión y vuelve a restaurar el mismo archivo: lo que ya entró solo se actualiza, no se duplica.');
+          });
+      }
+      siguiente();
     };
     reader.readAsText(file);
   });
+
+  // Parte un respaldo de ds-hd en tandas que caben en una petición del servidor. Cada registro
+  // de estas secciones cuesta una consulta (usuarios, dos); tickets, bitácora y avisos se
+  // guardan en lote. La configuración va en la última tanda. Un archivo que no es respaldo de
+  // ds-hd (p. ej. el del CRM viejo) se manda entero para que el servidor diga qué es.
+  function partirRespaldo(datos) {
+    var UNO_POR_UNO = ['empresas', 'contactos', 'cotizaciones', 'oportunidades', 'versiones', 'kb', 'eventos',
+      'inscripcionesEventos', 'listaNegraEventos', 'tareas', 'interacciones', 'pizarrasKB', 'filtrosGuardados', 'usuarios'];
+    var EN_LOTE = { tickets: 150, bitacora: 400, avisosVersiones: 400 };
+    var PRESUPUESTO = 30;
+    var todas = UNO_POR_UNO.concat(Object.keys(EN_LOTE));
+    var esRespaldo = todas.some(function (k) { return Array.isArray(datos[k]); });
+    if (!esRespaldo) return [datos];
+    var partes = [];
+    var actual = null;
+    var gasto = 0;
+    function nueva() {
+      actual = { version: datos.version, _parcial: true };
+      partes.push(actual);
+      gasto = 0;
+    }
+    nueva();
+    // Mismo orden que el servidor: primero empresas y contactos, luego lo que los referencia.
+    var orden = ['empresas', 'contactos', 'tickets', 'cotizaciones', 'oportunidades', 'versiones', 'kb', 'usuarios',
+      'eventos', 'inscripcionesEventos', 'listaNegraEventos', 'avisosVersiones', 'tareas', 'interacciones',
+      'pizarrasKB', 'filtrosGuardados', 'bitacora'];
+    orden.forEach(function (k) {
+      var lista = Array.isArray(datos[k]) ? datos[k] : [];
+      if (!lista.length) return;
+      if (EN_LOTE[k]) {
+        for (var j = 0; j < lista.length; j += EN_LOTE[k]) {
+          if (gasto + 2 > PRESUPUESTO) nueva();
+          var trozo = lista.slice(j, j + EN_LOTE[k]);
+          actual[k] = (actual[k] || []).concat(trozo);
+          if (k === 'tickets') {
+            actual.ticketsDetalle = actual.ticketsDetalle || {};
+            trozo.forEach(function (t) {
+              if (datos.ticketsDetalle && datos.ticketsDetalle[t.id]) actual.ticketsDetalle[t.id] = datos.ticketsDetalle[t.id];
+            });
+          }
+          gasto += 2;
+        }
+        return;
+      }
+      var costo = k === 'usuarios' ? 2 : 1;
+      lista.forEach(function (reg) {
+        if (gasto + costo > PRESUPUESTO) nueva();
+        (actual[k] = actual[k] || []).push(reg);
+        gasto += costo;
+      });
+    });
+    var ultima = { version: datos.version, _parcial: false };
+    if (datos.configuracion) ultima.configuracion = datos.configuracion;
+    // La tanda vacía del principio (si no había nada de lo de arriba) no se manda.
+    partes = partes.filter(function (p) { return Object.keys(p).length > 2; });
+    // Sin configuración, la última tanda de datos es la que cierra (y deja huella en la bitácora).
+    if (ultima.configuracion) partes.push(ultima);
+    else if (partes.length) partes[partes.length - 1]._parcial = false;
+    return partes;
+  }
 
   // Casilla "Todo" de las secciones a importar: marca/desmarca la lista completa, y ella
   // misma refleja si las de abajo quedaron todas marcadas, todas no, o a medias.
