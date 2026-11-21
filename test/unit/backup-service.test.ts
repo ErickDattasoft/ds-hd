@@ -26,6 +26,7 @@ import {
 import { InMemoryInteraccionRepository, InMemoryTareaRepository } from '../fakes/seguimiento.js';
 import { InMemoryAvisoRepository, InMemoryPizarraKBRepository } from '../fakes/kb.js';
 import { InMemoryFiltroGuardadoRepository } from '../fakes/InMemoryFiltroGuardadoRepository.js';
+import { InMemoryBitacoraRepository } from '../fakes/crm.js';
 import type { ReposExtraBackup } from '../../src/application/configuracion/BackupService.js';
 
 const reposExtra = (): ReposExtraBackup & {
@@ -33,6 +34,7 @@ const reposExtra = (): ReposExtraBackup & {
   inscripciones: InMemoryInscripcionRepository;
   tareas: InMemoryTareaRepository;
   avisos: InMemoryAvisoRepository;
+  bitacora: InMemoryBitacoraRepository;
 } => ({
   eventos: new InMemoryEventoRepository(),
   inscripciones: new InMemoryInscripcionRepository(),
@@ -42,6 +44,7 @@ const reposExtra = (): ReposExtraBackup & {
   interacciones: new InMemoryInteraccionRepository(),
   pizarras: new InMemoryPizarraKBRepository(),
   filtros: new InMemoryFiltroGuardadoRepository(),
+  bitacora: new InMemoryBitacoraRepository(),
 });
 
 const actor = (over: Partial<SessionUser> = {}): SessionUser => ({
@@ -231,6 +234,10 @@ describe('BackupService', () => {
       versionInstalada: '14.0', versionOficial: '14.1', fechaVencimiento: null, canal: 'correo',
       destino: 'c@acme.mx', enviadoPorUid: 'u1', enviadoPorNombre: 'Erick', createdAt: new Date('2026-10-01T00:00:00Z'),
     }]);
+    await origen.bitacora.registrar({
+      id: 'b1', at: new Date('2026-11-15T10:00:00Z'), actorUid: 'u1', actorNombre: 'Erick', accion: 'editar',
+      modulo: 'eventos', entidadTipo: 'Evento', entidadId: 'ev1', resumen: 'Editó Posada 2026',
+    });
     await cfgOrigen.guardarIntegraciones({ ...(await cfgOrigen.obtenerIntegraciones()), whatsappTelefono: '999', whatsappApiKey: 'SECRETA' });
 
     const archivo = JSON.parse(JSON.stringify(await nuevoServicio(origen, cfgOrigen).exportar()));
@@ -241,7 +248,10 @@ describe('BackupService', () => {
     await cfgDestino.guardarIntegraciones({ ...(await cfgDestino.obtenerIntegraciones()), whatsappApiKey: 'CLAVE-DESTINO' });
     const resumen = await nuevoServicio(destino, cfgDestino).restaurar(actor(), archivo);
 
-    expect(resumen).toMatchObject({ eventos: 1, inscritos: 1, tareas: 1, avisos: 1, errores: [] });
+    expect(resumen).toMatchObject({ eventos: 1, inscritos: 1, tareas: 1, avisos: 1, bitacora: 1, errores: [] });
+    expect(await destino.bitacora.listar()).toEqual([
+      expect.objectContaining({ id: 'b1', resumen: 'Editó Posada 2026', at: new Date('2026-11-15T10:00:00Z') }),
+    ]);
     const restaurado = await destino.eventos.findById('ev1');
     expect(restaurado?.fechaHora).toEqual(new Date('2026-12-12T02:00:00Z'));
     // El link personal ya enviado sigue funcionando, con sus pases y su respuesta.

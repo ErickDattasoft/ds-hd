@@ -1125,6 +1125,7 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
             interacciones: c.interaccionRepo,
             pizarras: c.pizarraKBRepo,
             filtros: c.filtroGuardadoRepo,
+            bitacora: c.bitacoraRepo,
           },
         ),
     ).singleton(),

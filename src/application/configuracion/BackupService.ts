@@ -15,6 +15,8 @@ import type {
   IInscripcionRepository,
   IListaNegraRepository,
 } from '../../core/ports/repositories/IEventoRepository.js';
+import type { IBitacoraRepository } from '../../core/ports/repositories/IBitacoraRepository.js';
+import type { EntradaBitacora } from '../../core/entities/EntradaBitacora.js';
 import type { IAvisoRepository } from '../../core/ports/repositories/IAvisoRepository.js';
 import type { IInteraccionRepository, ITareaRepository } from '../../core/ports/repositories/ISeguimientoRepository.js';
 import type { IPizarraKBRepository } from '../../core/ports/repositories/IPizarraKBRepository.js';
@@ -67,6 +69,8 @@ export interface ResumenRestauracion {
   tareas: number;
   /** Seguimiento de empresas (llamadas, reuniones, notas…). */
   interacciones: number;
+  /** Entradas de la bitácora (quién hizo qué y cuándo). */
+  bitacora: number;
   errores: string[];
 }
 
@@ -83,7 +87,11 @@ export interface ReposExtraBackup {
   interacciones: IInteraccionRepository;
   pizarras: IPizarraKBRepository;
   filtros: IFiltroGuardadoRepository;
+  bitacora: IBitacoraRepository;
 }
+
+/** Tope de entradas de bitácora a respaldar (de las más recientes hacia atrás). */
+const MAX_BITACORA = 1_000_000;
 
 /** Tope de interacciones a respaldar (el repo solo lista «las más recientes»). */
 const MAX_INTERACCIONES = 100_000;
@@ -349,15 +357,17 @@ export class BackupService {
     interacciones: Interaccion[];
     pizarrasKB: PizarraKB[];
     filtrosGuardados: FiltroGuardado[];
+    bitacora: EntradaBitacora[];
   }> {
     const r = this.extra;
-    if (!r) return { avisosVersiones: [], tareas: [], interacciones: [], pizarrasKB: [], filtrosGuardados: [] };
-    const [avisosVersiones, tareas, interacciones, pizarras, filtros] = await Promise.all([
+    if (!r) return { avisosVersiones: [], tareas: [], interacciones: [], pizarrasKB: [], filtrosGuardados: [], bitacora: [] };
+    const [avisosVersiones, tareas, interacciones, pizarras, filtros, bitacora] = await Promise.all([
       r.avisos.listTodos(),
       r.tareas.list(),
       r.interacciones.listRecientes(MAX_INTERACCIONES),
       Promise.all(uids.map((uid) => r.pizarras.obtener(uid))),
       Promise.all(uids.map((uid) => r.filtros.listar(uid))),
+      r.bitacora.listar({ limite: MAX_BITACORA }),
     ]);
     return {
       avisosVersiones,
@@ -365,6 +375,7 @@ export class BackupService {
       interacciones,
       pizarrasKB: pizarras.filter((p): p is PizarraKB => p !== null && p.contenido.trim() !== ''),
       filtrosGuardados: filtros.flat(),
+      bitacora,
     };
   }
 
@@ -381,6 +392,17 @@ export class BackupService {
         resumen.avisos += lote.length;
       } catch (err) {
         resumen.errores.push(`historial de avisos: ${err instanceof Error ? err.message : err}`);
+      }
+    }
+    const bitacora = arr(datos.bitacora) as unknown as EntradaBitacora[];
+    // Mismo id = misma entrada: restaurar dos veces no la duplica.
+    for (let i = 0; i < bitacora.length; i += 400) {
+      const lote = bitacora.slice(i, i + 400);
+      try {
+        await r.bitacora.registrarVarias(lote);
+        resumen.bitacora += lote.length;
+      } catch (err) {
+        resumen.errores.push(`bitácora: ${err instanceof Error ? err.message : err}`);
       }
     }
     for (const d of arr(datos.tareas)) {
@@ -484,6 +506,7 @@ export class BackupService {
       avisos: 0,
       tareas: 0,
       interacciones: 0,
+      bitacora: 0,
       errores: [],
     };
 

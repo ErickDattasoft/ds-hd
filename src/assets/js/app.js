@@ -444,7 +444,7 @@
               r.cotizaciones + ' cotizaciones, ' + r.versiones + ' versiones, ' + r.kb + ' artículos de KB, ' +
               r.usuarios + ' usuarios, ' + (r.eventos || 0) + ' eventos (con sus invitados), ' +
               (r.inscritos || 0) + ' registros del link abierto, ' + (r.avisos || 0) + ' avisos de versiones, ' +
-              (r.tareas || 0) + ' tareas, ' + (r.interacciones || 0) + ' de seguimiento.' +
+              (r.tareas || 0) + ' tareas, ' + (r.interacciones || 0) + ' de seguimiento, ' + (r.bitacora || 0) + ' de bitácora.' +
               (r.errores.length ? ' ' + r.errores.length + ' con error (revisa la consola).' : '') +
               '</p>';
             if (r.errores.length) console.warn('Errores al restaurar:', r.errores);
