@@ -48,6 +48,18 @@ a {
 a:hover {
   text-decoration-color: currentColor;
 }
+/* En oscuro el tono de marca (pensado para botones con texto blanco) se pierde como texto
+   sobre fondo oscuro: los enlaces y la marca del login usan una versión aclarada. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) a:not([class]),
+  :root:not([data-theme="light"]) .auth-brand {
+    color: color-mix(in srgb, var(--brand) 45%, #fff);
+  }
+}
+:root[data-theme="dark"] a:not([class]),
+:root[data-theme="dark"] .auth-brand {
+  color: color-mix(in srgb, var(--brand) 45%, #fff);
+}
 
 img, svg, video {
   display: block;
