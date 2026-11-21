@@ -292,7 +292,7 @@ export class BackupService {
       this.ticketRepo.listarDetalleTodos(),
     ]);
     const { eventos, inscripcionesEventos, listaNegraEventos } = await this.exportarEventos();
-    const otros = await this.exportarOtros(usuarios.map((u) => u.uid));
+    const otros = await this.exportarOtros();
     const [kbCfg, integraciones, correoEntrante] = await Promise.all([
       this.configuracion.obtenerKB(),
       this.configuracion.obtenerIntegraciones(),
@@ -346,12 +346,16 @@ export class BackupService {
     if (!this.extra) return { eventos: [], inscripcionesEventos: [], listaNegraEventos: [] };
     const r = this.extra;
     const [eventos, listaNegraEventos] = await Promise.all([r.eventos.list(), r.listaNegra.list()]);
-    const porEvento = await Promise.all(eventos.map((e) => r.inscripciones.listPorEvento(e.id)));
-    return { eventos, inscripcionesEventos: porEvento.flat(), listaNegraEventos };
+    // Una sola consulta para todos los eventos: el Worker tiene tope de consultas por petición.
+    const inscripcionesEventos = eventos.length ? await r.inscripciones.listTodas() : [];
+    return { eventos, inscripcionesEventos, listaNegraEventos };
   }
 
-  /** Avisos enviados, tareas, interacciones, pizarras de KB y filtros guardados de cada usuario. */
-  private async exportarOtros(uids: string[]): Promise<{
+  /**
+   * Avisos enviados, tareas, interacciones, pizarras de KB, filtros guardados y bitácora. Cada
+   * colección en UNA consulta: el Worker tiene tope de consultas por petición (nada por usuario).
+   */
+  private async exportarOtros(): Promise<{
     avisosVersiones: AvisoEnviado[];
     tareas: Tarea[];
     interacciones: Interaccion[];
@@ -365,16 +369,16 @@ export class BackupService {
       r.avisos.listTodos(),
       r.tareas.list(),
       r.interacciones.listRecientes(MAX_INTERACCIONES),
-      Promise.all(uids.map((uid) => r.pizarras.obtener(uid))),
-      Promise.all(uids.map((uid) => r.filtros.listar(uid))),
+      r.pizarras.listarTodas(),
+      r.filtros.listarTodos(),
       r.bitacora.listar({ limite: MAX_BITACORA }),
     ]);
     return {
       avisosVersiones,
       tareas,
       interacciones,
-      pizarrasKB: pizarras.filter((p): p is PizarraKB => p !== null && p.contenido.trim() !== ''),
-      filtrosGuardados: filtros.flat(),
+      pizarrasKB: pizarras.filter((p) => p.contenido.trim() !== ''),
+      filtrosGuardados: filtros,
       bitacora,
     };
   }

@@ -67,6 +67,9 @@ export class InMemoryPizarraKBRepository implements IPizarraKBRepository {
   async guardar(p: PizarraKB): Promise<void> {
     this.items.set(p.uid, p);
   }
+  async listarTodas(): Promise<PizarraKB[]> {
+    return [...this.items.values()];
+  }
 }
 
 export class InMemoryBusquedaKBRepository implements IBusquedaKBRepository {

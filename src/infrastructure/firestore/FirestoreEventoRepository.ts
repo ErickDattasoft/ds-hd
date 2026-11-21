@@ -216,6 +216,12 @@ export class FirestoreInscripcionRepository implements IInscripcionRepository {
     return inscripcionToDomain(doc.ref.parent.parent?.id ?? '', doc.id, doc.data());
   }
 
+  async listTodas(): Promise<Inscripcion[]> {
+    // Sin filtro: collection-group sin índice aparte (mismo patrón que `findGlobal`).
+    const snap = await this.db.collectionGroup('inscripciones').get();
+    return snap.docs.map((d) => inscripcionToDomain(d.ref.parent.parent?.id ?? '', d.id, d.data()));
+  }
+
   async listPorEvento(eventoId: string): Promise<Inscripcion[]> {
     const snap = await this.col(eventoId).get();
     return snap.docs

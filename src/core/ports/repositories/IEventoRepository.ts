@@ -21,6 +21,8 @@ export interface IInscripcionRepository {
   /** Busca una inscripción por id en cualquier evento (collection-group). Para el webhook de Brevo. */
   findGlobal(inscripcionId: string): Promise<Inscripcion | null>;
   listPorEvento(eventoId: string): Promise<Inscripcion[]>;
+  /** Las inscripciones de TODOS los eventos en una sola consulta (collection-group, para el respaldo). */
+  listTodas(): Promise<Inscripcion[]>;
   contar(eventoId: string): Promise<number>;
   /** Cuántas inscripciones a este evento vienen de una IP dada (para el límite antiabuso). */
   contarPorIp(eventoId: string, ip: string): Promise<number>;

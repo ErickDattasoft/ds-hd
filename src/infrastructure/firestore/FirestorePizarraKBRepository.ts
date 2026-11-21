@@ -19,6 +19,18 @@ export class FirestorePizarraKBRepository implements IPizarraKBRepository {
     };
   }
 
+  async listarTodas(): Promise<PizarraKB[]> {
+    const snap = await this.db.collection(COL).get();
+    return snap.docs.map((d) => {
+      const x = d.data();
+      return {
+        uid: d.id,
+        contenido: String(x.contenido ?? ''),
+        actualizadoEn: x.actualizadoEn instanceof Timestamp ? x.actualizadoEn.toDate() : new Date(0),
+      };
+    });
+  }
+
   async guardar(p: PizarraKB): Promise<void> {
     await this.db.collection(COL).doc(p.uid).set({
       contenido: p.contenido,

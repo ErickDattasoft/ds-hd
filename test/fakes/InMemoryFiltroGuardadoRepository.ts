@@ -15,6 +15,10 @@ export class InMemoryFiltroGuardadoRepository implements IFiltroGuardadoReposito
       .sort((a, b) => b.creadoEn.getTime() - a.creadoEn.getTime());
   }
 
+  async listarTodos(): Promise<FiltroGuardado[]> {
+    return [...this.items.values()];
+  }
+
   async guardar(f: FiltroGuardado): Promise<void> {
     this.items.set(f.id, f);
   }

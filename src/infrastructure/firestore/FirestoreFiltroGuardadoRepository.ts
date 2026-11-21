@@ -39,6 +39,11 @@ export class FirestoreFiltroGuardadoRepository implements IFiltroGuardadoReposit
       .sort((a, b) => b.creadoEn.getTime() - a.creadoEn.getTime());
   }
 
+  async listarTodos(): Promise<FiltroGuardado[]> {
+    const snap = await this.db.collection(COL).get();
+    return snap.docs.map((d) => toDomain(d.id, d.data() as Doc));
+  }
+
   async guardar(f: FiltroGuardado): Promise<void> {
     await this.db.collection(COL).doc(f.id).set({
       uid: f.uid,
