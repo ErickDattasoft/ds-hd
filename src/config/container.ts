@@ -1116,6 +1116,16 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
           c.oportunidadRepo,
           c.webhookPublisher,
           c.bitacoraService,
+          {
+            eventos: c.eventoRepo,
+            inscripciones: c.inscripcionRepo,
+            listaNegra: c.listaNegraRepo,
+            avisos: c.avisoRepo,
+            tareas: c.tareaRepo,
+            interacciones: c.interaccionRepo,
+            pizarras: c.pizarraKBRepo,
+            filtros: c.filtroGuardadoRepo,
+          },
         ),
     ).singleton(),
     configuracionController: asFunction(

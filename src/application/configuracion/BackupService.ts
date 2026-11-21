@@ -10,6 +10,24 @@ import type { IUsuarioRepository } from '../../core/ports/repositories/IUsuarioR
 import type { IConfiguracionRepository } from '../../core/ports/repositories/IConfiguracionRepository.js';
 import type { IContadorRepository } from '../../core/ports/repositories/IContadorRepository.js';
 import type { IOportunidadRepository } from '../../core/ports/repositories/IOportunidadRepository.js';
+import type {
+  IEventoRepository,
+  IInscripcionRepository,
+  IListaNegraRepository,
+} from '../../core/ports/repositories/IEventoRepository.js';
+import type { IAvisoRepository } from '../../core/ports/repositories/IAvisoRepository.js';
+import type { IInteraccionRepository, ITareaRepository } from '../../core/ports/repositories/ISeguimientoRepository.js';
+import type { IPizarraKBRepository } from '../../core/ports/repositories/IPizarraKBRepository.js';
+import type { IFiltroGuardadoRepository } from '../../core/ports/repositories/IFiltroGuardadoRepository.js';
+import { Evento, type EventoProps } from '../../core/entities/Evento.js';
+import { Tarea, type TareaProps } from '../../core/entities/Tarea.js';
+import { Interaccion, type InteraccionProps } from '../../core/entities/Interaccion.js';
+import type { AvisoEnviado } from '../../core/entities/AvisoEnviado.js';
+import type { PizarraKB } from '../../core/entities/PizarraKB.js';
+import type { FiltroGuardado } from '../../core/entities/FiltroGuardado.js';
+import type { ConfiguracionIntegraciones } from '../../core/entities/ConfiguracionIntegraciones.js';
+import type { ConfiguracionCorreoEntrante } from '../../core/entities/ConfiguracionCorreoEntrante.js';
+import type { EntradaListaNegra, Inscripcion } from '../../core/entities/Inscripcion.js';
 import { Oportunidad, type OportunidadProps } from '../../core/entities/Oportunidad.js';
 import type { IClock } from '../../core/ports/services/IClock.js';
 import type { IWebhookPublisher } from '../../core/ports/services/IWebhookPublisher.js';
@@ -41,13 +59,81 @@ export interface ResumenRestauracion {
   versiones: number;
   kb: number;
   usuarios: number;
+  eventos: number;
+  /** Registros del link abierto (inscripciones) de todos los eventos. */
+  inscritos: number;
+  /** Historial de avisos de versiones/licencias enviados. */
+  avisos: number;
+  tareas: number;
+  /** Seguimiento de empresas (llamadas, reuniones, notas…). */
+  interacciones: number;
   errores: string[];
+}
+
+/**
+ * Repositorios que el backup respalda además de los básicos (opcionales para no romper pruebas
+ * viejas): Eventos, historial de avisos, seguimiento, pizarras de KB y filtros guardados.
+ */
+export interface ReposExtraBackup {
+  eventos: IEventoRepository;
+  inscripciones: IInscripcionRepository;
+  listaNegra: IListaNegraRepository;
+  avisos: IAvisoRepository;
+  tareas: ITareaRepository;
+  interacciones: IInteraccionRepository;
+  pizarras: IPizarraKBRepository;
+  filtros: IFiltroGuardadoRepository;
+}
+
+/** Tope de interacciones a respaldar (el repo solo lista «las más recientes»). */
+const MAX_INTERACCIONES = 100_000;
+
+/** Integraciones SIN claves: el archivo de respaldo no debe llevar llaves de API. */
+function integracionesSinClaves(c: ConfiguracionIntegraciones): ConfiguracionIntegraciones {
+  return {
+    ...c,
+    whatsappApiKey: '',
+    whatsappOtros: (c.whatsappOtros ?? []).map((o) => ({ ...o, apiKey: '' })),
+    ...(c.whatsappClientes
+      ? { whatsappClientes: { ...c.whatsappClientes, metaToken: '', twilioAuthToken: '' } }
+      : {}),
+  };
+}
+
+/** Al restaurar integraciones, las claves se conservan de lo que ya hay en el sistema. */
+function integracionesConClavesActuales(
+  respaldo: ConfiguracionIntegraciones,
+  actual: ConfiguracionIntegraciones,
+): ConfiguracionIntegraciones {
+  const claveOtro = new Map((actual.whatsappOtros ?? []).map((o) => [o.telefono, o.apiKey]));
+  return {
+    ...respaldo,
+    whatsappApiKey: actual.whatsappApiKey,
+    whatsappOtros: (respaldo.whatsappOtros ?? []).map((o) => ({ ...o, apiKey: claveOtro.get(o.telefono) ?? '' })),
+    ...(respaldo.whatsappClientes
+      ? {
+          whatsappClientes: {
+            ...respaldo.whatsappClientes,
+            metaToken: actual.whatsappClientes?.metaToken ?? '',
+            twilioAuthToken: actual.whatsappClientes?.twilioAuthToken ?? '',
+          },
+        }
+      : {}),
+  };
+}
+
+/** Correo entrante sin secretos de Zoho ni la clave del webhook. */
+function correoEntranteSinClaves(c: ConfiguracionCorreoEntrante): ConfiguracionCorreoEntrante {
+  return { ...c, clientSecret: '', refreshToken: '', webhookKey: '' };
 }
 
 const arr = (v: unknown): Record<string, unknown>[] => (Array.isArray(v) ? (v as Record<string, unknown>[]) : []);
 
 /** Secciones que `restaurar()` lee; un archivo sin ninguna como arreglo no es un backup de ds-hd. */
-const SECCIONES_BACKUP = ['empresas', 'contactos', 'tickets', 'cotizaciones', 'oportunidades', 'versiones', 'kb', 'usuarios'];
+const SECCIONES_BACKUP = [
+  'empresas', 'contactos', 'tickets', 'cotizaciones', 'oportunidades', 'versiones', 'kb', 'usuarios',
+  'eventos', 'tareas', 'interacciones', 'avisosVersiones',
+];
 
 /**
  * Rechaza un archivo que no tenga la forma de `exportar()`. Sin esto, un respaldo del CRM viejo
@@ -79,6 +165,16 @@ function reviveFechas(v: unknown): unknown {
   return v;
 }
 
+/** Fecha de primer nivel del JSON (texto ISO) a `Date`; sin valor → `undefined`. */
+function aFecha(v: unknown): Date | undefined {
+  if (v instanceof Date) return v;
+  if (typeof v === 'string' || typeof v === 'number') {
+    const d = new Date(v);
+    return Number.isNaN(d.getTime()) ? undefined : d;
+  }
+  return undefined;
+}
+
 /**
  * Backup/restauración completa de ds-hd, en el propio formato del sistema (no el del CRM
  * viejo — ese lo maneja `scripts/migrate/`). Pensado para respaldo manual y recuperación
@@ -105,6 +201,7 @@ export class BackupService {
     private readonly oportunidades?: IOportunidadRepository,
     private readonly webhooks?: IWebhookPublisher,
     private readonly bitacora?: BitacoraService,
+    private readonly extra?: ReposExtraBackup,
   ) {}
 
   /** Anota quién y cuándo descargó el backup (para la alerta de 7 días, como el viejo). */
@@ -186,6 +283,13 @@ export class BackupService {
       this.oportunidades?.list() ?? Promise.resolve([]),
       this.ticketRepo.listarDetalleTodos(),
     ]);
+    const { eventos, inscripcionesEventos, listaNegraEventos } = await this.exportarEventos();
+    const otros = await this.exportarOtros(usuarios.map((u) => u.uid));
+    const [kbCfg, integraciones, correoEntrante] = await Promise.all([
+      this.configuracion.obtenerKB(),
+      this.configuracion.obtenerIntegraciones(),
+      this.configuracion.obtenerCorreoEntrante(),
+    ]);
 
     return {
       version: VERSION_BACKUP,
@@ -199,6 +303,12 @@ export class BackupService {
       versiones,
       kb,
       oportunidades,
+      // Eventos con sus invitados (links personales, pases y confirmaciones van DENTRO del evento),
+      // los registrados por el link abierto y los correos bloqueados.
+      eventos,
+      inscripcionesEventos,
+      listaNegraEventos,
+      ...otros,
       // Las cuentas se listan sin nada sensible de Auth (no hay contraseñas que respaldar
       // aquí — eso vive en Firebase Auth, fuera de Firestore).
       // Sin el secreto de la verificación en dos pasos: quien tenga el archivo no debe poder generar códigos.
@@ -211,8 +321,146 @@ export class BackupService {
         cotizaciones: cotizaciones_cfg,
         logo,
         resumen,
+        kb: kbCfg,
+        // Sin llaves de API ni secretos: al restaurar se conservan los que ya tenga el sistema.
+        integraciones: integracionesSinClaves(integraciones),
+        correoEntrante: correoEntranteSinClaves(correoEntrante),
       },
     };
+  }
+
+  /** Eventos, inscripciones de todos los eventos y lista negra (vacío si no hay repos). */
+  private async exportarEventos(): Promise<{
+    eventos: Evento[];
+    inscripcionesEventos: Inscripcion[];
+    listaNegraEventos: EntradaListaNegra[];
+  }> {
+    if (!this.extra) return { eventos: [], inscripcionesEventos: [], listaNegraEventos: [] };
+    const r = this.extra;
+    const [eventos, listaNegraEventos] = await Promise.all([r.eventos.list(), r.listaNegra.list()]);
+    const porEvento = await Promise.all(eventos.map((e) => r.inscripciones.listPorEvento(e.id)));
+    return { eventos, inscripcionesEventos: porEvento.flat(), listaNegraEventos };
+  }
+
+  /** Avisos enviados, tareas, interacciones, pizarras de KB y filtros guardados de cada usuario. */
+  private async exportarOtros(uids: string[]): Promise<{
+    avisosVersiones: AvisoEnviado[];
+    tareas: Tarea[];
+    interacciones: Interaccion[];
+    pizarrasKB: PizarraKB[];
+    filtrosGuardados: FiltroGuardado[];
+  }> {
+    const r = this.extra;
+    if (!r) return { avisosVersiones: [], tareas: [], interacciones: [], pizarrasKB: [], filtrosGuardados: [] };
+    const [avisosVersiones, tareas, interacciones, pizarras, filtros] = await Promise.all([
+      r.avisos.listTodos(),
+      r.tareas.list(),
+      r.interacciones.listRecientes(MAX_INTERACCIONES),
+      Promise.all(uids.map((uid) => r.pizarras.obtener(uid))),
+      Promise.all(uids.map((uid) => r.filtros.listar(uid))),
+    ]);
+    return {
+      avisosVersiones,
+      tareas,
+      interacciones,
+      pizarrasKB: pizarras.filter((p): p is PizarraKB => p !== null && p.contenido.trim() !== ''),
+      filtrosGuardados: filtros.flat(),
+    };
+  }
+
+  /** Restaura avisos, tareas, interacciones, pizarras y filtros (todo upsert por id). */
+  private async restaurarOtros(datos: Record<string, unknown>, resumen: ResumenRestauracion): Promise<void> {
+    const r = this.extra;
+    if (!r) return;
+    const avisos = arr(datos.avisosVersiones) as unknown as AvisoEnviado[];
+    // En lotes: cada registrar() es un solo batch de Firestore (máx. 500 escrituras).
+    for (let i = 0; i < avisos.length; i += 400) {
+      const lote = avisos.slice(i, i + 400);
+      try {
+        await r.avisos.registrar(lote);
+        resumen.avisos += lote.length;
+      } catch (err) {
+        resumen.errores.push(`historial de avisos: ${err instanceof Error ? err.message : err}`);
+      }
+    }
+    for (const d of arr(datos.tareas)) {
+      try {
+        await r.tareas.save(new Tarea(d as unknown as TareaProps));
+        resumen.tareas++;
+      } catch (err) {
+        resumen.errores.push(`tarea "${d.titulo}": ${err instanceof Error ? err.message : err}`);
+      }
+    }
+    for (const d of arr(datos.interacciones)) {
+      try {
+        await r.interacciones.create(new Interaccion(d as unknown as InteraccionProps));
+        resumen.interacciones++;
+      } catch (err) {
+        resumen.errores.push(`seguimiento "${d.resumen}": ${err instanceof Error ? err.message : err}`);
+      }
+    }
+    for (const d of arr(datos.pizarrasKB)) {
+      try {
+        await r.pizarras.guardar(d as unknown as PizarraKB);
+      } catch (err) {
+        resumen.errores.push(`pizarra de KB: ${err instanceof Error ? err.message : err}`);
+      }
+    }
+    for (const d of arr(datos.filtrosGuardados)) {
+      try {
+        await r.filtros.guardar(d as unknown as FiltroGuardado);
+      } catch (err) {
+        resumen.errores.push(`filtro "${d.nombre}": ${err instanceof Error ? err.message : err}`);
+      }
+    }
+  }
+
+  /**
+   * Restaura eventos, inscripciones y lista negra. Se lee del JSON CRUDO (sin `reviveFechas`):
+   * las fechas de los invitados viven como texto ISO dentro del evento y deben seguir siendo
+   * texto; solo las fechas de primer nivel se convierten a `Date`. El token de cada invitado se
+   * conserva, así que los links personales ya enviados siguen funcionando.
+   */
+  private async restaurarEventos(crudo: Record<string, unknown>, resumen: ResumenRestauracion): Promise<void> {
+    const r = this.extra;
+    if (!r) return;
+    for (const d of arr(crudo.eventos)) {
+      try {
+        await r.eventos.save(
+          new Evento({
+            ...(d as unknown as EventoProps),
+            fechaHora: aFecha(d.fechaHora) ?? new Date(NaN),
+            createdAt: aFecha(d.createdAt),
+            updatedAt: aFecha(d.updatedAt),
+          }),
+        );
+        resumen.eventos++;
+      } catch (err) {
+        resumen.errores.push(`evento "${d.titulo}": ${err instanceof Error ? err.message : err}`);
+      }
+    }
+    for (const d of arr(crudo.inscripcionesEventos)) {
+      try {
+        await r.inscripciones.save({
+          ...(d as unknown as Inscripcion),
+          recordatoriosEnviados: Array.isArray(d.recordatoriosEnviados) ? d.recordatoriosEnviados.map(String) : [],
+          createdAt: aFecha(d.createdAt) ?? this.clock.now(),
+        });
+        resumen.inscritos++;
+      } catch (err) {
+        resumen.errores.push(`registro "${d.nombre}" del evento: ${err instanceof Error ? err.message : err}`);
+      }
+    }
+    for (const d of arr(crudo.listaNegraEventos)) {
+      try {
+        await r.listaNegra.agregar({
+          ...(d as unknown as EntradaListaNegra),
+          createdAt: aFecha(d.createdAt) ?? this.clock.now(),
+        });
+      } catch (err) {
+        resumen.errores.push(`bloqueado "${d.email}": ${err instanceof Error ? err.message : err}`);
+      }
+    }
   }
 
   /** Restaura un backup exportado por `exportar()` — upsert por id, nunca borra. */
@@ -231,6 +479,11 @@ export class BackupService {
       versiones: 0,
       kb: 0,
       usuarios: 0,
+      eventos: 0,
+      inscritos: 0,
+      avisos: 0,
+      tareas: 0,
+      interacciones: 0,
       errores: [],
     };
 
@@ -323,6 +576,8 @@ export class BackupService {
         resumen.errores.push(`usuario "${d.email}": ${err instanceof Error ? err.message : err}`);
       }
     }
+    await this.restaurarEventos(datosCrudos, resumen);
+    await this.restaurarOtros(datos, resumen);
     const cfg = (datos.configuracion ?? {}) as Record<string, unknown>;
     if (cfg.tickets) await this.configuracion.guardarTickets(cfg.tickets as never);
     if (cfg.calculadora) await this.configuracion.guardarCalculadora(cfg.calculadora as never);
@@ -333,6 +588,26 @@ export class BackupService {
     }
     if (cfg.logo) await this.configuracion.guardarLogo(cfg.logo as never);
     if (cfg.resumen) await this.configuracion.guardarResumen(sanearConfigResumen(cfg.resumen));
+    if (cfg.kb) await this.configuracion.guardarKB(cfg.kb as never);
+    // Integraciones y correo entrante: el respaldo no trae claves; se conservan las actuales.
+    if (cfg.integraciones) {
+      const actual = await this.configuracion.obtenerIntegraciones();
+      await this.configuracion.guardarIntegraciones(
+        integracionesConClavesActuales(cfg.integraciones as ConfiguracionIntegraciones, actual),
+      );
+    }
+    if (cfg.correoEntrante) {
+      const actual = await this.configuracion.obtenerCorreoEntrante();
+      await this.configuracion.guardarCorreoEntrante({
+        ...(cfg.correoEntrante as ConfiguracionCorreoEntrante),
+        clientSecret: actual.clientSecret,
+        refreshToken: actual.refreshToken,
+        webhookKey: actual.webhookKey,
+        // Hasta dónde se revisó Zoho es estado vivo: no se regresa a una fecha vieja.
+        zohoRevisadoHasta: actual.zohoRevisadoHasta,
+        ultimaRevision: actual.ultimaRevision,
+      });
+    }
 
     await this.bitacora?.registrar({
       actor, accion: 'restaurar', modulo: 'backup', entidadTipo: 'Backup', entidadId: '-',

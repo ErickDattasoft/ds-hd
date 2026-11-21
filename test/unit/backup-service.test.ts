@@ -16,6 +16,33 @@ import { InMemoryCotizacionRepository } from '../fakes/cotizaciones.js';
 import { InMemoryVersionRepository, InMemoryKnowledgeRepository } from '../fakes/kb.js';
 import { InMemoryUsuarioRepository } from '../fakes/InMemoryUsuarioRepository.js';
 import { FixedClock } from '../fakes/support.js';
+import { Evento } from '../../src/core/entities/Evento.js';
+import { Tarea } from '../../src/core/entities/Tarea.js';
+import {
+  InMemoryEventoRepository,
+  InMemoryInscripcionRepository,
+  InMemoryListaNegraRepository,
+} from '../fakes/eventos.js';
+import { InMemoryInteraccionRepository, InMemoryTareaRepository } from '../fakes/seguimiento.js';
+import { InMemoryAvisoRepository, InMemoryPizarraKBRepository } from '../fakes/kb.js';
+import { InMemoryFiltroGuardadoRepository } from '../fakes/InMemoryFiltroGuardadoRepository.js';
+import type { ReposExtraBackup } from '../../src/application/configuracion/BackupService.js';
+
+const reposExtra = (): ReposExtraBackup & {
+  eventos: InMemoryEventoRepository;
+  inscripciones: InMemoryInscripcionRepository;
+  tareas: InMemoryTareaRepository;
+  avisos: InMemoryAvisoRepository;
+} => ({
+  eventos: new InMemoryEventoRepository(),
+  inscripciones: new InMemoryInscripcionRepository(),
+  listaNegra: new InMemoryListaNegraRepository(),
+  avisos: new InMemoryAvisoRepository(),
+  tareas: new InMemoryTareaRepository(),
+  interacciones: new InMemoryInteraccionRepository(),
+  pizarras: new InMemoryPizarraKBRepository(),
+  filtros: new InMemoryFiltroGuardadoRepository(),
+});
 
 const actor = (over: Partial<SessionUser> = {}): SessionUser => ({
   uid: 'admin1',
@@ -171,5 +198,60 @@ describe('BackupService', () => {
 
   it('sin permiso configuracion:integraciones no se puede restaurar', async () => {
     await expect(service.restaurar(actor({ permisos: [] }), { empresas: [] })).rejects.toThrow(ForbiddenError);
+  });
+  it('respalda y restaura eventos con sus invitados (mismo link personal), registros, avisos y tareas; sin claves de API', async () => {
+    const nuevoServicio = (extra: ReposExtraBackup, cfg: InMemoryConfiguracionRepository) => {
+      const store = new InMemoryTicketStore();
+      return new BackupService(
+        new InMemoryEmpresaRepository(), new InMemoryContactoRepository(), new InMemoryTicketRepository(store),
+        new InMemoryTicketQueries(store), new InMemoryCotizacionRepository(), new InMemoryVersionRepository(),
+        new InMemoryKnowledgeRepository(), new InMemoryUsuarioRepository(), cfg, new InMemoryContadorRepository(),
+        new FixedClock(new Date('2026-09-01T12:00:00Z')), undefined, undefined, undefined, extra,
+      );
+    };
+    const origen = reposExtra();
+    const cfgOrigen = new InMemoryConfiguracionRepository();
+    const evento = new Evento({
+      id: 'ev1', titulo: 'Posada 2026', tipo: 'presencial', fechaHora: new Date('2026-12-12T02:00:00Z'),
+      estado: 'publicado', createdAt: new Date('2026-11-01T00:00:00Z'),
+    });
+    const inv = evento.agregarInvitadoExterno({ id: 'x1', nombre: 'Juan Pérez', token: 'tok-123', pases: 3 });
+    inv.respondioAt = '2026-11-20T15:00:00.000Z';
+    inv.personas = 2;
+    await origen.eventos.save(evento);
+    await origen.inscripciones.save({
+      id: 'i1', eventoId: 'ev1', nombre: 'Ana', email: 'ana@x.mx', telefono: null, empresa: null,
+      estado: 'registrado', origen: 'publico', correoEstado: null, recordatoriosEnviados: ['previo'], ip: null,
+      correoSospechoso: false, asistira: 'Sí', usaSistema: null, fuente: null, deseaCanalWhatsapp: false,
+      contactadoWsp: false, asistioReal: false, createdAt: new Date('2026-11-10T00:00:00Z'),
+    });
+    await origen.tareas.save(new Tarea({ id: 't1', titulo: 'Llamar a cliente', asignadoAUid: 'u1', vence: '2026-12-01' }));
+    await origen.avisos.registrar([{
+      id: 'a1', empresaId: 'e1', empresaNombre: 'ACME', sistema: 'Nóminas', tipo: 'sistema',
+      versionInstalada: '14.0', versionOficial: '14.1', fechaVencimiento: null, canal: 'correo',
+      destino: 'c@acme.mx', enviadoPorUid: 'u1', enviadoPorNombre: 'Erick', createdAt: new Date('2026-10-01T00:00:00Z'),
+    }]);
+    await cfgOrigen.guardarIntegraciones({ ...(await cfgOrigen.obtenerIntegraciones()), whatsappTelefono: '999', whatsappApiKey: 'SECRETA' });
+
+    const archivo = JSON.parse(JSON.stringify(await nuevoServicio(origen, cfgOrigen).exportar()));
+    expect(JSON.stringify(archivo)).not.toContain('SECRETA');
+
+    const destino = reposExtra();
+    const cfgDestino = new InMemoryConfiguracionRepository();
+    await cfgDestino.guardarIntegraciones({ ...(await cfgDestino.obtenerIntegraciones()), whatsappApiKey: 'CLAVE-DESTINO' });
+    const resumen = await nuevoServicio(destino, cfgDestino).restaurar(actor(), archivo);
+
+    expect(resumen).toMatchObject({ eventos: 1, inscritos: 1, tareas: 1, avisos: 1, errores: [] });
+    const restaurado = await destino.eventos.findById('ev1');
+    expect(restaurado?.fechaHora).toEqual(new Date('2026-12-12T02:00:00Z'));
+    // El link personal ya enviado sigue funcionando, con sus pases y su respuesta.
+    const porToken = restaurado?.buscarPorToken('tok-123');
+    expect(porToken?.nombre).toBe('Juan Pérez');
+    expect(porToken?.inv).toMatchObject({ pases: 3, personas: 2, respondioAt: '2026-11-20T15:00:00.000Z' });
+    expect(destino.inscripciones.items[0]).toMatchObject({ nombre: 'Ana', recordatoriosEnviados: ['previo'], createdAt: new Date('2026-11-10T00:00:00Z') });
+    expect((await destino.tareas.findById('t1'))?.vence).toBe('2026-12-01');
+    expect((await destino.avisos.listTodos())[0]?.createdAt).toEqual(new Date('2026-10-01T00:00:00Z'));
+    // Integraciones: llega el teléfono del respaldo, la clave se queda la que ya había.
+    expect(await cfgDestino.obtenerIntegraciones()).toMatchObject({ whatsappTelefono: '999', whatsappApiKey: 'CLAVE-DESTINO' });
   });
 });
