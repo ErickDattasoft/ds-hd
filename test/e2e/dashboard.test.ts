@@ -3,6 +3,7 @@ import request from 'supertest';
 import { makeTestApp, cookieValor } from '../helpers/app.js';
 import { Empresa } from '../../src/core/entities/Empresa.js';
 import { Evento } from '../../src/core/entities/Evento.js';
+import { Ticket } from '../../src/core/entities/Ticket.js';
 
 const ADMIN = { uid: 'u-a', email: 'admin@dattasoft.mx', password: 'admin12345', nombre: 'Admin', rol: 'admin' as const };
 const AGENTE = { uid: 'u-g', email: 'ag@dattasoft.mx', password: 'agente12345', nombre: 'Agente', rol: 'agente' as const };
@@ -138,5 +139,34 @@ describe('dashboard — próximos eventos', () => {
     expect(tarjeta).toContain('Webinar Nóminas');
     expect(tarjeta.indexOf('Webinar Nóminas')).toBeLessThan(tarjeta.indexOf('POSADA DATTASOFT'));
     for (const no of ['Ejemplo prueba', 'Evento cancelado', 'Comunicado CFDI', 'Muy lejano']) expect(tarjeta).not.toContain(no);
+  });
+});
+
+describe('dashboard — tarjetas de soporte', () => {
+  it('«💬 Respuestas sin leer» y «👤 Mis tickets» (solo los asignados a quien entra)', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN, AGENTE] });
+    const nuevo = (id: string, numero: number, asunto: string, uid: string | null) => {
+      const tk = Ticket.crear({
+        id, numero, asunto, descripcion: 'descripción del problema', tipo: 'General', prioridad: 'Media',
+        estadoInicial: 'Abierto', canal: 'interno', ahora: new Date(Date.now() - 3 * 86_400_000),
+      });
+      if (uid) tk.asignar(uid, uid === ADMIN.uid ? 'Admin' : 'Agente', new Date());
+      t.ticketStore.tickets.set(id, tk);
+    };
+    nuevo('t1', 101, 'Kardex no cuadra', ADMIN.uid);
+    nuevo('t2', 102, 'Timbrado de nómina', AGENTE.uid);
+    await t.respuestaSinLeerRepo.guardar({
+      ticketId: 't1', numero: 101, asunto: 'Kardex no cuadra', empresaNombre: 'XELCRON', autorNombre: 'Arturo López',
+      extracto: 'Ya lo revisé y sigue igual', at: new Date(), agenteAsignadoUid: ADMIN.uid, agenteAsignadoNombre: 'Admin',
+      canalizadoA: null, distribuidor: '',
+    });
+    const { agent } = await login(t.app, ADMIN.email, ADMIN.password);
+    const dash = (await agent.get('/app')).text;
+    const resp = dash.slice(dash.indexOf('💬 Respuestas sin leer'), dash.indexOf('👤 Mis tickets'));
+    expect(resp).toContain('#101');
+    expect(resp).toContain('Ya lo revisé y sigue igual');
+    const mios = dash.slice(dash.indexOf('👤 Mis tickets'), dash.indexOf('Próximos eventos'));
+    expect(mios).toContain('Kardex no cuadra');
+    expect(mios).not.toContain('Timbrado de nómina');
   });
 });

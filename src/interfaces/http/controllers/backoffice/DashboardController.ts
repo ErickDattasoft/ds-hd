@@ -4,6 +4,7 @@ import type { Request, Response } from 'express';
 import type { ObtenerMetricasService } from '../../../../application/dashboard/ObtenerMetricasService.js';
 import type { AgendaService } from '../../../../application/dashboard/AgendaService.js';
 import type { CumpleanosService } from '../../../../application/dashboard/CumpleanosService.js';
+import type { RespuestasSinLeerService } from '../../../../application/tickets/RespuestasSinLeerService.js';
 
 const str = (v: unknown): string => (typeof v === 'string' ? v : '');
 
@@ -14,6 +15,7 @@ export class DashboardController {
     private readonly agenda: AgendaService,
     private readonly backup?: BackupService,
     private readonly cumpleanos?: CumpleanosService,
+    private readonly respuestas?: RespuestasSinLeerService,
   ) {}
 
   ver = async (req: Request, res: Response): Promise<void> => {
@@ -25,11 +27,14 @@ export class DashboardController {
     if (typeof req.query.meses === 'string') {
       res.cookie('dash_meses', String(meses), { maxAge: 365 * 86_400_000, sameSite: 'lax', httpOnly: true });
     }
-    const [m, backup, fechasEspeciales] = await Promise.all([
+    const verRespuestas = this.respuestas && req.user!.permisos.includes('tickets:leer');
+    const [m, backup, fechasEspeciales, respuestas] = await Promise.all([
       this.metricas.ejecutar(req.user!, { mesesGrafica: meses }),
       verBackup ? this.backup!.estado().catch(() => null) : Promise.resolve(null),
       // Un fallo aquí (p. ej. cuota) no debe tumbar el tablero entero.
       this.cumpleanos ? this.cumpleanos.proximos(req.user!).catch(() => null) : Promise.resolve(null),
+      // «💬 Respuestas sin leer»: lo mismo que la campana 🔔 (una lectura chica).
+      verRespuestas ? this.respuestas!.listarPara(req.user!).catch(() => null) : Promise.resolve(null),
     ]);
     res.render('pages/backoffice/dashboard', {
       titulo: 'Dashboard',
@@ -38,6 +43,7 @@ export class DashboardController {
       mesesOpciones: MESES_GRAFICA_OPCIONES,
       backupAtrasado: backup?.atrasado ? backup : null,
       fechasEspeciales,
+      respuestas,
       hoyIso: new Date().toLocaleDateString('en-CA', { timeZone: 'America/Mexico_City' }),
     });
   };

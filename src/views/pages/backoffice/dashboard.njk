@@ -261,6 +261,34 @@
       </ul>
     </div>
     {% endif %}
+    {% if respuestas %}
+    <div class="card">
+      <h2>💬 Respuestas sin leer <span class="badge {{ 'badge--danger' if respuestas | length }}">{{ respuestas | length }}</span></h2>
+      <ul class="timeline">
+        {% for r in respuestas | batch(6) | first %}
+          <li>
+            <a href="/app/tickets/{{ r.ticketId }}">#{{ r.numero }}</a> {{ r.asunto }}
+            <br><span class="muted">👤 <span class="nombre-sensible">{{ r.autorNombre }}</span> · {{ r.at | fechahora }}</span>
+            {% if r.extracto %}<br><span class="muted sensible">«{{ r.extracto | truncate(90) }}»</span>{% endif %}
+          </li>
+        {% else %}<li class="muted">Nadie ha contestado sin que lo leas 👍</li>{% endfor %}
+        {% if respuestas | length > 6 %}<li><a href="/app/tickets?platica=1">Ver las {{ respuestas | length }} →</a></li>{% endif %}
+      </ul>
+    </div>
+    {% endif %}
+    <div class="card">
+      <h2>👤 Mis tickets <span class="badge">{{ m.tickets.mios.total }}</span>{% if m.tickets.mios.vencidos %} <span class="badge badge--danger">{{ m.tickets.mios.vencidos }} vencido{{ 's' if m.tickets.mios.vencidos > 1 }}</span>{% endif %}</h2>
+      <ul class="timeline">
+        {% for t in m.tickets.mios.lista %}
+          <li>
+            <a href="/app/tickets/{{ t.id }}">#{{ t.numero }}</a> {{ t.asunto }}
+            {% if t.vencido %}<span class="badge badge--danger">⚠ vencido</span>{% endif %}
+            <br><span class="muted">🏢 <span class="nombre-sensible">{{ t.empresa or '—' }}</span> · {{ t.estado }} · {{ t.dias }} d</span>
+          </li>
+        {% else %}<li class="muted">No tienes tickets abiertos asignados 🎉</li>{% endfor %}
+        {% if m.tickets.mios.total > 6 %}<li><a href="/app/tickets/mis-asignados">Ver mis {{ m.tickets.mios.total }} →</a></li>{% endif %}
+      </ul>
+    </div>
     <div class="card">
       <h2>Próximos eventos</h2>
       <ul>
@@ -269,7 +297,7 @@
       </ul>
     </div>
     {% if m.actividadReciente | length %}
-    <div class="card" style="grid-column:1/-1">
+    <div class="card card--ancho">
       <h2>Actividad reciente</h2>
       <ul class="timeline">
         {% for a in m.actividadReciente %}<li><span class="muted">{{ a.at | fechahora }}</span> · <strong>{{ a.modulo }}</strong> — {{ a.resumen }} <span class="muted">{{ a.actorNombre }}</span></li>{% endfor %}

@@ -14,7 +14,7 @@ import { esEstadoFinal } from '../../core/entities/value-objects/EstadoTicket.js
 import type { IContactoRepository } from '../../core/ports/repositories/IContactoRepository.js';
 import type { AvisarEmpresasService } from '../empresas/AvisarEmpresasService.js';
 import { alcanceTickets } from '../tickets/alcance.js';
-import { ticketSinNadieAsignado } from '../../core/entities/Ticket.js';
+import { ticketSinNadieAsignado, type Ticket } from '../../core/entities/Ticket.js';
 
 /** Orden de las tarjetas por estado (como las del CRM viejo); los demás van después. */
 const ORDEN_ESTADOS = ['Abierto', 'En proceso', 'Pendiente', 'Resuelto', 'Cerrado'];
@@ -72,6 +72,12 @@ export interface Metricas {
     recientes: { id: string; numero: number; asunto: string; empresa: string | null; prioridad: string; estado: string; abiertoEn: Date }[];
     /** Abiertos desde hace 5 días o más, los más viejos primero (máx. 6). */
     viejos: { id: string; numero: number; asunto: string; empresa: string | null; agente: string | null; dias: number }[];
+    /** «👤 Mis tickets»: abiertos asignados a quien ve el tablero (sale de la misma lectura, sin costo extra). */
+    mios: {
+      total: number;
+      vencidos: number;
+      lista: { id: string; numero: number; asunto: string; empresa: string | null; estado: string; vencido: boolean; dias: number }[];
+    };
   };
   /** Total de contactos activos; `null` si no hay repositorio o permiso. */
   contactosTotal: number | null;
@@ -223,6 +229,7 @@ export class ObtenerMetricasService {
             estado: t.estado,
             abiertoEn: t.abiertoEn,
           })),
+        mios: misTickets(abiertos, actor.uid, ahora),
         viejos: abiertos
           .filter((t) => !esEstadoFinal(t.estado))
           .map((t) => ({ t, dias: Math.floor((ahora.getTime() - t.abiertoEn.getTime()) / dia) }))
@@ -336,4 +343,15 @@ export class ObtenerMetricasService {
       banner: candidatas.slice(0, 5),
     };
   }
+}
+
+/** «👤 Mis tickets»: los abiertos asignados a `uid`; primero los vencidos, luego los más viejos (máx. 6). */
+function misTickets(abiertos: Ticket[], uid: string, ahora: Date): Metricas['tickets']['mios'] {
+  const mios = abiertos.filter((t) => t.agenteAsignadoUid === uid && !esEstadoFinal(t.estado));
+  const lista = mios
+    .map((t) => ({ t, vencido: t.estaVencido(ahora), dias: Math.floor((ahora.getTime() - t.abiertoEn.getTime()) / 86_400_000) }))
+    .sort((a, b) => Number(b.vencido) - Number(a.vencido) || b.dias - a.dias)
+    .slice(0, 6)
+    .map(({ t, vencido, dias }) => ({ id: t.id, numero: t.numero, asunto: t.asunto, empresa: t.empresaNombre ?? null, estado: t.estado, vencido, dias }));
+  return { total: mios.length, vencidos: mios.filter((t) => t.estaVencido(ahora)).length, lista };
 }
