@@ -3838,6 +3838,14 @@
     form.querySelectorAll('[data-sin-tipo]').forEach((el) => {
       el.hidden = el.dataset.sinTipo.split(' ').includes(tipo);
     });
+    // Ejemplos (placeholder) y títulos de los campos que dependen del tipo.
+    const clave = tipo.charAt(0).toUpperCase() + tipo.slice(1);
+    form.querySelectorAll('[data-por-tipo]').forEach((el) => {
+      const ph = el.dataset['ph' + clave];
+      const tx = el.dataset['tx' + clave];
+      if (ph !== undefined) el.placeholder = ph;
+      if (tx !== undefined) el.textContent = tx;
+    });
     // Lo obligatorio solo se exige si se ve (la fecha no aplica al comunicado; el link solo a él).
     form.querySelectorAll('[data-requerido]').forEach((input) => {
       input.required = !input.closest('[hidden]');

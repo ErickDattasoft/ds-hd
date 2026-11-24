@@ -1288,5 +1288,10 @@ describe('eventos — página principal', () => {
     // La tarjeta abre el formulario con ese tipo ya elegido.
     const form = await agent.get('/app/eventos/nuevo?tipo=comunicado');
     expect(form.text).toMatch(/value="comunicado"\s+checked/);
+    // Los ejemplos en gris y los títulos son del tipo elegido, no de la Posada.
+    expect(form.text).toContain('placeholder="Ej. Cambios en CFDI 4.0 — Diciembre"');
+    expect(form.text).toContain('>Nombre del comunicado</span>');
+    expect(form.text).not.toContain('placeholder="Ej. Posada');
+    expect(form.text).toContain('data-ph-presencial="Ej. Posada DATTASOFT 2026"');
   });
 });

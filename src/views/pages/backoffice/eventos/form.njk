@@ -13,6 +13,21 @@
   <p class="muted">Solo llena lo básico. Lo demás es opcional y puedes cambiarlo cuando quieras.</p>
   {% if errores.general %}<p class="alert alert--error">{{ errores.general }}</p>{% endif %}
   {% set tipoActual = valores.tipo or 'webinar' %}
+  {#- Ejemplos (texto gris) y títulos de los campos según el tipo; app.js los cambia al elegir otro (data-por-tipo). -#}
+  {% set phTitulo = {
+    webinar: 'Ej. Webinar: Cierre anual en CONTPAQi Nóminas',
+    presencial: 'Ej. Posada DATTASOFT 2026',
+    felicitacion: 'Ej. ¡Feliz cumpleaños!',
+    comunicado: 'Ej. Cambios en CFDI 4.0 — Diciembre'
+  } %}
+  {% set phMensaje = {
+    webinar: 'Ej. Te invitamos a una sesión en línea donde veremos paso a paso el cierre anual en Nóminas. Trae tus dudas.',
+    presencial: 'Ej. Queremos celebrar contigo este fin de año…',
+    felicitacion: 'Ej. En DATTASOFT te deseamos un día lleno de alegría. ¡Gracias por tu confianza!',
+    comunicado: 'Ej. CONTPAQi publicó información importante sobre los cambios en facturación. Te compartimos el comunicado completo.'
+  } %}
+  {% set txTitulo = { webinar: 'Nombre del webinar', presencial: 'Nombre del evento', felicitacion: 'Nombre de la felicitación', comunicado: 'Nombre del comunicado' } %}
+  {% set txMensaje = { webinar: 'Mensaje para el invitado', presencial: 'Mensaje para el invitado', felicitacion: 'Mensaje de la felicitación', comunicado: 'Mensaje para el cliente' } %}
   <form method="post" action="{{ '/app/eventos' if modo == 'crear' else '/app/eventos/' + evento.id }}" class="evf" data-form-evento>
     <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
 
@@ -31,8 +46,9 @@
     <section class="ev-paso">
       <h2 class="ev-paso__titulo"><span class="ev-paso__num">2</span> Lo básico</h2>
       <div class="evf-campos">
-        <label class="field evf-ancho"><span>Nombre del evento</span>
-          <input type="text" name="titulo" value="{{ valores.titulo }}" required placeholder="Ej. Posada DattaSoft 2026" />
+        <label class="field evf-ancho"><span data-por-tipo{% for t, v in txTitulo %} data-tx-{{ t }}="{{ v }}"{% endfor %}>{{ txTitulo[tipoActual] }}</span>
+          <input type="text" name="titulo" value="{{ valores.titulo }}" required placeholder="{{ phTitulo[tipoActual] }}"
+                 data-por-tipo{% for t, v in phTitulo %} data-ph-{{ t }}="{{ v }}"{% endfor %} />
           {% if errores.titulo %}<em class="field__error">{{ errores.titulo }}</em>{% endif %}</label>
         <label class="field evf-ancho" data-solo-tipo="comunicado"><span>🔗 Link del comunicado <span class="muted">(el que te pasa CONTPAQi)</span></span>
           <input type="text" name="urlComunicado" value="{{ valores.urlComunicado }}" placeholder="Pega aquí el link, ej. https://www.contpaqi.com/…" data-requerido inputmode="url" autocomplete="off" />
@@ -45,8 +61,9 @@
           <input type="number" name="maxPersonasRegistro" value="{{ valores.maxPersonasRegistro or 1 }}" min="1" max="20" />
           <em class="field__hint">1 = solo el invitado. Con 2, el invitado elige «dos», «solo yo» o «ninguno».</em>
         </label>
-        <label class="field evf-ancho"><span>Mensaje para el invitado <span class="muted" data-solo-tipo="comunicado">(opcional: sale en el correo)</span></span>
-          <textarea name="descripcion" rows="5" placeholder="Ej. Queremos celebrar contigo este fin de año…">{{ valores.descripcion }}</textarea>
+        <label class="field evf-ancho"><span><span data-por-tipo{% for t, v in txMensaje %} data-tx-{{ t }}="{{ v }}"{% endfor %}>{{ txMensaje[tipoActual] }}</span> <span class="muted" data-solo-tipo="comunicado">(opcional: sale en el correo)</span></span>
+          <textarea name="descripcion" rows="5" placeholder="{{ phMensaje[tipoActual] }}"
+                    data-por-tipo{% for t, v in phMensaje %} data-ph-{{ t }}="{{ v }}"{% endfor %}>{{ valores.descripcion }}</textarea>
           <em class="field__hint">Es lo primero que lee, debajo de la imagen. Los saltos de línea se respetan.</em>
         </label>
         <label class="field evf-ancho" data-solo-tipo="webinar"><span>💻 Liga para entrar al webinar</span>
