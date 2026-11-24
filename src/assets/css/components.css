@@ -1801,6 +1801,8 @@ dialog.corrector-ia { width: min(760px, calc(100vw - 32px)); max-height: 88vh; o
 .inv-opciones--3 { grid-template-columns: repeat(3, 1fr); margin: var(--space-2) 0; }
 fieldset.field { border: 0; padding: 0; margin: 0; }
 @media (max-width: 480px) { .inv-opciones--3 { grid-template-columns: 1fr; } }
+.inv-opciones--4 { grid-template-columns: repeat(4, 1fr); margin: var(--space-2) 0; }
+@media (max-width: 900px) { .inv-opciones--4 { grid-template-columns: repeat(2, 1fr); } }
 /* Panel de invitaciones (detalle del evento en el CRM). */
 .inv-resumen { display: flex; flex-wrap: wrap; gap: var(--space-3); margin: var(--space-3) 0; }
 .inv-resumen > div {

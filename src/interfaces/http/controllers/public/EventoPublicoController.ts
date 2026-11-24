@@ -46,6 +46,13 @@ const vistaContenido = (e: Evento) => ({
   fechaIso: e.fechaHora.toISOString(),
 });
 
+/** Comunicado: sus links llevan directo al link de CONTPAQi. Devuelve si ya redirigió. */
+const irAlComunicado = (res: Response, e: Evento): boolean => {
+  if (!e.esComunicado || !e.urlComunicado) return false;
+  res.redirect(302, e.urlComunicado);
+  return true;
+};
+
 /** Landing pública de eventos y formulario de registro. */
 export class EventoPublicoController {
   constructor(
@@ -78,12 +85,15 @@ export class EventoPublicoController {
   }
 
   listar = async (_req: Request, res: Response): Promise<void> => {
-    const eventos = (await this.eventos.listar(true)).filter((e) => e.estado === 'publicado' && e.abiertoARegistro && !e.esPrueba);
+    const eventos = (await this.eventos.listar(true)).filter(
+      (e) => e.estado === 'publicado' && e.abiertoARegistro && !e.esPrueba && !e.esComunicado,
+    );
     res.render('pages/public/eventos-list', { titulo: 'Próximos eventos', eventos });
   };
 
   detalle = async (req: Request, res: Response): Promise<void> => {
     const evento = await this.eventos.obtener(str(req.params.id));
+    if (irAlComunicado(res, evento)) return;
     res.render('pages/public/evento', {
       titulo: evento.titulo,
       evento,
@@ -132,6 +142,8 @@ export class EventoPublicoController {
         str(req.params.token),
         esStaff(req),
       );
+      // Comunicado: ya quedó «👁 La abrió»; se va directo al link de CONTPAQi.
+      if (irAlComunicado(res, evento)) return;
       this.renderInvitacion(res, evento, nombre, inv, {
         cambiar: req.query.cambiar === '1',
         recienEnviada: req.query.ok === '1',
@@ -172,6 +184,7 @@ export class EventoPublicoController {
    */
   vistaPrevia = async (req: Request, res: Response): Promise<void> => {
     const evento = await this.eventos.obtener(str(req.params.id));
+    if (irAlComunicado(res, evento)) return;
     const inv = {
       pases: evento.pideConfirmacion ? evento.maxPersonasRegistro : 1,
       respuesta: 'pendiente',

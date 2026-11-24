@@ -3838,6 +3838,10 @@
     form.querySelectorAll('[data-sin-tipo]').forEach((el) => {
       el.hidden = el.dataset.sinTipo.split(' ').includes(tipo);
     });
+    // Lo obligatorio solo se exige si se ve (la fecha no aplica al comunicado; el link solo a él).
+    form.querySelectorAll('[data-requerido]').forEach((input) => {
+      input.required = !input.closest('[hidden]');
+    });
   }
   document.addEventListener('change', (e) => {
     const form = e.target.closest && e.target.closest('[data-form-evento]');

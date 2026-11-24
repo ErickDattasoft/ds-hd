@@ -1201,3 +1201,70 @@ describe('link abierto — lista para mandar el link por WhatsApp y correo', () 
     expect(t.eventoRepo.items.get('ev1')!.difusion).toHaveLength(0);
   });
 });
+
+describe('eventos — 📢 comunicado (link de CONTPAQi)', () => {
+  const LINK = 'https://www.contpaqi.com/comunicados/cambios-cfdi';
+
+  it('se crea pegando el link (sin fecha); sin link no se guarda y sin https se le agrega', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    const { agent, csrf } = await login(t.app, ADMIN.email, ADMIN.password);
+    const form = await agent.get('/app/eventos/nuevo');
+    expect(form.text).toContain('📢 Comunicado');
+    expect(form.text).toContain('name="urlComunicado"');
+
+    const sinLink = await agent.post('/app/eventos').type('form').send({ _csrf: csrf, titulo: 'Cambios CFDI', tipo: 'comunicado' });
+    expect(sinLink.status).toBe(422);
+    expect(sinLink.text).toContain('Pega aquí el link que te pasó CONTPAQi');
+
+    const ok = await agent.post('/app/eventos').type('form')
+      .send({ _csrf: csrf, titulo: 'Cambios CFDI', tipo: 'comunicado', urlComunicado: ' www.contpaqi.com/comunicados/cfdi ' });
+    expect(ok.status).toBe(302);
+    const ev = [...t.eventoRepo.items.values()][0]!;
+    expect(ev.tipo).toBe('comunicado');
+    expect(ev.urlComunicado).toBe('https://www.contpaqi.com/comunicados/cfdi');
+    expect(ev.pideConfirmacion).toBe(false);
+
+    const malo = await agent.post(`/app/eventos/${ev.id}`).type('form')
+      .send({ _csrf: csrf, titulo: 'Cambios CFDI', tipo: 'comunicado', urlComunicado: 'no es un link' });
+    expect(malo.status).toBe(422);
+  });
+
+  it('se manda con el link: el personal marca «la abrió» y lleva a CONTPAQi; el abierto es el link tal cual', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    t.eventoRepo.items.set(
+      'ev1',
+      new Evento({ id: 'ev1', titulo: 'Cambios CFDI', tipo: 'comunicado', urlComunicado: LINK, fechaHora: new Date(), estado: 'publicado' }),
+    );
+    const admin = await login(t.app, ADMIN.email, ADMIN.password);
+    await admin.agent.post('/app/eventos/ev1/externos').type('form').send({ _csrf: admin.csrf, nombre: 'Ana López', correo: 'ana@x.mx' });
+    const token = t.eventoRepo.items.get('ev1')!.invitadosExternos[0]!.token!;
+
+    await admin.agent.post('/app/eventos/ev1/invitaciones/enviar').type('form').send({ _csrf: admin.csrf });
+    const correo = t.emailSender.enviados.at(-1)!;
+    expect(correo.asunto).toBe('Comunicado: Cambios CFDI');
+    expect(correo.html).toContain('Comunicado de DATTASOFT');
+    expect(correo.html).toContain('Ver el comunicado');
+    expect(correo.html).toContain(`/eventos/ev1/i/${token}`);
+    expect(correo.html).not.toContain('Te esperamos');
+
+    const abre = await request(t.app).get(`/eventos/ev1/i/${token}`);
+    expect(abre.status).toBe(302);
+    expect(abre.headers.location).toBe(LINK);
+    expect(t.eventoRepo.items.get('ev1')!.invitadosExternos[0]!.abiertaAt).not.toBeNull();
+    expect((await request(t.app).get('/eventos/ev1')).headers.location).toBe(LINK);
+    expect((await request(t.app).get('/eventos')).text).not.toContain('Cambios CFDI');
+
+    const pagina = await admin.agent.get('/app/eventos/ev1');
+    expect(pagina.text).toContain('Revisa el link del comunicado');
+    expect(pagina.text).toContain(`value="${LINK}"`);
+    const texto = decodeURIComponent(pagina.text);
+    expect(texto).toContain('Comunicado de DATTASOFT');
+    expect(texto).not.toContain('Te esperamos');
+
+    await admin.agent.post('/app/eventos/ev1/difusion').type('form').send({ _csrf: admin.csrf, nombre: 'Beto', correo: 'beto@x.mx' });
+    await admin.agent.post('/app/eventos/ev1/difusion/enviar').type('form').send({ _csrf: admin.csrf });
+    const alAbierto = t.emailSender.enviados.at(-1)!;
+    expect(alAbierto.para[0]!.email).toBe('beto@x.mx');
+    expect(alAbierto.html).toContain(`href="${LINK}"`);
+  });
+});

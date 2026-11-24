@@ -18,8 +18,8 @@
 
     <section class="ev-paso">
       <h2 class="ev-paso__titulo"><span class="ev-paso__num">1</span> ¿Qué vas a hacer?</h2>
-      {% set ayudaTipo = { webinar: 'En línea, con liga para entrar', presencial: 'En un lugar, con mapa y programa', felicitacion: 'Una tarjeta para leer, sin confirmar' } %}
-      <div class="inv-opciones inv-opciones--3">
+      {% set ayudaTipo = { webinar: 'En línea, con liga para entrar', presencial: 'En un lugar, con mapa y programa', felicitacion: 'Una tarjeta para leer, sin confirmar', comunicado: 'Pegas el link que pasa CONTPAQi y lo mandas' } %}
+      <div class="inv-opciones inv-opciones--4">
         {% for t in TIPOS_EVENTO %}
           <label class="inv-opcion">
             <input type="radio" name="tipo" value="{{ t }}" {{ 'checked' if tipoActual == t }} />
@@ -35,14 +35,18 @@
         <label class="field evf-ancho"><span>Nombre del evento</span>
           <input type="text" name="titulo" value="{{ valores.titulo }}" required placeholder="Ej. Posada DattaSoft 2026" />
           {% if errores.titulo %}<em class="field__error">{{ errores.titulo }}</em>{% endif %}</label>
-        <label class="field"><span>Fecha y hora</span>
-          <input type="datetime-local" name="fechaHora" value="{{ valores.fechaHora }}" required />
+        <label class="field evf-ancho" data-solo-tipo="comunicado"><span>🔗 Link del comunicado <span class="muted">(el que te pasa CONTPAQi)</span></span>
+          <input type="text" name="urlComunicado" value="{{ valores.urlComunicado }}" placeholder="Pega aquí el link, ej. https://www.contpaqi.com/…" data-requerido inputmode="url" autocomplete="off" />
+          <em class="field__hint">Al mandarlo (WhatsApp o correo), el cliente da clic y llega directo a este link.</em>
+          {% if errores.urlComunicado %}<em class="field__error">{{ errores.urlComunicado }}</em>{% endif %}</label>
+        <label class="field" data-sin-tipo="comunicado"><span>Fecha y hora</span>
+          <input type="datetime-local" name="fechaHora" value="{{ valores.fechaHora }}" data-requerido />
           {% if errores.fechaHora %}<em class="field__error">{{ errores.fechaHora }}</em>{% endif %}</label>
-        <label class="field" data-sin-tipo="felicitacion"><span>🎟 Personas por invitación</span>
+        <label class="field" data-sin-tipo="felicitacion comunicado"><span>🎟 Personas por invitación</span>
           <input type="number" name="maxPersonasRegistro" value="{{ valores.maxPersonasRegistro or 1 }}" min="1" max="20" />
           <em class="field__hint">1 = solo el invitado. Con 2, el invitado elige «dos», «solo yo» o «ninguno».</em>
         </label>
-        <label class="field evf-ancho"><span>Mensaje para el invitado</span>
+        <label class="field evf-ancho"><span>Mensaje para el invitado <span class="muted" data-solo-tipo="comunicado">(opcional: sale en el correo)</span></span>
           <textarea name="descripcion" rows="5" placeholder="Ej. Queremos celebrar contigo este fin de año…">{{ valores.descripcion }}</textarea>
           <em class="field__hint">Es lo primero que lee, debajo de la imagen. Los saltos de línea se respetan.</em>
         </label>
@@ -100,9 +104,9 @@
           <input type="number" name="cupo" value="{{ valores.cupo or 0 }}" min="0" /></label>
         <label class="field"><span>Recordatorio: horas antes <span class="muted">(0 = no mandar)</span></span>
           <input type="number" name="horasRecordatorio" value="{{ valores.horasRecordatorio if valores.horasRecordatorio is defined and valores.horasRecordatorio !== '' else 24 }}" min="0" placeholder="24" /></label>
-        <label class="field" data-sin-tipo="felicitacion"><span>Sistema <span class="muted">(agrega «¿lo usas?» al link abierto)</span></span>
+        <label class="field" data-sin-tipo="felicitacion comunicado"><span>Sistema <span class="muted">(agrega «¿lo usas?» al link abierto)</span></span>
           <input type="text" name="sistema" value="{{ valores.sistema }}" placeholder="Ej. Contabilidad" /></label>
-        <label class="field" data-sin-tipo="felicitacion"><span>Registros por IP en el link abierto <span class="muted">(vacío = 5)</span></span>
+        <label class="field" data-sin-tipo="felicitacion comunicado"><span>Registros por IP en el link abierto <span class="muted">(vacío = 5)</span></span>
           <input type="number" name="limiteRegistrosPorIp" value="{{ valores.limiteRegistrosPorIp }}" min="1" placeholder="5" /></label>
         <label class="field evf-ancho"><span>Correo de confirmación <span class="muted">(vacío = el texto de siempre, el que ves en gris)</span></span>
           <textarea name="plantilla" rows="5" placeholder="{{ plantillaPorDefecto }}">{{ valores.plantilla }}</textarea>

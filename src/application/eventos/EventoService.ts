@@ -55,6 +55,8 @@ export interface DatosEvento {
   fechaHora: string;
   cupo?: number;
   urlWebinar?: string;
+  /** Comunicado: el link que pasa CONTPAQi. */
+  urlComunicado?: string;
   horasRecordatorio?: number;
   limiteRegistrosPorIp?: number | null;
   estado?: EstadoEvento;
@@ -159,7 +161,9 @@ export class EventoService {
     if (!actor.permisos.includes('eventos:gestionar')) throw new ForbiddenError('No puedes gestionar eventos');
     const previo = id ? await this.eventos.findById(id) : null;
     if (id && !previo) throw new NotFoundError('Evento', id);
-    if (!datos.fechaHora) throw new ValidationError('Indica la fecha y hora', { fechaHora: 'Requerida' });
+    // El comunicado no pide fecha: se queda la que tenía (o hoy).
+    const sinFecha = !datos.fechaHora && datos.tipo === 'comunicado';
+    if (!datos.fechaHora && !sinFecha) throw new ValidationError('Indica la fecha y hora', { fechaHora: 'Requerida' });
 
     const evento = new Evento({
       id: id ?? this.ids.newId(),
@@ -173,10 +177,11 @@ export class EventoService {
       itinerario: datos.itinerario !== undefined ? itinerarioDeTexto(datos.itinerario) : (previo?.itinerario ?? []),
       maxPersonasRegistro: datos.maxPersonasRegistro ?? previo?.maxPersonasRegistro ?? 1,
       descripcion: datos.descripcion ?? null,
-      fechaHora: instanteDeDatetimeLocal(datos.fechaHora),
+      fechaHora: sinFecha ? (previo?.fechaHora ?? this.clock.now()) : instanteDeDatetimeLocal(datos.fechaHora),
       cupo: datos.cupo ?? previo?.cupo ?? 0,
       estado: datos.estado ?? previo?.estado ?? 'borrador',
       urlWebinar: datos.urlWebinar ?? previo?.urlWebinar ?? null,
+      urlComunicado: datos.urlComunicado ?? previo?.urlComunicado ?? null,
       horasRecordatorio: datos.horasRecordatorio ?? previo?.horasRecordatorio ?? 24,
       limiteRegistrosPorIp:
         datos.limiteRegistrosPorIp !== undefined
@@ -844,9 +849,11 @@ export class EventoService {
   /** Texto para mandar la invitación por WhatsApp (corto, con el link personal). */
   mensajeWhatsAppInvitacion(evento: Evento, inv: DatosRsvp & { id: string }, nombre: string): string {
     const pases = evento.pideConfirmacion ? `🎟 Invitación para ${inv.pases} ${inv.pases === 1 ? 'persona' : 'personas'}` : '';
-    const accion = evento.pideConfirmacion
-      ? '👉 Abre tu invitación y confírmanos tu asistencia aquí:'
-      : '👉 Ábrela aquí:';
+    const accion = evento.esComunicado
+      ? '👉 Dale clic al link para verlo:'
+      : evento.pideConfirmacion
+        ? '👉 Abre tu invitación y confírmanos tu asistencia aquí:'
+        : '👉 Ábrela aquí:';
     return mensajeWhatsApp(evento, nombre, [pases], accion, this.linkInvitacion(evento, inv));
   }
 
@@ -905,7 +912,7 @@ export class EventoService {
       nombre,
       link: prueba?.link ?? this.linkInvitacion(evento, inv),
       pases: inv.pases,
-      boton: evento.pideConfirmacion ? 'Ver mi invitación y confirmar' : 'Abrir',
+      boton: evento.esComunicado ? 'Ver el comunicado' : evento.pideConfirmacion ? 'Ver mi invitación y confirmar' : 'Abrir',
       indicacion: evento.pideConfirmacion ? 'Abre tu invitación y confírmanos tu asistencia:' : '',
       prueba: !!prueba,
     });
@@ -926,8 +933,10 @@ export class EventoService {
       hour: 'numeric',
       minute: '2-digit',
     });
+    const comunicado = evento.esComunicado;
+    const leeNomas = evento.tipo === 'felicitacion' || comunicado;
     const renglones = [
-      evento.tipo !== 'felicitacion' ? `📅 ${esc(fecha)}` : '',
+      !leeNomas ? `📅 ${esc(fecha)}` : '',
       evento.tipo === 'presencial' && evento.lugarNombre ? `📍 ${esc(evento.lugarNombre)}` : '',
       evento.pideConfirmacion && d.pases ? `🎟 Invitación para ${d.pases} ${d.pases === 1 ? 'persona' : 'personas'}` : '',
     ].filter(Boolean);
@@ -938,11 +947,11 @@ export class EventoService {
     const adorno = est.adorno ? `<p style="font-size:22px;letter-spacing:10px;margin:0 0 6px;color:${est.color}">${est.adorno} ${est.adorno} ${est.adorno}</p>` : '';
     await this.email.enviar({
       para: [{ email: d.correo, nombre: nombre || undefined }],
-      asunto: `${d.prueba ? '[Prueba] ' : ''}${evento.tipo === 'felicitacion' ? evento.titulo : `Invitación: ${evento.titulo}`}`,
+      asunto: `${d.prueba ? '[Prueba] ' : ''}${comunicado ? `Comunicado: ${evento.titulo}` : evento.tipo === 'felicitacion' ? evento.titulo : `Invitación: ${evento.titulo}`}`,
       html: `<div style="font-family:${est.fuente};max-width:560px;margin:auto;text-align:center;background:${est.fondo};color:${est.texto};padding:28px 22px;border-radius:14px;border-top:6px solid ${est.color}">
-        <p style="margin:0 0 14px;font-size:12px;letter-spacing:3px;text-transform:uppercase;opacity:.7">${evento.tipo === 'felicitacion' ? 'Un mensaje' : 'Invitación'} de ${QUIEN_INVITA}</p>
+        <p style="margin:0 0 14px;font-size:12px;letter-spacing:3px;text-transform:uppercase;opacity:.7">${comunicado ? 'Comunicado' : evento.tipo === 'felicitacion' ? 'Un mensaje' : 'Invitación'} de ${QUIEN_INVITA}</p>
         <p style="font-size:16px;margin:0 0 6px">¡Hola${nombre ? ` ${esc(nombre)}` : ''}! 👋</p>
-        <p style="font-size:15px;margin:0 0 10px;opacity:.85">${evento.tipo === 'felicitacion' ? 'Tenemos algo para ti:' : 'Con mucho gusto te invitamos a'}</p>
+        <p style="font-size:15px;margin:0 0 10px;opacity:.85">${comunicado ? 'Te compartimos este comunicado:' : evento.tipo === 'felicitacion' ? 'Tenemos algo para ti:' : 'Con mucho gusto te invitamos a'}</p>
         ${adorno}
         <h2 style="margin:8px 0 16px;color:${est.color};font-size:26px">${esc(evento.titulo)}</h2>
         ${flayer}
@@ -950,7 +959,7 @@ export class EventoService {
         <p style="font-size:15px;line-height:1.7">${renglones.join('<br>')}</p>
         ${d.indicacion ? `<p style="font-size:15px;margin:20px 0 0">${esc(d.indicacion)}</p>` : ''}
         <p style="margin:14px 0 24px"><a href="${link}" style="background:${est.color};color:#fff;padding:12px 22px;border-radius:8px;text-decoration:none;font-weight:bold">${d.boton}</a></p>
-        ${evento.tipo === 'felicitacion' ? '' : '<p style="font-size:15px;margin:0 0 16px">¡Te esperamos! 🙌</p>'}
+        ${leeNomas ? '' : '<p style="font-size:15px;margin:0 0 16px">¡Te esperamos! 🙌</p>'}
         <p style="opacity:.6;font-size:12px">Si el botón no abre, copia este link: ${link}</p>
       </div>`,
       ...(evento.envioCorreo ? { responderA: { email: evento.envioCorreo } } : {}),
@@ -961,14 +970,18 @@ export class EventoService {
   // ── Lista del link abierto (pestaña «🌐 Link abierto») ──────────────────
   /** El link abierto del evento (sin nombre: cada quien pone sus datos). */
   linkAbierto(evento: Evento): string {
+    // Comunicado: el link de CONTPAQi tal cual (se ve su vista previa y no hay nada que registrar).
+    if (evento.esComunicado && evento.urlComunicado) return evento.urlComunicado;
     return `${this.baseUrl}/eventos/${evento.id}`;
   }
 
   /** Texto para mandar el link abierto por WhatsApp. */
   mensajeWhatsAppLinkAbierto(evento: Evento, nombre: string): string {
-    const accion = evento.pideConfirmacion
-      ? '👉 Dale clic al link para registrarte y confirmar tu asistencia:'
-      : '👉 Dale clic al link para verla:';
+    const accion = evento.esComunicado
+      ? '👉 Dale clic al link para verlo:'
+      : evento.pideConfirmacion
+        ? '👉 Dale clic al link para registrarte y confirmar tu asistencia:'
+        : '👉 Dale clic al link para verla:';
     return mensajeWhatsApp(evento, nombre, [], accion, this.linkAbierto(evento));
   }
 
@@ -1086,7 +1099,7 @@ export class EventoService {
       nombre,
       link: this.linkAbierto(evento),
       pases: null,
-      boton: evento.pideConfirmacion ? 'Registrarme y confirmar' : 'Abrir',
+      boton: evento.esComunicado ? 'Ver el comunicado' : evento.pideConfirmacion ? 'Registrarme y confirmar' : 'Abrir',
       indicacion: evento.pideConfirmacion ? 'Dale clic al botón para registrarte y confirmar tu asistencia:' : '',
     });
   }
@@ -1439,20 +1452,27 @@ const QUIEN_INVITA = 'DATTASOFT';
  */
 function mensajeWhatsApp(evento: Evento, nombre: string, extras: string[], accion: string, link: string): string {
   const felicitacion = evento.tipo === 'felicitacion';
-  const cuando = felicitacion
+  const comunicado = evento.esComunicado;
+  const cuando = felicitacion || comunicado
     ? ''
     : `📅 ${evento.fechaHora.toLocaleString('es-MX', { timeZone: ZONA_MEXICO, weekday: 'long', day: 'numeric', month: 'long', hour: 'numeric', minute: '2-digit' })}`;
   const donde = evento.tipo === 'presencial' && evento.lugarNombre ? `📍 ${evento.lugarNombre}` : '';
   const datos = [cuando, donde, ...extras].filter(Boolean);
+  const encabezado = comunicado ? `📢 *Comunicado de ${QUIEN_INVITA}*` : `✨ *${felicitacion ? 'Un mensaje' : 'Invitación'} de ${QUIEN_INVITA}* ✨`;
+  const que = comunicado
+    ? `Te compartimos este comunicado: *${evento.titulo}*`
+    : felicitacion
+      ? `Tenemos algo para ti: *${evento.titulo}*`
+      : `Con mucho gusto te invitamos a *${evento.titulo}*.`;
   return [
-    `✨ *${felicitacion ? 'Un mensaje' : 'Invitación'} de ${QUIEN_INVITA}* ✨`,
+    encabezado,
     '',
     `¡Hola${nombre ? ` ${nombre}` : ''}! 👋`,
-    felicitacion ? `Tenemos algo para ti: *${evento.titulo}*` : `Con mucho gusto te invitamos a *${evento.titulo}*.`,
+    que,
     ...(datos.length ? ['', ...datos] : []),
     '',
     accion,
     link,
-    ...(felicitacion ? [] : ['', '¡Te esperamos! 🙌']),
+    ...(felicitacion || comunicado ? [] : ['', '¡Te esperamos! 🙌']),
   ].join('\n');
 }

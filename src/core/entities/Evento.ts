@@ -4,14 +4,15 @@ import { ZONA_MEXICO } from './value-objects/horaMexico.js';
 export type EstadoEvento = 'borrador' | 'publicado' | 'finalizado' | 'cancelado';
 
 /** Qué clase de evento es: decide qué secciones muestra la invitación y si pide confirmación. */
-export type TipoEvento = 'webinar' | 'presencial' | 'felicitacion';
+export type TipoEvento = 'webinar' | 'presencial' | 'felicitacion' | 'comunicado';
 
-export const TIPOS_EVENTO: readonly TipoEvento[] = ['webinar', 'presencial', 'felicitacion'];
+export const TIPOS_EVENTO: readonly TipoEvento[] = ['webinar', 'presencial', 'felicitacion', 'comunicado'];
 
 export const TIPO_EVENTO_ETIQUETA: Record<TipoEvento, string> = {
   webinar: '💻 Webinar',
   presencial: '📍 Presencial',
   felicitacion: '🎉 Felicitación',
+  comunicado: '📢 Comunicado',
 };
 
 const esTipoEvento = (v: unknown): v is TipoEvento =>
@@ -40,6 +41,20 @@ const esEstiloEvento = (v: unknown): v is EstiloEvento =>
 /** Estilo que toca por defecto según el tipo (eventos viejos no traen estilo). */
 export function estiloPorDefecto(tipo: TipoEvento): EstiloEvento {
   return tipo === 'felicitacion' ? 'fiesta' : 'corporativo';
+}
+
+/**
+ * Limpia el link pegado de un comunicado: sin espacios y con `https://` si venía sin él
+ * («www.contpaqi.com/…»). Vacío = `null`. Lanza `ValidationError` si no parece un link.
+ */
+export function normalizarLinkComunicado(v: string | null | undefined): string | null {
+  let t = String(v ?? '').trim();
+  if (!t) return null;
+  if (!/^[a-z][a-z0-9+.-]*:/i.test(t)) t = `https://${t}`;
+  if (!/^https?:\/\/[^\s/]+\.[^\s]+$/i.test(t)) {
+    throw new ValidationError('El link del comunicado no es válido', { urlComunicado: 'Pega el link completo (https://…)' });
+  }
+  return t;
 }
 
 /** Máximo de pases que se le pueden dar a una sola invitación. */
@@ -289,6 +304,8 @@ export interface EventoProps {
   estilo?: EstiloEvento | null;
   /** Evento de ejemplo (botón «🧪 Crear eventos de ejemplo»): no sale en la lista pública. */
   esPrueba?: boolean;
+  /** Comunicado: el link que pasa CONTPAQi; la invitación (personal o abierta) lleva directo ahí. */
+  urlComunicado?: string | null;
   /** Presencial: dónde. */
   lugarNombre?: string | null;
   lugarDireccion?: string | null;
@@ -346,6 +363,7 @@ export class Evento {
   tipo: TipoEvento;
   estilo: EstiloEvento;
   esPrueba: boolean;
+  urlComunicado: string | null;
   lugarNombre: string | null;
   lugarDireccion: string | null;
   lugarMapsUrl: string | null;
@@ -384,6 +402,10 @@ export class Evento {
     this.tipo = esTipoEvento(props.tipo) ? props.tipo : 'webinar';
     this.estilo = esEstiloEvento(props.estilo) ? props.estilo : estiloPorDefecto(this.tipo);
     this.esPrueba = props.esPrueba === true;
+    this.urlComunicado = normalizarLinkComunicado(props.urlComunicado);
+    if (this.tipo === 'comunicado' && !this.urlComunicado) {
+      throw new ValidationError('Pega el link del comunicado', { urlComunicado: 'Pega aquí el link que te pasó CONTPAQi' });
+    }
     this.lugarNombre = props.lugarNombre?.trim() || null;
     this.lugarDireccion = props.lugarDireccion?.trim() || null;
     const maps = props.lugarMapsUrl?.trim() || null;
@@ -462,9 +484,14 @@ export class Evento {
     };
   }
 
-  /** Las felicitaciones solo se leen; los demás tipos piden confirmar asistencia. */
+  /** Las felicitaciones y los comunicados solo se leen; los demás tipos piden confirmar asistencia. */
   get pideConfirmacion(): boolean {
-    return this.tipo !== 'felicitacion';
+    return this.tipo !== 'felicitacion' && this.tipo !== 'comunicado';
+  }
+
+  /** Comunicado: sus links (personal y abierto) llevan directo al link de CONTPAQi. */
+  get esComunicado(): boolean {
+    return this.tipo === 'comunicado';
   }
 
   // ── Link personal de cada invitado ─────────────────────────────────────

@@ -131,6 +131,7 @@ export class EventoController {
           fechaHora: str(b.fechaHora),
           cupo: n(b.cupo),
           urlWebinar: str(b.urlWebinar),
+          urlComunicado: str(b.urlComunicado),
           // Vacío = 24h por defecto; 0 = sin recordatorio para este evento.
           horasRecordatorio: str(b.horasRecordatorio).trim() ? Math.max(0, Math.trunc(n(b.horasRecordatorio))) : 24,
           limiteRegistrosPorIp: str(b.limiteRegistrosPorIp) ? Math.max(1, n(b.limiteRegistrosPorIp)) : null,

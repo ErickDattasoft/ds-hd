@@ -5,7 +5,7 @@
       o link abierto), ③ respuestas. Lo que casi no se usa (editar un invitado, lista negra,
       borrar) queda guardado detrás de ✏️ y «Más opciones». app.js: data-ev-tab, data-abre. -#}
   {% set puedeGestionar = can('eventos:gestionar') %}
-  {% set linkPublico = config.baseUrl + '/eventos/' + evento.id %}
+  {% set linkPublico = evento.urlComunicado if evento.esComunicado else config.baseUrl + '/eventos/' + evento.id %}
 
   <div class="page-head">
     <h1>{{ evento.titulo }} <span class="{{ evento.estado | estadoClase }}">{{ evento.estado }}</span></h1>
@@ -13,7 +13,7 @@
       {% if puedeGestionar %}<a class="btn btn--sm" href="/app/eventos/{{ evento.id }}/editar">✏️ Editar evento</a>{% endif %}
     </div>
   </div>
-  <p class="muted">📅 {{ evento.fechaHora | fechahora }}{% if evento.lugarNombre %} · 📍 {{ evento.lugarNombre }}{% endif %} · {{ TIPO_EVENTO_ETIQUETA[evento.tipo] }}</p>
+  <p class="muted">{% if evento.esComunicado %}📢 Comunicado · creado el {{ evento.createdAt | fechahora }}{% else %}📅 {{ evento.fechaHora | fechahora }}{% if evento.lugarNombre %} · 📍 {{ evento.lugarNombre }}{% endif %} · {{ TIPO_EVENTO_ETIQUETA[evento.tipo] }}{% endif %}</p>
 
   {% if evento.estado == 'borrador' %}
     <p class="alert">📝 <strong>Borrador:</strong> puedes probar todo (mándate invitaciones, ábrelas, confirma). Solo no aparece en la lista pública de eventos.
@@ -38,7 +38,15 @@
 
   {#- ── ① La invitación ─────────────────────────────────────────────── -#}
   <section class="ev-paso">
-    <h2 class="ev-paso__titulo"><span class="ev-paso__num">1</span> Revisa cómo se ve la invitación</h2>
+    <h2 class="ev-paso__titulo"><span class="ev-paso__num">1</span> {{ 'Revisa el link del comunicado' if evento.esComunicado else 'Revisa cómo se ve la invitación' }}</h2>
+    {% if evento.esComunicado %}
+      <p class="ev-panel__ayuda">📢 Este es el link que pasó CONTPAQi. Cuando lo mandes (paso 2), cada cliente da clic y llega directo ahí. Ábrelo para confirmar que es el correcto.</p>
+      <div class="ev-link" style="margin-bottom:var(--space-4)">
+        <input type="text" readonly value="{{ evento.urlComunicado }}" aria-label="Link del comunicado" data-seleccionar />
+        <a class="btn" href="{{ evento.urlComunicado }}" target="_blank" rel="noopener">🔗 Abrir el comunicado</a>
+        {% if puedeGestionar %}<a class="btn btn--ghost" href="/app/eventos/{{ evento.id }}/editar">✏️ Cambiar el link</a>{% endif %}
+      </div>
+    {% endif %}
     <div class="ev-invitacion">
       <div class="ev-invitacion__img" id="flayer-preview">
         {% if evento.flayer %}
@@ -48,13 +56,13 @@
         {% endif %}
       </div>
       <div class="ev-invitacion__acciones">
-        <a class="btn" href="/app/eventos/{{ evento.id }}/vista-previa" target="_blank" rel="noopener">👁 Ver cómo se ve</a>
+        {% if not evento.esComunicado %}<a class="btn" href="/app/eventos/{{ evento.id }}/vista-previa" target="_blank" rel="noopener">👁 Ver cómo se ve</a>{% endif %}
         {% if puedeGestionar %}
           <form method="post" action="/app/eventos/{{ evento.id }}/enviarme-prueba" class="inline">
             <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
             <button class="btn btn--secondary" type="submit" title="Te llega a ti el correo con asunto «[Prueba]». No te agrega a la lista.">✉️ Mandarme una prueba</button>
           </form>
-          <a class="btn btn--ghost" href="/app/eventos/{{ evento.id }}/editar">✏️ Cambiar texto, fecha o lugar</a>
+          {% if not evento.esComunicado %}<a class="btn btn--ghost" href="/app/eventos/{{ evento.id }}/editar">✏️ Cambiar texto, fecha o lugar</a>{% endif %}
           <button type="button" class="btn btn--ghost" data-abre="ev-imagen">🖼 {{ 'Cambiar imagen' if evento.flayer else 'Poner imagen' }}</button>
         {% endif %}
       </div>
@@ -88,16 +96,16 @@
   {% for x in todosInvitados %}{% if x.i.telefono and not x.i.enviadaWspAt and x.i.respuesta == 'pendiente' %}{% set _ = porWsp.push(1) %}{% endif %}{% endfor %}
 
   <section class="ev-paso" id="invitaciones">
-    <h2 class="ev-paso__titulo"><span class="ev-paso__num">2</span> Invitaciones: elige cómo invitar</h2>
+    <h2 class="ev-paso__titulo"><span class="ev-paso__num">2</span> {{ 'Mándalo: elige a quién' if evento.esComunicado else 'Invitaciones: elige cómo invitar' }}</h2>
     <div class="ev-tabs" role="tablist" data-ev-tabs="{{ evento.id }}"
          data-ev-tab-inicial="{{ 'abierto' if (inscritos | length) and not (todosInvitados | length) else 'nombre' }}">
       <button type="button" role="tab" class="ev-tab" data-ev-tab="nombre">
         <strong>👥 Con nombre</strong>
-        <span>Cada quien recibe su propia invitación: «¡Hola, Ana!» · {{ todosInvitados | length }} invitado(s)</span>
+        <span>Cada quien recibe {{ 'su propio mensaje y ves quién lo abrió' if evento.esComunicado else 'su propia invitación' }}: «¡Hola, Ana!» · {{ todosInvitados | length }} {{ 'persona(s)' if evento.esComunicado else 'invitado(s)' }}</span>
       </button>
       <button type="button" role="tab" class="ev-tab" data-ev-tab="abierto">
         <strong>🌐 Link abierto</strong>
-        <span>Un solo link para redes o grupos; cada quien pone sus datos · {{ inscritos | length }} registrado(s)</span>
+        <span>{% if evento.esComunicado %}El link de CONTPAQi tal cual, para grupos o una lista · {{ difusionVM | length }} en la lista{% else %}Un solo link para redes o grupos; cada quien pone sus datos · {{ inscritos | length }} registrado(s){% endif %}</span>
       </button>
     </div>
 
@@ -285,12 +293,16 @@
 
     {#- Pestaña B: link abierto (sin nombre) -#}
     <div class="ev-tabpanel" data-ev-panel="abierto" id="inscritos">
+      {% if evento.esComunicado %}
+      <p class="ev-panel__ayuda">El link del comunicado tal cual. Cópialo, pégalo en un grupo, o mándalo desde aquí a una lista por WhatsApp o correo.</p>
+      {% else %}
       <p class="ev-panel__ayuda">Un solo link para todos: quien entra pone su nombre y sus datos{% if evento.pideConfirmacion %}, y cuántos van (hasta {{ evento.maxPersonasRegistro }}){% endif %}. Pégalo en redes, o mándalo desde aquí a una lista por WhatsApp o correo. Los que se registran aparecen abajo.</p>
+      {% endif %}
       <div class="ev-link">
         <input type="text" readonly value="{{ linkPublico }}" aria-label="Link abierto" data-seleccionar />
         <button type="button" class="btn" data-copiar-link data-link="{{ linkPublico }}">📋 Copiar link</button>
         <a class="btn btn--secondary" href="https://wa.me/?text={{ mensajeLinkAbierto | urlencode }}" target="_blank" rel="noopener" title="Para pegarlo en un grupo o un estado: tú eliges el chat">💬 Pegar en un grupo de WhatsApp</a>
-        <a class="btn btn--ghost" href="/eventos/{{ evento.id }}" target="_blank" rel="noopener">👁 Ver cómo se ve</a>
+        <a class="btn btn--ghost" href="{{ linkPublico }}" target="_blank" rel="noopener">{{ '🔗 Abrir' if evento.esComunicado else '👁 Ver cómo se ve' }}</a>
       </div>
 
       {% if puedeGestionar %}
