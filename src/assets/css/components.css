@@ -548,6 +548,9 @@ fieldset.field {
 
 @media (max-width: 640px) {
   .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  /* Con el scroll horizontal la tabla queda dentro de su propio contenedor: el encabezado
+     «sticky» se bajaba --topbar-h dentro de ella y tapaba el primer renglón. En celular va fijo. */
+  .table-wrap .data-table thead th { position: static; }
 }
 
 /* ── Badges ────────────────────────────────────────────────────────────── */
@@ -2085,3 +2088,6 @@ dialog.facturar-cerrar h2 { margin: 0 0 var(--space-2); font-size: 1.2rem; }
 .unir-opcion:hover { background: var(--color-surface-2); }
 .unir-opcion:has(input:checked) { background: color-mix(in srgb, var(--accent, #2563eb) 18%, transparent); font-weight: 600; }
 .unir-opcion .muted { margin-left: auto; font-size: .85rem; }
+.contactos-repetidos { display: flex; gap: 1rem; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; margin-bottom: 1rem; }
+.contactos-repetidos ul { margin: .35rem 0 .35rem 1.1rem; padding: 0; }
+.contactos-repetidos form { flex-shrink: 0; }

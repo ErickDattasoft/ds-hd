@@ -12,6 +12,7 @@ import type { Interaccion, TipoInteraccion } from '../../../../core/entities/Int
 import type { Ticket } from '../../../../core/entities/Ticket.js';
 import type { IUsuarioRepository } from '../../../../core/ports/repositories/IUsuarioRepository.js';
 import type { UnirEmpresasService } from '../../../../application/empresas/UnirEmpresasService.js';
+import { contactosRepetidos } from '../../../../application/empresas/contactosRepetidos.js';
 import { totalReferencias } from '../../../../core/ports/repositories/IUnionEmpresasRepository.js';
 import { DomainError, ForbiddenError } from '../../../../core/errors/DomainError.js';
 import { estadoActualizacion } from '../../../../core/entities/value-objects/version.js';
@@ -282,7 +283,7 @@ export class EmpresaController {
     const empresa = await this.empresas.obtener(id);
     const filtroHistorial = { desde: str(req.query.hDesde), hasta: str(req.query.hHasta), tipo: str(req.query.hTipo) };
     const puedeVerCotizaciones = req.user!.permisos.includes('cotizaciones:leer');
-    const [contactos, tickets, todosLosTickets, interacciones, versiones, tareasPendientes, cotizaciones, usuarios] = await Promise.all([
+    const [todosContactos, tickets, todosLosTickets, interacciones, versiones, tareasPendientes, cotizaciones, usuarios] = await Promise.all([
       this.contactos.listar({ empresaId: id }),
       this.ticketQueries.listar({ empresaId: id, limite: 20, archivado: false, ...soloSuDistribuidor(req.user!) }),
       this.ticketQueries.listar({ empresaId: id, ...soloSuDistribuidor(req.user!) }),
@@ -292,6 +293,8 @@ export class EmpresaController {
       puedeVerCotizaciones ? this.cotizaciones.list({ empresaId: id }) : Promise.resolve([]),
       this.usuarios ? this.usuarios.list({ activo: true }) : Promise.resolve([]),
     ]);
+    // Los archivados (en la Papelera, o juntados con otro) no salen en la ficha.
+    const contactos = todosContactos.filter((c) => c.activo);
     // El filtro de fechas también acota las tareas por su vencimiento, como en el CRM viejo.
     const tareas = tareasPendientes.filter(
       (t) =>
@@ -314,6 +317,7 @@ export class EmpresaController {
       hoy: hoyIso(),
       cotizaciones,
       aviso: str(req.query.aviso),
+      repetidos: contactosRepetidos(contactos, empresa),
       sistemas: empresa.sistemasContratados.map((sistema) => ({
         sistema,
         vigencia: empresa.vigencias[sistema] ?? null,
@@ -445,7 +449,7 @@ export class EmpresaController {
   unirPost = async (req: Request, res: Response): Promise<void> => {
     const destinoId = str(req.body?.destinoId);
     try {
-      const { destino, movidos } = await this.unirSvc!.unir(req.user!, str(req.params.id), destinoId);
+      const { destino, movidos, contactosJuntados } = await this.unirSvc!.unir(req.user!, str(req.params.id), destinoId);
       const partes = [
         [movidos.contactos, 'contacto(s)'],
         [movidos.tickets, 'ticket(s)'],
@@ -457,7 +461,10 @@ export class EmpresaController {
       ]
         .filter(([n]) => Number(n) > 0)
         .map(([n, t]) => `${n} ${t}`);
-      const aviso = `🔗 Empresas unidas. ${partes.length ? `Se pasaron aquí: ${partes.join(', ')}.` : 'La otra no tenía nada colgado.'} La duplicada quedó archivada en la Papelera.`;
+      const juntados = contactosJuntados
+        ? ` ${contactosJuntados} contacto(s) que estaban en las dos se juntaron en uno.`
+        : '';
+      const aviso = `🔗 Empresas unidas. ${partes.length ? `Se pasaron aquí: ${partes.join(', ')}.` : 'La otra no tenía nada colgado.'}${juntados} La duplicada quedó archivada en la Papelera.`;
       res.redirect(`/app/empresas/${destino.id}?aviso=${encodeURIComponent(aviso)}`);
     } catch (e) {
       if (e instanceof DomainError && !(e instanceof ForbiddenError)) {
@@ -466,6 +473,14 @@ export class EmpresaController {
       }
       throw e;
     }
+  };
+
+  /** «🔗 Juntar contactos repetidos» de la ficha: la misma persona dada de alta dos veces. */
+  juntarContactosPost = async (req: Request, res: Response): Promise<void> => {
+    const id = str(req.params.id);
+    const n = await this.unirSvc!.juntarContactosRepetidos(req.user!, id);
+    const aviso = n ? `🔗 Listo: ${n} contacto(s) repetido(s) se juntaron en uno; el repetido quedó en la Papelera.` : 'No había contactos repetidos.';
+    res.redirect(`/app/empresas/${id}?aviso=${encodeURIComponent(aviso)}`);
   };
 
   exportarExcel = async (req: Request, res: Response): Promise<void> => {

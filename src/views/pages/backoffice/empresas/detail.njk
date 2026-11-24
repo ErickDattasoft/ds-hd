@@ -119,6 +119,23 @@
   <details class="seccion" data-seccion="contactos" open>
   <summary class="seccion__titulo"><h2>👥 Contactos <span class="muted">({{ contactos | length }})</span></h2></summary>
   <div class="seccion__cuerpo">
+  {% if repetidos | length and can('empresas:editar') %}
+    <div class="alert alert--warn contactos-repetidos" role="status">
+      <div>
+        <strong>👯 Contactos repetidos:</strong> parece la misma persona dada de alta más de una vez (mismo nombre o correo).
+        <ul>
+          {% for g in repetidos %}
+            <li><span class="nombre-sensible">{{ g.queda.nombre }}</span> — se queda {% if g.queda.id == empresa.contactoPrincipalId %}el <strong>Principal</strong>{% else %}el más completo{% endif %}{% for s in g.sobran %}{% if s.nombre != g.queda.nombre %}, se junta con <span class="nombre-sensible">{{ s.nombre }}</span>{% endif %}{% endfor %} ({{ g.sobran | length + 1 }} registros)</li>
+          {% endfor %}
+        </ul>
+        <small class="muted">Se pasan sus tickets, cotizaciones y tareas al que se queda, se le copian los correos y teléfonos que le falten, y el repetido va a la Papelera.</small>
+      </div>
+      <form method="post" action="/app/empresas/{{ empresa.id }}/contactos/juntar" data-confirm="¿Juntar los contactos repetidos en uno solo?">
+        <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+        <button class="btn btn--sm" type="submit">🔗 Juntar repetidos</button>
+      </form>
+    </div>
+  {% endif %}
   <table class="data-table">
     <thead><tr><th>Nombre</th><th>Puesto</th><th>Correo</th><th>Teléfono</th><th>🎂 Cumpleaños</th><th data-no-ordenar>WhatsApp</th><th>Portal</th></tr></thead>
     <tbody>

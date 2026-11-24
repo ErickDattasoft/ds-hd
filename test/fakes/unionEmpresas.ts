@@ -63,4 +63,22 @@ export class InMemoryUnionEmpresasRepository implements IUnionEmpresasRepository
     }
     return out;
   }
+
+  async moverReferenciasContacto(deId: string, aId: string): Promise<number> {
+    const r = this.r;
+    const todos: { contactoId: string | null }[] = [
+      ...r.tickets.tickets.values(),
+      ...r.cotizaciones.items.values(),
+      ...r.tareas.items.values(),
+      ...r.interacciones.items,
+    ];
+    let n = 0;
+    for (const x of todos) {
+      if (x.contactoId === deId) {
+        (x as { contactoId: string }).contactoId = aId;
+        n++;
+      }
+    }
+    return n;
+  }
 }

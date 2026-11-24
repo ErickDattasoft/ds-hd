@@ -491,7 +491,7 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
         new FirestoreUnionEmpresasRepository(requireFirestore(firestoreDb)),
     ).singleton(),
     unirEmpresasService: asFunction(
-      (c: Cradle) => new UnirEmpresasService(c.empresaRepo, c.unionEmpresasRepo, c.clock, c.bitacoraService),
+      (c: Cradle) => new UnirEmpresasService(c.empresaRepo, c.unionEmpresasRepo, c.clock, c.bitacoraService, c.contactoRepo),
     ).singleton(),
     oportunidadRepo: asFunction(
       ({ firestoreDb }: Cradle): IOportunidadRepository =>

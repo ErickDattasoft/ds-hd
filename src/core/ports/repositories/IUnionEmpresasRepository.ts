@@ -30,4 +30,6 @@ export interface IUnionEmpresasRepository {
    * el nombre con el que se mandó.
    */
   moverReferencias(deId: string, a: { id: string; nombre: string }): Promise<ReferenciasEmpresa>;
+  /** Pasa a `aId` los tickets, cotizaciones, tareas y seguimiento del contacto `deId`. Devuelve cuántos. */
+  moverReferenciasContacto(deId: string, aId: string): Promise<number>;
 }

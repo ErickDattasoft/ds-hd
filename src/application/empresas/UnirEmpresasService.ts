@@ -4,6 +4,8 @@ import type {
   ReferenciasEmpresa,
 } from '../../core/ports/repositories/IUnionEmpresasRepository.js';
 import type { IClock } from '../../core/ports/services/IClock.js';
+import type { IContactoRepository } from '../../core/ports/repositories/IContactoRepository.js';
+import { completarContacto, contactosRepetidos } from './contactosRepetidos.js';
 import { Empresa } from '../../core/entities/Empresa.js';
 import { ForbiddenError, NotFoundError, ValidationError } from '../../core/errors/DomainError.js';
 import type { BitacoraService } from '../shared/BitacoraService.js';
@@ -13,6 +15,8 @@ import type { SessionUser } from '../shared/SessionUser.js';
 export interface ResultadoUnion {
   destino: Empresa;
   movidos: ReferenciasEmpresa;
+  /** Contactos repetidos (la misma persona en las dos empresas) que se juntaron en uno. */
+  contactosJuntados: number;
 }
 
 const CAMPOS_TEXTO = [
@@ -42,6 +46,7 @@ export class UnirEmpresasService {
     private readonly union: IUnionEmpresasRepository,
     private readonly clock: IClock,
     private readonly bitacora: BitacoraService,
+    private readonly contactos: IContactoRepository,
   ) {}
 
   /** Cuánto cuelga de una empresa (para enseñarlo antes de unir). */
@@ -73,6 +78,8 @@ export class UnirEmpresasService {
     origen.favorita = false;
     origen.archivar(ahora);
 
+    // La misma persona solía estar dada de alta en las dos: se junta en un solo contacto.
+    const contactosJuntados = await this.juntarRepetidos(destino);
     await Promise.all([this.empresas.save(destino), this.empresas.save(origen)]);
     const total = Object.values(movidos).reduce((s, n) => s + n, 0);
     await this.bitacora.registrar({
@@ -81,9 +88,64 @@ export class UnirEmpresasService {
       modulo: 'empresas',
       entidadTipo: 'Empresa',
       entidadId: destino.id,
-      resumen: `Empresa ${origen.nombre} unida con ${destino.nombre} (${total} registro(s) movidos: ${movidos.contactos} contactos, ${movidos.tickets} tickets, ${movidos.cotizaciones} cotizaciones); la duplicada quedó archivada`,
+      resumen: `Empresa ${origen.nombre} unida con ${destino.nombre} (${total} registro(s) movidos: ${movidos.contactos} contactos, ${movidos.tickets} tickets, ${movidos.cotizaciones} cotizaciones); la duplicada quedó archivada${contactosJuntados ? `; ${contactosJuntados} contacto(s) repetido(s) juntado(s)` : ''}`,
     });
-    return { destino, movidos };
+    return { destino, movidos, contactosJuntados };
+  }
+
+  /** Contactos de la empresa que son la misma persona (para enseñar el aviso en su ficha). */
+  async repetidosDe(empresaId: string): Promise<ReturnType<typeof contactosRepetidos>> {
+    const empresa = await this.empresas.findById(empresaId);
+    if (!empresa) throw new NotFoundError('Empresa', empresaId);
+    return contactosRepetidos(await this.contactos.list({ empresaId }), empresa);
+  }
+
+  /** «🔗 Juntar contactos repetidos» de la ficha de la empresa. Devuelve cuántos se juntaron. */
+  async juntarContactosRepetidos(actor: SessionUser, empresaId: string): Promise<number> {
+    if (!actor.permisos.includes('contactos:editar') && !actor.permisos.includes('empresas:editar')) {
+      throw new ForbiddenError('No puedes juntar contactos');
+    }
+    const empresa = await this.empresas.findById(empresaId);
+    if (!empresa) throw new NotFoundError('Empresa', empresaId);
+    const n = await this.juntarRepetidos(empresa);
+    if (n) {
+      empresa.updatedAt = this.clock.now();
+      await this.empresas.save(empresa);
+      await this.bitacora.registrar({
+        actor,
+        accion: 'juntar_contactos',
+        modulo: 'contactos',
+        entidadTipo: 'Empresa',
+        entidadId: empresa.id,
+        resumen: `${empresa.nombre}: ${n} contacto(s) repetido(s) juntado(s) en uno`,
+      });
+    }
+    return n;
+  }
+
+  /**
+   * Junta en uno los contactos repetidos de la empresa: pasa sus tickets/cotizaciones/tareas al
+   * que se queda, le copia lo que le falte y archiva los demás. No guarda la empresa (lo hace
+   * quien llama), pero sí le corrige principal/alternativo.
+   */
+  private async juntarRepetidos(empresa: Empresa): Promise<number> {
+    const grupos = contactosRepetidos(await this.contactos.list({ empresaId: empresa.id }), empresa);
+    const ahora = this.clock.now();
+    let n = 0;
+    for (const { queda, sobran } of grupos) {
+      for (const sobra of sobran) {
+        await this.union.moverReferenciasContacto(sobra.id, queda.id);
+        completarContacto(queda, sobra, ahora);
+        sobra.notas = [`🔗 Juntado con ${queda.nombre} (contacto repetido).`, sobra.notas].filter(Boolean).join('\n');
+        sobra.archivar(ahora);
+        if (empresa.contactoPrincipalId === sobra.id) empresa.contactoPrincipalId = queda.id;
+        if (empresa.contactoAlternativoId === sobra.id) empresa.contactoAlternativoId = queda.id;
+        n++;
+      }
+      await this.contactos.guardarVarios([queda, ...sobran]);
+    }
+    if (empresa.contactoAlternativoId === empresa.contactoPrincipalId) empresa.contactoAlternativoId = null;
+    return n;
   }
 
   /** Rellena en `destino` lo que le falta con lo de `origen`; lo que ya tiene el destino se respeta. */

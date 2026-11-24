@@ -67,11 +67,26 @@ export class FirestoreUnionEmpresasRepository implements IUnionEmpresasRepositor
     }
     r.usuarios = usuarios.size;
 
+    await this.escribir(escrituras);
+    return r;
+  }
+
+  async moverReferenciasContacto(deId: string, aId: string): Promise<number> {
+    const snaps = await Promise.all(
+      ['tickets', 'cotizaciones', 'tareas', 'interacciones'].map((col) =>
+        this.db.collection(col).where('contactoId', '==', deId).get(),
+      ),
+    );
+    const escrituras = snaps.flatMap((s) => s.docs.map((d) => ({ ref: d.ref, datos: { contactoId: aId } })));
+    await this.escribir(escrituras);
+    return escrituras.length;
+  }
+
+  private async escribir(escrituras: Escritura[]): Promise<void> {
     for (let i = 0; i < escrituras.length; i += 500) {
       const batch = this.db.batch();
       for (const e of escrituras.slice(i, i + 500)) batch.set(e.ref, e.datos, { merge: true });
       await batch.commit();
     }
-    return r;
   }
 }

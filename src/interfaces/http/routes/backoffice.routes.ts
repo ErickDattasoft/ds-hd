@@ -271,6 +271,9 @@ export function backofficeRoutes(container: Container): Router {
   r.post('/empresas/:id', requirePermission('empresas:editar'), (req, res) => empresas().actualizarPost(req, res));
   r.get('/empresas/:id/unir', requirePermission('empresas:eliminar'), (req, res) => empresas().unirView(req, res));
   r.post('/empresas/:id/unir', requirePermission('empresas:eliminar'), (req, res) => empresas().unirPost(req, res));
+  r.post('/empresas/:id/contactos/juntar', requirePermission('empresas:editar'), (req, res) =>
+    empresas().juntarContactosPost(req, res),
+  );
   r.post('/empresas/:id/archivar', requirePermission('empresas:eliminar'), (req, res) => empresas().archivarPost(req, res));
   r.post('/empresas/:id/favorita', requirePermission('empresas:editar'), (req, res) => empresas().favoritaPost(req, res));
 
