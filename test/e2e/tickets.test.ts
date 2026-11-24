@@ -794,3 +794,51 @@ describe('«¿Ya se facturó?» al cerrar', () => {
     expect(tk.facturacion.estado).toBe('no_facturado');
   });
 });
+
+describe('⚡ captura rápida', () => {
+  it('pegar notas → revisar → crear pre-tickets con su fecha, agente y estado; Editar los confirma', async () => {
+    const t = makeTestApp({ usuarios: [SUP, AG] });
+    t.empresaRepo.items.set('e1', new Empresa({ id: 'e1', nombre: 'CANUL Y ASOCIADOS' }));
+    const { agent, csrf } = await login(t.app, SUP.email, SUP.password);
+
+    const vista = await agent.get('/app/tickets/captura');
+    expect(vista.status).toBe(200);
+    const rev = await agent.post('/app/tickets/captura').type('form').send({
+      _csrf: csrf,
+      texto: 'CANUL Y ASOCIADOS - AGENTE 28/10/2026\n\nNo abre la contabilidad\n\nEMPRESA NUEVA - 27/10/2026\nOtra cosa que revisar',
+      tipo: 'General',
+    });
+    expect(rev.status).toBe(200);
+    expect(rev.text).toContain('data-captura-fila');
+    expect(rev.text).toContain('value="CANUL Y ASOCIADOS"');
+    expect(rev.text).toContain('captura-falta');
+    expect(t.ticketStore.tickets.size).toBe(0);
+
+    const r = await agent
+      .post('/app/tickets/captura/crear')
+      .set('x-csrf-token', csrf)
+      .send({
+        tipo: 'General', empresaNombre: 'CANUL Y ASOCIADOS', asunto: 'No abre la contabilidad',
+        descripcion: 'CANUL Y ASOCIADOS - AGENTE 28/10/2026\n\nNo abre la contabilidad', fecha: '2026-10-28',
+        agenteUid: AG.uid, estado: 'Resuelto', enviarCorreo: false,
+      });
+    expect(r.body).toMatchObject({ ok: true, correo: false });
+    const tk = t.ticketStore.tickets.get(r.body.id)!;
+    expect(tk).toMatchObject({ estado: 'Resuelto', empresaId: 'e1', agenteAsignadoUid: AG.uid, preTicket: true });
+    expect(tk.createdAt.toISOString()).toBe('2026-10-28T18:00:00.000Z');
+    expect(tk.resueltoEn).not.toBeNull();
+    expect(t.emailSender.enviados).toHaveLength(0);
+
+    const lista = await agent.get('/app/tickets?pre=1');
+    expect(lista.text).toContain('📝 Pre-ticket');
+
+    const mal = await agent.post('/app/tickets/captura/crear').set('x-csrf-token', csrf).send({ tipo: 'General', asunto: 'x' });
+    expect(mal.status).toBe(422);
+
+    await agent.post(`/app/tickets/${tk.id}/editar`).type('form').send({
+      _csrf: csrf, asunto: tk.asunto, descripcion: 'No abre la contabilidad', tipo: 'General', prioridad: 'Media',
+      empresaNombre: 'CANUL Y ASOCIADOS',
+    });
+    expect(t.ticketStore.tickets.get(tk.id)!.preTicket).toBe(false);
+  });
+});

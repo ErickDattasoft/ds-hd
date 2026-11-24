@@ -18,6 +18,7 @@
       <a class="btn btn--sm btn--ghost" href="/app/tickets">← Volver</a>
     </div>
   </div>
+  {% if ticket.preTicket %}<p class="alert">📝 <strong>Pre-ticket</strong> de la ⚡ Captura rápida. Revísalo con <a href="/app/tickets/{{ ticket.id }}/editar">✏️ Editar</a> (tipo, sistema, contacto…) y al guardar queda como ticket normal.</p>{% endif %}
 
   {% if aviso == 'correo-reenviado' %}
     <p class="alert alert--ok">✉️ Correo reenviado{% if avisoDetalle %} a {{ avisoDetalle }}{% endif %}.</p>

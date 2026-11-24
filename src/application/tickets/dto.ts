@@ -42,6 +42,12 @@ export interface CrearTicketInput {
   estadoFacturacion?: EstadoFacturacion;
   /** Programación de atención opcional, solo desde el alta del back-office. */
   agenda?: AgendaTicket | null;
+  /** Fecha real del trabajo (captura rápida de notas atrasadas); si no, ahora. */
+  fechaCreacion?: Date | null;
+  /** Agente al que queda asignado desde el alta, sin correo «asignado a ti». */
+  agente?: { uid: string; nombre: string } | null;
+  /** Nace como pre-ticket (captura rápida) hasta que alguien lo revise. */
+  preTicket?: boolean;
 }
 
 /** Datos para programar (o cancelar) la atención de un ticket. */

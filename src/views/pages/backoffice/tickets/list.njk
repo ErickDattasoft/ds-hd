@@ -6,6 +6,8 @@
     <h1>{{ 'Agenda de tickets' if filtro.agenda == '1' else 'Tickets' }} <span class="muted">({{ total }})</span></h1>
     <div class="page-head__actions">
       <a class="btn btn--sm" href="/app/tickets/nuevo">Nuevo ticket</a>
+      <a class="btn btn--sm btn--secondary" href="/app/tickets/captura" title="Pegar varias notas y crear muchos tickets de una vez">⚡ Captura rápida</a>
+      <a class="btn btn--sm {{ 'btn--secondary' if filtro.pre != '1' }}" href="/app/tickets{{ '' if filtro.pre == '1' else '?pre=1' }}" title="Tickets de la captura rápida que falta revisar">📝 Pre-tickets</a>
       <a class="btn btn--sm {{ 'btn--secondary' if filtro.agenda != '1' }}" href="/app/tickets{{ '' if filtro.agenda == '1' else '?agenda=1' }}">📅 Agenda</a>
       <a class="btn btn--sm btn--secondary" href="/app/tickets/tablero">Tablero</a>
       <a class="btn btn--sm btn--secondary" href="/app/tickets/mis-asignados">Mis asignados</a>
@@ -13,6 +15,7 @@
     </div>
   </div>
   {% if filtro.agenda == '1' %}<p class="muted">Solo tickets con atención programada, del más próximo al más lejano.</p>{% endif %}
+  {% if filtro.pre == '1' %}<p class="alert">📝 Solo pre-tickets de la ⚡ Captura rápida, por revisar. Ábrelos con ✏️ Editar y al guardar quedan como tickets normales. <a href="/app/tickets">Ver todos</a></p>{% endif %}
   {% if filtro.platica == '1' %}<p class="alert">💬 Solo tickets con plática con el cliente (tienen o tuvieron mensajes). <a href="/app/tickets">Ver todos</a></p>{% endif %}
 
   {% if resumen %}
@@ -33,6 +36,7 @@
     <input type="hidden" name="f" value="1" />
     {% if filtro.agenda == '1' %}<input type="hidden" name="agenda" value="1" />{% endif %}
     {% if filtro.platica == '1' %}<input type="hidden" name="platica" value="1" />{% endif %}
+    {% if filtro.pre == '1' %}<input type="hidden" name="pre" value="1" />{% endif %}
     <input type="search" name="texto" value="{{ filtro.texto }}" placeholder="Buscar por asunto, #, empresa, contacto o agente…" autocomplete="off" spellcheck="false" />
     <select name="estado">
       <option value="">Todos los estados</option>

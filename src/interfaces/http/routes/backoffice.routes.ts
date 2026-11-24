@@ -195,6 +195,12 @@ export function backofficeRoutes(container: Container): Router {
     tickets().rechazarPublicoPost(req, res),
   );
   r.get('/tickets/nuevo', requirePermission('tickets:crear'), (req, res) => tickets().nuevoForm(req, res));
+  r.get('/tickets/captura', requirePermission('tickets:crear'), (req, res) => tickets().capturaView(req, res));
+  r.post('/tickets/captura', requirePermission('tickets:crear'), (req, res) => tickets().capturaRevisarPost(req, res));
+  r.post('/tickets/captura/crear', requirePermission('tickets:crear'), async (req, res) => {
+    await tickets().capturaCrearPost(req, res);
+    cacheContadores.delete(container);
+  });
   r.post('/tickets', requirePermission('tickets:crear'), (req, res) => tickets().crearPost(req, res));
   r.get('/tickets/exportar', leerTickets, (req, res) => tickets().exportarExcel(req, res));
   r.get('/tickets/:id', leerTickets, (req, res) => tickets().detalleView(req, res));

@@ -43,7 +43,9 @@ import { ticketVM, type TicketVM } from '../../presenters/TicketPresenter.js';
 import type { RespuestasSinLeerService } from '../../../../application/tickets/RespuestasSinLeerService.js';
 import { camposDeError } from '../../support/errores.js';
 import { ValidationError } from '../../../../core/errors/DomainError.js';
-import { esEstadoCerrado } from '../../../../core/entities/value-objects/EstadoTicket.js';
+import { esEstadoCerrado, esEstadoFinal, esEstadoResuelto } from '../../../../core/entities/value-objects/EstadoTicket.js';
+import { descripcionDeNota, interpretarNota, separarNotas } from '../../../../application/tickets/capturaRapida.js';
+import { instanteMexico } from '../../../../core/entities/value-objects/horaMexico.js';
 
 /** Valores de casillas con el mismo `name` (llegan como string o como arreglo). */
 const casillas = (v: unknown): string[] =>
@@ -125,6 +127,7 @@ export class TicketController {
       ...(q.f === '1' && q.abiertos !== '0' ? { soloAbiertos: true } : {}),
       ...(q.agenda === '1' ? { soloProgramados: true } : {}),
       ...(q.platica === '1' ? { conPlatica: true } : {}),
+      ...(q.pre === '1' ? { preTicket: true } : {}),
       archivado: false,
     };
   }
@@ -362,6 +365,110 @@ export class TicketController {
         valores: { ...b, descripcion: sanitizarDescripcionHtml(str(b.descripcion)) },
         errores: camposDeError(err),
       });
+    }
+  };
+
+  /** Catálogos y valores fijos de la «⚡ Captura rápida». */
+  private async datosCaptura(user: NonNullable<Request['user']>) {
+    const [{ config }, agentes] = await Promise.all([
+      this.listar.listar(user, { limite: 0 }),
+      this.usuarios.list({ roles: ROLES_ASIGNABLES, activo: true }),
+    ]);
+    const estadoResuelto =
+      config.estados.find((e) => esEstadoResuelto(e)) ?? config.estados.find((e) => esEstadoFinal(e)) ?? config.estadoInicial;
+    return {
+      config,
+      agentes: agentes.map((a) => ({ uid: a.uid, nombre: a.nombre })).sort((a, b) => a.nombre.localeCompare(b.nombre, 'es')),
+      estadoResuelto,
+      puedeAsignar: user.permisos.includes('tickets:asignar'),
+    };
+  }
+
+  /** «⚡ Captura rápida»: pegar varias notas y convertirlas en tickets. */
+  capturaView = async (req: Request, res: Response): Promise<void> => {
+    const d = await this.datosCaptura(req.user!);
+    res.render('pages/backoffice/tickets/captura', {
+      titulo: 'Captura rápida de tickets',
+      ...d,
+      texto: '',
+      filas: null,
+      valores: { tipo: d.config.predeterminados?.tipo || '', agenteUid: req.user!.esTecnico ? req.user!.uid : '' },
+    });
+  };
+
+  /** Separa e interpreta las notas pegadas y muestra la tabla para revisar (no crea nada). */
+  capturaRevisarPost = async (req: Request, res: Response): Promise<void> => {
+    const b = req.body ?? {};
+    const texto = str(b.texto).slice(0, 200_000);
+    const [d, empresas, contactos] = await Promise.all([
+      this.datosCaptura(req.user!),
+      this.empresasRepo.list({ activa: true }),
+      this.contactosRepo.list({ activo: true }),
+    ]);
+    const agenteDefecto = str(b.agenteUid);
+    const filas = separarNotas(texto)
+      .slice(0, 100)
+      .map((n) =>
+        interpretarNota(n, {
+          empresas: empresas.map((e) => ({ id: e.id, nombre: e.nombre })),
+          contactos: contactos.map((c) => ({ nombre: c.nombre, email: c.email ?? null, empresaId: c.empresaId })),
+          agentes: d.agentes,
+          sistemas: d.config.sistemas,
+        }),
+      )
+      .map((f) => ({ ...f, agenteUid: f.agenteUid ?? agenteDefecto }));
+    res.render('pages/backoffice/tickets/captura', {
+      titulo: 'Captura rápida de tickets',
+      ...d,
+      texto,
+      filas,
+      hoy: new Date(this.clock.now().getTime() - 6 * 3_600_000).toISOString().slice(0, 10),
+      empresasNombres: empresas.map((e) => e.nombre).sort((a, b) => a.localeCompare(b, 'es')),
+      valores: { tipo: str(b.tipo), agenteUid: agenteDefecto },
+    });
+  };
+
+  /** Crea UN ticket de la captura rápida (la página los manda uno por uno). Responde JSON. */
+  capturaCrearPost = async (req: Request, res: Response): Promise<void> => {
+    const b = req.body ?? {};
+    const actor = req.user!;
+    try {
+      const empresaNombre = str(b.empresaNombre).trim() || null;
+      const fecha = /^\d{4}-\d{2}-\d{2}$/.test(str(b.fecha)) ? str(b.fecha) : '';
+      const ahora = this.clock.now();
+      // La fecha de la nota a mediodía (hora de México); nunca en el futuro.
+      const fechaCreacion = fecha ? new Date(Math.min(instanteMexico(fecha, '12:00').getTime(), ahora.getTime())) : null;
+      const agenteUid = actor.permisos.includes('tickets:asignar') ? str(b.agenteUid) : '';
+      const agente = agenteUid ? await this.usuarios.findByUid(agenteUid).catch(() => null) : null;
+      const texto = str(b.descripcion).trim();
+      const ticket = await this.crear.ejecutar({
+        actor,
+        asunto: str(b.asunto).trim(),
+        descripcion: descripcionDeNota(texto || str(b.asunto)),
+        tipo: str(b.tipo),
+        prioridad: parsePrioridad('Media'),
+        sistema: str(b.sistema) || null,
+        estado: str(b.estado) || null,
+        empresaId: empresaNombre ? await this.resolverEmpresaId(empresaNombre) : null,
+        empresaNombre,
+        contactoNombre: str(b.contactoNombre) || null,
+        contactoCorreo: str(b.contactoCorreo) || null,
+        solicitadoPor: str(b.solicitadoPor) || null,
+        estadoFacturacion: 'no_facturado',
+        fechaCreacion,
+        preTicket: true,
+        agente: agente ? { uid: agente.uid, nombre: agente.nombre } : null,
+      });
+      let correo = false;
+      if (b.enviarCorreo === true || b.enviarCorreo === 'on') {
+        correo = await this.reenviarCorreo
+          .ejecutar({ actor, ticketId: ticket.id, esReenvio: false, soloEquipo: false })
+          .then(() => true)
+          .catch(() => false);
+      }
+      res.json({ ok: true, id: ticket.id, numero: ticket.numero, correo });
+    } catch (err) {
+      res.status(422).json({ ok: false, detalle: err instanceof Error ? err.message : 'No se pudo crear' });
     }
   };
 

@@ -1,0 +1,96 @@
+{% extends "layouts/backoffice.njk" %}
+{% block title %}Captura rápida{% endblock %}
+{% block content %}
+  <div class="page-head">
+    <h1>⚡ Captura rápida de tickets</h1>
+    <div class="page-head__actions">
+      <a class="btn btn--sm btn--secondary" href="/app/tickets/nuevo">Nuevo ticket (uno)</a>
+      <a class="btn btn--sm btn--ghost" href="/app/tickets">← Tickets</a>
+    </div>
+  </div>
+
+  <form method="post" action="/app/tickets/captura" class="card">
+    <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+    <p class="muted">Pega aquí tus notas, todas juntas. Cada nota empieza con su renglón de encabezado,
+      por ejemplo <strong>«CANUL Y ASOCIADOS - ALFONSO 28/10/2026»</strong>, y abajo lo que pasó.
+      Si alguna no se separa bien, pon una línea con <code>---</code> entre notas.
+      <br>Todavía no se crea nada: primero ves la tabla para revisar.</p>
+    <label class="field"><span>📝 Tus notas</span>
+      <textarea name="texto" rows="{{ 6 if filas else 14 }}" required placeholder="CANUL Y ASOCIADOS - ALFONSO 28/10/2026&#10;Se configuró el acceso remoto&#10;&#10;Grupo Rocasa Peninsular - ALFONSO 21/10/2026&#10;Contador Alberto: no abre la contabilidad">{{ texto }}</textarea></label>
+    <div class="form-grid">
+      <label class="field"><span>Tipo de ticket (para todos)</span>
+        <select name="tipo">
+          {% for t in config.tipos %}<option value="{{ t }}" {{ 'selected' if t == valores.tipo }}>{{ t }}</option>{% endfor %}
+        </select></label>
+      {% if puedeAsignar %}
+      <label class="field"><span>Agente si la nota no dice</span>
+        <select name="agenteUid">
+          <option value="">— Sin asignar —</option>
+          {% for a in agentes %}<option value="{{ a.uid }}" {{ 'selected' if a.uid == valores.agenteUid }}>{{ a.nombre }}</option>{% endfor %}
+        </select></label>
+      {% endif %}
+    </div>
+    <div class="page-head__actions"><button class="btn" type="submit">🔍 Separar y revisar</button></div>
+  </form>
+
+  {% if filas %}
+    {% set sinEmpresa = [] %}
+    {% for f in filas %}{% if not f.empresaId %}{% set _ = sinEmpresa.push(1) %}{% endif %}{% endfor %}
+    <div class="card" data-captura data-tipo="{{ valores.tipo }}">
+      <h2>Revisa antes de crear <span class="muted">({{ filas.length }} notas)</span></h2>
+      <p class="muted">Corrige aquí empresa, asunto, fecha, agente y estado; lo demás (tipo, sistema, prioridad…)
+        lo ajustas después en cada ticket con ✏️. Quita la palomita ✓ de lo que no quieras crear.
+        <br>Se crean como <strong>📝 Pre-tickets</strong>: los encuentras en <a href="/app/tickets?pre=1">Tickets → 📝 Pre-tickets</a> y al guardarlos con ✏️ Editar quedan como tickets normales.
+        {% if sinEmpresa.length %}<br><strong>⚠️ {{ sinEmpresa.length }} sin empresa reconocida</strong>: escríbela o elígela de la lista.{% endif %}</p>
+      <datalist id="captura-empresas">{% for e in empresasNombres %}<option value="{{ e }}"></option>{% endfor %}</datalist>
+      <div class="captura-wrap">
+        <table class="data-table captura-tabla">
+          <thead><tr>
+            <th title="Crear este">✓</th><th>Empresa</th><th>Asunto</th><th>Fecha</th>
+            {% if puedeAsignar %}<th>Agente</th>{% endif %}<th>Estado</th><th title="Mandar correo al cliente">✉️</th><th>Resultado</th>
+          </tr></thead>
+          <tbody>
+          {% for f in filas %}
+            <tr data-captura-fila>
+              <td><input type="checkbox" data-c="incluir" checked aria-label="Crear este ticket" /></td>
+              <td>
+                <input data-c="empresaNombre" list="captura-empresas" value="{{ f.empresaNombre }}" class="nombre-sensible {{ '' if f.empresaId else 'captura-falta' }}" placeholder="⚠️ ¿Qué empresa?" />
+                {% if f.contactoNombre %}<div class="muted nombre-sensible">👤 {{ f.contactoNombre }}</div>{% endif %}
+                {% if f.solicitadoPor %}<div class="muted nombre-sensible" title="Lo del encabezado que no se reconoció; queda en «Solicitado por»">🗣 {{ f.solicitadoPor }}</div>{% endif %}
+                <input type="hidden" data-c="contactoNombre" value="{{ f.contactoNombre }}" />
+                <input type="hidden" data-c="contactoCorreo" value="{{ f.contactoCorreo }}" />
+                <input type="hidden" data-c="solicitadoPor" value="{{ f.solicitadoPor }}" />
+                <input type="hidden" data-c="sistema" value="{{ f.sistema }}" />
+              </td>
+              <td>
+                <input data-c="asunto" value="{{ f.asunto }}" required />
+                {% if f.sistema %}<div class="muted">🧩 {{ f.sistema }}</div>{% endif %}
+                <details><summary class="muted">📝 Nota completa</summary>
+                  <textarea data-c="descripcion" rows="5" class="sensible">{{ f.texto }}</textarea></details>
+              </td>
+              <td><input type="date" data-c="fecha" value="{{ f.fecha or hoy }}" max="{{ hoy }}" /></td>
+              {% if puedeAsignar %}
+              <td><select data-c="agenteUid">
+                <option value="">— Sin asignar —</option>
+                {% for a in agentes %}<option value="{{ a.uid }}" {{ 'selected' if a.uid == f.agenteUid }}>{{ a.nombre }}</option>{% endfor %}
+              </select></td>
+              {% endif %}
+              <td><select data-c="estado">
+                {% for e in config.estados %}<option value="{{ e }}" {{ 'selected' if e == estadoResuelto }}>{{ e }}</option>{% endfor %}
+              </select></td>
+              <td><input type="checkbox" data-c="enviarCorreo" {{ 'disabled title="Sin correo de contacto"' if not f.contactoCorreo else 'title="Mandarle el correo del ticket al cliente"' }} aria-label="Mandar correo al cliente" /></td>
+              <td data-c="resultado" class="muted">—</td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div class="page-head__actions">
+        <button class="btn" type="button" data-captura-crear>✅ Crear tickets marcados</button>
+        <span class="muted" data-captura-avance></span>
+      </div>
+    </div>
+  {% elif filas !== null and texto %}
+    <p class="alert">No encontré notas en el texto pegado.</p>
+  {% endif %}
+{% endblock %}

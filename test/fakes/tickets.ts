@@ -189,6 +189,7 @@ export class InMemoryTicketQueries implements ITicketQueries {
     if (f.soloProgramados && t.fechaHoraProgramada === null) return false;
     if (f.archivado !== undefined && t.archivado !== f.archivado) return false;
     if (f.conPlatica && !t.conPlatica) return false;
+    if (f.preTicket && !t.preTicket) return false;
     if (f.texto && !coincideTexto(t, f.texto)) return false;
     if (f.tipo && t.tipo !== f.tipo) return false;
     if (f.facturacion && t.facturacion.estado !== f.facturacion) return false;

@@ -132,6 +132,8 @@ export interface TicketProps {
    * el repositorio al guardar la nota — nunca `save()`, para que un ticket cargado antes no lo borre.
    */
   conPlatica?: boolean;
+  /** Pre-ticket de la «⚡ Captura rápida»: falta revisarlo; se quita al guardar con ✏️ Editar. */
+  preTicket?: boolean;
   /** Folio de un ticket que se eliminó: se conserva para que la numeración siga consecutiva. */
   eliminadoPorAdmin?: boolean;
 }
@@ -198,6 +200,8 @@ export class Ticket {
   archivado: boolean;
   /** Solo lectura en la práctica: ver `TicketProps.conPlatica`. */
   conPlatica: boolean;
+  /** Ver `TicketProps.preTicket`. */
+  preTicket: boolean;
   eliminadoPorAdmin: boolean;
 
   constructor(props: TicketProps) {
@@ -264,6 +268,7 @@ export class Ticket {
     this.agenda = sanearAgenda(props.agenda);
     this.archivado = props.archivado ?? false;
     this.conPlatica = props.conPlatica ?? false;
+    this.preTicket = props.preTicket ?? false;
     this.eliminadoPorAdmin = props.eliminadoPorAdmin ?? false;
   }
 
@@ -328,6 +333,7 @@ export class Ticket {
     estadoFacturacion?: EstadoFacturacion;
     agenda?: AgendaTicket | null;
     horasSla?: number;
+    preTicket?: boolean;
     ahora: Date;
   }): Ticket {
     if (input.asunto.trim().length < 3) {
@@ -410,6 +416,11 @@ export class Ticket {
     this.agenteAsignadoUid = agenteUid;
     this.agenteAsignadoNombre = agenteNombre;
     this.updatedAt = ahora;
+  }
+
+  /** El pre-ticket ya se revisó: queda como ticket normal. */
+  confirmarPreTicket(): void {
+    this.preTicket = false;
   }
 
   desasignar(ahora: Date): void {

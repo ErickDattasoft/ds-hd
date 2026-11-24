@@ -129,7 +129,13 @@ export class EditarTicketService {
     );
     const despues = this.foto(ticket);
     const cambios = Object.keys(ETIQUETAS).filter((k) => antes[k] !== despues[k]);
-    if (!cambios.length) return ticket;
+    // Guardar con ✏️ Editar es «ya lo revisé»: el pre-ticket queda como ticket normal.
+    const eraPreTicket = ticket.preTicket;
+    ticket.confirmarPreTicket();
+    if (!cambios.length) {
+      if (eraPreTicket) await this.tickets.save(ticket);
+      return ticket;
+    }
 
     await this.tickets.save(ticket);
     await registrarEvento(this.tickets, this.ids, ticket.id, {

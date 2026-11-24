@@ -24,6 +24,8 @@ export interface TicketVM {
   id: string;
   /** Respuesta del cliente que nadie del equipo ha visto (buzón 🔔); resalta la fila. */
   respuestaSinLeer?: { autorNombre: string; extracto: string } | null;
+  /** Pre-ticket de la captura rápida, por revisar. */
+  preTicket: boolean;
   numero: number;
   asunto: string;
   estado: string;
@@ -99,6 +101,7 @@ export function ticketVM(t: Ticket, ahora: Date): TicketVM {
     id: t.id,
     numero: t.numero,
     asunto: t.asunto,
+    preTicket: t.preTicket,
     estado: t.estado,
     prioridad: t.prioridad,
     tipo: t.tipo,

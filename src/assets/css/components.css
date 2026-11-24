@@ -2091,3 +2091,14 @@ dialog.facturar-cerrar h2 { margin: 0 0 var(--space-2); font-size: 1.2rem; }
 .contactos-repetidos { display: flex; gap: 1rem; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; margin-bottom: 1rem; }
 .contactos-repetidos ul { margin: .35rem 0 .35rem 1.1rem; padding: 0; }
 .contactos-repetidos form { flex-shrink: 0; }
+
+/* ⚡ Captura rápida de tickets */
+.captura-wrap { overflow-x: auto; }
+.captura-tabla { width: 100%; }
+.captura-tabla thead th { position: static; }
+.captura-tabla input:not([type=checkbox]), .captura-tabla select, .captura-tabla textarea { width: 100%; min-width: 7rem; box-sizing: border-box; }
+.captura-tabla td:nth-child(2) { min-width: 15rem; }
+.captura-tabla td:nth-child(3) { min-width: 18rem; }
+.captura-tabla .captura-falta { border-color: var(--warning, #d97706); background: color-mix(in srgb, var(--warning, #d97706) 12%, transparent); }
+.captura-tabla tr.captura-ok td { background: color-mix(in srgb, var(--success, #16a34a) 12%, transparent); }
+.badge--pre { background: var(--warning, #b45309); color: #fff; font-weight: 600; text-decoration: none; }

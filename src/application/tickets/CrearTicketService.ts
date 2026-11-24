@@ -10,6 +10,7 @@ import { Ticket } from '../../core/entities/Ticket.js';
 import { horasSlaDe } from '../../core/entities/ConfiguracionTickets.js';
 import { parsePrioridad } from '../../core/entities/value-objects/Prioridad.js';
 import { ValidationError } from '../../core/errors/DomainError.js';
+import { esEstadoFinal } from '../../core/entities/value-objects/EstadoTicket.js';
 import { CONTADOR_TICKETS } from './constantes.js';
 import { registrarEvento } from './efectos.js';
 import { desinflarImagenesDescripcion } from './desinflarImagenesDescripcion.js';
@@ -35,10 +36,14 @@ export class CrearTicketService {
     if (input.tipo && !cfg.tipos.includes(input.tipo)) {
       throw new ValidationError(`Tipo de ticket no válido: ${input.tipo}`, { tipo: 'No reconocido' });
     }
-    const estadoInicial =
+    const estadoPedido =
       input.estado && cfg.estados.includes(input.estado) ? input.estado : cfg.estadoInicial;
+    // Un ticket que nace resuelto o cerrado entra con el estado inicial y se cambia enseguida:
+    // así queda con su fecha de resuelto/cerrado y el historial completo.
+    const naceFinal = esEstadoFinal(estadoPedido) && !esEstadoFinal(cfg.estadoInicial);
+    const estadoInicial = naceFinal ? cfg.estadoInicial : estadoPedido;
 
-    const ahora = this.clock.now();
+    const ahora = input.fechaCreacion ?? this.clock.now();
     const numero = await this.contadores.siguiente(CONTADOR_TICKETS);
     // El id se genera aquí (no dentro de Ticket.crear) para poder "desinflar" las imágenes
     // pegadas en la descripción — cada una se sube como adjunto de ESTE ticket antes de
@@ -83,12 +88,16 @@ export class CrearTicketService {
       estadoFacturacion: input.estadoFacturacion,
       agenda: input.agenda ?? null,
       horasSla: horasSlaDe(cfg, prioridad),
+      preTicket: input.preTicket ?? false,
       ahora,
     });
 
     if (input.asignarAlActor && input.actor.esTecnico) {
       ticket.asignar(input.actor.uid, input.actor.nombre, ahora);
+    } else if (input.agente?.uid) {
+      ticket.asignar(input.agente.uid, input.agente.nombre, ahora);
     }
+    if (naceFinal) ticket.cambiarEstado(estadoPedido, cfg.estados, ahora);
 
     await this.tickets.save(ticket);
     await registrarEvento(this.tickets, this.ids, ticket.id, {

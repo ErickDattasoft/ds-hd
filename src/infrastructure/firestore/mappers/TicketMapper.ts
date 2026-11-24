@@ -77,6 +77,7 @@ export const TicketMapper = {
       historialEstados: historial,
       archivado: Boolean(d.archivado),
       conPlatica: d.conPlatica === true,
+      preTicket: d.preTicket === true,
       eliminadoPorAdmin: d.eliminadoPorAdmin === true,
     });
   },
@@ -104,6 +105,7 @@ export const TicketMapper = {
       solicitadoPor: t.solicitadoPor,
       canalizadoA: t.canalizadoA,
       notasInternas: t.notasInternas,
+      preTicket: t.preTicket,
       cc: t.cc,
       cco: t.cco,
       satisfaccion: t.satisfaccion

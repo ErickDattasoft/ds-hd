@@ -34,6 +34,7 @@ export class FirestoreTicketQueries implements ITicketQueries {
     if (filtro.canal) out.push(['canal', filtro.canal]);
     if (filtro.soloAbiertos) out.push(['abierto', true]);
     if (filtro.conPlatica) out.push(['conPlatica', true]);
+    if (filtro.preTicket) out.push(['preTicket', true]);
     // Otro distribuidor sí va al servidor (sus tickets ya nacen con el campo); DATTASOFT no,
     // porque los tickets de antes del campo no lo traen y se perderían (ver `postFiltro`).
     if (filtro.distribuidor && filtro.distribuidor !== DISTRIBUIDOR_POR_DEFECTO) {

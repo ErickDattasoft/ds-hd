@@ -4335,6 +4335,60 @@
   document.addEventListener('htmx:responseError', function () {
     location.reload();
   });
+
+  // ── Tickets: «⚡ Captura rápida» — crea los renglones marcados uno por uno (cada petición
+  // del Worker tiene un tope de consultas) y deja en cada uno su enlace para ajustarlo. ──
+  document.addEventListener('click', async function (e) {
+    var btn = e.target.closest && e.target.closest('[data-captura-crear]');
+    if (!btn) return;
+    var caja = btn.closest('[data-captura]');
+    var filas = Array.prototype.slice.call(caja.querySelectorAll('[data-captura-fila]')).filter(function (tr) {
+      return tr.querySelector('[data-c="incluir"]').checked && !tr.dataset.creado;
+    });
+    if (!filas.length) { alert('No hay renglones marcados por crear.'); return; }
+    var conCorreo = filas.filter(function (tr) { var c = tr.querySelector('[data-c="enviarCorreo"]'); return c && c.checked; }).length;
+    if (!confirm('¿Crear ' + filas.length + ' ticket(s)?' + (conCorreo ? '\n✉️ A ' + conCorreo + ' cliente(s) les llegará correo.' : '\nNo se manda correo a nadie.'))) return;
+    var tipo = (document.querySelector('form[action="/app/tickets/captura"] [name="tipo"]') || {}).value || caja.dataset.tipo || '';
+    var avance = caja.querySelector('[data-captura-avance]');
+    btn.disabled = true;
+    var bien = 0, mal = 0;
+    for (var i = 0; i < filas.length; i++) {
+      var tr = filas[i];
+      var v = function (k) { var el = tr.querySelector('[data-c="' + k + '"]'); return el ? (el.type === 'checkbox' ? el.checked : el.value) : ''; };
+      var res = tr.querySelector('[data-c="resultado"]');
+      avance.textContent = '⏳ Creando ' + (i + 1) + ' de ' + filas.length + '…';
+      res.textContent = '⏳';
+      try {
+        var r = await fetch('/app/tickets/captura/crear', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', accept: 'application/json', 'x-csrf-token': cookie('x-csrf-token') },
+          body: JSON.stringify({
+            tipo: tipo, empresaNombre: v('empresaNombre'), asunto: v('asunto'), descripcion: v('descripcion'),
+            fecha: v('fecha'), agenteUid: v('agenteUid'), estado: v('estado'), enviarCorreo: v('enviarCorreo'),
+            contactoNombre: v('contactoNombre'), contactoCorreo: v('contactoCorreo'), solicitadoPor: v('solicitadoPor'), sistema: v('sistema'),
+          }),
+        });
+        var d = await r.json().catch(function () { return { ok: false, detalle: 'Respuesta inválida' }; });
+        if (!d.ok) throw new Error(d.detalle || 'No se pudo crear');
+        tr.dataset.creado = '1';
+        tr.classList.add('captura-ok');
+        tr.querySelectorAll('input, select, textarea').forEach(function (el) { el.disabled = true; });
+        res.innerHTML = '';
+        var a = document.createElement('a');
+        a.href = '/app/tickets/' + d.id + '/editar'; a.target = '_blank'; a.rel = 'noopener';
+        a.textContent = '✅ #' + d.numero + ' ✏️';
+        a.title = 'Abrir para ajustar tipo, sistema, etc.';
+        res.appendChild(a);
+        if (d.correo) res.appendChild(document.createTextNode(' ✉️'));
+        bien++;
+      } catch (err) {
+        res.textContent = '❌ ' + err.message;
+        mal++;
+      }
+    }
+    avance.textContent = '✅ ' + bien + ' creado(s)' + (mal ? ' · ❌ ' + mal + ' con error (corrígelos y vuelve a dar clic)' : '');
+    btn.disabled = false;
+  });
   document.addEventListener('htmx:sendError', function () {
     alert('Se perdió la conexión. Revisa tu internet e intenta de nuevo.');
   });
