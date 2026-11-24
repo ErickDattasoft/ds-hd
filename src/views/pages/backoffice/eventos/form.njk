@@ -18,12 +18,11 @@
 
     <section class="ev-paso">
       <h2 class="ev-paso__titulo"><span class="ev-paso__num">1</span> ¿Qué vas a hacer?</h2>
-      {% set ayudaTipo = { webinar: 'En línea, con liga para entrar', presencial: 'En un lugar, con mapa y programa', felicitacion: 'Una tarjeta para leer, sin confirmar', comunicado: 'Pegas el link que pasa CONTPAQi y lo mandas' } %}
       <div class="inv-opciones inv-opciones--4">
         {% for t in TIPOS_EVENTO %}
           <label class="inv-opcion">
             <input type="radio" name="tipo" value="{{ t }}" {{ 'checked' if tipoActual == t }} />
-            <span>{{ TIPO_EVENTO_ETIQUETA[t] }}<small class="evf-ayuda">{{ ayudaTipo[t] }}</small></span>
+            <span>{{ TIPO_EVENTO_ETIQUETA[t] }}<small class="evf-ayuda">{{ TIPO_EVENTO_AYUDA[t] }}</small></span>
           </label>
         {% endfor %}
       </div>

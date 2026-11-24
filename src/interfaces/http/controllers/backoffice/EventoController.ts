@@ -12,6 +12,8 @@ import {
   ESTILOS_EVENTO,
   ESTILO_EVENTO_INFO,
   TIPO_EVENTO_ETIQUETA,
+  TIPO_EVENTO_AYUDA,
+  TIPO_EVENTO_GRUPO,
   MAX_PASES,
   type TipoEvento,
   type EstiloEvento,
@@ -34,7 +36,7 @@ const waLink = (tel: string | null | undefined, texto: string): string => {
 };
 /** Texto de fábrica del mensaje de confirmación según el tipo de evento. */
 const plantillaDe = (tipo: unknown): string => (tipo === 'presencial' ? PLANTILLA_PRESENCIAL_DEFAULT : PLANTILLA_EVENTO_DEFAULT);
-const datosFormulario = { TIPOS_EVENTO, TIPO_EVENTO_ETIQUETA, ESTILOS_EVENTO, ESTILO_EVENTO_INFO };
+const datosFormulario = { TIPOS_EVENTO, TIPO_EVENTO_ETIQUETA, TIPO_EVENTO_AYUDA, ESTILOS_EVENTO, ESTILO_EVENTO_INFO };
 const respuesta = (v: unknown): RespuestaInvitacion | undefined =>
   RESPUESTAS_INVITACION.includes(v as RespuestaInvitacion) ? (v as RespuestaInvitacion) : undefined;
 
@@ -47,6 +49,15 @@ export class EventoController {
     res.render('pages/backoffice/eventos/list', {
       titulo: 'Eventos',
       eventos,
+      // Un recuadro por tipo, en el mismo orden que las tarjetas de arriba.
+      grupos: TIPOS_EVENTO.map((tipo) => ({
+        tipo,
+        titulo: TIPO_EVENTO_GRUPO[tipo],
+        eventos: eventos.filter((e) => e.tipo === tipo),
+      })),
+      TIPOS_EVENTO,
+      TIPO_EVENTO_ETIQUETA,
+      TIPO_EVENTO_AYUDA,
       hayEjemplos: eventos.some((e) => e.esPrueba),
       aviso: str(req.query.aviso),
     });

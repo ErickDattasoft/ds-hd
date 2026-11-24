@@ -15,7 +15,6 @@
             <button class="btn btn--sm btn--ghost">🗑 Borrar ejemplos</button>
           </form>
         {% endif %}
-        <a class="btn btn--sm" href="/app/eventos/nuevo">Nuevo evento</a>
       </div>
     {% endif %}
   </div>
@@ -29,17 +28,42 @@
       <button class="btn btn--sm" type="submit">✉️ Agregar y enviar a los 5</button>
     </form>
   {% endif %}
-  <table class="data-table">
-    <thead><tr><th>Título</th><th>Fecha</th><th>Estado</th><th>Cupo</th></tr></thead>
-    <tbody>
-      {% for e in eventos %}
-        <tr>
-          <td><a href="/app/eventos/{{ e.id }}">{{ e.titulo }}</a></td>
-          <td>{% if e.esComunicado %}📢 Comunicado{% else %}{{ e.fechaHora | fechahora }}{% endif %}</td>
-          <td><span class="{{ e.estado | estadoClase }}">{{ e.estado }}</span></td>
-          <td>{{ e.cupo if e.cupo else 'sin límite' }}</td>
-        </tr>
-      {% else %}<tr><td colspan="4" class="muted">📭 Sin eventos todavía.{% if can('eventos:gestionar') %} <a href="/app/eventos/nuevo">Crea el primero</a>.{% endif %}</td></tr>{% endfor %}
-    </tbody>
-  </table>
+  {#- Arriba: una tarjeta por tipo (abre «Nuevo» con ese tipo ya elegido). Abajo: un recuadro por tipo. -#}
+  {% if can('eventos:gestionar') %}
+    <section class="ev-paso">
+      <h2 class="ev-paso__titulo">➕ ¿Qué quieres hacer?</h2>
+      <div class="ev-tipos">
+        {% for t in TIPOS_EVENTO %}
+          <a class="ev-tipo ev-tipo--{{ t }}" href="/app/eventos/nuevo?tipo={{ t }}">
+            <strong>{{ TIPO_EVENTO_ETIQUETA[t] }}</strong>
+            <small>{{ TIPO_EVENTO_AYUDA[t] }}</small>
+            <span class="ev-tipo__nuevo">＋ Nuevo</span>
+          </a>
+        {% endfor %}
+      </div>
+    </section>
+  {% endif %}
+
+  {% for g in grupos %}
+    <section class="ev-paso ev-grupo ev-grupo--{{ g.tipo }}" id="tipo-{{ g.tipo }}">
+      <h2 class="ev-paso__titulo">{{ g.titulo }} <span class="badge">{{ g.eventos | length }}</span></h2>
+      {% if g.eventos | length %}
+        <div class="table-wrap"><table class="data-table">
+          <thead><tr><th>Título</th><th>{{ 'Creado' if g.tipo == 'comunicado' else 'Fecha' }}</th><th>Estado</th>{% if g.tipo != 'comunicado' and g.tipo != 'felicitacion' %}<th>Cupo</th>{% endif %}</tr></thead>
+          <tbody>
+            {% for e in g.eventos %}
+              <tr>
+                <td><a href="/app/eventos/{{ e.id }}">{{ e.titulo }}</a></td>
+                <td>{{ (e.createdAt if g.tipo == 'comunicado' else e.fechaHora) | fechahora }}</td>
+                <td><span class="{{ e.estado | estadoClase }}">{{ e.estado }}</span></td>
+                {% if g.tipo != 'comunicado' and g.tipo != 'felicitacion' %}<td>{{ e.cupo if e.cupo else 'sin límite' }}</td>{% endif %}
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table></div>
+      {% else %}
+        <p class="muted">📭 Todavía no hay.{% if can('eventos:gestionar') %} <a href="/app/eventos/nuevo?tipo={{ g.tipo }}">Crear uno</a>.{% endif %}</p>
+      {% endif %}
+    </section>
+  {% endfor %}
 {% endblock %}

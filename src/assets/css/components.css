@@ -2043,3 +2043,25 @@ dialog.facturar-cerrar h2 { margin: 0 0 var(--space-2); font-size: 1.2rem; }
   .evf-guardar__botones { width: 100%; }
   .evf-guardar__botones .btn { flex: 1; }
 }
+
+/* Eventos (lista): tarjetas de tipo arriba y un recuadro por tipo. */
+.ev-tipos { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-3); }
+@media (max-width: 900px) { .ev-tipos { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 420px) { .ev-tipos { grid-template-columns: 1fr; } }
+.ev-tipo { --_c: var(--color-primary); display: flex; flex-direction: column; gap: var(--space-1); padding: var(--space-4); border: 1px solid var(--color-border); border-top: 4px solid var(--_c); border-radius: var(--radius); background: var(--color-surface); color: var(--color-text); text-decoration: none; transition: transform .12s, box-shadow .12s; }
+.ev-tipo:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgb(0 0 0 / .12); text-decoration: none; }
+.ev-tipo strong { font-size: 1.1rem; }
+.ev-tipo small { color: var(--color-text-muted); }
+.ev-tipo__nuevo { margin-top: auto; padding-top: var(--space-2); color: var(--_c); font-weight: 700; }
+.ev-tipo--webinar, .ev-grupo--webinar { --_c: #2f7de1; }
+.ev-tipo--presencial, .ev-grupo--presencial { --_c: #16a34a; }
+.ev-tipo--felicitacion, .ev-grupo--felicitacion { --_c: #e0457b; }
+.ev-tipo--comunicado, .ev-grupo--comunicado { --_c: #f08c00; }
+.ev-grupo { border-left: 5px solid var(--_c); }
+.ev-grupo .ev-paso__titulo { color: var(--_c); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .ev-tipo--webinar, :root:not([data-theme="light"]) .ev-grupo--webinar { --_c: #5aa2ff; } :root:not([data-theme="light"]) .ev-tipo--presencial, :root:not([data-theme="light"]) .ev-grupo--presencial { --_c: #3ddc84; } :root:not([data-theme="light"]) .ev-tipo--felicitacion, :root:not([data-theme="light"]) .ev-grupo--felicitacion { --_c: #ff6fa5; } :root:not([data-theme="light"]) .ev-tipo--comunicado, :root:not([data-theme="light"]) .ev-grupo--comunicado { --_c: #ffb02e; } }
+:root[data-theme="dark"] .ev-tipo--webinar, :root[data-theme="dark"] .ev-grupo--webinar { --_c: #5aa2ff; }
+:root[data-theme="dark"] .ev-tipo--presencial, :root[data-theme="dark"] .ev-grupo--presencial { --_c: #3ddc84; }
+:root[data-theme="dark"] .ev-tipo--felicitacion, :root[data-theme="dark"] .ev-grupo--felicitacion { --_c: #ff6fa5; }
+:root[data-theme="dark"] .ev-tipo--comunicado, :root[data-theme="dark"] .ev-grupo--comunicado { --_c: #ffb02e; }
+.ev-grupo .data-table thead th { position: static; } /* tablas cortas dentro del recuadro: sin encabezado fijo */

@@ -15,6 +15,22 @@ export const TIPO_EVENTO_ETIQUETA: Record<TipoEvento, string> = {
   comunicado: '📢 Comunicado',
 };
 
+/** Explicación corta de cada tipo (tarjetas de Eventos y del formulario). */
+export const TIPO_EVENTO_AYUDA: Record<TipoEvento, string> = {
+  webinar: 'En línea, con liga para entrar',
+  presencial: 'En un lugar, con mapa y programa',
+  felicitacion: 'Una tarjeta para leer, sin confirmar',
+  comunicado: 'Pegas el link que pasa CONTPAQi y lo mandas',
+};
+
+/** Título de cada recuadro en la lista de Eventos. */
+export const TIPO_EVENTO_GRUPO: Record<TipoEvento, string> = {
+  webinar: '💻 Webinars',
+  presencial: '📍 Eventos presenciales',
+  felicitacion: '🎉 Felicitaciones',
+  comunicado: '📢 Comunicados',
+};
+
 const esTipoEvento = (v: unknown): v is TipoEvento =>
   typeof v === 'string' && (TIPOS_EVENTO as readonly string[]).includes(v);
 

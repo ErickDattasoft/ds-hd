@@ -1268,3 +1268,25 @@ describe('eventos — 📢 comunicado (link de CONTPAQi)', () => {
     expect(alAbierto.html).toContain(`href="${LINK}"`);
   });
 });
+
+describe('eventos — página principal', () => {
+  it('arriba las tarjetas de cada tipo y abajo un recuadro por tipo con sus eventos', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    t.eventoRepo.items.set('w1', new Evento({ id: 'w1', titulo: 'Webinar de Nóminas', tipo: 'webinar', fechaHora: enUnaSemana() }));
+    t.eventoRepo.items.set('c1', new Evento({ id: 'c1', titulo: 'Cambios CFDI', tipo: 'comunicado', urlComunicado: 'https://www.contpaqi.com/x', fechaHora: new Date() }));
+    const { agent } = await login(t.app, ADMIN.email, ADMIN.password);
+    const res = await agent.get('/app/eventos');
+    expect(res.status).toBe(200);
+    for (const tipo of ['webinar', 'presencial', 'felicitacion', 'comunicado']) {
+      expect(res.text).toContain(`href="/app/eventos/nuevo?tipo=${tipo}"`);
+      expect(res.text).toContain(`id="tipo-${tipo}"`);
+    }
+    const webinars = res.text.slice(res.text.indexOf('id="tipo-webinar"'), res.text.indexOf('id="tipo-presencial"'));
+    expect(webinars).toContain('Webinar de Nóminas');
+    expect(webinars).not.toContain('Cambios CFDI');
+    expect(res.text.slice(res.text.indexOf('id="tipo-comunicado"'))).toContain('Cambios CFDI');
+    // La tarjeta abre el formulario con ese tipo ya elegido.
+    const form = await agent.get('/app/eventos/nuevo?tipo=comunicado');
+    expect(form.text).toMatch(/value="comunicado"\s+checked/);
+  });
+});
