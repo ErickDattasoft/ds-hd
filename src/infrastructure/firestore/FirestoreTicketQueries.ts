@@ -8,32 +8,56 @@ import type {
 import { coincideTexto, DISTRIBUIDOR_POR_DEFECTO, ticketDisponibleParaEquipo, ticketEsDeAgente, ticketSinNadieAsignado, type Ticket } from '../../core/entities/Ticket.js';
 import { esEstadoFinal, slugEstado } from '../../core/entities/value-objects/EstadoTicket.js';
 import { TicketMapper } from './mappers/TicketMapper.js';
+import { cumpleIgualdades, type CacheColecciones } from './CacheColecciones.js';
 
 const COL = 'tickets';
 
 
 /** Implementación Firestore del lado consulta de tickets. */
 export class FirestoreTicketQueries implements ITicketQueries {
-  constructor(private readonly db: Firestore) {}
+  /** `cache`: copia en memoria con sello de cambios (sin ella, cada consulta lee de Firestore). */
+  constructor(
+    private readonly db: Firestore,
+    private readonly cache?: CacheColecciones,
+  ) {}
 
-  private aplicar(filtro: FiltroTickets): Query {
-    let q: Query = this.db.collection(COL);
-    if (filtro.estado) q = q.where('estado', '==', filtro.estado);
-    if (filtro.prioridad) q = q.where('prioridad', '==', filtro.prioridad);
-    if (filtro.grupo) q = q.where('grupo', '==', filtro.grupo);
-    if (filtro.agenteAsignadoUid) q = q.where('agenteAsignadoUid', '==', filtro.agenteAsignadoUid);
-    if (filtro.sinAsignar) q = q.where('agenteAsignadoUid', '==', null);
-    if (filtro.empresaId) q = q.where('empresaId', '==', filtro.empresaId);
-    if (filtro.solicitanteUid) q = q.where('solicitanteUid', '==', filtro.solicitanteUid);
-    if (filtro.canal) q = q.where('canal', '==', filtro.canal);
-    if (filtro.soloAbiertos) q = q.where('abierto', '==', true);
-    if (filtro.conPlatica) q = q.where('conPlatica', '==', true);
+  /** Las igualdades que van al servidor (o se aplican sobre la copia en memoria, con el mismo criterio). */
+  private igualdades(filtro: FiltroTickets): [string, unknown][] {
+    const out: [string, unknown][] = [];
+    if (filtro.estado) out.push(['estado', filtro.estado]);
+    if (filtro.prioridad) out.push(['prioridad', filtro.prioridad]);
+    if (filtro.grupo) out.push(['grupo', filtro.grupo]);
+    if (filtro.agenteAsignadoUid) out.push(['agenteAsignadoUid', filtro.agenteAsignadoUid]);
+    if (filtro.sinAsignar) out.push(['agenteAsignadoUid', null]);
+    if (filtro.empresaId) out.push(['empresaId', filtro.empresaId]);
+    if (filtro.solicitanteUid) out.push(['solicitanteUid', filtro.solicitanteUid]);
+    if (filtro.canal) out.push(['canal', filtro.canal]);
+    if (filtro.soloAbiertos) out.push(['abierto', true]);
+    if (filtro.conPlatica) out.push(['conPlatica', true]);
     // Otro distribuidor sí va al servidor (sus tickets ya nacen con el campo); DATTASOFT no,
     // porque los tickets de antes del campo no lo traen y se perderían (ver `postFiltro`).
     if (filtro.distribuidor && filtro.distribuidor !== DISTRIBUIDOR_POR_DEFECTO) {
-      q = q.where('distribuidor', '==', filtro.distribuidor);
+      out.push(['distribuidor', filtro.distribuidor]);
     }
+    return out;
+  }
+
+  private aplicar(filtro: FiltroTickets): Query {
+    let q: Query = this.db.collection(COL);
+    for (const [campo, valor] of this.igualdades(filtro)) q = q.where(campo, '==', valor);
     return q;
+  }
+
+  /** Los tickets que cumplen las igualdades: de la copia en memoria si la hay, si no de Firestore. */
+  private async traer(filtro: FiltroTickets): Promise<Ticket[]> {
+    if (this.cache) {
+      const igualdades = this.igualdades(filtro);
+      return (await this.cache.todos('tickets'))
+        .filter((d) => cumpleIgualdades(d.data, igualdades))
+        .map((d) => TicketMapper.toDomain(d.id, d.data));
+    }
+    const snap = await this.aplicar(filtro).get();
+    return snap.docs.map((d) => TicketMapper.toDomain(d.id, d.data()));
   }
 
   private postFiltro(tickets: Ticket[], filtro: FiltroTickets): Ticket[] {
@@ -68,13 +92,14 @@ export class FirestoreTicketQueries implements ITicketQueries {
   }
 
   async listar(filtro: FiltroTickets): Promise<Ticket[]> {
-    const snap = await this.aplicar(filtro).get();
-    const tickets = snap.docs.map((d) => TicketMapper.toDomain(d.id, d.data()));
+    const tickets = await this.traer(filtro);
     const filtrados = this.postFiltro(tickets, filtro);
     return filtro.limite ? filtrados.slice(0, filtro.limite) : filtrados;
   }
 
   async contar(filtro: FiltroTickets): Promise<number> {
+    // Con la copia en memoria contar no cuesta lecturas (fuera del sello).
+    if (this.cache) return (await this.listar({ ...filtro, limite: undefined })).length;
     // Con soloAbiertos ya es una query indexable; texto/archivado se filtran en memoria.
     const enMemoria =
       filtro.texto || filtro.tipo || filtro.facturacion || filtro.soloProgramados ||
@@ -122,12 +147,7 @@ export class FirestoreTicketQueries implements ITicketQueries {
   ): Promise<CargaAgente[]> {
     return Promise.all(
       agentes.map(async (a) => {
-        const snap = await this.db
-          .collection(COL)
-          .where('agenteAsignadoUid', '==', a.uid)
-          .where('abierto', '==', true)
-          .get();
-        const tickets = snap.docs.map((d) => TicketMapper.toDomain(d.id, d.data()));
+        const tickets = await this.traer({ agenteAsignadoUid: a.uid, soloAbiertos: true });
         return {
           agenteUid: a.uid,
           agenteNombre: a.nombre,

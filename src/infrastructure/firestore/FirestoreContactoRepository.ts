@@ -2,6 +2,7 @@ import { type DocumentData, type Firestore, type Query } from 'firebase-admin/fi
 import { Timestamp } from '../../core/entities/value-objects/Timestamp.js';
 import type { IContactoRepository, ListarContactosFiltro } from '../../core/ports/repositories/IContactoRepository.js';
 import { Contacto } from '../../core/entities/Contacto.js';
+import { cumpleIgualdades, type CacheColecciones } from './CacheColecciones.js';
 
 const COL = 'contactos';
 const fecha = (v: unknown): Date | undefined => (v instanceof Timestamp ? v.toDate() : undefined);
@@ -28,7 +29,11 @@ function toDomain(id: string, d: DocumentData): Contacto {
 }
 
 export class FirestoreContactoRepository implements IContactoRepository {
-  constructor(private readonly db: Firestore) {}
+  /** `cache`: copia en memoria con sello de cambios (ver {@link CacheColecciones}). */
+  constructor(
+    private readonly db: Firestore,
+    private readonly cache?: CacheColecciones,
+  ) {}
 
   async findById(id: string): Promise<Contacto | null> {
     const s = await this.db.collection(COL).doc(id).get();
@@ -53,12 +58,23 @@ export class FirestoreContactoRepository implements IContactoRepository {
   }
 
   async list(filtro: ListarContactosFiltro = {}): Promise<Contacto[]> {
-    let q: Query = this.db.collection(COL);
-    if (filtro.empresaId) q = q.where('empresaId', '==', filtro.empresaId);
-    if (filtro.activo !== undefined) q = q.where('activo', '==', filtro.activo);
-    if (filtro.esPortal !== undefined) q = q.where('esPortal', '==', filtro.esPortal);
-    const snap = await q.get();
-    let contactos = snap.docs.map((d) => toDomain(d.id, d.data()));
+    let contactos: Contacto[];
+    if (this.cache) {
+      const igualdades: [string, unknown][] = [];
+      if (filtro.empresaId) igualdades.push(['empresaId', filtro.empresaId]);
+      if (filtro.activo !== undefined) igualdades.push(['activo', filtro.activo]);
+      if (filtro.esPortal !== undefined) igualdades.push(['esPortal', filtro.esPortal]);
+      contactos = (await this.cache.todos('contactos'))
+        .filter((d) => cumpleIgualdades(d.data, igualdades))
+        .map((d) => toDomain(d.id, d.data));
+    } else {
+      let q: Query = this.db.collection(COL);
+      if (filtro.empresaId) q = q.where('empresaId', '==', filtro.empresaId);
+      if (filtro.activo !== undefined) q = q.where('activo', '==', filtro.activo);
+      if (filtro.esPortal !== undefined) q = q.where('esPortal', '==', filtro.esPortal);
+      const snap = await q.get();
+      contactos = snap.docs.map((d) => toDomain(d.id, d.data()));
+    }
     if (filtro.texto) {
       const t = filtro.texto.toLowerCase();
       contactos = contactos.filter(

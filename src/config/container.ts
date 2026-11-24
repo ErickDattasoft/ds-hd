@@ -75,6 +75,7 @@ import type { IOportunidadRepository } from '../core/ports/repositories/IOportun
 import { FirestoreOportunidadRepository } from '../infrastructure/firestore/FirestoreOportunidadRepository.js';
 import type { IUnionEmpresasRepository } from '../core/ports/repositories/IUnionEmpresasRepository.js';
 import { FirestoreUnionEmpresasRepository } from '../infrastructure/firestore/FirestoreUnionEmpresasRepository.js';
+import { CacheColecciones, conSelloDeCambios } from '../infrastructure/firestore/CacheColecciones.js';
 import { UnirEmpresasService } from '../application/empresas/UnirEmpresasService.js';
 import { OportunidadService } from '../application/ventas/OportunidadService.js';
 import { OportunidadController } from '../interfaces/http/controllers/backoffice/OportunidadController.js';
@@ -233,6 +234,7 @@ export interface Cradle {
   filtroGuardadoRepo: IFiltroGuardadoRepository;
   oportunidadRepo: IOportunidadRepository;
   unionEmpresasRepo: IUnionEmpresasRepository;
+  cacheColecciones: CacheColecciones;
   unirEmpresasService: UnirEmpresasService;
   oportunidadController: OportunidadController;
   adjuntoTicketRepo: IAdjuntoTicketRepository;
@@ -470,13 +472,34 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
       ({ firestoreDb }: Cradle): IInvitacionRepository =>
         new FirestoreInvitacionRepository(requireFirestore(firestoreDb)),
     ).singleton(),
+    // Copia en memoria de tickets/empresas/contactos con sello de cambios: cada clic lee el sello
+    // (1 lectura) en vez de la colección completa. Los repos que escriben van envueltos con
+    // `conSelloDeCambios` para que ningún guardado deje la copia vieja en otras instancias.
+    cacheColecciones: asFunction(
+      ({ firestoreDb }: Cradle) => new CacheColecciones(requireFirestore(firestoreDb)),
+    ).singleton(),
     ticketRepo: asFunction(
-      ({ firestoreDb, bitacoraRepo, idGenerator }: Cradle): ITicketRepository =>
-        ticketRepoConBitacora(new FirestoreTicketRepository(requireFirestore(firestoreDb)), bitacoraRepo, idGenerator),
+      ({ firestoreDb, bitacoraRepo, idGenerator, cacheColecciones }: Cradle): ITicketRepository =>
+        ticketRepoConBitacora(
+          conSelloDeCambios(new FirestoreTicketRepository(requireFirestore(firestoreDb)), cacheColecciones, ['tickets'], [
+            'save',
+            'eliminar',
+            'eliminarVarios',
+            'guardarConDetalle',
+            'guardarVariosConDetalle',
+            'agregarNota',
+            'eliminarNota',
+            'marcarConPlatica',
+            'renombrarEstado',
+            'renombrarEstadoSinMayusculas',
+          ]),
+          bitacoraRepo,
+          idGenerator,
+        ),
     ).singleton(),
     ticketQueries: asFunction(
-      ({ firestoreDb }: Cradle): ITicketQueries =>
-        new FirestoreTicketQueries(requireFirestore(firestoreDb)),
+      ({ firestoreDb, cacheColecciones }: Cradle): ITicketQueries =>
+        new FirestoreTicketQueries(requireFirestore(firestoreDb), cacheColecciones),
     ).singleton(),
     contadorRepo: asFunction(
       ({ firestoreDb }: Cradle): IContadorRepository =>
@@ -487,8 +510,11 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
         new FirestoreIntentosLoginRepository(requireFirestore(firestoreDb)),
     ).singleton(),
     unionEmpresasRepo: asFunction(
-      ({ firestoreDb }: Cradle): IUnionEmpresasRepository =>
-        new FirestoreUnionEmpresasRepository(requireFirestore(firestoreDb)),
+      ({ firestoreDb, cacheColecciones }: Cradle): IUnionEmpresasRepository =>
+        conSelloDeCambios(new FirestoreUnionEmpresasRepository(requireFirestore(firestoreDb)), cacheColecciones, ['tickets', 'contactos'], [
+          'moverReferencias',
+          'moverReferenciasContacto',
+        ]),
     ).singleton(),
     unirEmpresasService: asFunction(
       (c: Cradle) => new UnirEmpresasService(c.empresaRepo, c.unionEmpresasRepo, c.clock, c.bitacoraService, c.contactoRepo),
@@ -553,12 +579,22 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
       c.turnstile.secret ? new TurnstileVerifier(c.turnstile.secret, l) : new NullCaptchaVerifier(),
     ).singleton(),
     empresaRepo: asFunction(
-      ({ firestoreDb }: Cradle): IEmpresaRepository =>
-        new FirestoreEmpresaRepository(requireFirestore(firestoreDb)),
+      ({ firestoreDb, cacheColecciones }: Cradle): IEmpresaRepository =>
+        conSelloDeCambios(new FirestoreEmpresaRepository(requireFirestore(firestoreDb), cacheColecciones), cacheColecciones, ['empresas'], [
+          'save',
+          'guardarVarias',
+          'eliminar',
+          'eliminarVarias',
+        ]),
     ).singleton(),
     contactoRepo: asFunction(
-      ({ firestoreDb }: Cradle): IContactoRepository =>
-        new FirestoreContactoRepository(requireFirestore(firestoreDb)),
+      ({ firestoreDb, cacheColecciones }: Cradle): IContactoRepository =>
+        conSelloDeCambios(new FirestoreContactoRepository(requireFirestore(firestoreDb), cacheColecciones), cacheColecciones, ['contactos'], [
+          'save',
+          'guardarVarios',
+          'eliminar',
+          'eliminarVarios',
+        ]),
     ).singleton(),
     bitacoraRepo: asFunction(
       ({ firestoreDb }: Cradle): IBitacoraRepository =>

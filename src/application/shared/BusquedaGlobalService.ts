@@ -15,7 +15,7 @@ const LIMITE_POR_TIPO = 5;
 const LIMITE_KB = 8;
 /** La KB solo cambia al reindexar: se guarda un rato en memoria para que cada letra tecleada en
  * Ctrl+K no vuelva a leer toda la colección de Firestore (cada artículo = 1 lectura). */
-const KB_CACHE_MS = 2 * 60_000;
+const KB_CACHE_MS = 10 * 60_000;
 
 /** Un resultado de la búsqueda global, ya listo para pintar (título + enlace). */
 export interface ResultadoBusqueda {

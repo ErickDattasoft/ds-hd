@@ -275,6 +275,19 @@
   document.addEventListener('click', function (e) {
     var link = e.target.closest('[data-respaldar]');
     if (!link) return;
+    // Cada respaldo lee TODA la base (≈2,000 lecturas de las 50,000 gratis del día): si ya se
+    // bajó uno hace poco en esta computadora, se pregunta antes de bajar otro.
+    var ultimo = 0;
+    try { ultimo = Number(localStorage.getItem('ds-ultimo-respaldo')) || 0; } catch { ultimo = 0; }
+    var horas = (Date.now() - ultimo) / 3600000;
+    if (ultimo && horas < 4) {
+      var hora = new Date(ultimo).toLocaleTimeString('es-MX', { hour: 'numeric', minute: '2-digit' });
+      if (!window.confirm('Ya descargaste un respaldo hoy a las ' + hora + '.\n\nCada respaldo lee TODA la base de datos (unas 2,000 lecturas de las 50,000 gratis del día; si se acaban, el CRM deja de funcionar hasta las 2:00 AM).\nCon uno al día basta, al final de la jornada.\n\n¿Descargar otro de todos modos?')) {
+        e.preventDefault();
+        return;
+      }
+    }
+    try { localStorage.setItem('ds-ultimo-respaldo', String(Date.now())); } catch { /* sin almacenamiento */ }
     fetch('/app/configuracion/backup/imagenes', { headers: { accept: 'application/json' } })
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (d) {

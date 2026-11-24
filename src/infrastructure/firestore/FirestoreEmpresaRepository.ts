@@ -3,6 +3,7 @@ import { Timestamp } from '../../core/entities/value-objects/Timestamp.js';
 import type { IEmpresaRepository, ListarEmpresasFiltro } from '../../core/ports/repositories/IEmpresaRepository.js';
 import { Empresa } from '../../core/entities/Empresa.js';
 import { mesDiaDeFecha } from '../../core/entities/value-objects/fechasEspeciales.js';
+import { cumpleIgualdades, type CacheColecciones } from './CacheColecciones.js';
 
 const COL = 'empresas';
 const fecha = (v: unknown): Date | undefined => (v instanceof Timestamp ? v.toDate() : undefined);
@@ -38,7 +39,11 @@ function toDomain(id: string, d: DocumentData): Empresa {
 }
 
 export class FirestoreEmpresaRepository implements IEmpresaRepository {
-  constructor(private readonly db: Firestore) {}
+  /** `cache`: copia en memoria con sello de cambios (ver {@link CacheColecciones}). */
+  constructor(
+    private readonly db: Firestore,
+    private readonly cache?: CacheColecciones,
+  ) {}
 
   async findById(id: string): Promise<Empresa | null> {
     const s = await this.db.collection(COL).doc(id).get();
@@ -52,10 +57,18 @@ export class FirestoreEmpresaRepository implements IEmpresaRepository {
   }
 
   async list(filtro: ListarEmpresasFiltro = {}): Promise<Empresa[]> {
-    let q: Query = this.db.collection(COL);
-    if (filtro.activa !== undefined) q = q.where('activa', '==', filtro.activa);
-    const snap = await q.get();
-    let empresas = snap.docs.map((d) => toDomain(d.id, d.data()));
+    let empresas: Empresa[];
+    if (this.cache) {
+      const igualdades: [string, unknown][] = filtro.activa !== undefined ? [['activa', filtro.activa]] : [];
+      empresas = (await this.cache.todos('empresas'))
+        .filter((d) => cumpleIgualdades(d.data, igualdades))
+        .map((d) => toDomain(d.id, d.data));
+    } else {
+      let q: Query = this.db.collection(COL);
+      if (filtro.activa !== undefined) q = q.where('activa', '==', filtro.activa);
+      const snap = await q.get();
+      empresas = snap.docs.map((d) => toDomain(d.id, d.data()));
+    }
     if (filtro.texto) {
       const t = filtro.texto.toLowerCase();
       empresas = empresas.filter(
