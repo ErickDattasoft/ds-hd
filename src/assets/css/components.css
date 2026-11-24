@@ -2102,3 +2102,43 @@ dialog.facturar-cerrar h2 { margin: 0 0 var(--space-2); font-size: 1.2rem; }
 .captura-tabla .captura-falta { border-color: var(--warning, #d97706); background: color-mix(in srgb, var(--warning, #d97706) 12%, transparent); }
 .captura-tabla tr.captura-ok td { background: color-mix(in srgb, var(--success, #16a34a) 12%, transparent); }
 .badge--pre { background: var(--warning, #b45309); color: #fff; font-weight: 600; text-decoration: none; }
+
+/* 🗒️ Mis notas (tipo Sticky Notes). Cada color define fondo, franja y texto; en oscuro van
+   tonos vivos como los del Sticky Notes de Windows. */
+.nota--amarillo { --n-bg: #fff7c2; --n-band: #f5c518; --n-text: #3d3300; }
+.nota--verde    { --n-bg: #dcf5d6; --n-band: #4caf50; --n-text: #173d14; }
+.nota--rosa     { --n-bg: #ffe0ef; --n-band: #e85a9b; --n-text: #4a1430; }
+.nota--morado   { --n-bg: #ece3fb; --n-band: #9c6ade; --n-text: #2e1957; }
+.nota--azul     { --n-bg: #ddeefc; --n-band: #3d9be9; --n-text: #0e2e4d; }
+.nota--gris     { --n-bg: #eceef1; --n-band: #8b95a3; --n-text: #23292f; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .nota--amarillo { --n-bg: #6b5a12; --n-band: #f5c518; --n-text: #fff8d6; }
+  :root:not([data-theme="light"]) .nota--verde    { --n-bg: #2f5a2e; --n-band: #7bd36f; --n-text: #e9fbe5; }
+  :root:not([data-theme="light"]) .nota--rosa     { --n-bg: #6e2c4d; --n-band: #f27fb7; --n-text: #ffe6f2; }
+  :root:not([data-theme="light"]) .nota--morado   { --n-bg: #5b4677; --n-band: #c7a5f5; --n-text: #f3ecff; }
+  :root:not([data-theme="light"]) .nota--azul     { --n-bg: #255a70; --n-band: #69c2ec; --n-text: #e4f5ff; }
+  :root:not([data-theme="light"]) .nota--gris     { --n-bg: #444a52; --n-band: #a3acb9; --n-text: #f0f2f5; }
+}
+:root[data-theme="dark"] .nota--amarillo { --n-bg: #6b5a12; --n-band: #f5c518; --n-text: #fff8d6; }
+:root[data-theme="dark"] .nota--verde    { --n-bg: #2f5a2e; --n-band: #7bd36f; --n-text: #e9fbe5; }
+:root[data-theme="dark"] .nota--rosa     { --n-bg: #6e2c4d; --n-band: #f27fb7; --n-text: #ffe6f2; }
+:root[data-theme="dark"] .nota--morado   { --n-bg: #5b4677; --n-band: #c7a5f5; --n-text: #f3ecff; }
+:root[data-theme="dark"] .nota--azul     { --n-bg: #255a70; --n-band: #69c2ec; --n-text: #e4f5ff; }
+:root[data-theme="dark"] .nota--gris     { --n-bg: #444a52; --n-band: #a3acb9; --n-text: #f0f2f5; }
+
+.notas { display: grid; grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr)); gap: 1rem; align-items: start; margin-top: 1rem; }
+.notas__buscar { min-width: 14rem; }
+.nota { background: var(--n-bg); color: var(--n-text); border-top: 6px solid var(--n-band); border-radius: 8px; box-shadow: var(--shadow-sm); display: flex; flex-direction: column; padding: .5rem .75rem .4rem; }
+.nota:focus-within { box-shadow: var(--shadow); outline: 2px solid var(--n-band); }
+.nota__cab { display: flex; justify-content: space-between; font-size: .8rem; opacity: .85; min-height: 1.1rem; }
+.nota__texto { background: transparent; color: inherit; border: 0; resize: none; font: inherit; font-size: 1rem; line-height: 1.45; width: 100%; min-height: 4.5rem; padding: .25rem 0; overflow: hidden; }
+.nota__texto:focus { outline: none; }
+.nota__texto::placeholder { color: inherit; opacity: .55; }
+.nota__pie { display: flex; align-items: center; gap: .25rem; border-top: 1px solid color-mix(in srgb, var(--n-text) 15%, transparent); padding-top: .35rem; margin-top: .25rem; }
+.nota__pie .btn { color: inherit; }
+.nota__colores { display: flex; gap: .3rem; margin-right: auto; }
+.nota__color { width: 1.1rem; height: 1.1rem; border-radius: 50%; border: 2px solid color-mix(in srgb, var(--n-text) 25%, transparent); background: var(--n-band); cursor: pointer; padding: 0; }
+.nota[data-color="amarillo"] .nota__color.nota--amarillo, .nota[data-color="verde"] .nota__color.nota--verde,
+.nota[data-color="rosa"] .nota__color.nota--rosa, .nota[data-color="morado"] .nota__color.nota--morado,
+.nota[data-color="azul"] .nota__color.nota--azul, .nota[data-color="gris"] .nota__color.nota--gris { outline: 2px solid currentColor; outline-offset: 1px; }
+@media (hover: hover) { .nota__pie { opacity: .35; transition: opacity .15s; } .nota:hover .nota__pie, .nota:focus-within .nota__pie { opacity: 1; } }

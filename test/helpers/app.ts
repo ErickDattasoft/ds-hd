@@ -29,6 +29,7 @@ import {
 import { InMemoryIntentosLoginRepository } from '../fakes/InMemoryIntentosLoginRepository.js';
 import { InMemoryOportunidadRepository } from '../fakes/InMemoryOportunidadRepository.js';
 import { InMemoryUnionEmpresasRepository } from '../fakes/unionEmpresas.js';
+import { InMemoryNotaPersonalRepository } from '../fakes/InMemoryNotaPersonalRepository.js';
 import { InMemoryFiltroGuardadoRepository } from '../fakes/InMemoryFiltroGuardadoRepository.js';
 import { InMemoryRespuestaSinLeerRepository } from '../fakes/InMemoryRespuestaSinLeerRepository.js';
 import { InMemoryAdjuntoTicketRepository } from '../fakes/InMemoryAdjuntoTicketRepository.js';
@@ -73,6 +74,7 @@ export interface TestApp {
   listaNegraRepo: InMemoryListaNegraRepository;
   captchaVerifier: FakeCaptchaVerifier;
   filtroGuardadoRepo: InMemoryFiltroGuardadoRepository;
+  notaPersonalRepo: InMemoryNotaPersonalRepository;
   respuestaSinLeerRepo: InMemoryRespuestaSinLeerRepository;
   oportunidadRepo: InMemoryOportunidadRepository;
   adjuntoTicketRepo: InMemoryAdjuntoTicketRepository;
@@ -146,6 +148,7 @@ export function makeTestApp(opts: { usuarios?: { uid: string; email: string; pas
     ),
     intentosLoginRepo: new InMemoryIntentosLoginRepository(),
     filtroGuardadoRepo: new InMemoryFiltroGuardadoRepository(),
+    notaPersonalRepo: new InMemoryNotaPersonalRepository(),
     respuestaSinLeerRepo: new InMemoryRespuestaSinLeerRepository(),
     oportunidadRepo,
     unionEmpresasRepo: new InMemoryUnionEmpresasRepository({
@@ -213,6 +216,7 @@ export function makeTestApp(opts: { usuarios?: { uid: string; email: string; pas
     listaNegraRepo,
     captchaVerifier,
     filtroGuardadoRepo: overrides.filtroGuardadoRepo as InMemoryFiltroGuardadoRepository,
+    notaPersonalRepo: overrides.notaPersonalRepo as InMemoryNotaPersonalRepository,
     respuestaSinLeerRepo: overrides.respuestaSinLeerRepo as InMemoryRespuestaSinLeerRepository,
     oportunidadRepo: overrides.oportunidadRepo as InMemoryOportunidadRepository,
     adjuntoTicketRepo,

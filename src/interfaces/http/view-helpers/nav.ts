@@ -74,6 +74,7 @@ export interface NavSeccion {
 export const NAV_BACKOFFICE: readonly NavItem[] = [
   { etiqueta: 'Dashboard', href: '/app', icono: '📊', permiso: 'dashboard:ver', grupo: 'principal' },
   { etiqueta: 'Calendario', href: '/app/calendario', icono: '📅', permiso: 'dashboard:ver', grupo: 'principal' },
+  { etiqueta: 'Mis notas', href: '/app/notas', icono: '🗒️', permiso: 'dashboard:ver', grupo: 'principal' },
   { etiqueta: 'Base de conocimiento', href: '/app/kb', icono: '📚', permiso: 'kb:leer', grupo: 'principal' },
   { etiqueta: 'Versiones', href: '/app/versiones', icono: '🧩', permiso: 'versiones:leer', grupo: 'principal',
     contadorKey: 'versionesNuevas', contadorTitulo: 'Versión nueva publicada por CONTPAQi en {n} de tus sistemas' },

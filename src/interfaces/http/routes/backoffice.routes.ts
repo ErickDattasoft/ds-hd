@@ -445,6 +445,11 @@ export function backofficeRoutes(container: Container): Router {
   );
 
   // ── Filtros guardados (búsquedas frecuentes personales) ────────────────────
+  // ── 🗒️ Notas personales (tipo Sticky Notes) ─────────────────────────────────
+  const notas = () => container.resolve('notasController');
+  r.get('/notas', (req, res) => notas().vista(req, res));
+  r.post('/notas', (req, res) => notas().guardarPost(req, res));
+  r.post('/notas/:id/eliminar', (req, res) => notas().eliminarPost(req, res));
   const filtros = () => container.resolve('filtrosController');
   r.post('/filtros', (req, res) => filtros().guardarPost(req, res));
   r.post('/filtros/:id/eliminar', (req, res) => filtros().eliminarPost(req, res));

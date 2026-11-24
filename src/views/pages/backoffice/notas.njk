@@ -1,0 +1,45 @@
+{% extends "layouts/backoffice.njk" %}
+{% block title %}Mis notas{% endblock %}
+{% block content %}
+  {% set nombresColor = { amarillo: 'Amarillo', verde: 'Verde', rosa: 'Rosa', morado: 'Morado', azul: 'Azul', gris: 'Gris' } %}
+  {% macro tarjeta(n, colores, nombresColor) %}
+    <article class="nota nota--{{ n.color }}" data-nota data-id="{{ n.id }}" data-color="{{ n.color }}">
+      <header class="nota__cab">
+        <span class="nota__estado" data-nota-estado></span>
+        <time class="nota__cuando" data-nota-cuando>{{ n.cuando }}</time>
+      </header>
+      <textarea class="nota__texto sensible" data-nota-texto rows="3" placeholder="Escribe una nota…" aria-label="Texto de la nota">{{ n.texto }}</textarea>
+      <footer class="nota__pie">
+        <span class="nota__colores">
+          {% for c in colores %}<button type="button" class="nota__color nota--{{ c }}" data-nota-color="{{ c }}" title="{{ nombresColor[c] }}" aria-label="Color {{ nombresColor[c] }}"></button>{% endfor %}
+        </span>
+        <button type="button" class="btn btn--sm btn--ghost" data-nota-ticket title="Mandar esta nota a ⚡ Captura rápida para volverla pre-ticket">🎫 Ticket</button>
+        <button type="button" class="btn btn--sm btn--ghost" data-nota-borrar title="Borrar nota" aria-label="Borrar nota">🗑</button>
+      </footer>
+    </article>
+  {% endmacro %}
+
+  <div data-notas>
+    <div class="page-head">
+      <h1>🗒️ Mis notas <span class="muted" data-notas-total>({{ notas.length }})</span></h1>
+      <div class="page-head__actions">
+        <input type="search" class="notas__buscar" data-notas-buscar placeholder="🔍 Buscar en mis notas" aria-label="Buscar en mis notas" />
+        <button type="button" class="btn" data-nota-nueva>＋ Nota</button>
+      </div>
+    </div>
+    <p class="muted">Tu borrador personal, como Sticky Notes: solo tú ves tus notas y se guardan solas mientras escribes.
+      Si una nota es un ticket, dale <strong>🎫 Ticket</strong> y pasa a ⚡ Captura rápida para revisarla y crearla.</p>
+
+    <div class="notas" data-notas-lista>
+      {% for n in notas %}{{ tarjeta(n, colores, nombresColor) }}{% endfor %}
+    </div>
+    <p class="muted notas__vacio" data-notas-vacio {{ 'hidden' if notas.length }}>Todavía no tienes notas. Dale <strong>＋ Nota</strong> para empezar.</p>
+
+    <template data-nota-plantilla>{{ tarjeta({ id: '', texto: '', color: 'amarillo', cuando: '' }, colores, nombresColor) }}</template>
+
+    <form method="post" action="/app/tickets/captura" data-nota-ticket-form hidden>
+      <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+      <input type="hidden" name="texto" />
+    </form>
+  </div>
+{% endblock %}

@@ -1,3 +1,5 @@
+import type { INotaPersonalRepository } from '../../core/ports/repositories/INotaPersonalRepository.js';
+import { esColorNota, type NotaPersonal } from '../../core/entities/NotaPersonal.js';
 import type { BitacoraService } from '../shared/BitacoraService.js';
 import type { IEmpresaRepository } from '../../core/ports/repositories/IEmpresaRepository.js';
 import type { IContactoRepository } from '../../core/ports/repositories/IContactoRepository.js';
@@ -88,6 +90,8 @@ export interface ReposExtraBackup {
   pizarras: IPizarraKBRepository;
   filtros: IFiltroGuardadoRepository;
   bitacora: IBitacoraRepository;
+  /** 🗒️ Notas personales (opcional: los tests viejos no lo pasan). */
+  notas?: INotaPersonalRepository;
 }
 
 /** Tope de entradas de bitácora a respaldar (de las más recientes hacia atrás). */
@@ -364,16 +368,18 @@ export class BackupService {
     pizarrasKB: PizarraKB[];
     filtrosGuardados: FiltroGuardado[];
     bitacora: EntradaBitacora[];
+    notasPersonales: { uid: string; notas: NotaPersonal[] }[];
   }> {
     const r = this.extra;
-    if (!r) return { avisosVersiones: [], tareas: [], interacciones: [], pizarrasKB: [], filtrosGuardados: [], bitacora: [] };
-    const [avisosVersiones, tareas, interacciones, pizarras, filtros, bitacora] = await Promise.all([
+    if (!r) return { avisosVersiones: [], tareas: [], interacciones: [], pizarrasKB: [], filtrosGuardados: [], bitacora: [], notasPersonales: [] };
+    const [avisosVersiones, tareas, interacciones, pizarras, filtros, bitacora, notasPersonales] = await Promise.all([
       r.avisos.listTodos(),
       r.tareas.list(),
       r.interacciones.listRecientes(MAX_INTERACCIONES),
       r.pizarras.listarTodas(),
       r.filtros.listarTodos(),
       r.bitacora.listar({ limite: MAX_BITACORA }),
+      r.notas ? r.notas.listarTodas() : Promise.resolve([]),
     ]);
     return {
       avisosVersiones,
@@ -382,6 +388,7 @@ export class BackupService {
       pizarrasKB: pizarras.filter((p) => p.contenido.trim() !== ''),
       filtrosGuardados: filtros,
       bitacora,
+      notasPersonales,
     };
   }
 
@@ -439,6 +446,25 @@ export class BackupService {
         await r.filtros.guardar(d as unknown as FiltroGuardado);
       } catch (err) {
         resumen.errores.push(`filtro "${d.nombre}": ${err instanceof Error ? err.message : err}`);
+      }
+    }
+    // Notas personales: una escritura por persona (todas sus notas van en un documento).
+    for (const d of arr(datos.notasPersonales)) {
+      if (!r.notas || typeof d.uid !== 'string') continue;
+      try {
+        const notas = (Array.isArray(d.notas) ? d.notas : []) as Record<string, unknown>[];
+        await r.notas.guardar(
+          d.uid,
+          notas.map((n) => ({
+            id: String(n.id),
+            texto: String(n.texto ?? ''),
+            color: esColorNota(n.color) ? n.color : 'amarillo',
+            creadaEn: new Date(String(n.creadaEn)),
+            actualizadaEn: new Date(String(n.actualizadaEn)),
+          })),
+        );
+      } catch (err) {
+        resumen.errores.push(`notas personales: ${err instanceof Error ? err.message : err}`);
       }
     }
   }

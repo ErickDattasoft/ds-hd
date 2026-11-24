@@ -25,6 +25,10 @@ import { FirestoreAdjuntoTicketRepository } from '../infrastructure/firestore/Fi
 import { AdjuntoTicketService } from '../application/tickets/AdjuntoTicketService.js';
 import { FiltrosGuardadosService } from '../application/shared/FiltrosGuardadosService.js';
 import { FiltrosController } from '../interfaces/http/controllers/backoffice/FiltrosController.js';
+import { NotasController } from '../interfaces/http/controllers/backoffice/NotasController.js';
+import { NotasPersonalesService } from '../application/notas/NotasPersonalesService.js';
+import { FirestoreNotaPersonalRepository } from '../infrastructure/firestore/FirestoreNotaPersonalRepository.js';
+import type { INotaPersonalRepository } from '../core/ports/repositories/INotaPersonalRepository.js';
 import { RespuestasController } from '../interfaces/http/controllers/backoffice/RespuestasController.js';
 import { RespuestasSinLeerService } from '../application/tickets/RespuestasSinLeerService.js';
 import { FirestoreRespuestaSinLeerRepository } from '../infrastructure/firestore/FirestoreRespuestaSinLeerRepository.js';
@@ -241,6 +245,9 @@ export interface Cradle {
   adjuntoTicketService: AdjuntoTicketService;
   filtrosGuardadosService: FiltrosGuardadosService;
   filtrosController: FiltrosController;
+  notaPersonalRepo: INotaPersonalRepository;
+  notasPersonalesService: NotasPersonalesService;
+  notasController: NotasController;
   respuestaSinLeerRepo: IRespuestaSinLeerRepository;
   respuestasSinLeerService: RespuestasSinLeerService;
   respuestasController: RespuestasController;
@@ -547,6 +554,14 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
       (c: Cradle) => new FiltrosGuardadosService(c.filtroGuardadoRepo, c.idGenerator, c.clock),
     ).singleton(),
     filtrosController: asFunction((c: Cradle) => new FiltrosController(c.filtrosGuardadosService)).singleton(),
+    notaPersonalRepo: asFunction(
+      ({ firestoreDb }: Cradle): INotaPersonalRepository =>
+        new FirestoreNotaPersonalRepository(requireFirestore(firestoreDb)),
+    ).singleton(),
+    notasPersonalesService: asFunction(
+      (c: Cradle) => new NotasPersonalesService(c.notaPersonalRepo, c.idGenerator, c.clock),
+    ).singleton(),
+    notasController: asFunction((c: Cradle) => new NotasController(c.notasPersonalesService, c.clock)).singleton(),
     respuestaSinLeerRepo: asFunction(
       ({ firestoreDb }: Cradle): IRespuestaSinLeerRepository =>
         new FirestoreRespuestaSinLeerRepository(requireFirestore(firestoreDb)),
@@ -1175,6 +1190,7 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
             pizarras: c.pizarraKBRepo,
             filtros: c.filtroGuardadoRepo,
             bitacora: c.bitacoraRepo,
+            notas: c.notaPersonalRepo,
           },
         ),
     ).singleton(),

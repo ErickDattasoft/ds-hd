@@ -522,7 +522,7 @@
   // ds-hd (p. ej. el del CRM viejo) se manda entero para que el servidor diga qué es.
   function partirRespaldo(datos) {
     var UNO_POR_UNO = ['empresas', 'contactos', 'cotizaciones', 'oportunidades', 'versiones', 'kb', 'eventos',
-      'inscripcionesEventos', 'listaNegraEventos', 'tareas', 'interacciones', 'pizarrasKB', 'filtrosGuardados', 'usuarios'];
+      'inscripcionesEventos', 'listaNegraEventos', 'tareas', 'interacciones', 'pizarrasKB', 'filtrosGuardados', 'notasPersonales', 'usuarios'];
     var EN_LOTE = { tickets: 150, bitacora: 400, avisosVersiones: 400 };
     var PRESUPUESTO = 30;
     var todas = UNO_POR_UNO.concat(Object.keys(EN_LOTE));
@@ -540,7 +540,7 @@
     // Mismo orden que el servidor: primero empresas y contactos, luego lo que los referencia.
     var orden = ['empresas', 'contactos', 'tickets', 'cotizaciones', 'oportunidades', 'versiones', 'kb', 'usuarios',
       'eventos', 'inscripcionesEventos', 'listaNegraEventos', 'avisosVersiones', 'tareas', 'interacciones',
-      'pizarrasKB', 'filtrosGuardados', 'bitacora'];
+      'pizarrasKB', 'filtrosGuardados', 'notasPersonales', 'bitacora'];
     orden.forEach(function (k) {
       var lista = Array.isArray(datos[k]) ? datos[k] : [];
       if (!lista.length) return;
@@ -4336,6 +4336,115 @@
     location.reload();
   });
 
+
+  // ── 🗒️ Mis notas (tipo Sticky Notes): se guardan solas mientras escribes ──
+  var notaPendientes = new Map(); // tarjeta → temporizador del guardado
+  function notaPost(url, datos, keepalive) {
+    return fetch(url, {
+      method: 'POST',
+      keepalive: !!keepalive,
+      headers: { 'content-type': 'application/json', accept: 'application/json', 'x-csrf-token': cookie('x-csrf-token') },
+      body: JSON.stringify(datos || {}),
+    }).then(function (r) { return r.json().catch(function () { return { ok: false }; }); });
+  }
+  function notaCrecer(ta) { ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 'px'; }
+  function notaEstado(card, txt) { var e = card.querySelector('[data-nota-estado]'); if (e) e.textContent = txt; }
+  function notaGuardar(card, keepalive) {
+    clearTimeout(notaPendientes.get(card));
+    notaPendientes.delete(card);
+    var ta = card.querySelector('[data-nota-texto]');
+    notaEstado(card, '⏳');
+    return notaPost('/app/notas', { id: card.dataset.id, texto: ta.value }, keepalive).then(function (d) {
+      if (!d.ok) { notaEstado(card, '⚠️ No se guardó'); return; }
+      notaEstado(card, '✓');
+      card.querySelector('[data-nota-cuando]').textContent = d.nota.cuando;
+      setTimeout(function () { if (!notaPendientes.has(card)) notaEstado(card, ''); }, 1500);
+    }).catch(function () { notaEstado(card, '⚠️ Sin conexión'); });
+  }
+  function notasContar(caja) {
+    var n = caja.querySelectorAll('[data-notas-lista] [data-nota]').length;
+    caja.querySelector('[data-notas-total]').textContent = '(' + n + ')';
+    caja.querySelector('[data-notas-vacio]').hidden = n > 0;
+  }
+  function notasIniciar() {
+    document.querySelectorAll('[data-notas-lista] [data-nota-texto]').forEach(notaCrecer);
+  }
+  document.addEventListener('DOMContentLoaded', notasIniciar);
+  document.addEventListener('htmx:afterSettle', notasIniciar);
+  document.addEventListener('input', function (e) {
+    var ta = e.target.closest && e.target.closest('[data-nota-texto]');
+    if (ta) {
+      var card = ta.closest('[data-nota]');
+      notaCrecer(ta);
+      notaEstado(card, '✏️');
+      clearTimeout(notaPendientes.get(card));
+      notaPendientes.set(card, setTimeout(function () { notaGuardar(card); }, 1200));
+      return;
+    }
+    var q = e.target.closest && e.target.closest('[data-notas-buscar]');
+    if (q) {
+      var t = q.value.trim().toLowerCase();
+      q.closest('[data-notas]').querySelectorAll('[data-notas-lista] [data-nota]').forEach(function (c) {
+        c.hidden = !!t && c.querySelector('[data-nota-texto]').value.toLowerCase().indexOf(t) < 0;
+      });
+    }
+  });
+  document.addEventListener('focusout', function (e) {
+    var ta = e.target.closest && e.target.closest('[data-nota-texto]');
+    if (ta) { var card = ta.closest('[data-nota]'); if (notaPendientes.has(card)) notaGuardar(card); }
+  });
+  // Al salir de la página (o cambiar de sección con hx-boost) no se pierde lo último escrito.
+  function notasVaciarPendientes() { Array.from(notaPendientes.keys()).forEach(function (c) { notaGuardar(c, true); }); }
+  window.addEventListener('pagehide', notasVaciarPendientes);
+  document.addEventListener('htmx:beforeRequest', notasVaciarPendientes);
+  document.addEventListener('click', async function (e) {
+    var t = e.target.closest && e.target.closest('[data-nota-nueva], [data-nota-color], [data-nota-borrar], [data-nota-ticket]');
+    if (!t) return;
+    var caja = t.closest('[data-notas]');
+    if (!caja) return;
+    if (t.hasAttribute('data-nota-nueva')) {
+      t.disabled = true;
+      var d = await notaPost('/app/notas', { texto: '' }).catch(function () { return { ok: false }; });
+      t.disabled = false;
+      if (!d.ok) { alert(d.detalle || 'No se pudo crear la nota.'); return; }
+      var card = caja.querySelector('[data-nota-plantilla]').content.firstElementChild.cloneNode(true);
+      card.dataset.id = d.nota.id;
+      card.querySelector('[data-nota-cuando]').textContent = d.nota.cuando;
+      caja.querySelector('[data-notas-lista]').prepend(card);
+      notasContar(caja);
+      card.querySelector('[data-nota-texto]').focus();
+      return;
+    }
+    var card2 = t.closest('[data-nota]');
+    if (t.hasAttribute('data-nota-color')) {
+      var color = t.getAttribute('data-nota-color');
+      var antes = card2.dataset.color;
+      card2.classList.remove('nota--' + antes);
+      card2.classList.add('nota--' + color);
+      card2.dataset.color = color;
+      var r = await notaPost('/app/notas', { id: card2.dataset.id, color: color }).catch(function () { return { ok: false }; });
+      if (!r.ok) notaEstado(card2, '⚠️ No se guardó el color');
+      return;
+    }
+    if (t.hasAttribute('data-nota-borrar')) {
+      var txt = card2.querySelector('[data-nota-texto]').value.trim();
+      if (txt && !confirm('¿Borrar esta nota?\n\n' + txt.slice(0, 120))) return;
+      clearTimeout(notaPendientes.get(card2));
+      notaPendientes.delete(card2);
+      await notaPost('/app/notas/' + encodeURIComponent(card2.dataset.id) + '/eliminar');
+      card2.remove();
+      notasContar(caja);
+      return;
+    }
+    if (t.hasAttribute('data-nota-ticket')) {
+      var texto = card2.querySelector('[data-nota-texto]').value.trim();
+      if (!texto) { alert('La nota está vacía.'); return; }
+      if (notaPendientes.has(card2)) await notaGuardar(card2);
+      var f = caja.querySelector('[data-nota-ticket-form]');
+      f.querySelector('[name="texto"]').value = texto;
+      f.submit();
+    }
+  });
   // ── Tickets: «⚡ Captura rápida» — crea los renglones marcados uno por uno (cada petición
   // del Worker tiene un tope de consultas) y deja en cada uno su enlace para ajustarlo. ──
   document.addEventListener('click', async function (e) {
