@@ -1342,6 +1342,29 @@ describe('🔔 aviso al equipo de cada registro', () => {
     expect(aviso?.html).toContain('Total que van hasta ahora: 3');
   });
 
+  it('a quien confirma con su link personal le llega «Confirmado»; si dice que no, no', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    const ev = evento();
+    ev.lugarNombre = 'Salón Los Arcos';
+    ev.agregarInvitadoExterno({ id: 'x1', nombre: 'Ana López', fuente: null, token: 'tok1', correo: 'ana@x.mx' });
+    ev.agregarInvitadoExterno({ id: 'x2', nombre: 'Luis Mena', fuente: null, token: 'tok2', correo: 'luis@x.mx' });
+    t.eventoRepo.items.set('ev1', ev);
+    const anon = request.agent(t.app);
+    const inv = await anon.get('/eventos/ev1/i/tok1');
+    const csrf = cookieValor(inv.headers['set-cookie'] as unknown as string[], 'x-csrf-token')!;
+
+    await anon.post('/eventos/ev1/i/tok1').type('form').send({ _csrf: csrf, personas: '2' });
+    const conf = t.emailSender.enviados.find((c) => c.asunto === 'Confirmado: Posada');
+    expect(conf?.para.map((p) => p.email)).toEqual(['ana@x.mx']);
+    expect(conf?.html).toContain('Asistirán 2 personas');
+    expect(conf?.html).toContain('Salón Los Arcos');
+    expect(conf?.html).toContain('/eventos/ev1/i/tok1');
+
+    await anon.post('/eventos/ev1/i/tok2').type('form').send({ _csrf: csrf, personas: '0' });
+    expect(t.emailSender.enviados.filter((c) => c.asunto === 'Confirmado: Posada')).toHaveLength(1);
+    expect(t.emailSender.enviados.some((c) => c.asunto.startsWith('❌ No podrá ir: Luis Mena'))).toBe(true);
+  });
+
   it('si el correo del aviso falla, el registro igual queda', async () => {
     const t = makeTestApp({ usuarios: [ADMIN] });
     t.eventoRepo.items.set('ev1', evento());

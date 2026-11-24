@@ -475,6 +475,19 @@ sus datos y cuántos van. Abajo aparecen los que se registraron.
 WhatsApp se mandan (el CRM no puede elegir el número: sale del WhatsApp abierto en esa
 computadora) y a qué correo llegan las respuestas.
 
+### 🔔 Avisos de registro y correo de confirmado
+
+- **A ti**: cada vez que alguien se registra en el link abierto (no importa si el link se
+  compartió desde el CRM, por WhatsApp a mano o en redes) o contesta su invitación con nombre,
+  llega un correo «🎟 Nuevo registro», «✅ Confirmó» o «❌ No podrá ir» con sus datos y el
+  **Total que van**. Los correos que lo reciben se anotan en **⚙️ Configuración de envío →
+  🔔 Avisar de cada registro a** (varios, separados por coma). Si lo dejas vacío, llega al
+  correo de envío o, si tampoco hay, a quien creó el evento.
+- **A la persona**: si se registró en el link abierto con correo, le llega «Registro
+  confirmado». Si confirmó con su link personal y tiene correo, le llega «Confirmado: …» con
+  la fecha, el lugar, cuántos van y el botón para volver a su invitación. Quien dice que no
+  va no recibe correo.
+
 ### Comunicados
 
 En un comunicado el envío es el mismo, con estas diferencias:

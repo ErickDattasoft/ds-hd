@@ -1153,6 +1153,7 @@ export class EventoService {
       asistira: resp.asistira,
       personas: inv.personas,
     });
+    if (resp.asistira && inv.correo && token) await this.confirmarInvitado(evento, nombre, inv, token);
     await this.avisarAlEquipo(evento, {
       asunto: resp.asistira
         ? `✅ Confirmó: ${nombre}${inv.personas && inv.personas > 1 ? ` (${inv.personas} personas)` : ''} – ${evento.titulo}`
@@ -1461,6 +1462,60 @@ export class EventoService {
     }
     this.logger.info('Seguimiento de eventos enviado', { eventos: eventosProcesados, correos });
     return { eventos: eventosProcesados, correos };
+  }
+
+  /**
+   * «Confirmado, te esperamos»: correo a quien confirmó con su link personal, con el estilo de su
+   * invitación (cuándo, dónde, cuántos van y el link para cambiar su respuesta). Si falla, la
+   * confirmación igual queda guardada.
+   */
+  private async confirmarInvitado(evento: Evento, nombre: string, inv: DatosRsvp, token: string): Promise<void> {
+    try {
+      const esc = (t: string): string =>
+        t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+      const fecha = evento.fechaHora.toLocaleString('es-MX', {
+        timeZone: ZONA_MEXICO,
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long',
+        hour: 'numeric',
+        minute: '2-digit',
+      });
+      const est = ESTILO_EVENTO_INFO[evento.estilo];
+      const link = this.linkInvitacion(evento, { token });
+      const personas = inv.personas ?? 1;
+      const presencial = evento.tipo === 'presencial';
+      const renglones = [
+        `📅 ${esc(fecha)}`,
+        presencial && evento.lugarNombre ? `📍 ${esc(evento.lugarNombre)}` : '',
+        presencial && evento.lugarDireccion ? `<span style="opacity:.8">${esc(evento.lugarDireccion)}</span>` : '',
+        presencial && evento.lugarMapsUrl ? `<a href="${esc(evento.lugarMapsUrl)}" style="color:${est.color}">🗺 Ver en el mapa</a>` : '',
+        !presencial && evento.urlWebinar ? `💻 <a href="${esc(evento.urlWebinar)}" style="color:${est.color}">Link para conectarte</a>` : '',
+        evento.vestimenta ? `👔 Vestimenta: ${esc(evento.vestimenta)}` : '',
+        `🎟 ${personas === 1 ? 'Asistirás tú' : `Asistirán ${personas} personas`}`,
+      ].filter(Boolean);
+      await this.email.enviar({
+        para: [{ email: inv.correo!, nombre: nombre || undefined }],
+        asunto: `Confirmado: ${evento.titulo}`,
+        html: `<div style="font-family:${est.fuente};max-width:560px;margin:auto;text-align:center;background:${est.fondo};color:${est.texto};padding:28px 22px;border-radius:14px;border-top:6px solid ${est.color}">
+          <p style="margin:0 0 14px;font-size:12px;letter-spacing:3px;text-transform:uppercase;opacity:.7">Asistencia confirmada</p>
+          <p style="font-size:18px;margin:0 0 6px">¡Listo${nombre ? `, ${esc(nombre)}` : ''}! ✅</p>
+          <p style="font-size:15px;margin:0 0 10px;opacity:.85">Tu asistencia quedó confirmada para</p>
+          <h2 style="margin:8px 0 16px;color:${est.color};font-size:26px">${esc(evento.titulo)}</h2>
+          <p style="font-size:15px;line-height:1.7">${renglones.join('<br>')}</p>
+          <p style="font-size:15px;margin:18px 0 0">¡Te esperamos! 🙌</p>
+          <p style="margin:14px 0 20px"><a href="${link}" style="background:${est.color};color:#fff;padding:12px 22px;border-radius:8px;text-decoration:none;font-weight:bold">Ver mi invitación</a></p>
+          <p style="opacity:.6;font-size:12px">¿Cambió algo? Desde tu invitación puedes cambiar cuántos van o avisarnos si ya no puedes ir.</p>
+        </div>`,
+        ...(evento.envioCorreo ? { responderA: { email: evento.envioCorreo } } : {}),
+        tags: ['evento-confirmacion', `evento-${evento.id}`],
+      });
+    } catch (err) {
+      this.logger.warn('No se pudo mandar la confirmación al invitado', {
+        evento: evento.id,
+        error: err instanceof Error ? err.message : String(err),
+      });
+    }
   }
 
   /** Correos que reciben el aviso de registros: los anotados, o el de envío, o el de quien creó el evento. */
