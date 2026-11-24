@@ -469,6 +469,7 @@ describe('registro público — asistira/usaSistema/fuente/canal WhatsApp', () =
     const anon = request.agent(t.app);
     const page = await anon.get('/eventos/ev1');
     expect(page.text).toContain('¿Actualmente utilizas Nóminas?');
+    expect(page.text).not.toContain('canal de WhatsApp'); // oculto hasta que exista el canal
     const csrf = cookieValor(page.headers['set-cookie'] as unknown as string[], 'x-csrf-token')!;
 
     const reg = await anon.post('/eventos/ev1').type('form').send({

@@ -149,10 +149,9 @@
                   {% endfor %}
                 </select>
               </label>
-              <label class="field--check">
-                <input type="checkbox" name="deseaCanalWhatsapp" {{ 'checked' if valores.deseaCanalWhatsapp }} />
-                <span>Quiero unirme al canal de WhatsApp para recibir avisos y novedades.</span>
-              </label>
+              {# «Quiero unirme al canal de WhatsApp»: oculto hasta que exista el canal (el usuario lo pidió
+                 2026-11-24). El servidor y la lista del staff lo siguen aceptando; para volver a pedirlo
+                 basta regresar aquí la casilla `deseaCanalWhatsapp`. #}
             </div>
           </fieldset>
 
