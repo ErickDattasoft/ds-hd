@@ -15,7 +15,7 @@ tu rol puede ver (un agente solo ve lo suyo; admin/supervisor/lectura ven el glo
 - **Tickets**: abiertos, pendientes, resueltos en el periodo, y los que están por vencer o
   vencidos de SLA.
 - **Cotizaciones**: cuántas están en borrador, enviadas y aprobadas.
-- **Eventos**: próximos webinars y su cupo/inscritos.
+- **Próximos eventos**: los de los siguientes 30 días (webinars, presenciales y felicitaciones), con su tipo y fecha. Los que siguen en borrador salen con «📝 en preparación».
 - **Actividad reciente**: últimas entradas de la bitácora relevantes a tu rol.
 
 Las barras y totales se recalculan en cada carga de la página; no hay botón de "actualizar"

@@ -221,7 +221,13 @@ describe('BackupService', () => {
     const inv = evento.agregarInvitadoExterno({ id: 'x1', nombre: 'Juan Pérez', token: 'tok-123', pases: 3 });
     inv.respondioAt = '2026-11-20T15:00:00.000Z';
     inv.personas = 2;
+    evento.agregarADifusion({ id: 'd1', nombre: 'Beto', correo: 'beto@x.mx', telefono: '' });
     await origen.eventos.save(evento);
+    // 📢 Comunicado: el link de CONTPAQi viaja en el respaldo.
+    await origen.eventos.save(new Evento({
+      id: 'ev2', titulo: 'Cambios CFDI', tipo: 'comunicado', urlComunicado: 'https://www.contpaqi.com/cfdi',
+      fechaHora: new Date('2026-11-24T15:00:00Z'), estado: 'publicado',
+    }));
     await origen.inscripciones.save({
       id: 'i1', eventoId: 'ev1', nombre: 'Ana', email: 'ana@x.mx', telefono: null, empresa: null,
       estado: 'registrado', origen: 'publico', correoEstado: null, recordatoriosEnviados: ['previo'], ip: null,
@@ -248,12 +254,14 @@ describe('BackupService', () => {
     await cfgDestino.guardarIntegraciones({ ...(await cfgDestino.obtenerIntegraciones()), whatsappApiKey: 'CLAVE-DESTINO' });
     const resumen = await nuevoServicio(destino, cfgDestino).restaurar(actor(), archivo);
 
-    expect(resumen).toMatchObject({ eventos: 1, inscritos: 1, tareas: 1, avisos: 1, bitacora: 1, errores: [] });
+    expect(resumen).toMatchObject({ eventos: 2, inscritos: 1, tareas: 1, avisos: 1, bitacora: 1, errores: [] });
     expect(await destino.bitacora.listar()).toEqual([
       expect.objectContaining({ id: 'b1', resumen: 'Editó Posada 2026', at: new Date('2026-11-15T10:00:00Z') }),
     ]);
     const restaurado = await destino.eventos.findById('ev1');
     expect(restaurado?.fechaHora).toEqual(new Date('2026-12-12T02:00:00Z'));
+    expect(restaurado?.difusion.map((d) => d.correo)).toEqual(['beto@x.mx']);
+    expect(await destino.eventos.findById('ev2')).toMatchObject({ tipo: 'comunicado', urlComunicado: 'https://www.contpaqi.com/cfdi' });
     // El link personal ya enviado sigue funcionando, con sus pases y su respuesta.
     const porToken = restaurado?.buscarPorToken('tok-123');
     expect(porToken?.nombre).toBe('Juan Pérez');

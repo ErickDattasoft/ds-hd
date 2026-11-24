@@ -1,12 +1,13 @@
-import type { Evento } from '../../entities/Evento.js';
+import type { EstadoEvento, Evento } from '../../entities/Evento.js';
 import type { EntradaListaNegra, Inscripcion } from '../../entities/Inscripcion.js';
 
 /** Persistencia de eventos/webinars (`eventos/{id}`). */
 export interface IEventoRepository {
   findById(id: string): Promise<Evento | null>;
   list(soloPublicados?: boolean): Promise<Evento[]>;
-  /** Eventos publicados cuya fecha cae dentro de la ventana [desde, hasta]. */
-  proximos(desde: Date, hasta: Date): Promise<Evento[]>;
+  /** Eventos cuya fecha cae dentro de la ventana [desde, hasta]; por defecto solo publicados
+   *  (el Dashboard pasa también borradores, para ver lo que se está preparando). */
+  proximos(desde: Date, hasta: Date, estados?: EstadoEvento[]): Promise<Evento[]>;
   save(evento: Evento): Promise<void>;
   /** Borrado permanente del evento (sus inscripciones se borran aparte). */
   eliminar(id: string): Promise<void>;

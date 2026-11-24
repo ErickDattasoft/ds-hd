@@ -264,8 +264,8 @@
     <div class="card">
       <h2>Próximos eventos</h2>
       <ul>
-        {% for e in m.proximosEventos %}<li><a href="/app/eventos/{{ e.id }}">{{ e.titulo }}</a> <span class="muted">{{ e.fechaHora | fechahora }}</span></li>
-        {% else %}<li class="muted">Ninguno programado.</li>{% endfor %}
+        {% for e in m.proximosEventos %}<li><a href="/app/eventos/{{ e.id }}">{{ e.titulo }}</a> <span class="muted">{{ e.tipo }} · {{ e.fechaHora | fechahora }}</span>{% if e.borrador %} <span class="badge badge--warning" title="Aún en borrador: no sale en la lista pública">📝 en preparación</span>{% endif %}</li>
+        {% else %}<li class="muted">Ninguno en los próximos 30 días. <a href="/app/eventos">Ir a Eventos</a></li>{% endfor %}
       </ul>
     </div>
     {% if m.actividadReciente | length %}

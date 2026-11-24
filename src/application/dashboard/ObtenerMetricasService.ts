@@ -1,6 +1,7 @@
 import type { ITicketQueries } from '../../core/ports/repositories/ITicketQueries.js';
 import type { ICotizacionRepository } from '../../core/ports/repositories/ICotizacionRepository.js';
 import type { IEventoRepository } from '../../core/ports/repositories/IEventoRepository.js';
+import { TIPO_EVENTO_ETIQUETA } from '../../core/entities/Evento.js';
 import type { ITareaRepository } from '../../core/ports/repositories/ISeguimientoRepository.js';
 import type { IBitacoraRepository } from '../../core/ports/repositories/IBitacoraRepository.js';
 import type { IEmpresaRepository } from '../../core/ports/repositories/IEmpresaRepository.js';
@@ -80,7 +81,7 @@ export interface Metricas {
   misTareasPendientes: number;
   /** Tickets del buzón público a la espera de aceptar/rechazar (`0` si el actor no ve el buzón). */
   ticketsPublicosPendientes: number;
-  proximosEventos: { id: string; titulo: string; fechaHora: Date }[];
+  proximosEventos: { id: string; titulo: string; fechaHora: Date; borrador: boolean; tipo: string }[];
   actividadReciente: { at: Date; resumen: string; actorNombre: string | null; modulo: string }[];
   /** `null` si el actor no puede leer empresas. */
   licencias: MetricasLicencias | null;
@@ -165,7 +166,7 @@ export class ObtenerMetricasService {
         Promise.all(
           (['borrador', 'enviada', 'aceptada', 'rechazada', 'vencida'] as const).map(async (e) => [e, await this.cotizaciones.contarEnEstado(e)] as const),
         ).then((pares) => Object.fromEntries(pares) as Record<string, number>),
-        this.eventos.proximos(ahora, new Date(ahora.getTime() + 30 * 86_400_000)),
+        this.eventos.proximos(ahora, new Date(ahora.getTime() + 30 * 86_400_000), ['publicado', 'borrador']),
         this.tareas.list({ asignadoAUid: actor.uid, completada: false }),
         actor.permisos.includes('bitacora:leer')
           ? this.bitacora.listar({ limite: 12 })
@@ -257,10 +258,12 @@ export class ObtenerMetricasService {
       },
       misTareasPendientes: misTareas.filter((t) => !t.completada).length,
       ticketsPublicosPendientes: publicos.length,
+      // Los ejemplos 🧪 y los comunicados (no tienen fecha de evento) no cuentan.
       proximosEventos: proximos
+        .filter((e) => !e.esPrueba && !e.esComunicado)
         .sort((a, b) => a.fechaHora.getTime() - b.fechaHora.getTime())
         .slice(0, 5)
-        .map((e) => ({ id: e.id, titulo: e.titulo, fechaHora: e.fechaHora })),
+        .map((e) => ({ id: e.id, titulo: e.titulo, fechaHora: e.fechaHora, borrador: e.estado === 'borrador', tipo: TIPO_EVENTO_ETIQUETA[e.tipo] })),
       actividadReciente: bita.map((e) => ({
         at: e.at,
         resumen: e.resumen,

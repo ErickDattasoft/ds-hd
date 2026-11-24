@@ -78,10 +78,10 @@ export class FirestoreEventoRepository implements IEventoRepository {
       .sort((a, b) => b.fechaHora.getTime() - a.fechaHora.getTime());
   }
 
-  async proximos(desde: Date, hasta: Date): Promise<Evento[]> {
+  async proximos(desde: Date, hasta: Date, estados: EstadoEvento[] = ['publicado']): Promise<Evento[]> {
     const snap = await this.db
       .collection('eventos')
-      .where('estado', '==', 'publicado')
+      .where('estado', 'in', estados)
       .where('fechaHora', '>=', Timestamp.fromDate(desde))
       .where('fechaHora', '<=', Timestamp.fromDate(hasta))
       .get();

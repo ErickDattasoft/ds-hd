@@ -3,7 +3,7 @@ import type {
   IInscripcionRepository,
   IListaNegraRepository,
 } from '../../src/core/ports/repositories/IEventoRepository.js';
-import type { Evento } from '../../src/core/entities/Evento.js';
+import type { EstadoEvento, Evento } from '../../src/core/entities/Evento.js';
 import type { EntradaListaNegra, Inscripcion } from '../../src/core/entities/Inscripcion.js';
 
 export class InMemoryEventoRepository implements IEventoRepository {
@@ -16,10 +16,10 @@ export class InMemoryEventoRepository implements IEventoRepository {
       .filter((e) => !soloPublicados || e.estado === 'publicado')
       .sort((a, b) => b.fechaHora.getTime() - a.fechaHora.getTime());
   }
-  async proximos(desde: Date, hasta: Date): Promise<Evento[]> {
+  async proximos(desde: Date, hasta: Date, estados: EstadoEvento[] = ['publicado']): Promise<Evento[]> {
     return [...this.items.values()].filter(
       (e) =>
-        e.estado === 'publicado' &&
+        estados.includes(e.estado) &&
         e.fechaHora.getTime() >= desde.getTime() &&
         e.fechaHora.getTime() <= hasta.getTime(),
     );

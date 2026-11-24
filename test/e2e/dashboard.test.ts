@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import request from 'supertest';
 import { makeTestApp, cookieValor } from '../helpers/app.js';
 import { Empresa } from '../../src/core/entities/Empresa.js';
+import { Evento } from '../../src/core/entities/Evento.js';
 
 const ADMIN = { uid: 'u-a', email: 'admin@dattasoft.mx', password: 'admin12345', nombre: 'Admin', rol: 'admin' as const };
 const AGENTE = { uid: 'u-g', email: 'ag@dattasoft.mx', password: 'agente12345', nombre: 'Agente', rol: 'agente' as const };
@@ -113,5 +114,29 @@ describe('dashboard', () => {
     expect(cal.text).toContain('cal-ev--tarea-vencida');
     const calHoy = await agent.get(`/app/calendario?mes=${hoy.getFullYear()}-${hoy.getMonth() + 1}`);
     expect(calHoy.text).toContain('Tarea de Beto (Beto)');
+  });
+});
+
+describe('dashboard — próximos eventos', () => {
+  it('incluye los borradores marcados «en preparación»; no los ejemplos, comunicados ni cancelados', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    const en = (dias: number) => new Date(Date.now() + dias * 86_400_000);
+    const evs = [
+      new Evento({ id: 'p1', titulo: 'POSADA DATTASOFT', tipo: 'presencial', fechaHora: en(20), estado: 'borrador' }),
+      new Evento({ id: 'w1', titulo: 'Webinar Nóminas', tipo: 'webinar', fechaHora: en(5), estado: 'publicado' }),
+      new Evento({ id: 'x1', titulo: 'Ejemplo prueba', fechaHora: en(3), estado: 'publicado', esPrueba: true }),
+      new Evento({ id: 'k1', titulo: 'Evento cancelado', fechaHora: en(3), estado: 'cancelado' }),
+      new Evento({ id: 'c1', titulo: 'Comunicado CFDI', tipo: 'comunicado', urlComunicado: 'https://contpaqi.com/x', fechaHora: en(1), estado: 'publicado' }),
+      new Evento({ id: 'l1', titulo: 'Muy lejano', fechaHora: en(60), estado: 'publicado' }),
+    ];
+    for (const e of evs) t.eventoRepo.items.set(e.id, e);
+    const { agent } = await login(t.app, ADMIN.email, ADMIN.password);
+    const dash = await agent.get('/app');
+    const tarjeta = dash.text.slice(dash.text.indexOf('Próximos eventos'), dash.text.indexOf('Próximos eventos') + 1500);
+    expect(tarjeta).toContain('POSADA DATTASOFT');
+    expect(tarjeta).toContain('📝 en preparación');
+    expect(tarjeta).toContain('Webinar Nóminas');
+    expect(tarjeta.indexOf('Webinar Nóminas')).toBeLessThan(tarjeta.indexOf('POSADA DATTASOFT'));
+    for (const no of ['Ejemplo prueba', 'Evento cancelado', 'Comunicado CFDI', 'Muy lejano']) expect(tarjeta).not.toContain(no);
   });
 });

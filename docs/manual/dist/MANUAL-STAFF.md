@@ -14,7 +14,7 @@
 8. [Seguimiento comercial (tareas e interacciones)](#seguimiento-comercial-tareas-e-interacciones)
 9. [Papelera de reciclaje](#papelera-de-reciclaje)
 10. [Bitácora de auditoría](#bitacora-de-auditoria)
-11. [Eventos y webinars (gestión)](#eventos-y-webinars-gestion)
+11. [Eventos, invitaciones y comunicados (gestión)](#eventos-invitaciones-y-comunicados-gestion)
 12. [Usuarios, roles y permisos](#usuarios-roles-y-permisos)
 13. [Mi perfil, firma y Acerca de](#mi-perfil-firma-y-acerca-de)
 14. [Configuración](#configuracion)
@@ -67,7 +67,7 @@ tu rol puede ver (un agente solo ve lo suyo; admin/supervisor/lectura ven el glo
 - **Tickets**: abiertos, pendientes, resueltos en el periodo, y los que están por vencer o
   vencidos de SLA.
 - **Cotizaciones**: cuántas están en borrador, enviadas y aprobadas.
-- **Eventos**: próximos webinars y su cupo/inscritos.
+- **Próximos eventos**: los de los siguientes 30 días (webinars, presenciales y felicitaciones), con su tipo y fecha. Los que siguen en borrador salen con «📝 en preparación».
 - **Actividad reciente**: últimas entradas de la bitácora relevantes a tu rol.
 
 Las barras y totales se recalculan en cada carga de la página; no hay botón de "actualizar"
@@ -396,72 +396,134 @@ edición en el módulo original.
 
 ---
 
-## Eventos y webinars (gestión)
+## Eventos, invitaciones y comunicados (gestión)
 
-`/app/eventos` administra los webinars/eventos que se publican en `/eventos` para registro
-público (ver [Eventos — registro público](eventos-publico.md) para el lado del visitante).
+**Eventos** (`/app/eventos`) sirve para invitar a clientes y prospectos a webinars y eventos
+presenciales, mandar felicitaciones y compartir comunicados de CONTPAQi. Todo se manda desde
+el CRM por WhatsApp o por correo, y ves quién lo abrió y quién confirmó. El lado del
+visitante está en [Eventos — registro público](eventos-publico.md).
 
-*(captura pendiente: eventos-staff-lista.png — corre `npm run docs:screenshots` contra la app corriendo y con datos de `npm run seed:demo`)*
+## La página principal
 
-## Crear y publicar un evento
+- **Arriba, «➕ ¿Qué quieres hacer?»**: una tarjeta por tipo. Al darle clic se abre el
+  formulario de nuevo evento con ese tipo ya elegido.
 
-*Eventos → Nuevo*: título, descripción, fecha/hora, cupo y el link del webinar. Mientras el
-evento existe, cualquiera puede registrarse en `/eventos/<id>` (protegido con Turnstile
-anti-bot) hasta llenar el cupo.
+| Tipo | Para qué |
+| --- | --- |
+| 💻 Webinar | En línea, con la liga para entrar. Pide confirmar asistencia. |
+| 📍 Presencial | En un lugar, con mapa, programa y vestimenta. Pide confirmar y cuántos van. |
+| 🎉 Felicitación | Una tarjeta para leer (cumpleaños, Navidad…). No pide confirmar. |
+| 📢 Comunicado | Pegas el link que pasa CONTPAQi y lo mandas. No pide confirmar. |
 
-## Gestionar inscritos
+- **Abajo, un recuadro por tipo** (Webinars, Eventos presenciales, Felicitaciones,
+  Comunicados) con sus eventos, la fecha y el estado. Clic en el título para abrirlo.
+- **🧪 Crear eventos de ejemplo**: crea uno de cada estilo y te manda las invitaciones a tu
+  correo, para probar. No salen en la lista pública y se borran con **🗑 Borrar ejemplos**.
 
-Desde el detalle de un evento ves la lista de inscritos. Los datos los captura el propio
-interesado en el formulario público, así que la tabla es **editable**: corrige nombre,
-empresa, correo y teléfono en la misma fila y dale **Guardar**. Si cambias el correo, el
-semáforo de entrega se reinicia (el del correo anterior ya no dice nada del nuevo) y no se
-permite dejar dos inscritos del mismo evento con el mismo correo.
+## Crear un evento
 
-Cada fila trae además:
+El formulario va en pasos:
+
+1. **¿Qué vas a hacer?** — el tipo (las mismas tarjetas de arriba).
+2. **Lo básico** — nombre, fecha y hora, 🎟 personas por invitación (cuántos puede llevar cada
+   invitado), mensaje para el invitado y, según el tipo, la liga del webinar o el lugar.
+   En un **comunicado** solo se pide el nombre y el **🔗 link del comunicado**: pega el que
+   pasó CONTPAQi (si lo pegas sin `https://`, se agrega solo). No lleva fecha.
+3. **¿Cómo se ve?** — el estilo: Corporativo, Elegante, Fiesta, Cumpleaños o Navidad (colores,
+   letra y adorno de la invitación y del correo).
+
+**➕ Más detalles** (programa, vestimenta, mapa, a quién contactar) y **⚙️ Opciones
+avanzadas** (cupo, recordatorio, correo de confirmación, seguimiento) son opcionales.
+
+**¿Cómo está?** — *En preparación* (borrador: puedes probar todo, solo no sale en la lista
+pública), *Publicado*, *Ya pasó* o *Cancelado*.
+
+## La página del evento
+
+### ① Revisa la invitación
+
+- **👁 Ver cómo se ve**: la invitación con un nombre de ejemplo («Juan Pérez»).
+- **✉️ Mandarme una prueba**: te llega el correo con asunto «[Prueba]». No te agrega a la lista.
+- **🖼 Poner imagen**: el flayer (PNG, JPG o WebP, máx. 700 KB). Sale en la invitación, en el
+  correo y en la vista previa al compartir el link.
+- En un **comunicado** este paso muestra el link con **🔗 Abrir el comunicado**, para revisar
+  que sea el correcto, y **✏️ Cambiar el link**.
+
+### ② Elige cómo invitar
+
+Hay dos pestañas:
+
+**👥 Con nombre** — cada quien recibe su propio link («¡Hola, Ana!»).
+
+- Agrega invitados con **🏢 De mis clientes** (casillas con buscador; usa el contacto
+  principal de cada empresa), **👤 Otra persona** o **📄 Lista de Excel** (descarga la
+  plantilla, llénala con Nombre, Correo, WhatsApp y Personas, y súbela).
+- Manda con **💬 Mandar por WhatsApp uno por uno** (abre WhatsApp Web en la misma pestaña,
+  persona por persona) o **✉️ Enviar por correo a los que faltan** (de 25 en 25 por clic).
+  También hay 💬 y ✉️ en cada renglón.
+- Cada renglón muestra cómo va: ⏳ Sin mandar · ✉️💬 Enviada · 👁 La abrió · ✅ Van N de M ·
+  ❌ No va. Con ✏️ cambias sus datos o anotas su respuesta si te contestó por teléfono.
+
+**🌐 Link abierto** — un solo link para todos (redes, grupos de WhatsApp). Quien entra pone
+sus datos y cuántos van. Abajo aparecen los que se registraron.
+
+- **📋 Copiar link** y **💬 Pegar en un grupo de WhatsApp**.
+- **📨 Mandar el link a una lista**: agrega personas (📄 Lista de Excel o 👤 Una persona) y
+  mándalo por WhatsApp uno por uno o por correo, igual que en «Con nombre».
+
+**📤 Se envía desde / ⚙️ Configuración de envío** (en las dos pestañas): anota con qué
+WhatsApp se mandan (el CRM no puede elegir el número: sale del WhatsApp abierto en esa
+computadora) y a qué correo llegan las respuestas.
+
+### Comunicados
+
+En un comunicado el envío es el mismo, con estas diferencias:
+
+- El mensaje dice «📢 Comunicado de DATTASOFT — Te compartimos este comunicado» y el botón
+  del correo es «Ver el comunicado». El asunto es «Comunicado: …».
+- **Con nombre**: al dar clic en su link, la persona llega directo al comunicado de
+  CONTPAQi y en su renglón queda **👁 La abrió**.
+- **Link abierto**: es el link de CONTPAQi tal cual.
+- No sale en la lista pública de eventos.
+
+### Total que van
+
+En webinars y presenciales, arriba de la página: **👥 Total que van** (con nombre + link
+abierto), cuántos dijeron que sí, que no, sin contestar y cuántos la abrieron.
+
+## Registrados del link abierto
+
+Los datos los captura el propio interesado, así que la tabla es **editable**: corrige
+nombre, empresa, correo y teléfono en la misma fila y dale **Guardar**.
 
 | Columna | Qué significa |
 | --- | --- |
-| 📧 | Semáforo de entrega del correo: 🟢 entregado · 🟡 aún sin confirmar (Brevo tarda unos minutos) · 🔴 rebotó, probablemente un correo falso |
-| 🚩 | Dominio de correo temporal/desechable conocido — probablemente no es un prospecto real |
-| 🚫 | Marcado como problemático. Pasa el mouse encima para ver el motivo y quién lo marcó; si está apagado, haz clic para marcar a esa persona |
-| 🔁 Antes | Ya asistió **de verdad** a otro evento. Útil para no reinvitar a quien ya fue si un webinar se repite |
-| ✅ Asistió | Asistencia real confirmada, distinta de lo que declaró al registrarse. Es la que alimenta el 🔁 de los eventos siguientes |
-| 💬 (Contactado) | Ya se le mandó el mensaje por WhatsApp. Se marca solo al usar el botón 💬 |
+| 📧 | Entrega del correo: 🟢 entregado · 🟡 aún sin confirmar · 🔴 rebotó (probablemente un correo falso) |
+| 🚩 | Correo temporal o desechable: probablemente no es un prospecto real |
+| 🚫 | Marcado como problemático (pasa el mouse para ver el motivo y quién lo marcó) |
+| 🔁 Antes | Ya asistió **de verdad** a otro evento |
+| ✅ Asistió | Asistencia real confirmada (alimenta el 🔁 de los eventos siguientes) |
+| 💬 | Ya se le mandó el mensaje por WhatsApp |
 
-Y estas acciones:
+Acciones: 💬 WhatsApp con la plantilla del evento, ✉️ reenviar confirmación, 🚫 lista negra,
+🗑️ eliminar y **📥 Exportar Excel**.
 
-- **💬 WhatsApp** — abre WhatsApp con la plantilla del evento ya resuelta para esa persona, y
-  la marca como contactada.
-- **💬 WhatsApp a pendientes** — hace lo mismo en tanda, para todos los que tengan teléfono y
-  no estén marcados como contactados. Se abre una pestaña por persona, espaciadas para que el
-  navegador no las bloquee: **todavía hay que darle Enviar en cada una**.
-- **✉️** — reenvía el correo de confirmación a un inscrito puntual.
-- **🚫** — manda a la lista negra. Pide un motivo (opcional) y guarda también su teléfono y
-  quién lo marcó, para que quede señalado si se vuelve a registrar en cualquier evento futuro.
-- **🗑️** — elimina ese registro. No se puede deshacer.
-- **📥 Exportar Excel** — baja la lista completa con todas las columnas de arriba.
-- **Estado** — marca la inscripción (registrado / confirmado / asistió / no asistió).
+La **lista negra** vale para todos los eventos: quien esté ahí, por correo o teléfono, no
+puede volver a registrarse en ninguno.
 
-La **lista negra** es global a todos los eventos: quien esté ahí, por correo o por teléfono,
-no puede volver a registrarse en ninguno. Se puede agregar a mano o quitar si fue un error.
+## Recordatorios y seguimiento automáticos
 
-## Compartir el link de registro
+El CRM manda solo un recordatorio por correo a los registrados antes del evento (24 h por
+defecto; 0 = no mandar) y, si el evento tiene **mensaje de seguimiento**, otro después.
+Ambos se configuran en ⚙️ Opciones avanzadas.
 
-En el detalle del evento, **🔗 Link Registro** copia al portapapeles la URL pública para
-pegarla en redes, WhatsApp o un correo. *Ver página pública* abre esa misma página en otra
-pestaña para revisarla antes de compartirla.
+## Dónde más aparece
 
-El registro público pide nombre y **al menos un dato de contacto: correo o teléfono**. Quien
-se registre solo con teléfono no recibe confirmación ni recordatorio por correo — aparece en
-Inscritos con el 💬 para contactarlo por WhatsApp. El duplicado se detecta por correo **o**
-por teléfono. El formulario exige la verificación anti-bots de Cloudflare: sin ella no se
-guarda ningún registro.
-
-## Recordatorios automáticos
-
-Un job programado (`/jobs/recordatorios-eventos`, protegido por `JOBS_SECRET`) envía
-recordatorios a los inscritos antes del evento; no requiere acción manual del staff salvo
-reenviar un correo puntual que se haya perdido.
+- **Dashboard**: «Próximos eventos» de los siguientes 30 días.
+- **Calendario**: los eventos en su fecha.
+- **Bitácora**: módulo *eventos* (crear, editar, envíos, cambios de invitados).
+- **Respaldo** (🛡️ Respaldar): incluye los eventos con sus invitados, links personales,
+  confirmaciones, la lista del link abierto, los registrados y la lista negra.
 
 ---
 
