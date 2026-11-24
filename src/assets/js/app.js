@@ -2253,6 +2253,22 @@
     var input = e.target.closest('[data-lista-archivo]');
     if (!input || !input.files || !input.files[0]) return;
     var form = input.closest('[data-lista-invitados]');
+    var conteo = form.querySelector('[data-lista-conteo]');
+    if (/\.xlsx$/i.test(input.files[0].name)) {
+      // El Excel lo lee el servidor y regresa el texto, para revisarlo antes de agregar.
+      var fd = new FormData();
+      fd.append('archivo', input.files[0]);
+      conteo.textContent = '⏳ Leyendo el Excel…';
+      fetch('/app/eventos/lista-excel', { method: 'POST', body: fd, headers: { 'x-csrf-token': cookie('x-csrf-token') } })
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          if (d.error) { conteo.textContent = '⚠ ' + d.error; return; }
+          form.querySelector('[data-lista-texto]').value = d.texto;
+          listaContar(form);
+        })
+        .catch(function () { conteo.textContent = '⚠ No se pudo leer el archivo. Revisa tu conexión e intenta de nuevo.'; });
+      return;
+    }
     var lector = new FileReader();
     lector.onload = function () {
       var texto = String(lector.result || '');
@@ -2479,10 +2495,11 @@
     var qs = 'phone=' + tel + (texto ? '&text=' + encodeURIComponent(texto) : '');
     return modo === 'app' ? 'whatsapp://send?' + qs : 'https://web.whatsapp.com/send?' + qs;
   }
-  function abrirWhatsApp(href, modo) {
+  function abrirWhatsApp(href, modo, pestana) {
     var url = urlWhatsApp(href, modo);
     // La app se abre por su protocolo: con window.open quedaría una pestaña en blanco.
     if (modo === 'app') window.location.href = url;
+    else if (pestana) window.open(url, pestana); // misma pestaña para uno tras otro
     else window.open(url, '_blank', 'noopener');
   }
   /** Pregunta dónde abrir (si no hay preferencia guardada) y llama a `listo(modo)`. */
@@ -2532,8 +2549,101 @@
     var a = e.target.closest && e.target.closest('a[href^="https://wa.me/"]');
     if (!a || e.defaultPrevented) return;
     e.preventDefault();
-    elegirWhatsApp(function (modo) { abrirWhatsApp(a.href, modo); });
+    elegirWhatsApp(function (modo) {
+      abrirWhatsApp(a.href, modo);
+      a.dispatchEvent(new CustomEvent('whatsapp-abierto', { bubbles: true }));
+    });
   }, true);
+
+  // ── Eventos: 💬 de un invitado → queda marcado «💬 Enviada» (sin recargar) ──
+  function marcarWspInvitado(a) {
+    var evento = (location.pathname.match(/\/app\/eventos\/([^/]+)/) || [])[1];
+    if (!evento) return Promise.resolve();
+    a.removeAttribute('data-wsp-pendiente');
+    var fila = a.closest('.ev-invitado');
+    var chip = fila && fila.querySelector('[data-wsp-chip]');
+    if (chip && chip.textContent.indexOf('💬') < 0) {
+      chip.textContent = chip.textContent.indexOf('✉️') >= 0 ? '✉️💬 Enviada' : '💬 Enviada';
+      chip.className = 'ev-chip';
+    }
+    return fetch('/app/eventos/' + evento + '/invitaciones/' + a.dataset.wspInv + '/whatsapp', {
+      method: 'POST',
+      headers: { 'x-csrf-token': cookie('x-csrf-token') },
+    }).catch(function () { /* si falla, solo no queda marcado */ });
+  }
+  document.addEventListener('whatsapp-abierto', function (e) {
+    var a = e.target.closest && e.target.closest('[data-wsp-inv]');
+    if (a) marcarWspInvitado(a);
+  });
+
+  // ── Eventos: «💬 Mandar por WhatsApp uno por uno» — abre el chat de cada quien, en orden ──
+  document.addEventListener('click', function (e) {
+    var btn = e.target.closest && e.target.closest('[data-wsp-uno-a-uno]');
+    if (!btn) return;
+    var cola = [].slice.call(document.querySelectorAll('[data-wsp-inv][data-wsp-pendiente]'));
+    if (!cola.length) { toast('✔️ Ya no hay a quién mandar por WhatsApp'); return; }
+    var total = cola.length;
+    var hechos = 0;
+    var numero = btn.dataset.envioWsp;
+    var dlg = document.createElement('dialog');
+    dlg.className = 'card';
+    dlg.style.maxWidth = '30rem';
+    dlg.innerHTML =
+      '<h3>💬 Mandar por WhatsApp, uno por uno</h3>' +
+      '<p class="wsp-cola__aviso"></p>' +
+      '<p class="muted" data-paso></p>' +
+      '<p class="wsp-cola__quien"></p>' +
+      '<p class="muted" data-hint>Se abre su chat con la invitación escrita: solo da <strong>Enviar</strong> en WhatsApp y regresa aquí para el siguiente.</p>' +
+      '<div class="page-head__actions" style="margin-top:0.75rem"></div>';
+    var aviso = dlg.querySelector('.wsp-cola__aviso');
+    aviso.textContent = numero
+      ? '📤 Se manda desde el WhatsApp ' + numero + '. Antes de empezar, revisa que ese número sea el que está abierto en esta computadora.'
+      : '📤 Se manda desde el WhatsApp que esté abierto en esta computadora. (Puedes anotar el número en «📤 Se envía desde».)';
+    var paso = dlg.querySelector('[data-paso]');
+    var quien = dlg.querySelector('.wsp-cola__quien');
+    var acciones = dlg.querySelector('.page-head__actions');
+    function boton(texto, clase, fn) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'btn ' + clase;
+      b.textContent = texto;
+      b.addEventListener('click', fn);
+      acciones.appendChild(b);
+      return b;
+    }
+    var bAbrir = boton('', '', function () {
+      var a = cola[0];
+      elegirWhatsApp(function (modo) {
+        abrirWhatsApp(a.href, modo, 'crm_whatsapp');
+        marcarWspInvitado(a);
+        hechos++;
+        cola.shift();
+        mostrar();
+      });
+    });
+    var bSaltar = boton('⏭ Saltar', 'btn--secondary', function () { cola.shift(); mostrar(); });
+    boton('Terminar', 'btn--ghost', function () { dlg.close(); });
+    function mostrar() {
+      if (!cola.length) {
+        paso.textContent = '';
+        quien.textContent = '✅ Listo: se abrieron ' + hechos + ' de ' + total + '.';
+        bAbrir.hidden = true;
+        bSaltar.hidden = true;
+        return;
+      }
+      var a = cola[0];
+      paso.textContent = (total - cola.length + 1) + ' de ' + total + (hechos ? ' · ya van ' + hechos : '');
+      quien.textContent = (a.dataset.wspNombre || 'Sin nombre') + ' · ' + a.dataset.wspTel;
+      bAbrir.textContent = '💬 Abrir WhatsApp de ' + (a.dataset.wspNombre || 'este invitado').split(' ')[0];
+    }
+    mostrar();
+    dlg.addEventListener('close', function () {
+      dlg.remove();
+      if (hechos) window.location.reload();
+    });
+    document.body.appendChild(dlg);
+    dlg.showModal();
+  });
   document.addEventListener('change', function (e) {
     if (!e.target.matches || !e.target.matches('[data-whatsapp-modo]')) return;
     try { localStorage.setItem('crm_whatsapp_modo', e.target.value); } catch { /* sin almacenamiento */ }

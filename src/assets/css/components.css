@@ -1957,6 +1957,17 @@ dialog.facturar-cerrar h2 { margin: 0 0 var(--space-2); font-size: 1.2rem; }
 .ev-tab span { color: var(--color-text-muted); font-size: .88rem; }
 .ev-tab:hover { border-color: var(--brand); }
 .ev-tab.is-activa { border-color: var(--brand); background: var(--brand-weak); box-shadow: 0 0 0 1px var(--brand) inset; }
+.ev-envio { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-3); margin-bottom: var(--space-3); padding: var(--space-2) var(--space-3); border: 1px dashed var(--brand); border-radius: var(--radius); background: var(--brand-weak); }
+.ev-envio__label { font-weight: 700; }
+.ev-envio__dato { overflow-wrap: anywhere; min-width: 0; }
+.ev-envio > .ev-panel { flex-basis: 100%; margin-top: 0; }
+.ev-pasos-lista { margin: 0 0 var(--space-3); padding-left: 1.4em; display: grid; gap: var(--space-2); }
+.ev-pasos-lista > li { min-width: 0; overflow-wrap: anywhere; }
+.ev-pasos-lista > li > div { margin-top: 6px; }
+.ev-pasos-lista input[type=file] { max-width: 100%; width: 100%; }
+#ev-add-lista, #ev-add-lista .form { min-width: 0; max-width: 100%; }
+.wsp-cola__quien { font-size: 1.15rem; margin: var(--space-2) 0; }
+.wsp-cola__aviso { padding: var(--space-2) var(--space-3); border-radius: var(--radius); background: var(--brand-weak); margin: var(--space-2) 0; }
 .ev-agregar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
 .ev-agregar__label { font-weight: 700; margin-right: var(--space-1); }
 .ev-agregar .is-activa { border-color: var(--brand); background: var(--brand-weak); }

@@ -743,6 +743,54 @@ export class EventoService {
     return { agregados, repetidos, errores };
   }
 
+  /** Plantilla vacía para «📄 Lista de Excel»: las columnas que entiende {@link leerListaInvitados}. */
+  async plantillaListaInvitados(): Promise<Buffer> {
+    return this.excel.escribir(
+      'Invitados',
+      [
+        { header: 'Nombre', key: 'nombre', width: 32 },
+        { header: 'Correo', key: 'correo', width: 32 },
+        { header: 'WhatsApp', key: 'whatsapp', width: 18 },
+        { header: 'Personas', key: 'personas', width: 10 },
+      ],
+      [],
+    );
+  }
+
+  /**
+   * Un Excel (.xlsx) de invitados → el mismo texto que si se hubiera pegado (tabuladores), para
+   * mostrarlo en el cuadro antes de agregar. Sin renglones, avisa.
+   */
+  async excelListaATexto(buffer: Buffer): Promise<string> {
+    let filas: Record<string, string>[];
+    try {
+      filas = await this.excel.leer(buffer);
+    } catch {
+      throw new ValidationError('No se pudo leer el archivo. Guárdalo como Excel (.xlsx) o CSV y vuelve a intentar.');
+    }
+    const columnas = [...new Set(filas.flatMap((f) => Object.keys(f)))];
+    const limpio = (v: unknown): string => String(v ?? '').replace(/[\t\r\n]+/g, ' ').trim();
+    const renglones = filas
+      .map((f) => columnas.map((c) => limpio(f[c])))
+      .filter((r) => r.some(Boolean));
+    if (!renglones.length) throw new ValidationError('El Excel no trae invitados (¿llenaste debajo de los títulos?)');
+    return [columnas.map(limpio).join('\t'), ...renglones.map((r) => r.join('\t'))].join('\n');
+  }
+
+  /** «📤 Se envía desde»: WhatsApp y correo de quien manda las invitaciones de este evento. */
+  async cambiarEnvio(actor: SessionUser, eventoId: string, datos: { whatsapp: string; correo: string }): Promise<void> {
+    const evento = await this.paraGestion(actor, eventoId);
+    evento.cambiarEnvio(datos);
+    await this.persistirPanel(actor, evento);
+  }
+
+  /** 💬 Se abrió el WhatsApp de un invitado con su invitación: queda marcado como enviado. */
+  async marcarEnviadaWsp(actor: SessionUser, eventoId: string, invId: string): Promise<void> {
+    const evento = await this.paraGestion(actor, eventoId);
+    evento.marcarEnviadaWsp(invId, this.clock.now());
+    await this.persistirPanel(actor, evento);
+  }
+
   async actualizarInvitadoExterno(
     actor: SessionUser,
     eventoId: string,
@@ -889,6 +937,7 @@ export class EventoService {
         <p style="margin:24px 0"><a href="${link}" style="background:${est.color};color:#fff;padding:12px 22px;border-radius:8px;text-decoration:none;font-weight:bold">${boton}</a></p>
         <p style="opacity:.6;font-size:12px">Si el botón no abre, copia este link: ${link}</p>
       </div>`,
+      ...(evento.envioCorreo ? { responderA: { email: evento.envioCorreo } } : {}),
       tags: ['evento-invitacion', `evento-${evento.id}`],
     });
   }

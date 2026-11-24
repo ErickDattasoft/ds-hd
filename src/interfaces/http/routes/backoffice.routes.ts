@@ -376,6 +376,8 @@ export function backofficeRoutes(container: Container): Router {
   // ── Eventos ────────────────────────────────────────────────────────────────
   r.get('/eventos', requirePermission('eventos:leer'), (req, res) => eventos().listar(req, res));
   r.get('/eventos/nuevo', requirePermission('eventos:gestionar'), (req, res) => eventos().nuevo(req, res));
+  r.get('/eventos/plantilla-invitados.xlsx', requirePermission('eventos:gestionar'), (req, res) => eventos().plantillaListaGet(req, res));
+  r.post('/eventos/lista-excel', requirePermission('eventos:gestionar'), uploadExcel, (req, res) => eventos().listaExcelPost(req, res));
   r.post('/eventos/ejemplos', requirePermission('eventos:gestionar'), (req, res) => eventos().ejemplosCrearPost(req, res));
   r.post('/eventos/ejemplos/invitar', requirePermission('eventos:gestionar'), (req, res) => eventos().ejemplosInvitarPost(req, res));
   r.post('/eventos/ejemplos/eliminar', requirePermission('eventos:gestionar'), (req, res) => eventos().ejemplosEliminarPost(req, res));
@@ -400,6 +402,8 @@ export function backofficeRoutes(container: Container): Router {
   r.post('/eventos/:id/lista-negra', requirePermission('eventos:gestionar'), (req, res) => eventos().listaNegraAgregarPost(req, res));
   r.post('/eventos/:id/lista-negra/quitar', requirePermission('eventos:gestionar'), (req, res) => eventos().listaNegraQuitarPost(req, res));
   r.post('/eventos/:id/invitaciones/enviar', requirePermission('eventos:gestionar'), (req, res) => eventos().invitacionesEnviarPost(req, res));
+  r.post('/eventos/:id/envio', requirePermission('eventos:gestionar'), (req, res) => eventos().envioPost(req, res));
+  r.post('/eventos/:id/invitaciones/:invId/whatsapp', requirePermission('eventos:gestionar'), (req, res) => eventos().invitacionWspPost(req, res));
   r.post('/eventos/:id/invitaciones/:invId/enviar', requirePermission('eventos:gestionar'), (req, res) => eventos().invitacionEnviarPost(req, res));
   r.post('/eventos/:id/empresas', requirePermission('eventos:gestionar'), (req, res) => eventos().empresaAgregarPost(req, res));
   r.post('/eventos/:id/empresas/varias', requirePermission('eventos:gestionar'), (req, res) => eventos().empresasVariasPost(req, res));

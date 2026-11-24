@@ -17,6 +17,7 @@ import {
   type EstiloEvento,
   type EstadoEvento,
   type RespuestaInvitacion,
+  type DatosRsvp,
 } from '../../../../core/entities/Evento.js';
 import { camposDeError } from '../../support/errores.js';
 import { datetimeLocalMexico } from '../../../../core/entities/value-objects/horaMexico.js';
@@ -169,7 +170,7 @@ export class EventoController {
       ]);
     // Las invitaciones de antes del link personal reciben el suyo aquí (una sola vez).
     await this.eventos.asegurarLinksInvitados(evento);
-    const conLink = <T extends { id: string; token: string | null; telefono: string | null; pases: number; respuesta: string; personas: number | null; mensaje: string | null; respondioNombre: string | null; paraNombre: string | null; correo: string | null; enviadaAt: string | null; abiertaAt: string | null; respondioAt: string | null }>(
+    const conLink = <T extends DatosRsvp & { id: string }>(
       inv: T,
       nombre: string,
     ) => ({
@@ -273,6 +274,48 @@ export class EventoController {
     } catch (err) {
       this.avisar(res, id, err);
     }
+  };
+
+  /** «⬇ Plantilla de Excel» para llenar la lista de invitados. */
+  plantillaListaGet = async (_req: Request, res: Response): Promise<void> => {
+    const buffer = await this.eventos.plantillaListaInvitados();
+    res
+      .type('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+      .attachment('Plantilla invitados.xlsx')
+      .send(buffer);
+  };
+
+  /** El Excel elegido en «📄 Lista de Excel» → texto para el cuadro (se revisa antes de agregar). */
+  listaExcelPost = async (req: Request, res: Response): Promise<void> => {
+    if (!req.file) {
+      res.status(400).json({ error: 'No llegó el archivo' });
+      return;
+    }
+    try {
+      res.json({ texto: await this.eventos.excelListaATexto(req.file.buffer) });
+    } catch (err) {
+      res.status(400).json({ error: err instanceof Error ? err.message : 'No se pudo leer el archivo' });
+    }
+  };
+
+  /** «📤 Se envía desde»: WhatsApp y correo de quien manda las invitaciones. */
+  envioPost = async (req: Request, res: Response): Promise<void> => {
+    const id = str(req.params.id);
+    try {
+      await this.eventos.cambiarEnvio(req.user!, id, {
+        whatsapp: str(req.body?.envioWhatsapp),
+        correo: str(req.body?.envioCorreo),
+      });
+      res.redirect(`/app/eventos/${id}?aviso=${encodeURIComponent('📤 Guardado: así se mandarán las invitaciones')}#invitaciones`);
+    } catch (err) {
+      this.avisar(res, id, err);
+    }
+  };
+
+  /** 💬 Marca que se abrió el WhatsApp del invitado con su invitación (sin recargar). */
+  invitacionWspPost = async (req: Request, res: Response): Promise<void> => {
+    await this.eventos.marcarEnviadaWsp(req.user!, str(req.params.id), str(req.params.invId));
+    res.json({ ok: true });
   };
 
   empresaActualizarPost = async (req: Request, res: Response): Promise<void> => {

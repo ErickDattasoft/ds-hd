@@ -84,6 +84,8 @@
   {% for ext in externosVM %}{% set _ = todosInvitados.push({ clase: 'externo', i: ext }) %}{% endfor %}
   {% set porMandar = [] %}
   {% for x in todosInvitados %}{% if x.i.correo and not x.i.enviadaAt and x.i.respuesta == 'pendiente' %}{% set _ = porMandar.push(1) %}{% endif %}{% endfor %}
+  {% set porWsp = [] %}
+  {% for x in todosInvitados %}{% if x.i.telefono and not x.i.enviadaWspAt and x.i.respuesta == 'pendiente' %}{% set _ = porWsp.push(1) %}{% endif %}{% endfor %}
 
   <section class="ev-paso" id="invitaciones">
     <h2 class="ev-paso__titulo"><span class="ev-paso__num">2</span> Invitaciones: elige cómo invitar</h2>
@@ -102,6 +104,27 @@
     {#- Pestaña A: invitados con nombre -#}
     <div class="ev-tabpanel" data-ev-panel="nombre">
       {% if puedeGestionar %}
+        {#- Se envía desde: a la vista, para que quien manda no tenga que ir a Configuración. -#}
+        <div class="ev-envio" data-paneles>
+          <span class="ev-envio__label">📤 Se envía desde:</span>
+          {% if evento.envioWhatsapp or evento.envioCorreo %}
+            {% if evento.envioWhatsapp %}<span class="ev-envio__dato">💬 WhatsApp <strong class="sensible">{{ evento.envioWhatsapp }}</strong></span>{% endif %}
+            {% if evento.envioCorreo %}<span class="ev-envio__dato">✉️ Respuestas a <strong class="sensible">{{ evento.envioCorreo }}</strong></span>{% endif %}
+          {% else %}
+            <span class="muted">sin anotar — dinos con qué WhatsApp y correo vas a mandar</span>
+          {% endif %}
+          <button type="button" class="btn btn--sm btn--ghost" data-abre="ev-envio-form">✏️ {{ 'Cambiar' if (evento.envioWhatsapp or evento.envioCorreo) else 'Anotar' }}</button>
+          <div class="ev-panel" id="ev-envio-form" data-panel hidden>
+            <form method="post" action="/app/eventos/{{ evento.id }}/envio" class="ev-persona">
+              <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+              <label class="field"><span>💬 WhatsApp de envío</span><input type="tel" name="envioWhatsapp" value="{{ evento.envioWhatsapp or '' }}" placeholder="Ej. 999 123 4567 (oficina)" autocomplete="off" /></label>
+              <label class="field"><span>✉️ Correo para respuestas</span><input type="email" name="envioCorreo" value="{{ evento.envioCorreo or '' }}" placeholder="eventos@dattasoft.mx" autocomplete="off" /></label>
+              <button class="btn" type="submit">Guardar</button>
+              <p class="ev-panel__ayuda">El WhatsApp se manda desde el que esté <strong>abierto en esta computadora</strong> (WhatsApp Web o la app): el número de aquí te lo recuerda antes de empezar. Los correos salen del correo del CRM y, si alguien contesta, la respuesta llega al correo que pongas aquí.</p>
+            </form>
+          </div>
+        </div>
+
         <div class="ev-agregar" data-paneles>
           <span class="ev-agregar__label">Agregar invitados:</span>
           <button type="button" class="btn btn--secondary" data-abre="ev-add-clientes">🏢 De mis clientes</button>
@@ -158,16 +181,18 @@
         <div class="ev-panel" id="ev-add-lista" data-panel hidden>
           <form method="post" action="/app/eventos/{{ evento.id }}/externos/lista" class="form" data-lista-invitados>
             <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
-            <p class="ev-panel__ayuda">Para muchas personas a la vez. En Excel, una persona por renglón con estas columnas (correo o celular, al menos uno):</p>
-            <pre class="lista-ejemplo">nombre       correo              celular      personas
-Ana López    ana@correo.com      9991234567   2
-Luis Mena                        9997654321   1</pre>
-            <label class="field"><span>Selecciona las celdas en Excel, cópialas (Ctrl+C) y pégalas aquí (Ctrl+V)</span>
-              <textarea name="lista" rows="5" required placeholder="Pega aquí…" data-lista-texto></textarea>
+            <ol class="ev-pasos-lista">
+              <li><strong>Descarga la plantilla</strong> y llénala: una persona por renglón con su <strong>Nombre</strong> y su <strong>WhatsApp</strong> y/o <strong>Correo</strong> (lo que tengas). «Personas» es opcional.
+                <div><a class="btn btn--sm btn--secondary" href="/app/eventos/plantilla-invitados.xlsx" download>⬇ Descargar plantilla de Excel</a></div>
+              </li>
+              <li><strong>Súbela aquí</strong> <span class="muted">(Excel .xlsx o CSV)</span>
+                <div><input type="file" accept=".xlsx,.csv,.txt,text/csv,text/plain,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" data-lista-archivo /></div>
+              </li>
+              <li><strong>Revisa</strong> que se vea bien y da <strong>«📄 Agregar a todos»</strong>. Después: <strong>✉️ Enviar a los que faltan</strong> (a quien tiene correo) y <strong>💬 Mandar por WhatsApp uno por uno</strong> (a quien tiene WhatsApp).</li>
+            </ol>
+            <label class="field"><span class="muted">Así quedó la lista <span>(también puedes copiar celdas de Excel y pegarlas aquí)</span></span>
+              <textarea name="lista" rows="5" required placeholder="Aquí aparece la lista al subir el archivo…" data-lista-texto></textarea>
               <em class="field__hint" data-lista-conteo></em>
-            </label>
-            <label class="field"><span class="muted">…o sube el archivo guardado como CSV</span>
-              <input type="file" accept=".csv,.txt,text/csv,text/plain" data-lista-archivo />
             </label>
             <div class="varias__pie">
               {% if evento.pideConfirmacion %}<label class="inv-pases-alta" title="Para los renglones que no traen personas">🎟 Personas si no lo trae <input type="number" name="pases" min="1" max="{{ MAX_PASES }}" value="{{ evento.maxPersonasRegistro }}" style="width:4.5em" /></label>{% endif %}
@@ -179,15 +204,18 @@ Luis Mena                        9997654321   1</pre>
 
       {% if puedeGestionar and todosInvitados | length %}
         <div class="ev-mandar">
+          {% if porWsp | length %}
+            <button type="button" class="btn" data-wsp-uno-a-uno data-evento="{{ evento.id }}" data-envio-wsp="{{ evento.envioWhatsapp or '' }}">💬 Mandar por WhatsApp uno por uno ({{ porWsp | length }})</button>
+          {% endif %}
           {% if porMandar | length %}
             <form method="post" action="/app/eventos/{{ evento.id }}/invitaciones/enviar" class="inline"
                   data-confirm="{{ '⚠️ El evento sigue en BORRADOR. ' if evento.estado == 'borrador' }}¿Mandar la invitación por correo a los {{ porMandar | length }} que faltan?">
               <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
               <button class="btn" type="submit">✉️ Enviar a los que faltan ({{ porMandar | length }})</button>
             </form>
-            <span class="muted">Por correo, a quien todavía no se le ha mandado. Para WhatsApp usa el 💬 de cada uno.</span>
+            <span class="muted">✉️ = por correo a quien aún no se le manda · 💬 = abre el WhatsApp de cada uno, uno tras otro.</span>
           {% else %}
-            <span class="muted">✔️ Ya se les mandó por correo a todos los que tienen correo. Usa 💬 para mandar por WhatsApp.</span>
+            <span class="muted">✔️ Ya se les mandó por correo a todos los que tienen correo.{% if porWsp | length %} Falta WhatsApp.{% endif %}</span>
           {% endif %}
         </div>
       {% endif %}
@@ -213,12 +241,14 @@ Luis Mena                        9997654321   1</pre>
                 {% elif inv.respuesta == 'no_asistira' %}<span class="ev-chip ev-chip--no">❌ No va</span>
                 {% elif inv.respuesta == 'no_localizado' %}<span class="ev-chip">📵 No localizado</span>
                 {% elif inv.abiertaAt %}<span class="ev-chip ev-chip--abrio" title="La abrió el {{ inv.abiertaAt | fechahora }}">👁 La abrió</span>
-                {% elif inv.enviadaAt %}<span class="ev-chip" title="Se le mandó el {{ inv.enviadaAt | fechahora }}">✉️ Enviada</span>
-                {% else %}<span class="ev-chip ev-chip--pend">⏳ Sin mandar</span>{% endif %}
+                {% elif inv.enviadaAt or inv.enviadaWspAt %}<span class="ev-chip" data-wsp-chip title="{% if inv.enviadaAt %}Por correo el {{ inv.enviadaAt | fechahora }}. {% endif %}{% if inv.enviadaWspAt %}Por WhatsApp el {{ inv.enviadaWspAt | fechahora }}.{% endif %}">{{ '✉️' if inv.enviadaAt }}{{ '💬' if inv.enviadaWspAt }} Enviada</span>
+                {% else %}<span class="ev-chip ev-chip--pend" data-wsp-chip>⏳ Sin mandar</span>{% endif %}
               </div>
               <div class="ev-invitado__acciones">
                 {% if puedeGestionar %}
                   <a class="btn btn--sm btn--ghost" href="{{ inv.waInvitacion }}" target="_blank" rel="noopener"
+                     data-wsp-inv="{{ inv.id }}" data-wsp-nombre="{{ nombreVisible }}" data-wsp-tel="{{ inv.telefono or '' }}"
+                     {% if inv.telefono and not inv.enviadaWspAt and inv.respuesta == 'pendiente' %}data-wsp-pendiente{% endif %}
                      title="{{ 'Mandar por WhatsApp a ' + inv.telefono if inv.telefono else 'Mandar por WhatsApp (eliges el chat)' }}">💬</a>
                   {% if inv.correo %}
                     <form method="post" action="/app/eventos/{{ evento.id }}/invitaciones/{{ inv.id }}/enviar" class="inline"

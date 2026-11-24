@@ -1046,3 +1046,76 @@ describe('borrador = para probar', () => {
     expect((await anon.get(`/eventos/ev1/i/${token}`)).status).toBe(200);
   });
 });
+
+describe('lista de Excel y envío por WhatsApp uno por uno', () => {
+  const evento = () =>
+    new Evento({ id: 'ev1', titulo: 'Posada', tipo: 'presencial', fechaHora: enUnaSemana(), estado: 'publicado', maxPersonasRegistro: 2 });
+
+  it('⬇ plantilla → se llena → se sube el .xlsx → queda el texto para revisar → se agregan', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    t.eventoRepo.items.set('ev1', evento());
+    const admin = await login(t.app, ADMIN.email, ADMIN.password);
+
+    const plantilla = await admin.agent.get('/app/eventos/plantilla-invitados.xlsx').buffer(true).parse((res, cb) => {
+      const partes: Buffer[] = [];
+      res.on('data', (c: Buffer) => partes.push(c));
+      res.on('end', () => cb(null, Buffer.concat(partes)));
+    });
+    expect(plantilla.status).toBe(200);
+    const { FflateExcelIO } = await import('../../src/infrastructure/excel/FflateExcelIO.js');
+    const io = new FflateExcelIO();
+    expect(Object.keys((await io.leerVarias(plantilla.body as Buffer)) ?? {})).toEqual(['Invitados']);
+
+    // Lo que llenan los compañeros: nombre con apellido y WhatsApp (sin correo).
+    const lleno = await io.escribir(
+      'Invitados',
+      [{ header: 'Nombre', key: 'n' }, { header: 'Correo', key: 'c' }, { header: 'WhatsApp', key: 'w' }, { header: 'Personas', key: 'p' }],
+      [{ n: 'Ana López', c: '', w: '999 123 4567', p: '' }, { n: 'Luis Mena', c: '', w: '9997654321', p: '3' }],
+    );
+    const r = await admin.agent
+      .post('/app/eventos/lista-excel')
+      .set('x-csrf-token', admin.csrf)
+      .attach('archivo', lleno, 'invitados.xlsx');
+    expect(r.status).toBe(200);
+    expect(r.body.texto.split('\n')[0]).toBe('Nombre\tCorreo\tWhatsApp\tPersonas');
+
+    await admin.agent.post('/app/eventos/ev1/externos/lista').type('form').send({ _csrf: admin.csrf, lista: r.body.texto });
+    const [ana, luis] = (await t.eventoRepo.findById('ev1'))!.invitadosExternos;
+    expect([ana!.nombre, ana!.telefono, ana!.pases, luis!.nombre, luis!.pases]).toEqual(['Ana López', '999 123 4567', 2, 'Luis Mena', 3]);
+
+    const malo = await admin.agent.post('/app/eventos/lista-excel').set('x-csrf-token', admin.csrf).attach('archivo', Buffer.from('no soy excel'), 'x.xlsx');
+    expect(malo.status).toBe(400);
+  });
+
+  it('📤 se envía desde + 💬 uno por uno: marca enviada por WhatsApp y el correo responde al de envío', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    const ev = evento();
+    ev.agregarInvitadoExterno({ id: 'x1', nombre: 'Ana López', fuente: null, token: 'tok1', telefono: '9991234567', correo: 'ana@x.mx' });
+    ev.agregarInvitadoExterno({ id: 'x2', nombre: 'Luis Mena', fuente: null, token: 'tok2', telefono: '9997654321' });
+    t.eventoRepo.items.set('ev1', ev);
+    const admin = await login(t.app, ADMIN.email, ADMIN.password);
+
+    let page = await admin.agent.get('/app/eventos/ev1');
+    expect(page.text).toContain('Mandar por WhatsApp uno por uno (2)');
+    expect(page.text).toContain('sin anotar');
+
+    const mal = await admin.agent.post('/app/eventos/ev1/envio').type('form').send({ _csrf: admin.csrf, envioWhatsapp: '123', envioCorreo: '' });
+    expect(decodeURIComponent(String(mal.headers.location))).toContain('10 dígitos');
+    await admin.agent.post('/app/eventos/ev1/envio').type('form').send({ _csrf: admin.csrf, envioWhatsapp: '999 111 2233', envioCorreo: 'Eventos@Dattasoft.mx' });
+    page = await admin.agent.get('/app/eventos/ev1');
+    expect(page.text).toContain('999 111 2233');
+    expect(page.text).toContain('data-envio-wsp="999 111 2233"');
+
+    const m = await admin.agent.post('/app/eventos/ev1/invitaciones/x2/whatsapp').set('x-csrf-token', admin.csrf);
+    expect(m.body).toEqual({ ok: true });
+    const luis = (await t.eventoRepo.findById('ev1'))!.buscarInvitado('x2')!;
+    expect(luis.enviadaWspAt).toBeTruthy();
+    expect(luis.contactado).toBe(true);
+    page = await admin.agent.get('/app/eventos/ev1');
+    expect(page.text).toContain('Mandar por WhatsApp uno por uno (1)');
+    expect(page.text).toContain('💬 Enviada');
+
+    await admin.agent.post('/app/eventos/ev1/invitaciones/x1/enviar').type('form').send({ _csrf: admin.csrf });
+    expect(t.emailSender.enviados.at(-1)?.responderA).toEqual({ email: 'eventos@dattasoft.mx' });
+  });
+});

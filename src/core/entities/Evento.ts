@@ -169,6 +169,8 @@ export interface DatosRsvp {
   telefono: string | null;
   /** Última vez que se le mandó la invitación por correo desde el CRM. */
   enviadaAt: string | null;
+  /** Última vez que se abrió su WhatsApp con la invitación desde el CRM (💬). */
+  enviadaWspAt: string | null;
 }
 
 /** Campos de destinatario que el staff edita a mano. */
@@ -300,6 +302,11 @@ export interface EventoProps {
   /** Contacto de referencia de ESTE evento (distinto del "invitado por" de cada invitación). */
   contactoNombre?: string | null;
   contactoWhatsapp?: string | null;
+  /** «📤 Se envía desde»: el WhatsApp que debe estar abierto en la computadora al mandar invitaciones
+   *  (el CRM no puede elegir el número: es un recordatorio visible para quien manda). */
+  envioWhatsapp?: string | null;
+  /** «📤 Se envía desde»: a este correo llegan las respuestas de las invitaciones por correo. */
+  envioCorreo?: string | null;
   /** Plantilla de mensaje con comodines, propia de este evento — ver {@link resolverPlantillaEvento}. */
   plantilla?: string | null;
   /** Mensaje de seguimiento por correo tras el evento; vacío = no se manda (opcional a propósito). */
@@ -337,6 +344,8 @@ export class Evento {
   sistema: string | null;
   contactoNombre: string | null;
   contactoWhatsapp: string | null;
+  envioWhatsapp: string | null;
+  envioCorreo: string | null;
   plantilla: string | null;
   mensajeSeguimiento: string | null;
   horasSeguimiento: number | null;
@@ -381,6 +390,9 @@ export class Evento {
     this.sistema = props.sistema?.trim() || null;
     this.contactoNombre = props.contactoNombre?.trim() || null;
     this.contactoWhatsapp = props.contactoWhatsapp?.trim() || null;
+    this.envioWhatsapp = props.envioWhatsapp?.trim() || null;
+    // Al leer de la BD no se valida (un correo raro no debe tumbar el evento): se valida al cambiarlo.
+    this.envioCorreo = props.envioCorreo?.trim().toLowerCase() || null;
     this.plantilla = props.plantilla?.trim() || null;
     this.mensajeSeguimiento = props.mensajeSeguimiento?.trim() || null;
     this.horasSeguimiento =
@@ -454,6 +466,28 @@ export class Evento {
     if (!inv) throw new NotFoundError('Invitado', id);
     inv.enviadaAt = ahora.toISOString();
     inv.contactado = true;
+  }
+
+  /** Registra que se abrió su WhatsApp con la invitación (💬). */
+  marcarEnviadaWsp(id: string, ahora: Date): void {
+    const inv = this.buscarInvitado(id);
+    if (!inv) throw new NotFoundError('Invitado', id);
+    inv.enviadaWspAt = ahora.toISOString();
+    inv.contactado = true;
+  }
+
+  /** «📤 Se envía desde»: el WhatsApp y el correo de quien manda las invitaciones de este evento. */
+  cambiarEnvio(datos: { whatsapp: string; correo: string }): void {
+    const correo = datos.correo.trim().toLowerCase();
+    if (correo && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo)) {
+      throw new ValidationError(`«${correo}» no parece un correo`, { envioCorreo: 'Correo no válido' });
+    }
+    const whatsapp = datos.whatsapp.trim();
+    if (whatsapp && whatsapp.replace(/\D/g, '').length < 10) {
+      throw new ValidationError('El WhatsApp debe tener al menos 10 dígitos', { envioWhatsapp: 'Número no válido' });
+    }
+    this.envioWhatsapp = whatsapp || null;
+    this.envioCorreo = correo || null;
   }
 
   /** Da link a las invitaciones que aún no tienen (las de antes de esta función). */
@@ -679,6 +713,7 @@ function sanearRsvp(d: Partial<DatosRsvp>): DatosRsvp {
     correo: textoONull(d.correo)?.toLowerCase() ?? null,
     telefono: textoONull(d.telefono),
     enviadaAt: textoONull(d.enviadaAt),
+    enviadaWspAt: textoONull(d.enviadaWspAt),
   };
 }
 
