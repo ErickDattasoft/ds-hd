@@ -998,6 +998,7 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
           c.config.baseUrl,
           c.config.isProduction,
           c.contactoRepo,
+          c.usuarioRepo,
         ),
     ).singleton(),
     obtenerMetricasService: asFunction(

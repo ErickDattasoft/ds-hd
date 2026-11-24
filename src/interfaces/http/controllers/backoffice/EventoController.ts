@@ -323,6 +323,7 @@ export class EventoController {
       await this.eventos.cambiarEnvio(req.user!, id, {
         whatsapp: str(req.body?.envioWhatsapp),
         correo: str(req.body?.envioCorreo),
+        ...(req.body?.avisarRegistros !== undefined ? { avisar: str(req.body?.avisarRegistros) } : {}),
       });
       const tab = str(req.body?.tab) === 'abierto' ? 'tab=abierto&' : '';
       res.redirect(`/app/eventos/${id}?${tab}aviso=${encodeURIComponent('📤 Guardado: así se mandarán las invitaciones')}#invitaciones`);

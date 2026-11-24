@@ -1295,3 +1295,66 @@ describe('eventos — página principal', () => {
     expect(form.text).toContain('data-ph-presencial="Ej. Posada DATTASOFT 2026"');
   });
 });
+
+describe('🔔 aviso al equipo de cada registro', () => {
+  const evento = () =>
+    new Evento({ id: 'ev1', titulo: 'Posada', tipo: 'presencial', fechaHora: enUnaSemana(), estado: 'publicado', maxPersonasRegistro: 3, creadoPorUid: ADMIN.uid });
+
+  it('registro en el link abierto: sin correos anotados avisa a quien creó el evento, con total que van', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    t.eventoRepo.items.set('ev1', evento());
+    const anon = request.agent(t.app);
+    const page = await anon.get('/eventos/ev1');
+    const csrf = cookieValor(page.headers['set-cookie'] as unknown as string[], 'x-csrf-token')!;
+    const reg = await anon.post('/eventos/ev1').type('form').send({ _csrf: csrf, nombre: 'Pedro Gómez', telefono: '9991234567', asistencia: '2' });
+    expect(reg.status).toBe(200);
+    const aviso = t.emailSender.enviados.find((c) => c.asunto.startsWith('🎟 Nuevo registro'));
+    expect(aviso?.asunto).toBe('🎟 Nuevo registro: Pedro Gómez (2 personas) – Posada');
+    expect(aviso?.para.map((p) => p.email)).toEqual([ADMIN.email]);
+    expect(aviso?.html).toContain('9991234567');
+    expect(aviso?.html).toContain('Total que van hasta ahora: 2');
+  });
+
+  it('se anotan varios correos en ⚙️ Configuración de envío y ahí llega el aviso al confirmar con link personal', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    const ev = evento();
+    ev.agregarInvitadoExterno({ id: 'x1', nombre: 'Ana López', fuente: null, token: 'tok1', correo: 'ana@x.mx' });
+    t.eventoRepo.items.set('ev1', ev);
+    const admin = await login(t.app, ADMIN.email, ADMIN.password);
+
+    const mal = await admin.agent.post('/app/eventos/ev1/envio').type('form')
+      .send({ _csrf: admin.csrf, envioWhatsapp: '', envioCorreo: '', avisarRegistros: 'gelmi@dattasoft.mx, nada' });
+    expect(decodeURIComponent(String(mal.headers.location))).toContain('no parece un correo');
+    await admin.agent.post('/app/eventos/ev1/envio').type('form')
+      .send({ _csrf: admin.csrf, envioWhatsapp: '', envioCorreo: '', avisarRegistros: 'Gelmi@dattasoft.mx; erick@dattasoft.mx' });
+    const page = await admin.agent.get('/app/eventos/ev1');
+    expect(page.text).toContain('gelmi@dattasoft.mx, erick@dattasoft.mx');
+
+    const anon = request.agent(t.app);
+    const inv = await anon.get('/eventos/ev1/i/tok1');
+    const csrf = cookieValor(inv.headers['set-cookie'] as unknown as string[], 'x-csrf-token')!;
+    const r = await anon.post('/eventos/ev1/i/tok1').type('form').send({ _csrf: csrf, personas: '3', mensaje: 'Ahí estaremos' });
+    expect(r.status).toBe(303);
+    const aviso = t.emailSender.enviados.find((c) => c.asunto.startsWith('✅ Confirmó'));
+    expect(aviso?.asunto).toBe('✅ Confirmó: Ana López (3 personas) – Posada');
+    expect(aviso?.para.map((p) => p.email)).toEqual(['gelmi@dattasoft.mx', 'erick@dattasoft.mx']);
+    expect(aviso?.html).toContain('Ahí estaremos');
+    expect(aviso?.html).toContain('Total que van hasta ahora: 3');
+  });
+
+  it('si el correo del aviso falla, el registro igual queda', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    t.eventoRepo.items.set('ev1', evento());
+    const original = t.emailSender.enviar.bind(t.emailSender);
+    t.emailSender.enviar = async (c) => {
+      if (c.asunto.startsWith('🎟')) throw new Error('Brevo caído');
+      return original(c);
+    };
+    const anon = request.agent(t.app);
+    const page = await anon.get('/eventos/ev1');
+    const csrf = cookieValor(page.headers['set-cookie'] as unknown as string[], 'x-csrf-token')!;
+    const reg = await anon.post('/eventos/ev1').type('form').send({ _csrf: csrf, nombre: 'Pedro', email: 'pedro@x.com', asistencia: 'Sí' });
+    expect(reg.status).toBe(200);
+    expect(t.inscripcionRepo.items).toHaveLength(1);
+  });
+});

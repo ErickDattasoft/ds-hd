@@ -361,6 +361,9 @@ export interface EventoProps {
   envioWhatsapp?: string | null;
   /** «📤 Se envía desde»: a este correo llegan las respuestas de las invitaciones por correo. */
   envioCorreo?: string | null;
+  /** 🔔 A quién avisar por correo cada vez que alguien se registra o contesta su invitación.
+   *  Vacío = al correo de envío (o a quien creó el evento). */
+  avisarRegistros?: string[];
   /** Plantilla de mensaje con comodines, propia de este evento — ver {@link resolverPlantillaEvento}. */
   plantilla?: string | null;
   /** Mensaje de seguimiento por correo tras el evento; vacío = no se manda (opcional a propósito). */
@@ -402,6 +405,7 @@ export class Evento {
   contactoWhatsapp: string | null;
   envioWhatsapp: string | null;
   envioCorreo: string | null;
+  avisarRegistros: string[];
   plantilla: string | null;
   mensajeSeguimiento: string | null;
   horasSeguimiento: number | null;
@@ -454,6 +458,7 @@ export class Evento {
     this.envioWhatsapp = props.envioWhatsapp?.trim() || null;
     // Al leer de la BD no se valida (un correo raro no debe tumbar el evento): se valida al cambiarlo.
     this.envioCorreo = props.envioCorreo?.trim().toLowerCase() || null;
+    this.avisarRegistros = [...new Set((props.avisarRegistros ?? []).map((c) => c.trim().toLowerCase()).filter(Boolean))];
     this.plantilla = props.plantilla?.trim() || null;
     this.mensajeSeguimiento = props.mensajeSeguimiento?.trim() || null;
     this.horasSeguimiento =
@@ -543,7 +548,7 @@ export class Evento {
   }
 
   /** «📤 Se envía desde»: el WhatsApp y el correo de quien manda las invitaciones de este evento. */
-  cambiarEnvio(datos: { whatsapp: string; correo: string }): void {
+  cambiarEnvio(datos: { whatsapp: string; correo: string; avisar?: string }): void {
     const correo = datos.correo.trim().toLowerCase();
     if (correo && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo)) {
       throw new ValidationError(`«${correo}» no parece un correo`, { envioCorreo: 'Correo no válido' });
@@ -552,8 +557,15 @@ export class Evento {
     if (whatsapp && whatsapp.replace(/\D/g, '').length < 10) {
       throw new ValidationError('El WhatsApp debe tener al menos 10 dígitos', { envioWhatsapp: 'Número no válido' });
     }
+    let avisar = this.avisarRegistros;
+    if (datos.avisar !== undefined) {
+      avisar = [...new Set(datos.avisar.split(/[\s,;]+/).map((c) => c.trim().toLowerCase()).filter(Boolean))];
+      const malo = avisar.find((c) => !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(c));
+      if (malo) throw new ValidationError(`«${malo}» no parece un correo`, { avisarRegistros: 'Correo no válido' });
+    }
     this.envioWhatsapp = whatsapp || null;
     this.envioCorreo = correo || null;
+    this.avisarRegistros = avisar;
   }
 
   /** Da link a las invitaciones que aún no tienen (las de antes de esta función). */

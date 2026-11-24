@@ -30,6 +30,7 @@ import {
   type InvitadoExterno,
 } from '../../core/entities/Evento.js';
 import type { EntradaListaNegra, EstadoInscripcion, Inscripcion } from '../../core/entities/Inscripcion.js';
+import type { IUsuarioRepository } from '../../core/ports/repositories/IUsuarioRepository.js';
 import { Email } from '../../core/entities/value-objects/Email.js';
 import { esCorreoDesechable } from '../../core/entities/value-objects/dominiosDesechables.js';
 import { esTelefonoPlausible } from '../../core/entities/value-objects/Telefono.js';
@@ -138,6 +139,8 @@ export class EventoService {
     private readonly exigirCaptcha: boolean = false,
     /** Para tomar el contacto principal (correo/celular) al invitar una empresa de la cartera. */
     private readonly contactos?: IContactoRepository,
+    /** Para avisar de los registros a quien creó el evento cuando no hay otro correo anotado. */
+    private readonly usuarios?: IUsuarioRepository,
   ) {}
 
   // ── Consulta ─────────────────────────────────────────────────────────────
@@ -783,7 +786,11 @@ export class EventoService {
   }
 
   /** «📤 Se envía desde»: WhatsApp y correo de quien manda las invitaciones de este evento. */
-  async cambiarEnvio(actor: SessionUser, eventoId: string, datos: { whatsapp: string; correo: string }): Promise<void> {
+  async cambiarEnvio(
+    actor: SessionUser,
+    eventoId: string,
+    datos: { whatsapp: string; correo: string; avisar?: string },
+  ): Promise<void> {
     const evento = await this.paraGestion(actor, eventoId);
     evento.cambiarEnvio(datos);
     await this.persistirPanel(actor, evento);
@@ -1146,6 +1153,21 @@ export class EventoService {
       asistira: resp.asistira,
       personas: inv.personas,
     });
+    await this.avisarAlEquipo(evento, {
+      asunto: resp.asistira
+        ? `✅ Confirmó: ${nombre}${inv.personas && inv.personas > 1 ? ` (${inv.personas} personas)` : ''} – ${evento.titulo}`
+        : `❌ No podrá ir: ${nombre} – ${evento.titulo}`,
+      titulo: resp.asistira ? '✅ Confirmó su invitación' : '❌ Avisó que no podrá ir',
+      datos: [
+        ['Invitado', nombre],
+        ['Contestó', inv.respondioNombre && inv.respondioNombre !== nombre ? inv.respondioNombre : null],
+        ['Respuesta', resp.asistira ? `Sí va${inv.personas ? ` · ${inv.personas} ${inv.personas === 1 ? 'persona' : 'personas'}` : ''}` : 'No podrá ir'],
+        ['Mensaje', inv.mensaje],
+        ['Correo', inv.correo],
+        ['WhatsApp', inv.telefono],
+        ['Por', 'Invitación con nombre (link personal)'],
+      ],
+    });
     return { evento, nombre, inv };
   }
 
@@ -1319,6 +1341,22 @@ export class EventoService {
     await this.inscripciones.create(inscripcion);
     await this.enviarConfirmacion(evento, inscripcion);
     this.logger.info('Inscripción a evento', { evento: evento.id, email: correo?.value ?? null });
+    const personas = inscripcion.personas ?? 1;
+    await this.avisarAlEquipo(evento, {
+      asunto: `🎟 Nuevo registro: ${nombre}${personas > 1 ? ` (${personas} personas)` : ''} – ${evento.titulo}`,
+      titulo: '🎟 Alguien se registró en el link abierto',
+      datos: [
+        ['Nombre', nombre],
+        ['¿Asistirá?', inscripcion.asistira],
+        ['Personas', inscripcion.asistira || personas > 1 ? String(personas) : null],
+        ['Correo', inscripcion.email],
+        ['WhatsApp', inscripcion.telefono],
+        ['Empresa', inscripcion.empresa],
+        ['¿Usa el sistema?', inscripcion.usaSistema],
+        ['¿Cómo se enteró?', inscripcion.fuente],
+        ['Por', 'Link abierto'],
+      ],
+    });
     return inscripcion;
   }
 
@@ -1423,6 +1461,64 @@ export class EventoService {
     }
     this.logger.info('Seguimiento de eventos enviado', { eventos: eventosProcesados, correos });
     return { eventos: eventosProcesados, correos };
+  }
+
+  /** Correos que reciben el aviso de registros: los anotados, o el de envío, o el de quien creó el evento. */
+  private async destinatariosAviso(evento: Evento): Promise<string[]> {
+    if (evento.avisarRegistros.length) return evento.avisarRegistros;
+    if (evento.envioCorreo) return [evento.envioCorreo];
+    if (evento.creadoPorUid && this.usuarios) {
+      const u = await this.usuarios.findByUid(evento.creadoPorUid);
+      if (u?.activo && u.email.value) return [u.email.value];
+    }
+    return [];
+  }
+
+  /**
+   * 🔔 Aviso al equipo de que alguien se registró o contestó su invitación. Nunca tumba el
+   * registro: si el correo falla, solo queda en el log.
+   */
+  private async avisarAlEquipo(
+    evento: Evento,
+    aviso: { asunto: string; titulo: string; datos: [string, string | null | undefined][] },
+  ): Promise<void> {
+    try {
+      const para = await this.destinatariosAviso(evento);
+      if (!para.length) return;
+      const inscritos = await this.inscripciones.listPorEvento(evento.id);
+      const vanDelLink = inscritos
+        .filter((i) => ['sí', 'si'].includes((i.asistira ?? '').trim().toLowerCase()))
+        .reduce((t, i) => t + (i.personas ?? 1), 0);
+      const total = evento.resumenInvitaciones.personas + vanDelLink;
+      const esc = (t: string): string =>
+        t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+      const filas = aviso.datos
+        .filter((d): d is [string, string] => Boolean(d[1] && String(d[1]).trim()))
+        .map(
+          ([k, v]) =>
+            `<tr><td style="padding:4px 12px 4px 0;color:#666;white-space:nowrap">${esc(k)}</td><td style="padding:4px 0"><strong>${esc(v).replace(/\n/g, '<br>')}</strong></td></tr>`,
+        )
+        .join('');
+      const pide = evento.pideConfirmacion || evento.tipo === 'presencial';
+      await this.email.enviar({
+        para: para.map((email) => ({ email })),
+        asunto: aviso.asunto,
+        html: `<div style="font-family:Arial,sans-serif;max-width:560px">
+          <p style="font-size:18px;margin:0 0 4px"><strong>${esc(aviso.titulo)}</strong></p>
+          <p style="margin:0 0 14px;color:#555">${esc(evento.titulo)}</p>
+          <table style="border-collapse:collapse;font-size:14px">${filas}</table>
+          ${pide ? `<p style="margin:16px 0 0;font-size:15px">👥 <strong>Total que van hasta ahora: ${total}</strong></p>` : ''}
+          <p style="margin:18px 0"><a href="${this.baseUrl}/app/eventos/${evento.id}" style="background:#4f46e5;color:#fff;padding:10px 16px;border-radius:8px;text-decoration:none">Ver el evento en el CRM</a></p>
+          <p style="color:#888;font-size:12px">Te llega porque estás en «🔔 Avisar de registros a» de este evento (en ⚙️ Configuración de envío).</p>
+        </div>`,
+        tags: ['evento-aviso-staff', `evento-${evento.id}`],
+      });
+    } catch (err) {
+      this.logger.warn('No se pudo avisar al equipo del registro', {
+        evento: evento.id,
+        error: err instanceof Error ? err.message : String(err),
+      });
+    }
   }
 
   private async enviarConfirmacion(evento: Evento, ins: Inscripcion): Promise<void> {
