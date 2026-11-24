@@ -11,6 +11,9 @@ import type { ITicketQueries } from '../../../../core/ports/repositories/ITicket
 import type { Interaccion, TipoInteraccion } from '../../../../core/entities/Interaccion.js';
 import type { Ticket } from '../../../../core/entities/Ticket.js';
 import type { IUsuarioRepository } from '../../../../core/ports/repositories/IUsuarioRepository.js';
+import type { UnirEmpresasService } from '../../../../application/empresas/UnirEmpresasService.js';
+import { totalReferencias } from '../../../../core/ports/repositories/IUnionEmpresasRepository.js';
+import { DomainError, ForbiddenError } from '../../../../core/errors/DomainError.js';
 import { estadoActualizacion } from '../../../../core/entities/value-objects/version.js';
 import { formatearLicenciasPendientes } from '../../../../application/empresas/avisos.js';
 import { camposDeError } from '../../support/errores.js';
@@ -69,6 +72,7 @@ export class EmpresaController {
     private readonly filtrosGuardados: FiltrosGuardadosService,
     private readonly cotizaciones: ICotizacionRepository,
     private readonly usuarios?: IUsuarioRepository,
+    private readonly unirSvc?: UnirEmpresasService,
   ) {}
 
   listar = async (req: Request, res: Response): Promise<void> => {
@@ -309,6 +313,7 @@ export class EmpresaController {
       staff: usuarios.filter((u) => u.esStaff),
       hoy: hoyIso(),
       cotizaciones,
+      aviso: str(req.query.aviso),
       sistemas: empresa.sistemasContratados.map((sistema) => ({
         sistema,
         vigencia: empresa.vigencias[sistema] ?? null,
@@ -413,6 +418,56 @@ export class EmpresaController {
     res.redirect(volver.startsWith('/app/') ? volver : '/app/empresas');
   };
 
+  /** Pantalla «🔗 Unir con otra empresa»: qué tiene esta (la duplicada) y con cuál se junta. */
+  unirView = async (req: Request, res: Response): Promise<void> => {
+    await this.renderUnir(req, res, str(req.query.destino));
+  };
+
+  private async renderUnir(req: Request, res: Response, destinoId: string, error = ''): Promise<void> {
+    const empresa = await this.empresas.obtener(str(req.params.id));
+    const [referencias, todas] = await Promise.all([
+      this.unirSvc!.contar(empresa.id),
+      this.empresas.listar({ activa: true }),
+    ]);
+    const otras = todas.filter((e) => e.id !== empresa.id).sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
+    res.status(error ? 422 : 200).render('pages/backoffice/empresas/unir', {
+      titulo: `Unir ${empresa.nombre}`,
+      empresa,
+      referencias,
+      total: totalReferencias(referencias),
+      parecidas: otras.filter((e) => nombresParecidos(e.nombre, empresa.nombre)),
+      otras,
+      destinoId,
+      error,
+    });
+  }
+
+  unirPost = async (req: Request, res: Response): Promise<void> => {
+    const destinoId = str(req.body?.destinoId);
+    try {
+      const { destino, movidos } = await this.unirSvc!.unir(req.user!, str(req.params.id), destinoId);
+      const partes = [
+        [movidos.contactos, 'contacto(s)'],
+        [movidos.tickets, 'ticket(s)'],
+        [movidos.cotizaciones, 'cotización(es)'],
+        [movidos.tareas + movidos.interacciones, 'tarea(s)/seguimiento'],
+        [movidos.oportunidades, 'oportunidad(es)'],
+        [movidos.usuarios, 'cuenta(s) del portal'],
+        [movidos.avisos, 'aviso(s) de versiones'],
+      ]
+        .filter(([n]) => Number(n) > 0)
+        .map(([n, t]) => `${n} ${t}`);
+      const aviso = `🔗 Empresas unidas. ${partes.length ? `Se pasaron aquí: ${partes.join(', ')}.` : 'La otra no tenía nada colgado.'} La duplicada quedó archivada en la Papelera.`;
+      res.redirect(`/app/empresas/${destino.id}?aviso=${encodeURIComponent(aviso)}`);
+    } catch (e) {
+      if (e instanceof DomainError && !(e instanceof ForbiddenError)) {
+        await this.renderUnir(req, res, destinoId, e.message);
+        return;
+      }
+      throw e;
+    }
+  };
+
   exportarExcel = async (req: Request, res: Response): Promise<void> => {
     const texto = str(req.query.q);
     const buffer = await this.excel.exportar({
@@ -492,4 +547,25 @@ export class EmpresaController {
     const va = ([] as unknown[]).concat(b.campoExtraValor ?? []).map(String);
     return et.map((etiqueta, i) => ({ etiqueta, valor: va[i] ?? '' })).filter((c) => c.etiqueta || c.valor);
   }
+}
+
+const PALABRAS_VACIAS = new Set(['sa', 'de', 'cv', 'rl', 'sc', 'sapi', 'srl', 'y', 'la', 'el', 'los', 'las', 'del', 'grupo']);
+/** Palabras que distinguen el nombre de una empresa (sin acentos, «S.A. de C.V.» ni artículos). */
+const palabrasClave = (nombre: string): string[] =>
+  nombre
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9ñ ]+/g, ' ')
+    .split(/\s+/)
+    .filter((p) => p.length > 1 && !PALABRAS_VACIAS.has(p));
+
+/** Dos nombres que parecen la misma empresa: comparten la primera palabra clave o uno contiene al otro. */
+function nombresParecidos(a: string, b: string): boolean {
+  const pa = palabrasClave(a);
+  const pb = palabrasClave(b);
+  if (!pa.length || !pb.length) return false;
+  const ja = pa.join(' ');
+  const jb = pb.join(' ');
+  return pa[0] === pb[0] || ja.includes(jb) || jb.includes(ja);
 }

@@ -73,6 +73,9 @@ import { CorreoEntranteService } from '../application/tickets/CorreoEntranteServ
 import { DosPasosService } from '../application/auth/DosPasosService.js';
 import type { IOportunidadRepository } from '../core/ports/repositories/IOportunidadRepository.js';
 import { FirestoreOportunidadRepository } from '../infrastructure/firestore/FirestoreOportunidadRepository.js';
+import type { IUnionEmpresasRepository } from '../core/ports/repositories/IUnionEmpresasRepository.js';
+import { FirestoreUnionEmpresasRepository } from '../infrastructure/firestore/FirestoreUnionEmpresasRepository.js';
+import { UnirEmpresasService } from '../application/empresas/UnirEmpresasService.js';
 import { OportunidadService } from '../application/ventas/OportunidadService.js';
 import { OportunidadController } from '../interfaces/http/controllers/backoffice/OportunidadController.js';
 import { ContrasenaService } from '../application/usuarios/ContrasenaService.js';
@@ -229,6 +232,8 @@ export interface Cradle {
   intentosLoginRepo: IIntentosLoginRepository;
   filtroGuardadoRepo: IFiltroGuardadoRepository;
   oportunidadRepo: IOportunidadRepository;
+  unionEmpresasRepo: IUnionEmpresasRepository;
+  unirEmpresasService: UnirEmpresasService;
   oportunidadController: OportunidadController;
   adjuntoTicketRepo: IAdjuntoTicketRepository;
   adjuntoTicketService: AdjuntoTicketService;
@@ -480,6 +485,13 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
     intentosLoginRepo: asFunction(
       ({ firestoreDb }: Cradle): IIntentosLoginRepository =>
         new FirestoreIntentosLoginRepository(requireFirestore(firestoreDb)),
+    ).singleton(),
+    unionEmpresasRepo: asFunction(
+      ({ firestoreDb }: Cradle): IUnionEmpresasRepository =>
+        new FirestoreUnionEmpresasRepository(requireFirestore(firestoreDb)),
+    ).singleton(),
+    unirEmpresasService: asFunction(
+      (c: Cradle) => new UnirEmpresasService(c.empresaRepo, c.unionEmpresasRepo, c.clock, c.bitacoraService),
     ).singleton(),
     oportunidadRepo: asFunction(
       ({ firestoreDb }: Cradle): IOportunidadRepository =>
@@ -1184,6 +1196,7 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
           c.filtrosGuardadosService,
           c.cotizacionRepo,
           c.usuarioRepo,
+          c.unirEmpresasService,
         ),
     ).singleton(),
     contactoController: asFunction(

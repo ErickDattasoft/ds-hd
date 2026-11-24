@@ -28,6 +28,7 @@ import {
 } from '../fakes/crm.js';
 import { InMemoryIntentosLoginRepository } from '../fakes/InMemoryIntentosLoginRepository.js';
 import { InMemoryOportunidadRepository } from '../fakes/InMemoryOportunidadRepository.js';
+import { InMemoryUnionEmpresasRepository } from '../fakes/unionEmpresas.js';
 import { InMemoryFiltroGuardadoRepository } from '../fakes/InMemoryFiltroGuardadoRepository.js';
 import { InMemoryRespuestaSinLeerRepository } from '../fakes/InMemoryRespuestaSinLeerRepository.js';
 import { InMemoryAdjuntoTicketRepository } from '../fakes/InMemoryAdjuntoTicketRepository.js';
@@ -130,6 +131,7 @@ export function makeTestApp(opts: { usuarios?: { uid: string; email: string; pas
     },
   };
 
+  const oportunidadRepo = new InMemoryOportunidadRepository();
   const overrides: ContainerOverrides = {
     descargasContpaqi,
     usuarioRepo,
@@ -145,7 +147,17 @@ export function makeTestApp(opts: { usuarios?: { uid: string; email: string; pas
     intentosLoginRepo: new InMemoryIntentosLoginRepository(),
     filtroGuardadoRepo: new InMemoryFiltroGuardadoRepository(),
     respuestaSinLeerRepo: new InMemoryRespuestaSinLeerRepository(),
-    oportunidadRepo: new InMemoryOportunidadRepository(),
+    oportunidadRepo,
+    unionEmpresasRepo: new InMemoryUnionEmpresasRepository({
+      contactos: contactoRepo,
+      tickets: ticketStore,
+      cotizaciones: cotizacionRepo,
+      tareas: tareaRepo,
+      interacciones: interaccionRepo,
+      oportunidades: oportunidadRepo,
+      usuarios: usuarioRepo,
+      avisos: avisoRepo,
+    }),
     adjuntoTicketRepo,
     // Igual que en el contenedor real: la actividad de los tickets se copia a la bitácora.
     ticketRepo: ticketRepoConBitacora(new InMemoryTicketRepository(ticketStore), bitacoraRepo, {

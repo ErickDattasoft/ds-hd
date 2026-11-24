@@ -2068,3 +2068,20 @@ dialog.facturar-cerrar h2 { margin: 0 0 var(--space-2); font-size: 1.2rem; }
 :root[data-theme="dark"] .ev-tipo--felicitacion, :root[data-theme="dark"] .ev-grupo--felicitacion { --_c: #ff6fa5; }
 :root[data-theme="dark"] .ev-tipo--comunicado, :root[data-theme="dark"] .ev-grupo--comunicado { --_c: #ffb02e; }
 .ev-grupo .data-table thead th { position: static; } /* tablas cortas dentro del recuadro: sin encabezado fijo */
+
+/* ── Unir empresas duplicadas ─────────────────────────────────────────── */
+.unir-origen { border-left: 4px solid var(--danger); }
+.unir-paso { font-weight: 600; margin: 0 0 .5rem; }
+.unir-nombre { font-size: 1.25rem; font-weight: 700; margin: 0 0 .75rem; }
+.unir-lista { display: flex; flex-wrap: wrap; gap: .4rem .6rem; list-style: none; padding: 0; margin: 0 0 .75rem; }
+.unir-lista li { background: var(--color-surface-2); border: 1px solid var(--color-border); border-radius: 999px; padding: .2rem .7rem; }
+.unir-opciones {
+  max-height: 22rem; overflow-y: auto; border: 1px solid var(--color-border); border-radius: 8px;
+  margin: .75rem 0 1rem; padding: .25rem;
+}
+.unir-grupo { margin: .5rem .5rem .25rem; font-size: .8rem; font-weight: 700; color: var(--color-text-muted); text-transform: uppercase; letter-spacing: .04em; }
+.unir-opcion { display: flex; align-items: center; gap: .6rem; padding: .45rem .6rem; border-radius: 6px; cursor: pointer; }
+.unir-opcion[hidden] { display: none; }
+.unir-opcion:hover { background: var(--color-surface-2); }
+.unir-opcion:has(input:checked) { background: color-mix(in srgb, var(--accent, #2563eb) 18%, transparent); font-weight: 600; }
+.unir-opcion .muted { margin-left: auto; font-size: .85rem; }

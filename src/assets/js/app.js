@@ -292,6 +292,19 @@
       e.preventDefault();
     }
   });
+  // Buscador que filtra una lista: <input data-filtrar-lista="#id"> oculta los renglones
+  // `[data-texto]` de ese contenedor que no traen lo escrito (sin acentos ni mayúsculas).
+  document.addEventListener('input', function (e) {
+    var t = e.target.closest && e.target.closest('[data-filtrar-lista]');
+    if (!t) return;
+    var lista = document.querySelector(t.getAttribute('data-filtrar-lista'));
+    if (!lista) return;
+    var limpio = function (x) { return String(x || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase(); };
+    var q = limpio(t.value).trim();
+    Array.prototype.forEach.call(lista.querySelectorAll('[data-texto]'), function (r) {
+      r.hidden = q !== '' && limpio(r.getAttribute('data-texto')).indexOf(q) === -1;
+    });
+  });
   // «Seleccionar todo» en tablas con casillas `name="ids"` (papelera).
   document.addEventListener('change', function (e) {
     var t = e.target.closest && e.target.closest('[data-seleccionar-todo]');

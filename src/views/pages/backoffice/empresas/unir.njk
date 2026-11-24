@@ -1,0 +1,63 @@
+{% extends "layouts/backoffice.njk" %}
+{% block title %}Unir empresa{% endblock %}
+
+{% macro renglon(e) %}
+  <label class="unir-opcion" data-texto="{{ e.nombre }} {{ e.rfc or '' }}">
+    <input type="radio" name="destinoId" value="{{ e.id }}" {{ 'checked' if destinoId == e.id }} required />
+    <span class="nombre-sensible">{{ e.nombre }}</span>
+    {% if e.rfc %}<span class="muted sensible">{{ e.rfc }}</span>{% endif %}
+  </label>
+{% endmacro %}
+
+{% block content %}
+  <div class="page-head">
+    <h1>🔗 Unir con otra empresa</h1>
+    <div class="page-head__actions">
+      <a class="btn btn--sm btn--ghost" href="/app/empresas/{{ empresa.id }}">← Volver a la empresa</a>
+    </div>
+  </div>
+
+  {% if error %}<div class="alert alert--error" role="alert">{{ error }}</div>{% endif %}
+
+  <div class="card unir-origen">
+    <p class="unir-paso">① La empresa <strong>duplicada</strong> (la que va a desaparecer):</p>
+    <p class="unir-nombre nombre-sensible">🏢 {{ empresa.nombre }}{% if empresa.rfc %} <span class="muted sensible">· {{ empresa.rfc }}</span>{% endif %}</p>
+    {% if total %}
+      <p>Tiene esto, y <strong>todo se pasa</strong> a la empresa que elijas abajo:</p>
+      <ul class="unir-lista">
+        {% if referencias.contactos %}<li>👤 {{ referencias.contactos }} contacto(s)</li>{% endif %}
+        {% if referencias.tickets %}<li>🎫 {{ referencias.tickets }} ticket(s)</li>{% endif %}
+        {% if referencias.cotizaciones %}<li>🧾 {{ referencias.cotizaciones }} cotización(es)</li>{% endif %}
+        {% if referencias.tareas %}<li>✅ {{ referencias.tareas }} tarea(s)</li>{% endif %}
+        {% if referencias.interacciones %}<li>📞 {{ referencias.interacciones }} registro(s) de seguimiento</li>{% endif %}
+        {% if referencias.oportunidades %}<li>💼 {{ referencias.oportunidades }} oportunidad(es)</li>{% endif %}
+        {% if referencias.usuarios %}<li>🔑 {{ referencias.usuarios }} cuenta(s) del portal de clientes</li>{% endif %}
+        {% if referencias.avisos %}<li>📨 {{ referencias.avisos }} aviso(s) de versiones enviados</li>{% endif %}
+      </ul>
+    {% else %}
+      <p class="muted">No tiene contactos, tickets ni nada más colgado.</p>
+    {% endif %}
+    <p class="muted">También se copian los datos que a la otra le falten (RFC, teléfono, correo, dirección, sistemas, vigencias…). Lo que la otra ya tenga <strong>no se cambia</strong>. Después, esta queda archivada en la 🗑️ Papelera.</p>
+  </div>
+
+  <form method="post" action="/app/empresas/{{ empresa.id }}/unir" class="card"
+        data-confirm="¿Unir {{ empresa.nombre }} con la empresa elegida? Todo lo de esta pasa a la otra y esta se archiva. No se puede deshacer de un clic.">
+    <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+    <p class="unir-paso">② ¿Con cuál se junta? Elige la empresa <strong>buena</strong> (la que se queda):</p>
+    <label class="field"><span>🔍 Buscar</span>
+      <input type="search" data-filtrar-lista="#unir-opciones" placeholder="Escribe parte del nombre o RFC" autocomplete="off" autofocus />
+    </label>
+    <div id="unir-opciones" class="unir-opciones">
+      {% if parecidas | length %}
+        <p class="unir-grupo">✨ Se parecen</p>
+        {% for e in parecidas %}{{ renglon(e) }}{% endfor %}
+        <p class="unir-grupo">Todas las empresas</p>
+      {% endif %}
+      {% for e in otras %}{{ renglon(e) }}{% endfor %}
+    </div>
+    <div class="page-head__actions">
+      <a class="btn btn--ghost" href="/app/empresas/{{ empresa.id }}">Cancelar</a>
+      <button class="btn btn--danger" type="submit">🔗 Unir y archivar la duplicada</button>
+    </div>
+  </form>
+{% endblock %}
