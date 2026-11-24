@@ -2598,7 +2598,7 @@
     var aviso = dlg.querySelector('.wsp-cola__aviso');
     aviso.textContent = numero
       ? '📤 Se manda desde el WhatsApp ' + numero + '. Antes de empezar, revisa que ese número sea el que está abierto en esta computadora.'
-      : '📤 Se manda desde el WhatsApp que esté abierto en esta computadora. (Puedes anotar el número en «📤 Se envía desde».)';
+      : '📤 Se manda desde el WhatsApp que esté abierto en esta computadora. (Puedes anotar el número en «⚙️ Configuración de envío».)';
     var paso = dlg.querySelector('[data-paso]');
     var quien = dlg.querySelector('.wsp-cola__quien');
     var acciones = dlg.querySelector('.page-head__actions');

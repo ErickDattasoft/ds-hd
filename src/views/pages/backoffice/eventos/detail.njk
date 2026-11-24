@@ -89,6 +89,28 @@
 
   <section class="ev-paso" id="invitaciones">
     <h2 class="ev-paso__titulo"><span class="ev-paso__num">2</span> Invitaciones: elige cómo invitar</h2>
+    {% if puedeGestionar %}
+      {#- Configuración de envío: arriba de las dos pestañas (con nombre y link abierto), a la vista de quien manda. -#}
+      <div class="ev-envio" data-paneles>
+        <span class="ev-envio__label">📤 Se envía desde:</span>
+        {% if evento.envioWhatsapp or evento.envioCorreo %}
+          {% if evento.envioWhatsapp %}<span class="ev-envio__dato">💬 WhatsApp <strong class="sensible">{{ evento.envioWhatsapp }}</strong></span>{% endif %}
+          {% if evento.envioCorreo %}<span class="ev-envio__dato">✉️ Correo <strong class="sensible">{{ evento.envioCorreo }}</strong></span>{% endif %}
+        {% else %}
+          <span class="muted">sin anotar — pon con qué WhatsApp y correo se van a mandar</span>
+        {% endif %}
+        <button type="button" class="btn btn--sm btn--secondary" data-abre="ev-envio-form">⚙️ Configuración de envío</button>
+        <div class="ev-panel" id="ev-envio-form" data-panel hidden>
+          <form method="post" action="/app/eventos/{{ evento.id }}/envio" class="ev-persona">
+            <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+            <label class="field"><span>💬 WhatsApp de envío</span><input type="tel" name="envioWhatsapp" value="{{ evento.envioWhatsapp or '' }}" placeholder="Ej. 999 123 4567 (oficina)" autocomplete="off" /></label>
+            <label class="field"><span>✉️ Correo de envío <small class="muted">(ahí llegan las respuestas)</small></span><input type="email" name="envioCorreo" value="{{ evento.envioCorreo or '' }}" placeholder="eventos@dattasoft.mx" autocomplete="off" /></label>
+            <button class="btn" type="submit">Guardar</button>
+            <p class="ev-panel__ayuda">El WhatsApp se manda desde el que esté <strong>abierto en esta computadora</strong> (WhatsApp Web o la app): el número de aquí te lo recuerda antes de empezar. Los correos de «Con nombre» salen del correo del CRM y, si alguien contesta, la respuesta llega al correo que pongas aquí. Vale para las dos pestañas: con nombre y link abierto. Cámbialo según quién vaya a mandar.</p>
+          </form>
+        </div>
+      </div>
+    {% endif %}
     <div class="ev-tabs" role="tablist" data-ev-tabs="{{ evento.id }}"
          data-ev-tab-inicial="{{ 'abierto' if (inscritos | length) and not (todosInvitados | length) else 'nombre' }}">
       <button type="button" role="tab" class="ev-tab" data-ev-tab="nombre">
@@ -104,27 +126,6 @@
     {#- Pestaña A: invitados con nombre -#}
     <div class="ev-tabpanel" data-ev-panel="nombre">
       {% if puedeGestionar %}
-        {#- Se envía desde: a la vista, para que quien manda no tenga que ir a Configuración. -#}
-        <div class="ev-envio" data-paneles>
-          <span class="ev-envio__label">📤 Se envía desde:</span>
-          {% if evento.envioWhatsapp or evento.envioCorreo %}
-            {% if evento.envioWhatsapp %}<span class="ev-envio__dato">💬 WhatsApp <strong class="sensible">{{ evento.envioWhatsapp }}</strong></span>{% endif %}
-            {% if evento.envioCorreo %}<span class="ev-envio__dato">✉️ Respuestas a <strong class="sensible">{{ evento.envioCorreo }}</strong></span>{% endif %}
-          {% else %}
-            <span class="muted">sin anotar — dinos con qué WhatsApp y correo vas a mandar</span>
-          {% endif %}
-          <button type="button" class="btn btn--sm btn--ghost" data-abre="ev-envio-form">✏️ {{ 'Cambiar' if (evento.envioWhatsapp or evento.envioCorreo) else 'Anotar' }}</button>
-          <div class="ev-panel" id="ev-envio-form" data-panel hidden>
-            <form method="post" action="/app/eventos/{{ evento.id }}/envio" class="ev-persona">
-              <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
-              <label class="field"><span>💬 WhatsApp de envío</span><input type="tel" name="envioWhatsapp" value="{{ evento.envioWhatsapp or '' }}" placeholder="Ej. 999 123 4567 (oficina)" autocomplete="off" /></label>
-              <label class="field"><span>✉️ Correo para respuestas</span><input type="email" name="envioCorreo" value="{{ evento.envioCorreo or '' }}" placeholder="eventos@dattasoft.mx" autocomplete="off" /></label>
-              <button class="btn" type="submit">Guardar</button>
-              <p class="ev-panel__ayuda">El WhatsApp se manda desde el que esté <strong>abierto en esta computadora</strong> (WhatsApp Web o la app): el número de aquí te lo recuerda antes de empezar. Los correos salen del correo del CRM y, si alguien contesta, la respuesta llega al correo que pongas aquí.</p>
-            </form>
-          </div>
-        </div>
-
         <div class="ev-agregar" data-paneles>
           <span class="ev-agregar__label">Agregar invitados:</span>
           <button type="button" class="btn btn--secondary" data-abre="ev-add-clientes">🏢 De mis clientes</button>
@@ -309,7 +310,8 @@
       <div class="ev-link">
         <input type="text" readonly value="{{ linkPublico }}" aria-label="Link abierto" data-seleccionar />
         <button type="button" class="btn" data-copiar-link data-link="{{ linkPublico }}">📋 Copiar link</button>
-        <a class="btn btn--secondary" href="https://wa.me/?text={{ (evento.titulo + ' — ' + linkPublico) | urlencode }}" target="_blank" rel="noopener">💬 Compartir por WhatsApp</a>
+        <a class="btn btn--secondary" href="https://wa.me/?text={{ (evento.titulo + ' — ' + linkPublico) | urlencode }}" target="_blank" rel="noopener"{% if evento.envioWhatsapp %} title="Mándalo desde el WhatsApp {{ evento.envioWhatsapp }}"{% endif %}>💬 Compartir por WhatsApp</a>
+        <a class="btn btn--secondary" href="mailto:?subject={{ evento.titulo | urlencode }}&body={{ ('Te invitamos a ' + evento.titulo + '. Confirma aquí: ' + linkPublico) | urlencode }}">✉️ Compartir por correo</a>
         <a class="btn btn--ghost" href="/eventos/{{ evento.id }}" target="_blank" rel="noopener">👁 Ver cómo se ve</a>
       </div>
 
