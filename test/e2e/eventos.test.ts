@@ -1152,3 +1152,52 @@ describe('link abierto — una sola pregunta de asistencia', () => {
     expect(t.inscripcionRepo.items[0]!.asistira).toBe('No');
   });
 });
+
+describe('link abierto — lista para mandar el link por WhatsApp y correo', () => {
+  it('carga la lista, la muestra con «Se envía desde», manda por correo y marca WhatsApp', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    t.eventoRepo.items.set('ev1', new Evento({
+      id: 'ev1', titulo: 'Posada', tipo: 'presencial', fechaHora: enUnaSemana(), estado: 'publicado',
+      lugarNombre: 'Salón Jardín', envioWhatsapp: '999 111 2233', envioCorreo: 'eventos@ejemplo.mx',
+    }));
+    const admin = await login(t.app, ADMIN.email, ADMIN.password);
+    const carga = await admin.agent.post('/app/eventos/ev1/difusion/lista').type('form').send({
+      _csrf: admin.csrf,
+      lista: 'Nombre\tCorreo\tWhatsApp\nAna López\tana@x.mx\t9991234567\nBeto\t\t9997654321\nAna otra vez\tana@x.mx\t',
+    });
+    expect(carga.headers.location).toContain('tab=abierto');
+    const ev = t.eventoRepo.items.get('ev1')!;
+    expect(ev.difusion).toHaveLength(2);
+    // Ninguno se vuelve invitado con nombre: es la lista del link abierto.
+    expect(ev.invitadosExternos).toHaveLength(0);
+
+    const pagina = await admin.agent.get('/app/eventos/ev1');
+    expect(pagina.text).toContain('Mandar el link a una lista (2)');
+    expect(pagina.text).toContain('Mandar por WhatsApp uno por uno (2)');
+    expect(pagina.text).toContain('Enviar por correo a los que faltan (1)');
+    expect(pagina.text).toContain('ev-envio-form-abierto');
+    // El WhatsApp lleva encabezado y el link abierto.
+    expect(decodeURIComponent(pagina.text)).toContain('Invitación de DATTASOFT');
+
+    await admin.agent.post('/app/eventos/ev1/difusion/enviar').type('form').send({ _csrf: admin.csrf });
+    const correo = t.emailSender.enviados.at(-1)!;
+    expect(correo.para[0]!.email).toBe('ana@x.mx');
+    expect(correo.html).toContain('Invitación de DATTASOFT');
+    expect(correo.html).toContain('/eventos/ev1"');
+    expect(correo.html).toContain('Registrarme y confirmar');
+    expect(t.eventoRepo.items.get('ev1')!.difusion[0]!.enviadaAt).not.toBeNull();
+
+    const beto = t.eventoRepo.items.get('ev1')!.difusion[1]!;
+    const wsp = await admin.agent.post(`/app/eventos/ev1/difusion/${beto.id}/whatsapp`).set('x-csrf-token', admin.csrf);
+    expect(wsp.body).toEqual({ ok: true });
+    expect(t.eventoRepo.items.get('ev1')!.difusion[1]!.enviadaWspAt).not.toBeNull();
+
+    await admin.agent.post('/app/eventos/ev1/difusion').type('form').send({ _csrf: admin.csrf, nombre: 'Caro', telefono: '123' });
+    expect(t.eventoRepo.items.get('ev1')!.difusion).toHaveLength(2);
+    await admin.agent.post('/app/eventos/ev1/difusion').type('form').send({ _csrf: admin.csrf, nombre: 'Caro', telefono: '999 000 1111' });
+    expect(t.eventoRepo.items.get('ev1')!.difusion).toHaveLength(3);
+
+    await admin.agent.post('/app/eventos/ev1/difusion/vaciar').type('form').send({ _csrf: admin.csrf });
+    expect(t.eventoRepo.items.get('ev1')!.difusion).toHaveLength(0);
+  });
+});

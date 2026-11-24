@@ -203,6 +203,25 @@ export interface InvitadoExterno extends DatosRsvp {
   notas: string | null;
 }
 
+/**
+ * Persona a la que se le manda el LINK ABIERTO (sin invitación personal): se carga de Excel o se
+ * captura en la pestaña «🌐 Link abierto». Solo lleva la palomita de enviado; la respuesta llega
+ * cuando la persona se registra en el link.
+ */
+export interface DestinatarioLink {
+  id: string;
+  nombre: string;
+  correo: string | null;
+  telefono: string | null;
+  /** Se le mandó el link por correo desde el CRM. */
+  enviadaAt: string | null;
+  /** Se abrió su WhatsApp con el link desde el CRM. */
+  enviadaWspAt: string | null;
+}
+
+/** Tope de la lista del link abierto (tamaño del documento del evento). */
+export const MAX_DIFUSION = 1000;
+
 /** Conteos de la invitación dirigida, para las tarjetas del panel del evento. */
 export interface ResumenInvitaciones {
   invitados: number;
@@ -294,6 +313,8 @@ export interface EventoProps {
   invitaciones?: ConRsvpOpcional<InvitacionEmpresa>[];
   /** Invitados externos (redes sociales, referidos). */
   invitadosExternos?: ConRsvpOpcional<InvitadoExterno>[];
+  /** A quién se le manda el link abierto (pestaña «🌐 Link abierto»). */
+  difusion?: Partial<DestinatarioLink>[];
   /** Imagen promocional (poster/flayer) del evento. */
   flayer?: EventoFlayer | null;
   /** Sistema al que aplica el evento (p. ej. "Contabilidad"); dispara la pregunta "¿lo usas?"
@@ -340,6 +361,7 @@ export class Evento {
   limiteRegistrosPorIp: number | null;
   invitaciones: InvitacionEmpresa[];
   invitadosExternos: InvitadoExterno[];
+  difusion: DestinatarioLink[];
   flayer: EventoFlayer | null;
   sistema: string | null;
   contactoNombre: string | null;
@@ -386,6 +408,7 @@ export class Evento {
         : null;
     this.invitaciones = (props.invitaciones ?? []).map(sanearInvitacionEmpresa);
     this.invitadosExternos = (props.invitadosExternos ?? []).map(sanearInvitadoExterno);
+    this.difusion = (props.difusion ?? []).filter((d) => d && d.id).map(sanearDestinatarioLink);
     this.flayer = props.flayer ?? null;
     this.sistema = props.sistema?.trim() || null;
     this.contactoNombre = props.contactoNombre?.trim() || null;
@@ -594,6 +617,57 @@ export class Evento {
     this.invitaciones.splice(i, 1);
   }
 
+  // ── Lista del link abierto ────────────────────────────────────────────
+  /** Agrega a alguien a la lista del link abierto (necesita correo o WhatsApp). */
+  agregarADifusion(entrada: { id: string; nombre?: string; correo?: string | null; telefono?: string | null }): DestinatarioLink {
+    if (this.difusion.length >= MAX_DIFUSION) {
+      throw new ValidationError(`La lista ya tiene ${MAX_DIFUSION} personas, que es el máximo`);
+    }
+    const telefono = entrada.telefono?.trim() || null;
+    if (!entrada.correo?.trim() && !telefono) {
+      throw new ValidationError('Pon su correo o su WhatsApp', { correo: 'Falta correo o WhatsApp' });
+    }
+    if (telefono && telefono.replace(/\D/g, '').length < 10) {
+      throw new ValidationError(`«${telefono}» no parece un WhatsApp (faltan dígitos)`, { telefono: 'Número no válido' });
+    }
+    const d = sanearDestinatarioLink({
+      id: entrada.id,
+      nombre: entrada.nombre ?? '',
+      correo: sanearCorreo(entrada.correo),
+      telefono,
+    });
+    this.difusion.push(d);
+    return d;
+  }
+
+  /** Busca a alguien de la lista del link abierto. */
+  buscarEnDifusion(id: string): DestinatarioLink {
+    const d = this.difusion.find((x) => x.id === id);
+    if (!d) throw new NotFoundError('Persona de la lista', id);
+    return d;
+  }
+
+  quitarDeDifusion(id: string): void {
+    const i = this.difusion.findIndex((x) => x.id === id);
+    if (i < 0) throw new NotFoundError('Persona de la lista', id);
+    this.difusion.splice(i, 1);
+  }
+
+  /** Borra toda la lista del link abierto (los registrados no se tocan). */
+  vaciarDifusion(): void {
+    this.difusion = [];
+  }
+
+  /** ✉️ Se le mandó el link abierto por correo. */
+  marcarDifusionCorreo(id: string, ahora: Date): void {
+    this.buscarEnDifusion(id).enviadaAt = ahora.toISOString();
+  }
+
+  /** 💬 Se abrió su WhatsApp con el link abierto. */
+  marcarDifusionWsp(id: string, ahora: Date): void {
+    this.buscarEnDifusion(id).enviadaWspAt = ahora.toISOString();
+  }
+
   // ── Invitados externos ────────────────────────────────────────────────
   agregarInvitadoExterno(entrada: {
     id: string;
@@ -742,5 +816,17 @@ function sanearInvitadoExterno(d: Partial<InvitadoExterno> & { id: string }): In
     respuesta: esRespuesta(d.respuesta) ? d.respuesta : 'pendiente',
     notas: d.notas?.trim() || null,
     ...sanearRsvp(d),
+  };
+}
+
+/** Normaliza a alguien de la lista del link abierto leído de la BD o del formulario. */
+function sanearDestinatarioLink(d: Partial<DestinatarioLink> & { id?: string }): DestinatarioLink {
+  return {
+    id: String(d.id ?? ''),
+    nombre: String(d.nombre ?? '').trim(),
+    correo: textoONull(d.correo)?.toLowerCase() ?? null,
+    telefono: textoONull(d.telefono),
+    enviadaAt: textoONull(d.enviadaAt),
+    enviadaWspAt: textoONull(d.enviadaWspAt),
   };
 }

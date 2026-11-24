@@ -2128,7 +2128,9 @@
       var clave = 'evTab:' + tabs.getAttribute('data-ev-tabs');
       var guardada = null;
       try { guardada = localStorage.getItem(clave); } catch (e) { void e; }
-      evMostrarTab(tabs, guardada || tabs.getAttribute('data-ev-tab-inicial') || 'nombre');
+      // ?tab=abierto (al volver de guardar algo de esa pestaña) gana sobre la recordada.
+      var pedida = new URLSearchParams(location.search).get('tab');
+      evMostrarTab(tabs, pedida || guardada || tabs.getAttribute('data-ev-tab-inicial') || 'nombre');
     });
   }
   function evMostrarTab(tabs, cual) {
@@ -2562,17 +2564,24 @@
     a.removeAttribute('data-wsp-pendiente');
     var fila = a.closest('.ev-invitado');
     var chip = fila && fila.querySelector('[data-wsp-chip]');
+    if (chip && chip.hasAttribute('data-chip-difusion')) {
+      if (chip.textContent.indexOf('💬') < 0) chip.textContent = (chip.textContent.indexOf('✉️') >= 0 ? '✉️💬' : '💬') + ' Enviado';
+      chip.className = 'ev-chip ev-chip--si';
+      chip = null;
+    }
     if (chip && chip.textContent.indexOf('💬') < 0) {
       chip.textContent = chip.textContent.indexOf('✉️') >= 0 ? '✉️💬 Enviada' : '💬 Enviada';
       chip.className = 'ev-chip';
     }
-    return fetch('/app/eventos/' + evento + '/invitaciones/' + a.dataset.wspInv + '/whatsapp', {
+    // La lista del link abierto marca en su propia ruta (data-wsp-marcar).
+    var url = a.dataset.wspMarcar || '/app/eventos/' + evento + '/invitaciones/' + a.dataset.wspInv + '/whatsapp';
+    return fetch(url, {
       method: 'POST',
       headers: { 'x-csrf-token': cookie('x-csrf-token') },
     }).catch(function () { /* si falla, solo no queda marcado */ });
   }
   document.addEventListener('whatsapp-abierto', function (e) {
-    var a = e.target.closest && e.target.closest('[data-wsp-inv]');
+    var a = e.target.closest && e.target.closest('[data-wsp-inv],[data-wsp-dif]');
     if (a) marcarWspInvitado(a);
   });
 
@@ -2580,7 +2589,8 @@
   document.addEventListener('click', function (e) {
     var btn = e.target.closest && e.target.closest('[data-wsp-uno-a-uno]');
     if (!btn) return;
-    var cola = [].slice.call(document.querySelectorAll('[data-wsp-inv][data-wsp-pendiente]'));
+    // Cada botón dice qué lista recorre: invitados con nombre o la lista del link abierto.
+    var cola = [].slice.call(document.querySelectorAll((btn.dataset.cola || '[data-wsp-inv]') + '[data-wsp-pendiente]'));
     if (!cola.length) { toast('✔️ Ya no hay a quién mandar por WhatsApp'); return; }
     var total = cola.length;
     var hechos = 0;
@@ -2593,7 +2603,7 @@
       '<p class="wsp-cola__aviso"></p>' +
       '<p class="muted" data-paso></p>' +
       '<p class="wsp-cola__quien"></p>' +
-      '<p class="muted" data-hint>Se abre su chat con la invitación escrita: solo da <strong>Enviar</strong> en WhatsApp y regresa aquí para el siguiente.</p>' +
+      '<p class="muted" data-hint>Se abre su chat con ' + (btn.dataset.cola ? 'el link' : 'la invitación') + ' escrit' + (btn.dataset.cola ? 'o' : 'a') + ': solo da <strong>Enviar</strong> en WhatsApp y regresa aquí para el siguiente.</p>' +
       '<div class="page-head__actions" style="margin-top:0.75rem"></div>';
     var aviso = dlg.querySelector('.wsp-cola__aviso');
     aviso.textContent = numero

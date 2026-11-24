@@ -179,6 +179,10 @@ export class EventoController {
     });
     const invitacionesVM = evento.invitaciones.map((i) => ({ ...i, ...conLink(i, i.paraNombre ?? i.empresaNombre) }));
     const externosVM = evento.invitadosExternos.map((i) => ({ ...i, ...conLink(i, i.nombre) }));
+    const difusionVM = evento.difusion.map((d) => ({
+      ...d,
+      waLink: waLink(d.telefono, this.eventos.mensajeWhatsAppLinkAbierto(evento, d.nombre)),
+    }));
     // Cruce en vivo contra la lista negra (no solo lo que se grabó al registrarse) — si a alguien
     // se le marca DESPUÉS de haberse inscrito, su fila lo refleja de inmediato.
     const correosNegra = new Map(listaNegra.map((e) => [e.email, e]));
@@ -216,6 +220,8 @@ export class EventoController {
       resumen: evento.resumenInvitaciones,
       invitacionesVM,
       externosVM,
+      difusionVM,
+      mensajeLinkAbierto: this.eventos.mensajeWhatsAppLinkAbierto(evento, ''),
       // Del link público cuentan quienes dijeron «Sí» (cada uno con sus acompañantes).
       personasInscritos: inscritos
         .filter((i) => (i.asistira ?? '').trim().toLowerCase() === 'sí' || (i.asistira ?? '').trim().toLowerCase() === 'si')
@@ -306,7 +312,8 @@ export class EventoController {
         whatsapp: str(req.body?.envioWhatsapp),
         correo: str(req.body?.envioCorreo),
       });
-      res.redirect(`/app/eventos/${id}?aviso=${encodeURIComponent('📤 Guardado: así se mandarán las invitaciones')}#invitaciones`);
+      const tab = str(req.body?.tab) === 'abierto' ? 'tab=abierto&' : '';
+      res.redirect(`/app/eventos/${id}?${tab}aviso=${encodeURIComponent('📤 Guardado: así se mandarán las invitaciones')}#invitaciones`);
     } catch (err) {
       this.avisar(res, id, err);
     }
@@ -404,6 +411,90 @@ export class EventoController {
       res.redirect(`/app/eventos/${id}?aviso=${encodeURIComponent(partes.join(' · '))}#invitaciones`);
     } catch (err) {
       this.avisar(res, id, err);
+    }
+  };
+
+  // ── Lista del link abierto ───────────────────────────────────────────
+  /** Lleva a la pestaña «🌐 Link abierto» con un aviso. */
+  private alLinkAbierto(res: Response, id: string, aviso?: string): void {
+    if (res.headersSent) return;
+    res.redirect(`/app/eventos/${id}?tab=abierto${aviso ? `&aviso=${encodeURIComponent(aviso.slice(0, 900))}` : ''}#invitaciones`);
+  }
+
+  private avisarAbierto(res: Response, id: string, err: unknown): void {
+    this.alLinkAbierto(res, id, '⚠ ' + (err instanceof Error ? err.message : 'No se pudo completar'));
+  }
+
+  /** «📄 Cargar lista» del link abierto (Excel, CSV o celdas pegadas). */
+  difusionListaPost = async (req: Request, res: Response): Promise<void> => {
+    const id = str(req.params.id);
+    try {
+      const r = await this.eventos.cargarListaDifusion(req.user!, id, str(req.body?.lista));
+      const partes = [`📄 ${r.agregados} persona(s) agregada(s) a la lista`];
+      if (r.repetidos) partes.push(`${r.repetidos} ya estaba(n)`);
+      if (r.errores.length) partes.push(`⚠ ${r.errores.length} con problema: ${r.errores.slice(0, 5).join('; ')}${r.errores.length > 5 ? '…' : ''}`);
+      if (!r.agregados && !r.repetidos && !r.errores.length) partes.splice(0, 1, '⚠ La lista venía vacía');
+      this.alLinkAbierto(res, id, partes.join(' · '));
+    } catch (err) {
+      this.avisarAbierto(res, id, err);
+    }
+  };
+
+  /** «👤 Agregar una persona» a la lista del link abierto. */
+  difusionAgregarPost = async (req: Request, res: Response): Promise<void> => {
+    const id = str(req.params.id);
+    try {
+      await this.eventos.agregarADifusion(req.user!, id, {
+        nombre: str(req.body?.nombre),
+        correo: str(req.body?.correo),
+        telefono: str(req.body?.telefono),
+      });
+      this.alLinkAbierto(res, id, '👤 Agregado a la lista');
+    } catch (err) {
+      this.avisarAbierto(res, id, err);
+    }
+  };
+
+  difusionQuitarPost = async (req: Request, res: Response): Promise<void> => {
+    const id = str(req.params.id);
+    await this.eventos.quitarDeDifusion(req.user!, id, str(req.params.difId)).catch((err) => this.avisarAbierto(res, id, err));
+    this.alLinkAbierto(res, id);
+  };
+
+  difusionVaciarPost = async (req: Request, res: Response): Promise<void> => {
+    const id = str(req.params.id);
+    await this.eventos.vaciarDifusion(req.user!, id);
+    this.alLinkAbierto(res, id, '🗑 Lista vaciada (los registrados no se tocan)');
+  };
+
+  /** 💬 Marca que se abrió su WhatsApp con el link abierto (sin recargar). */
+  difusionWspPost = async (req: Request, res: Response): Promise<void> => {
+    await this.eventos.marcarDifusionWsp(req.user!, str(req.params.id), str(req.params.difId));
+    res.json({ ok: true });
+  };
+
+  /** ✉️ Manda el link abierto por correo a una persona de la lista. */
+  difusionCorreoPost = async (req: Request, res: Response): Promise<void> => {
+    const id = str(req.params.id);
+    try {
+      await this.eventos.enviarDifusionCorreo(req.user!, id, str(req.params.difId));
+      this.alLinkAbierto(res, id, '✉️ Link enviado por correo');
+    } catch (err) {
+      this.avisarAbierto(res, id, err);
+    }
+  };
+
+  /** ✉️ Manda el link abierto por correo a los de la lista que faltan. */
+  difusionEnviarPost = async (req: Request, res: Response): Promise<void> => {
+    const id = str(req.params.id);
+    try {
+      const r = await this.eventos.enviarDifusionPendientes(req.user!, id);
+      const partes = [`✉️ Link enviado a ${r.enviadas} persona(s)`];
+      if (r.fallidas) partes.push(`${r.fallidas} no se pudieron mandar`);
+      if (r.faltan) partes.push(`faltan ${r.faltan}: vuelve a picar «Enviar»`);
+      this.alLinkAbierto(res, id, partes.join(' · '));
+    } catch (err) {
+      this.avisarAbierto(res, id, err);
     }
   };
 

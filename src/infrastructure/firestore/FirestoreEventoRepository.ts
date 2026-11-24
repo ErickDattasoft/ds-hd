@@ -15,6 +15,7 @@ import {
   type EstiloEvento,
   type InvitacionEmpresa,
   type InvitadoExterno,
+  type DestinatarioLink,
 } from '../../core/entities/Evento.js';
 import type { EntradaListaNegra, EstadoInscripcion, Inscripcion } from '../../core/entities/Inscripcion.js';
 
@@ -44,6 +45,7 @@ const eventoToDomain = (id: string, d: DocumentData): Evento =>
     limiteRegistrosPorIp: typeof d.limiteRegistrosPorIp === 'number' ? d.limiteRegistrosPorIp : null,
     invitaciones: Array.isArray(d.invitaciones) ? (d.invitaciones as InvitacionEmpresa[]) : [],
     invitadosExternos: Array.isArray(d.invitadosExternos) ? (d.invitadosExternos as InvitadoExterno[]) : [],
+    difusion: Array.isArray(d.difusion) ? (d.difusion as DestinatarioLink[]) : [],
     flayer: (d.flayer as EventoFlayer | null | undefined) ?? null,
     sistema: d.sistema ?? null,
     contactoNombre: d.contactoNombre ?? null,
@@ -111,6 +113,7 @@ export class FirestoreEventoRepository implements IEventoRepository {
         limiteRegistrosPorIp: e.limiteRegistrosPorIp,
         invitaciones: e.invitaciones,
         invitadosExternos: e.invitadosExternos,
+        difusion: e.difusion,
         flayer: e.flayer,
         sistema: e.sistema,
         contactoNombre: e.contactoNombre,

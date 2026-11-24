@@ -89,28 +89,6 @@
 
   <section class="ev-paso" id="invitaciones">
     <h2 class="ev-paso__titulo"><span class="ev-paso__num">2</span> Invitaciones: elige cómo invitar</h2>
-    {% if puedeGestionar %}
-      {#- Configuración de envío: arriba de las dos pestañas (con nombre y link abierto), a la vista de quien manda. -#}
-      <div class="ev-envio" data-paneles>
-        <span class="ev-envio__label">📤 Se envía desde:</span>
-        {% if evento.envioWhatsapp or evento.envioCorreo %}
-          {% if evento.envioWhatsapp %}<span class="ev-envio__dato">💬 WhatsApp <strong class="sensible">{{ evento.envioWhatsapp }}</strong></span>{% endif %}
-          {% if evento.envioCorreo %}<span class="ev-envio__dato">✉️ Correo <strong class="sensible">{{ evento.envioCorreo }}</strong></span>{% endif %}
-        {% else %}
-          <span class="muted">sin anotar — pon con qué WhatsApp y correo se van a mandar</span>
-        {% endif %}
-        <button type="button" class="btn btn--sm btn--secondary" data-abre="ev-envio-form">⚙️ Configuración de envío</button>
-        <div class="ev-panel" id="ev-envio-form" data-panel hidden>
-          <form method="post" action="/app/eventos/{{ evento.id }}/envio" class="ev-persona">
-            <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
-            <label class="field"><span>💬 WhatsApp de envío</span><input type="tel" name="envioWhatsapp" value="{{ evento.envioWhatsapp or '' }}" placeholder="Ej. 999 123 4567 (oficina)" autocomplete="off" /></label>
-            <label class="field"><span>✉️ Correo de envío <small class="muted">(ahí llegan las respuestas)</small></span><input type="email" name="envioCorreo" value="{{ evento.envioCorreo or '' }}" placeholder="eventos@dattasoft.mx" autocomplete="off" /></label>
-            <button class="btn" type="submit">Guardar</button>
-            <p class="ev-panel__ayuda">El WhatsApp se manda desde el que esté <strong>abierto en esta computadora</strong> (WhatsApp Web o la app): el número de aquí te lo recuerda antes de empezar. Los correos de «Con nombre» salen del correo del CRM y, si alguien contesta, la respuesta llega al correo que pongas aquí. Vale para las dos pestañas: con nombre y link abierto. Cámbialo según quién vaya a mandar.</p>
-          </form>
-        </div>
-      </div>
-    {% endif %}
     <div class="ev-tabs" role="tablist" data-ev-tabs="{{ evento.id }}"
          data-ev-tab-inicial="{{ 'abierto' if (inscritos | length) and not (todosInvitados | length) else 'nombre' }}">
       <button type="button" role="tab" class="ev-tab" data-ev-tab="nombre">
@@ -126,6 +104,7 @@
     {#- Pestaña A: invitados con nombre -#}
     <div class="ev-tabpanel" data-ev-panel="nombre">
       {% if puedeGestionar %}
+        {% set tabEnvio = 'nombre' %}{% include "partials/evento-envio.njk" %}
         <div class="ev-agregar" data-paneles>
           <span class="ev-agregar__label">Agregar invitados:</span>
           <button type="button" class="btn btn--secondary" data-abre="ev-add-clientes">🏢 De mis clientes</button>
@@ -306,14 +285,127 @@
 
     {#- Pestaña B: link abierto (sin nombre) -#}
     <div class="ev-tabpanel" data-ev-panel="abierto" id="inscritos">
-      <p class="ev-panel__ayuda">Compártelo en Facebook, en un grupo de WhatsApp o en un correo masivo. Quien entra pone su nombre y sus datos{% if evento.pideConfirmacion %}, y cuántos van (hasta {{ evento.maxPersonasRegistro }}){% endif %}. Aparecen abajo.</p>
+      <p class="ev-panel__ayuda">Un solo link para todos: quien entra pone su nombre y sus datos{% if evento.pideConfirmacion %}, y cuántos van (hasta {{ evento.maxPersonasRegistro }}){% endif %}. Pégalo en redes, o mándalo desde aquí a una lista por WhatsApp o correo. Los que se registran aparecen abajo.</p>
       <div class="ev-link">
         <input type="text" readonly value="{{ linkPublico }}" aria-label="Link abierto" data-seleccionar />
         <button type="button" class="btn" data-copiar-link data-link="{{ linkPublico }}">📋 Copiar link</button>
-        <a class="btn btn--secondary" href="https://wa.me/?text={{ (evento.titulo + ' — ' + linkPublico) | urlencode }}" target="_blank" rel="noopener"{% if evento.envioWhatsapp %} title="Mándalo desde el WhatsApp {{ evento.envioWhatsapp }}"{% endif %}>💬 Compartir por WhatsApp</a>
-        <a class="btn btn--secondary" href="mailto:?subject={{ evento.titulo | urlencode }}&body={{ ('Te invitamos a ' + evento.titulo + '. Confirma aquí: ' + linkPublico) | urlencode }}">✉️ Compartir por correo</a>
+        <a class="btn btn--secondary" href="https://wa.me/?text={{ mensajeLinkAbierto | urlencode }}" target="_blank" rel="noopener" title="Para pegarlo en un grupo o un estado: tú eliges el chat">💬 Pegar en un grupo de WhatsApp</a>
         <a class="btn btn--ghost" href="/eventos/{{ evento.id }}" target="_blank" rel="noopener">👁 Ver cómo se ve</a>
       </div>
+
+      {% if puedeGestionar %}
+        {% set difWsp = [] %}
+        {% for d in difusionVM %}{% if d.telefono and not d.enviadaWspAt %}{% set _ = difWsp.push(1) %}{% endif %}{% endfor %}
+        {% set difCorreo = [] %}
+        {% for d in difusionVM %}{% if d.correo and not d.enviadaAt %}{% set _ = difCorreo.push(1) %}{% endif %}{% endfor %}
+
+        <div class="ev-difusion">
+          <div class="ev-subtitulo">
+            <h3>📨 Mandar el link a una lista ({{ difusionVM | length }})</h3>
+          </div>
+          {% set tabEnvio = 'abierto' %}{% include "partials/evento-envio.njk" %}
+
+          <div class="ev-agregar" data-paneles>
+            <span class="ev-agregar__label">Agregar a la lista:</span>
+            <button type="button" class="btn btn--secondary" data-abre="ev-dif-lista">📄 Lista de Excel</button>
+            <button type="button" class="btn btn--secondary" data-abre="ev-dif-persona">👤 Una persona</button>
+
+            <div class="ev-panel" id="ev-dif-persona" data-panel hidden>
+              <form method="post" action="/app/eventos/{{ evento.id }}/difusion" class="ev-persona">
+                <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+                <label class="field"><span>Nombre</span><input name="nombre" maxlength="120" placeholder="Ej. Ana López" autocomplete="off" /></label>
+                <label class="field"><span>💬 WhatsApp</span><input type="tel" name="telefono" placeholder="999 123 4567" autocomplete="off" /></label>
+                <label class="field"><span>✉️ Correo</span><input type="email" name="correo" placeholder="ana@correo.com" autocomplete="off" /></label>
+                <button class="btn" type="submit">＋ Agregar</button>
+                <p class="ev-panel__ayuda">Pon su WhatsApp, su correo o los dos.</p>
+              </form>
+            </div>
+
+            <div class="ev-panel" id="ev-dif-lista" data-panel hidden>
+              <form method="post" action="/app/eventos/{{ evento.id }}/difusion/lista" data-lista-invitados>
+                <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+                <ol class="ev-pasos-lista">
+                  <li><strong>Descarga la plantilla</strong> y llénala: una persona por renglón con su <strong>Nombre</strong> y su <strong>WhatsApp</strong> y/o <strong>Correo</strong>. «Personas» aquí no se usa (cada quien elige al registrarse).
+                    <div><a class="btn btn--sm btn--secondary" href="/app/eventos/plantilla-invitados.xlsx" download>⬇ Descargar plantilla de Excel</a></div>
+                  </li>
+                  <li><strong>Súbela aquí</strong> <span class="muted">(Excel .xlsx o CSV)</span>
+                    <div><input type="file" accept=".xlsx,.csv,.txt,text/csv,text/plain,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" data-lista-archivo /></div>
+                  </li>
+                  <li><strong>Revisa</strong> y da <strong>«📄 Agregar a la lista»</strong>. Después usa los botones 💬 y ✉️ de abajo.</li>
+                </ol>
+                <label class="field"><span class="muted">Así quedó la lista <span>(también puedes copiar celdas de Excel y pegarlas aquí)</span></span>
+                  <textarea name="lista" rows="5" required placeholder="Aquí aparece la lista al subir el archivo…" data-lista-texto></textarea>
+                  <em class="field__hint" data-lista-conteo></em>
+                </label>
+                <div class="varias__pie"><button class="btn" type="submit">📄 Agregar a la lista</button></div>
+              </form>
+            </div>
+          </div>
+
+          {% if difusionVM | length %}
+            <div class="ev-mandar">
+              {% if difWsp | length %}
+                <button type="button" class="btn" data-wsp-uno-a-uno data-cola="[data-wsp-dif]" data-envio-wsp="{{ evento.envioWhatsapp or '' }}">💬 Mandar por WhatsApp uno por uno ({{ difWsp | length }})</button>
+              {% endif %}
+              {% if difCorreo | length %}
+                <form method="post" action="/app/eventos/{{ evento.id }}/difusion/enviar" class="inline"
+                      data-confirm="{{ '⚠️ El evento sigue en BORRADOR. ' if evento.estado == 'borrador' }}¿Mandar el link por correo a los {{ difCorreo | length }} que faltan?">
+                  <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+                  <button class="btn" type="submit">✉️ Enviar por correo a los que faltan ({{ difCorreo | length }})</button>
+                </form>
+              {% endif %}
+              {% if not (difWsp | length) and not (difCorreo | length) %}
+                <span class="muted">✔️ Ya se le mandó el link a todos los de la lista.</span>
+              {% endif %}
+            </div>
+
+            <ul class="ev-lista ev-lista--difusion">
+              {% for d in difusionVM %}
+                <li class="ev-invitado">
+                  <div class="ev-invitado__fila">
+                    <div class="ev-invitado__quien">
+                      <strong class="nombre-sensible">{{ d.nombre or 'Sin nombre' }}</strong>
+                      <div class="muted ev-invitado__contacto sensible">{{ d.correo or '' }}{% if d.correo and d.telefono %} · {% endif %}{{ d.telefono or '' }}</div>
+                    </div>
+                    <div class="ev-invitado__estado">
+                      {% if d.enviadaAt or d.enviadaWspAt %}
+                        <span class="ev-chip ev-chip--si" data-wsp-chip data-chip-difusion title="{% if d.enviadaAt %}Por correo el {{ d.enviadaAt | fechahora }}. {% endif %}{% if d.enviadaWspAt %}Por WhatsApp el {{ d.enviadaWspAt | fechahora }}.{% endif %}">{{ '✉️' if d.enviadaAt }}{{ '💬' if d.enviadaWspAt }} Enviado</span>
+                      {% else %}
+                        <span class="ev-chip ev-chip--pend" data-wsp-chip data-chip-difusion>⏳ Sin mandar</span>
+                      {% endif %}
+                    </div>
+                    <div class="ev-invitado__acciones">
+                      {% if d.telefono %}
+                        <a class="btn btn--sm btn--ghost" href="{{ d.waLink }}" target="_blank" rel="noopener"
+                           data-wsp-dif="{{ d.id }}" data-wsp-marcar="/app/eventos/{{ evento.id }}/difusion/{{ d.id }}/whatsapp"
+                           data-wsp-nombre="{{ d.nombre }}" data-wsp-tel="{{ d.telefono }}"
+                           {% if not d.enviadaWspAt %}data-wsp-pendiente{% endif %}
+                           title="Mandar el link por WhatsApp a {{ d.telefono }}">💬</a>
+                      {% endif %}
+                      {% if d.correo %}
+                        <form method="post" action="/app/eventos/{{ evento.id }}/difusion/{{ d.id }}/correo" class="inline"
+                              {% if d.enviadaAt %}data-confirm="Ya se le mandó el {{ d.enviadaAt | fechahora }}. ¿Mandarlo otra vez?"{% endif %}>
+                          <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+                          <button class="btn btn--sm btn--ghost" type="submit" title="Mandar el link por correo a {{ d.correo }}">✉️</button>
+                        </form>
+                      {% endif %}
+                      <form method="post" action="/app/eventos/{{ evento.id }}/difusion/{{ d.id }}/quitar" class="inline">
+                        <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+                        <button class="btn btn--sm btn--ghost" type="submit" title="Quitar de la lista">🗑</button>
+                      </form>
+                    </div>
+                  </div>
+                </li>
+              {% endfor %}
+            </ul>
+            <form method="post" action="/app/eventos/{{ evento.id }}/difusion/vaciar" class="ev-difusion__vaciar"
+                  data-confirm="¿Vaciar toda la lista ({{ difusionVM | length }})? Los que ya se registraron no se borran.">
+              <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+              <button class="btn btn--sm btn--ghost" type="submit">🗑 Vaciar la lista</button>
+            </form>
+          {% endif %}
+        </div>
+      {% endif %}
 
       <div class="ev-subtitulo">
         <h3>Quién se ha registrado ({{ inscritos | length }})</h3>

@@ -409,6 +409,13 @@ export function backofficeRoutes(container: Container): Router {
   r.post('/eventos/:id/empresas/varias', requirePermission('eventos:gestionar'), (req, res) => eventos().empresasVariasPost(req, res));
   r.post('/eventos/:id/empresas/:invId', requirePermission('eventos:gestionar'), (req, res) => eventos().empresaActualizarPost(req, res));
   r.post('/eventos/:id/empresas/:invId/quitar', requirePermission('eventos:gestionar'), (req, res) => eventos().empresaQuitarPost(req, res));
+  r.post('/eventos/:id/difusion/lista', requirePermission('eventos:gestionar'), (req, res) => eventos().difusionListaPost(req, res));
+  r.post('/eventos/:id/difusion/enviar', requirePermission('eventos:gestionar'), (req, res) => eventos().difusionEnviarPost(req, res));
+  r.post('/eventos/:id/difusion/vaciar', requirePermission('eventos:gestionar'), (req, res) => eventos().difusionVaciarPost(req, res));
+  r.post('/eventos/:id/difusion', requirePermission('eventos:gestionar'), (req, res) => eventos().difusionAgregarPost(req, res));
+  r.post('/eventos/:id/difusion/:difId/whatsapp', requirePermission('eventos:gestionar'), (req, res) => eventos().difusionWspPost(req, res));
+  r.post('/eventos/:id/difusion/:difId/correo', requirePermission('eventos:gestionar'), (req, res) => eventos().difusionCorreoPost(req, res));
+  r.post('/eventos/:id/difusion/:difId/quitar', requirePermission('eventos:gestionar'), (req, res) => eventos().difusionQuitarPost(req, res));
   r.post('/eventos/:id/externos/lista', requirePermission('eventos:gestionar'), (req, res) => eventos().externosListaPost(req, res));
   r.post('/eventos/:id/externos', requirePermission('eventos:gestionar'), (req, res) => eventos().externoAgregarPost(req, res));
   r.post('/eventos/:id/externos/:extId', requirePermission('eventos:gestionar'), (req, res) => eventos().externoActualizarPost(req, res));

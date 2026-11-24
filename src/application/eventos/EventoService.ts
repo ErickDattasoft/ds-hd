@@ -843,14 +843,11 @@ export class EventoService {
 
   /** Texto para mandar la invitación por WhatsApp (corto, con el link personal). */
   mensajeWhatsAppInvitacion(evento: Evento, inv: DatosRsvp & { id: string }, nombre: string): string {
-    const cuando =
-      evento.tipo === 'felicitacion'
-        ? ''
-        : `\n📅 ${evento.fechaHora.toLocaleString('es-MX', { timeZone: ZONA_MEXICO, weekday: 'long', day: 'numeric', month: 'long', hour: 'numeric', minute: '2-digit' })}`;
-    const donde = evento.tipo === 'presencial' && evento.lugarNombre ? `\n📍 ${evento.lugarNombre}` : '';
-    const pases = evento.pideConfirmacion ? `\n🎟 Invitación para ${inv.pases} ${inv.pases === 1 ? 'persona' : 'personas'}` : '';
-    const accion = evento.pideConfirmacion ? 'Aquí tu invitación, ¿nos confirmas?' : 'Te dejamos esto:';
-    return `¡Hola${nombre ? ` ${nombre}` : ''}! 👋\n${evento.titulo}${cuando}${donde}${pases}\n\n${accion}\n${this.linkInvitacion(evento, inv)}`;
+    const pases = evento.pideConfirmacion ? `🎟 Invitación para ${inv.pases} ${inv.pases === 1 ? 'persona' : 'personas'}` : '';
+    const accion = evento.pideConfirmacion
+      ? '👉 Abre tu invitación y confírmanos tu asistencia aquí:'
+      : '👉 Ábrela aquí:';
+    return mensajeWhatsApp(evento, nombre, [pases], accion, this.linkInvitacion(evento, inv));
   }
 
   /** Manda por correo la invitación de UN invitado (empresa o externo). */
@@ -903,7 +900,23 @@ export class EventoService {
   ): Promise<void> {
     if (!inv.correo) throw new ValidationError('Este invitado no tiene correo; agrégaselo o mándala por WhatsApp');
     const nombre = 'empresaNombre' in inv ? (inv.paraNombre ?? inv.empresaNombre) : inv.nombre || inv.paraNombre || '';
-    const link = prueba?.link ?? this.linkInvitacion(evento, inv);
+    await this.correoDeInvitacion(evento, {
+      correo: inv.correo,
+      nombre,
+      link: prueba?.link ?? this.linkInvitacion(evento, inv),
+      pases: inv.pases,
+      boton: evento.pideConfirmacion ? 'Ver mi invitación y confirmar' : 'Abrir',
+      indicacion: evento.pideConfirmacion ? 'Abre tu invitación y confírmanos tu asistencia:' : '',
+      prueba: !!prueba,
+    });
+  }
+
+  /** El correo de invitación (con el estilo del evento). `pases` null = link abierto, sin pases. */
+  private async correoDeInvitacion(
+    evento: Evento,
+    d: { correo: string; nombre: string; link: string; pases: number | null; boton: string; indicacion?: string; prueba?: boolean },
+  ): Promise<void> {
+    const { nombre, link } = d;
     const esc = (t: string) => t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     const fecha = evento.fechaHora.toLocaleString('es-MX', {
       timeZone: ZONA_MEXICO,
@@ -916,29 +929,165 @@ export class EventoService {
     const renglones = [
       evento.tipo !== 'felicitacion' ? `📅 ${esc(fecha)}` : '',
       evento.tipo === 'presencial' && evento.lugarNombre ? `📍 ${esc(evento.lugarNombre)}` : '',
-      evento.pideConfirmacion ? `🎟 Invitación para ${inv.pases} ${inv.pases === 1 ? 'persona' : 'personas'}` : '',
+      evento.pideConfirmacion && d.pases ? `🎟 Invitación para ${d.pases} ${d.pases === 1 ? 'persona' : 'personas'}` : '',
     ].filter(Boolean);
     const flayer = evento.flayer
       ? `<p><img src="${this.baseUrl}/eventos/${evento.id}/flayer?v=${evento.flayer.tamano}" alt="" style="max-width:100%;border-radius:10px"></p>`
       : '';
-    const boton = evento.pideConfirmacion ? 'Ver mi invitación y confirmar' : 'Abrir';
     const est = ESTILO_EVENTO_INFO[evento.estilo];
     const adorno = est.adorno ? `<p style="font-size:22px;letter-spacing:10px;margin:0 0 6px;color:${est.color}">${est.adorno} ${est.adorno} ${est.adorno}</p>` : '';
     await this.email.enviar({
-      para: [{ email: inv.correo, nombre: nombre || undefined }],
-      asunto: `${prueba ? '[Prueba] ' : ''}${evento.tipo === 'felicitacion' ? evento.titulo : `Invitación: ${evento.titulo}`}`,
+      para: [{ email: d.correo, nombre: nombre || undefined }],
+      asunto: `${d.prueba ? '[Prueba] ' : ''}${evento.tipo === 'felicitacion' ? evento.titulo : `Invitación: ${evento.titulo}`}`,
       html: `<div style="font-family:${est.fuente};max-width:560px;margin:auto;text-align:center;background:${est.fondo};color:${est.texto};padding:28px 22px;border-radius:14px;border-top:6px solid ${est.color}">
-        <p style="font-size:16px">¡Hola${nombre ? ` ${esc(nombre)}` : ''}! 👋</p>
+        <p style="margin:0 0 14px;font-size:12px;letter-spacing:3px;text-transform:uppercase;opacity:.7">${evento.tipo === 'felicitacion' ? 'Un mensaje' : 'Invitación'} de ${QUIEN_INVITA}</p>
+        <p style="font-size:16px;margin:0 0 6px">¡Hola${nombre ? ` ${esc(nombre)}` : ''}! 👋</p>
+        <p style="font-size:15px;margin:0 0 10px;opacity:.85">${evento.tipo === 'felicitacion' ? 'Tenemos algo para ti:' : 'Con mucho gusto te invitamos a'}</p>
         ${adorno}
         <h2 style="margin:8px 0 16px;color:${est.color};font-size:26px">${esc(evento.titulo)}</h2>
         ${flayer}
         ${evento.descripcion ? `<p style="white-space:pre-wrap;opacity:.85">${esc(evento.descripcion)}</p>` : ''}
         <p style="font-size:15px;line-height:1.7">${renglones.join('<br>')}</p>
-        <p style="margin:24px 0"><a href="${link}" style="background:${est.color};color:#fff;padding:12px 22px;border-radius:8px;text-decoration:none;font-weight:bold">${boton}</a></p>
+        ${d.indicacion ? `<p style="font-size:15px;margin:20px 0 0">${esc(d.indicacion)}</p>` : ''}
+        <p style="margin:14px 0 24px"><a href="${link}" style="background:${est.color};color:#fff;padding:12px 22px;border-radius:8px;text-decoration:none;font-weight:bold">${d.boton}</a></p>
+        ${evento.tipo === 'felicitacion' ? '' : '<p style="font-size:15px;margin:0 0 16px">¡Te esperamos! 🙌</p>'}
         <p style="opacity:.6;font-size:12px">Si el botón no abre, copia este link: ${link}</p>
       </div>`,
       ...(evento.envioCorreo ? { responderA: { email: evento.envioCorreo } } : {}),
       tags: ['evento-invitacion', `evento-${evento.id}`],
+    });
+  }
+
+  // ── Lista del link abierto (pestaña «🌐 Link abierto») ──────────────────
+  /** El link abierto del evento (sin nombre: cada quien pone sus datos). */
+  linkAbierto(evento: Evento): string {
+    return `${this.baseUrl}/eventos/${evento.id}`;
+  }
+
+  /** Texto para mandar el link abierto por WhatsApp. */
+  mensajeWhatsAppLinkAbierto(evento: Evento, nombre: string): string {
+    const accion = evento.pideConfirmacion
+      ? '👉 Dale clic al link para registrarte y confirmar tu asistencia:'
+      : '👉 Dale clic al link para verla:';
+    return mensajeWhatsApp(evento, nombre, [], accion, this.linkAbierto(evento));
+  }
+
+  /**
+   * Carga una lista (Excel/CSV/pegado) a la lista del link abierto. Se salta a quien ya está
+   * (mismo correo o WhatsApp). Un solo guardado.
+   */
+  async cargarListaDifusion(
+    actor: SessionUser,
+    eventoId: string,
+    texto: string,
+  ): Promise<{ agregados: number; repetidos: number; errores: string[] }> {
+    const evento = await this.paraGestion(actor, eventoId);
+    const { renglones, errores } = leerListaInvitados(texto);
+    const clave = (v: string | null | undefined): string => (v ?? '').trim().toLowerCase();
+    const tel = (v: string | null | undefined): string => (v ?? '').replace(/\D/g, '').slice(-10);
+    const correos = new Set(evento.difusion.map((i) => clave(i.correo)).filter(Boolean));
+    const telefonos = new Set(evento.difusion.map((i) => tel(i.telefono)).filter(Boolean));
+    let agregados = 0;
+    let repetidos = 0;
+    for (const r of renglones) {
+      if ((r.correo && correos.has(clave(r.correo))) || (r.telefono && telefonos.has(tel(r.telefono)))) {
+        repetidos++;
+        continue;
+      }
+      try {
+        evento.agregarADifusion({ id: this.ids.newId(), nombre: r.nombre, correo: r.correo, telefono: r.telefono });
+      } catch (err) {
+        errores.push(`«${r.nombre || r.correo || r.telefono}»: ${err instanceof Error ? err.message : 'no se pudo agregar'}`);
+        continue;
+      }
+      if (r.correo) correos.add(clave(r.correo));
+      if (r.telefono) telefonos.add(tel(r.telefono));
+      agregados++;
+    }
+    if (agregados) await this.persistirPanel(actor, evento, `cargó ${agregados} persona(s) a la lista del link abierto`);
+    return { agregados, repetidos, errores };
+  }
+
+  /** Agrega a UNA persona (capturada a mano) a la lista del link abierto. */
+  async agregarADifusion(
+    actor: SessionUser,
+    eventoId: string,
+    datos: { nombre: string; correo: string; telefono: string },
+  ): Promise<void> {
+    const evento = await this.paraGestion(actor, eventoId);
+    const tel = (v: string | null | undefined): string => (v ?? '').replace(/\D/g, '').slice(-10);
+    const correo = datos.correo.trim().toLowerCase();
+    if (
+      (correo && evento.difusion.some((d) => d.correo === correo)) ||
+      (datos.telefono.trim() && evento.difusion.some((d) => tel(d.telefono) === tel(datos.telefono)))
+    ) {
+      throw new ConflictError('Esa persona ya está en la lista');
+    }
+    evento.agregarADifusion({ id: this.ids.newId(), nombre: datos.nombre, correo: datos.correo, telefono: datos.telefono });
+    await this.persistirPanel(actor, evento);
+  }
+
+  async quitarDeDifusion(actor: SessionUser, eventoId: string, id: string): Promise<void> {
+    const evento = await this.paraGestion(actor, eventoId);
+    evento.quitarDeDifusion(id);
+    await this.persistirPanel(actor, evento);
+  }
+
+  async vaciarDifusion(actor: SessionUser, eventoId: string): Promise<void> {
+    const evento = await this.paraGestion(actor, eventoId);
+    evento.vaciarDifusion();
+    await this.persistirPanel(actor, evento, 'vació la lista del link abierto');
+  }
+
+  /** 💬 Se abrió el WhatsApp de alguien de la lista con el link abierto. */
+  async marcarDifusionWsp(actor: SessionUser, eventoId: string, id: string): Promise<void> {
+    const evento = await this.paraGestion(actor, eventoId);
+    evento.marcarDifusionWsp(id, this.clock.now());
+    await this.persistirPanel(actor, evento);
+  }
+
+  /** ✉️ Manda el link abierto por correo a UNA persona de la lista. */
+  async enviarDifusionCorreo(actor: SessionUser, eventoId: string, id: string): Promise<void> {
+    const evento = await this.paraGestion(actor, eventoId);
+    const d = evento.buscarEnDifusion(id);
+    if (!d.correo) throw new ValidationError('No tiene correo; mándaselo por WhatsApp');
+    await this.correoLinkAbierto(evento, d.correo, d.nombre);
+    evento.marcarDifusionCorreo(id, this.clock.now());
+    await this.persistirPanel(actor, evento);
+  }
+
+  /** ✉️ Manda el link abierto a quien tiene correo y aún no se le manda ({@link ENVIOS_POR_LOTE} por clic). */
+  async enviarDifusionPendientes(
+    actor: SessionUser,
+    eventoId: string,
+  ): Promise<{ enviadas: number; fallidas: number; faltan: number }> {
+    const evento = await this.paraGestion(actor, eventoId);
+    const porMandar = evento.difusion.filter((d) => d.correo && !d.enviadaAt);
+    const lote = porMandar.slice(0, ENVIOS_POR_LOTE);
+    let enviadas = 0;
+    let fallidas = 0;
+    for (const d of lote) {
+      try {
+        await this.correoLinkAbierto(evento, d.correo!, d.nombre);
+        evento.marcarDifusionCorreo(d.id, this.clock.now());
+        enviadas++;
+      } catch (err) {
+        fallidas++;
+        this.logger.warn('No se pudo mandar el link abierto', { err: String(err), eventoId, id: d.id });
+      }
+    }
+    await this.persistirPanel(actor, evento, `link abierto enviado por correo: ${enviadas}`);
+    return { enviadas, fallidas, faltan: porMandar.length - lote.length };
+  }
+
+  private correoLinkAbierto(evento: Evento, correo: string, nombre: string): Promise<void> {
+    return this.correoDeInvitacion(evento, {
+      correo,
+      nombre,
+      link: this.linkAbierto(evento),
+      pases: null,
+      boton: evento.pideConfirmacion ? 'Registrarme y confirmar' : 'Abrir',
+      indicacion: evento.pideConfirmacion ? 'Dale clic al botón para registrarte y confirmar tu asistencia:' : '',
     });
   }
 
@@ -1279,4 +1428,31 @@ export class EventoService {
       tags: ['evento-confirmacion', `evento-${evento.id}`, `insc_${ins.id}`],
     });
   }
+}
+
+/** Quién invita: va en el encabezado de los mensajes y correos de invitación. */
+const QUIEN_INVITA = 'DATTASOFT';
+
+/**
+ * Mensaje de WhatsApp con encabezado: «✨ Invitación de DATTASOFT», saludo, qué/cuándo/dónde,
+ * qué hacer y el link. *negritas* al estilo WhatsApp.
+ */
+function mensajeWhatsApp(evento: Evento, nombre: string, extras: string[], accion: string, link: string): string {
+  const felicitacion = evento.tipo === 'felicitacion';
+  const cuando = felicitacion
+    ? ''
+    : `📅 ${evento.fechaHora.toLocaleString('es-MX', { timeZone: ZONA_MEXICO, weekday: 'long', day: 'numeric', month: 'long', hour: 'numeric', minute: '2-digit' })}`;
+  const donde = evento.tipo === 'presencial' && evento.lugarNombre ? `📍 ${evento.lugarNombre}` : '';
+  const datos = [cuando, donde, ...extras].filter(Boolean);
+  return [
+    `✨ *${felicitacion ? 'Un mensaje' : 'Invitación'} de ${QUIEN_INVITA}* ✨`,
+    '',
+    `¡Hola${nombre ? ` ${nombre}` : ''}! 👋`,
+    felicitacion ? `Tenemos algo para ti: *${evento.titulo}*` : `Con mucho gusto te invitamos a *${evento.titulo}*.`,
+    ...(datos.length ? ['', ...datos] : []),
+    '',
+    accion,
+    link,
+    ...(felicitacion ? [] : ['', '¡Te esperamos! 🙌']),
+  ].join('\n');
 }
