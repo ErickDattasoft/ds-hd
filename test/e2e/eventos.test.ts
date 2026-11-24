@@ -904,7 +904,7 @@ describe('página pública de un evento — es una landing, no el sitio navegabl
     );
     const anon = request.agent(t.app);
     const page = await anon.get('/eventos/ev1');
-    expect(page.text).toContain('¿Cuántos van?');
+    expect(page.text).toContain('¿Cuántos asistirán?');
     expect(page.text).toContain('Confirmar mi asistencia');
     expect(page.text).not.toContain('te enviamos el acceso');
     const csrf = cookieValor(page.headers['set-cookie'] as unknown as string[], 'x-csrf-token')!;
@@ -1117,5 +1117,38 @@ describe('lista de Excel y envío por WhatsApp uno por uno', () => {
 
     await admin.agent.post('/app/eventos/ev1/invitaciones/x1/enviar').type('form').send({ _csrf: admin.csrf });
     expect(t.emailSender.enviados.at(-1)?.responderA).toEqual({ email: 'eventos@dattasoft.mx' });
+  });
+});
+
+describe('link abierto — una sola pregunta de asistencia', () => {
+  it('con 3 personas por invitación ofrece 3, 2, solo yo, no y tal vez; guarda personas', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    t.eventoRepo.items.set('ev1', new Evento({
+      id: 'ev1', titulo: 'Posada', fechaHora: enUnaSemana(), estado: 'publicado', maxPersonasRegistro: 3,
+    }));
+    const anon = request.agent(t.app);
+    const page = await anon.get('/eventos/ev1');
+    expect(page.text).toContain('Asistiremos 3 personas');
+    expect(page.text).toContain('Asistiremos 2 personas');
+    expect(page.text).toContain('Asistiré solo yo');
+    expect(page.text).not.toContain('Asistiremos 4 personas');
+    const csrf = cookieValor(page.headers['set-cookie'] as unknown as string[], 'x-csrf-token')!;
+    const reg = await anon.post('/eventos/ev1').type('form').send({
+      _csrf: csrf, nombre: 'Pedro', email: 'pedro@x.com', asistencia: '2',
+    });
+    expect(reg.status).toBe(200);
+    expect(t.inscripcionRepo.items[0]).toMatchObject({ asistira: 'Sí', personas: 2 });
+  });
+
+  it('con 1 persona solo pregunta sí / no / tal vez', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    t.eventoRepo.items.set('ev1', new Evento({ id: 'ev1', titulo: 'Uno', fechaHora: enUnaSemana(), estado: 'publicado' }));
+    const anon = request.agent(t.app);
+    const page = await anon.get('/eventos/ev1');
+    expect(page.text).not.toContain('Asistiremos');
+    expect(page.text).toContain('Sí, ahí estaré');
+    const csrf = cookieValor(page.headers['set-cookie'] as unknown as string[], 'x-csrf-token')!;
+    await anon.post('/eventos/ev1').type('form').send({ _csrf: csrf, nombre: 'Ana', email: 'ana@x.com', asistencia: 'No' });
+    expect(t.inscripcionRepo.items[0]!.asistira).toBe('No');
   });
 });

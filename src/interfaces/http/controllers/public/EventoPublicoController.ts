@@ -238,8 +238,7 @@ export class EventoPublicoController {
         email: str(b.email),
         telefono: str(b.telefono),
         empresa: str(b.empresa),
-        asistira: str(b.asistira),
-        personas: Number(str(b.personas) || 1),
+        ...asistenciaPublica(b),
         usaSistema: str(b.usaSistema),
         fuente: str(b.fuente),
         deseaCanalWhatsapp: b.deseaCanalWhatsapp === 'on' || b.deseaCanalWhatsapp === 'true',
@@ -287,4 +286,16 @@ export class EventoPublicoController {
         'Si el correo está registrado en este evento, te reenviamos el acceso en unos segundos.',
     });
   };
+}
+
+/**
+ * Traduce la pregunta única del link abierto («asistencia»: un número de personas, «No» o
+ * «Tal vez») a asistira + personas. Si no viene, usa los campos sueltos de antes.
+ */
+export function asistenciaPublica(b: Record<string, unknown>): { asistira: string; personas: number } {
+  const a = str(b.asistencia);
+  if (!a) return { asistira: str(b.asistira), personas: Number(str(b.personas) || 1) };
+  const n = Number(a);
+  if (Number.isFinite(n) && n >= 1) return { asistira: 'Sí', personas: Math.trunc(n) };
+  return { asistira: a === 'No' ? 'No' : 'Tal vez', personas: 1 };
 }

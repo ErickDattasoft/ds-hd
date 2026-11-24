@@ -95,24 +95,37 @@
           <fieldset class="evento-seccion">
             <legend>Tu asistencia</legend>
             <div class="evento-campos">
-              <label class="field"><span>¿Asistirás?</span>
-                <select name="asistira" required data-asistira>
-                  <option value="">Selecciona una opción</option>
-                  <option value="Sí" {{ 'selected' if valores.asistira == 'Sí' }}>Sí, ahí estaré</option>
-                  <option value="No" {{ 'selected' if valores.asistira == 'No' }}>No podré asistir</option>
-                  <option value="Tal vez" {{ 'selected' if valores.asistira == 'Tal vez' }}>Aún no estoy seguro</option>
-                </select>
-              </label>
-              {% if evento.maxPersonasRegistro > 1 %}
-                <label class="field" data-rsvp-personas><span>¿Cuántos van? <span class="muted">(contándote a ti)</span></span>
-                  <select name="personas">
-                    {% for n in range(1, evento.maxPersonasRegistro + 1) %}
-                      <option value="{{ n }}" {{ 'selected' if valores.personas == n | string }}>{{ n }} {{ 'persona' if n == 1 else 'personas' }}</option>
+              {#- Una sola elección: con «Personas por invitación» = 3 → «Asistiremos 3», «Asistiremos 2»,
+                  «Solo yo», «No podré», «Aún no sé». El servidor la traduce a asistira + personas. -#}
+              {%- set maxP = evento.maxPersonasRegistro or 1 %}
+              {%- set elegido = (valores.asistencia | string) if valores.asistencia else ('' if not valores.asistira else ((valores.personas or 1) | string if valores.asistira == 'Sí' else valores.asistira)) %}
+              <fieldset class="inv-eleccion evento-campos__todo">
+                <legend>{{ '¿Cuántos asistirán?' if maxP > 1 else '¿Asistirás?' }}{% if maxP > 1 %} <span class="muted">(contándote a ti)</span>{% endif %}</legend>
+                <div class="inv-opciones inv-opciones--lista" role="radiogroup">
+                  {% if maxP > 1 %}
+                    {% for n in range(maxP, 0, -1) %}
+                      <label class="inv-opcion">
+                        <input type="radio" name="asistencia" value="{{ n }}" required {{ 'checked' if elegido == (n | string) }} />
+                        <span>{% if n == 1 %}👤 Asistiré solo yo <small>(1 persona)</small>{% else %}👥 Asistiremos {{ n }} personas{% endif %}</span>
+                      </label>
                     {% endfor %}
-                  </select>
-                  {% if errores.personas %}<em class="field__error">{{ errores.personas }}</em>{% endif %}
-                </label>
-              {% endif %}
+                  {% else %}
+                    <label class="inv-opcion">
+                      <input type="radio" name="asistencia" value="1" required {{ 'checked' if elegido == '1' }} />
+                      <span>✅ Sí, ahí estaré</span>
+                    </label>
+                  {% endif %}
+                  <label class="inv-opcion">
+                    <input type="radio" name="asistencia" value="No" required {{ 'checked' if elegido == 'No' }} />
+                    <span>❌ No podré asistir</span>
+                  </label>
+                  <label class="inv-opcion">
+                    <input type="radio" name="asistencia" value="Tal vez" required {{ 'checked' if elegido == 'Tal vez' }} />
+                    <span>🤔 Aún no estoy seguro</span>
+                  </label>
+                </div>
+                {% if errores.personas %}<em class="field__error">{{ errores.personas }}</em>{% endif %}
+              </fieldset>
               {% if evento.sistema %}
                 <label class="field"><span>¿Actualmente utilizas {{ evento.sistema }}?</span>
                   <select name="usaSistema" required>

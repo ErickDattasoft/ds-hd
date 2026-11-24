@@ -1332,6 +1332,7 @@ tr.fila--sla-vencido > td { background: color-mix(in srgb, var(--danger) 6%, tra
   gap: var(--space-4);
 }
 .evento-campos--una { grid-template-columns: 1fr; }
+.evento-campos__todo { grid-column: 1 / -1; }
 .evento-nota {
   grid-column: 1 / -1;
   margin: calc(var(--space-2) * -1) 0 0;
