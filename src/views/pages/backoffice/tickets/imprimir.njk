@@ -52,7 +52,7 @@
   <div class="bloque">{{ descripcionHtml | safe }}</div>
 
   {% if notas | length %}
-    <h2>Conversación</h2>
+    <h2>Descripción</h2>
     {% for n in notas %}
       <div class="nota">
         <p class="muted" style="margin:0">{{ n.autorNombre }} · {{ n.createdAt | fechahora }}</p>
