@@ -80,6 +80,9 @@ import { FirestoreOportunidadRepository } from '../infrastructure/firestore/Fire
 import type { IUnionEmpresasRepository } from '../core/ports/repositories/IUnionEmpresasRepository.js';
 import { FirestoreUnionEmpresasRepository } from '../infrastructure/firestore/FirestoreUnionEmpresasRepository.js';
 import { CacheColecciones, conSelloDeCambios } from '../infrastructure/firestore/CacheColecciones.js';
+import type { IConsumoFirestoreRepository } from '../core/ports/repositories/IConsumoFirestoreRepository.js';
+import { FirestoreConsumoRepository } from '../infrastructure/firestore/FirestoreConsumoRepository.js';
+import { ConsumoFirestoreService } from '../application/dashboard/ConsumoFirestoreService.js';
 import { UnirEmpresasService } from '../application/empresas/UnirEmpresasService.js';
 import { OportunidadService } from '../application/ventas/OportunidadService.js';
 import { OportunidadController } from '../interfaces/http/controllers/backoffice/OportunidadController.js';
@@ -239,6 +242,8 @@ export interface Cradle {
   oportunidadRepo: IOportunidadRepository;
   unionEmpresasRepo: IUnionEmpresasRepository;
   cacheColecciones: CacheColecciones;
+  consumoFirestoreRepo: IConsumoFirestoreRepository;
+  consumoFirestoreService: ConsumoFirestoreService;
   unirEmpresasService: UnirEmpresasService;
   oportunidadController: OportunidadController;
   adjuntoTicketRepo: IAdjuntoTicketRepository;
@@ -485,6 +490,13 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
     cacheColecciones: asFunction(
       ({ firestoreDb }: Cradle) => new CacheColecciones(requireFirestore(firestoreDb)),
     ).singleton(),
+    // 📊 Medidor de consumo (lo llena el Worker; el Dashboard y la barra de arriba lo leen).
+    consumoFirestoreRepo: asFunction(
+      ({ firestoreDb }: Cradle): IConsumoFirestoreRepository => new FirestoreConsumoRepository(requireFirestore(firestoreDb)),
+    ).singleton(),
+    consumoFirestoreService: asFunction(
+      (c: Cradle) => new ConsumoFirestoreService(c.consumoFirestoreRepo, c.clock),
+    ).singleton(),
     ticketRepo: asFunction(
       ({ firestoreDb, bitacoraRepo, idGenerator, cacheColecciones }: Cradle): ITicketRepository =>
         ticketRepoConBitacora(
@@ -559,7 +571,7 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
         new FirestoreNotaPersonalRepository(requireFirestore(firestoreDb)),
     ).singleton(),
     notasPersonalesService: asFunction(
-      (c: Cradle) => new NotasPersonalesService(c.notaPersonalRepo, c.idGenerator, c.clock),
+      (c: Cradle) => new NotasPersonalesService(c.notaPersonalRepo, c.idGenerator, c.clock, c.bitacoraService),
     ).singleton(),
     notasController: asFunction((c: Cradle) => new NotasController(c.notasPersonalesService, c.clock)).singleton(),
     respuestaSinLeerRepo: asFunction(
@@ -1161,6 +1173,7 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
           c.editarTicketService,
           c.cotizacionRepo,
           c.respuestasSinLeerService,
+          c.notasPersonalesService,
         ),
     ).singleton(),
     backupService: asFunction(
@@ -1325,6 +1338,8 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
           c.backupService,
           new CumpleanosService(c.contactoRepo, c.empresaRepo, c.clock),
           c.respuestasSinLeerService,
+          c.consumoFirestoreService,
+          c.notasPersonalesService,
         ),
     ).singleton(),
     eventoPublicoController: asFunction(

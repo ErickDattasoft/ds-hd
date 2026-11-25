@@ -41,6 +41,7 @@ import { parseAgenda } from '../../../../core/entities/value-objects/AgendaTicke
 import { sanitizarDescripcionHtml } from '../../../../core/entities/value-objects/descripcionHtml.js';
 import { ticketVM, type TicketVM } from '../../presenters/TicketPresenter.js';
 import type { RespuestasSinLeerService } from '../../../../application/tickets/RespuestasSinLeerService.js';
+import type { NotasPersonalesService } from '../../../../application/notas/NotasPersonalesService.js';
 import { camposDeError } from '../../support/errores.js';
 import { ValidationError } from '../../../../core/errors/DomainError.js';
 import { esEstadoCerrado, esEstadoFinal, esEstadoResuelto } from '../../../../core/entities/value-objects/EstadoTicket.js';
@@ -85,6 +86,7 @@ export class TicketController {
     private readonly editar: EditarTicketService,
     private readonly cotizacionesRepo?: ICotizacionRepository,
     private readonly respuestas?: RespuestasSinLeerService,
+    private readonly notasPersonales?: NotasPersonalesService,
   ) {}
 
   /**
@@ -431,6 +433,8 @@ export class TicketController {
       hoy: new Date(this.clock.now().getTime() - 6 * 3_600_000).toISOString().slice(0, 10),
       empresasNombres: empresas.map((e) => e.nombre).sort((a, b) => a.localeCompare(b, 'es')),
       valores: { tipo, agenteUid: agenteDefecto },
+      // Si viene de 🗒️ Mis notas: al crear cada ticket se anota en la nota (🎫 #N).
+      notaId: str(b.notaId).slice(0, 100),
     });
   };
 
@@ -473,6 +477,11 @@ export class TicketController {
           .ejecutar({ actor, ticketId: ticket.id, esReenvio: false, soloEquipo: false })
           .then(() => true)
           .catch(() => false);
+      }
+      if (str(b.notaId) && this.notasPersonales) {
+        await this.notasPersonales
+          .marcarTicket({ uid: actor.uid, nombre: actor.nombre }, str(b.notaId), { id: ticket.id, numero: ticket.numero })
+          .catch(() => undefined);
       }
       res.json({ ok: true, id: ticket.id, numero: ticket.numero, correo });
     } catch (err) {

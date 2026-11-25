@@ -1,3 +1,4 @@
+import { PORCENTAJE_AVISO } from '../../../application/dashboard/ConsumoFirestoreService.js';
 import { Router, type Request } from 'express';
 import type { Container } from '../../../config/container.js';
 import { requireAuth, requireStaff, requirePermission } from '../middlewares/authz.js';
@@ -46,6 +47,8 @@ async function contadoresDelMenu(
         (t.tipo ?? '').toLowerCase().includes('correo'),
       ).length,
     versionesNuevas: async () => (await container.resolve('versionesContpaqiService').novedades()).length,
+    // 📊 % de la cuota diaria de Firestore (1 lectura cada 2 min por instancia): aviso arriba ≥ 80 %.
+    consumoFirestore: async () => (await container.resolve('consumoFirestoreService').hoy()).porcentaje,
     solicitudesAccesoPendientes: async () =>
       (await container.resolve('solicitudAccesoService').listarPendientes(user)).length,
   };
@@ -100,6 +103,7 @@ export function backofficeRoutes(container: Container): Router {
     const permisos = req.method === 'GET' ? req.user!.permisos : [];
     if (permisos.includes('tickets:leer')) claves.push('ticketsCorreoSinLeer');
     if (permisos.includes('tickets:crear')) claves.push('ticketsPublicosPendientes');
+    if (req.method === 'GET') claves.push('consumoFirestore');
     // El buzón 🔔 no pasa por el caché de 20 s: al abrir un ticket tiene que bajar de inmediato.
     const [contadores, respuestasSinLeer] = await Promise.all([
       contadoresDelMenu(container, claves, req.user!),
@@ -112,6 +116,7 @@ export function backofficeRoutes(container: Container): Router {
       buzonPendientes: contadores.ticketsPublicosPendientes ?? null,
       correoSinLeer: contadores.ticketsCorreoSinLeer ?? 0,
       respuestasSinLeer,
+      consumoFirestore: (contadores.consumoFirestore ?? 0) >= PORCENTAJE_AVISO ? contadores.consumoFirestore : null,
     };
     res.locals.area = 'backoffice';
     next();
@@ -450,6 +455,8 @@ export function backofficeRoutes(container: Container): Router {
   r.get('/notas', (req, res) => notas().vista(req, res));
   r.post('/notas', (req, res) => notas().guardarPost(req, res));
   r.post('/notas/:id/eliminar', (req, res) => notas().eliminarPost(req, res));
+  r.post('/notas/:id/restaurar', (req, res) => notas().restaurarPost(req, res));
+  r.post('/notas/:id/borrar-definitivo', (req, res) => notas().borrarDefinitivoPost(req, res));
   const filtros = () => container.resolve('filtrosController');
   r.post('/filtros', (req, res) => filtros().guardarPost(req, res));
   r.post('/filtros/:id/eliminar', (req, res) => filtros().eliminarPost(req, res));

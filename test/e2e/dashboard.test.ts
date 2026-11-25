@@ -170,3 +170,27 @@ describe('dashboard — tarjetas de soporte', () => {
     expect(mios).not.toContain('Timbrado de nómina');
   });
 });
+
+describe('🔥 consumo de Firebase', () => {
+  it('el Dashboard muestra la tarjeta; arriba sale el aviso solo a partir del 80 %', async () => {
+    const { diaDeCuota } = await import('../../src/core/entities/value-objects/cuotaFirestore.js');
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    const dia = diaDeCuota(new Date());
+    t.consumoFirestoreRepo.dias.set(dia, { dia, lecturas: 12_345, porHora: { '10': 12_345 } });
+    const { agent } = await login(t.app, ADMIN.email, ADMIN.password);
+
+    const res = await agent.get('/app');
+    expect(res.text).toContain('Consumo de Firebase hoy');
+    expect(res.text).toContain('12,345');
+    expect(res.text).toContain('24.7 %');
+    expect(res.text).not.toContain('aviso-consumo');
+
+    // Otro proceso (otra app = caché de contadores nueva) con 85 %: sale el aviso en cualquier página.
+    const t2 = makeTestApp({ usuarios: [ADMIN] });
+    t2.consumoFirestoreRepo.dias.set(dia, { dia, lecturas: 42_500, porHora: {} });
+    const { agent: agent2 } = await login(t2.app, ADMIN.email, ADMIN.password);
+    const tickets = await agent2.get('/app/tickets');
+    expect(tickets.text).toContain('aviso-consumo');
+    expect(tickets.text).toContain('🔥 Firebase 85 %');
+  });
+});

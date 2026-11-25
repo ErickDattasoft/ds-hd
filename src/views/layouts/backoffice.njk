@@ -8,5 +8,18 @@
       {% block content %}{% endblock %}
     </main>
   </div>
+  {# 🗒️ Nota rápida (Alt+N o el botón de arriba): se guarda en Mis notas sin salir de donde estás. #}
+  <dialog class="nota-rapida" data-nota-rapida aria-labelledby="nota-rapida-titulo">
+    <form method="dialog" class="nota nota--amarillo nota-rapida__caja" data-nota-rapida-form>
+      <p class="nota-rapida__cab"><strong id="nota-rapida-titulo">🗒️ Nota rápida</strong>
+        <span class="muted">Ctrl+Enter guarda · Esc cierra</span></p>
+      <textarea class="nota__texto" name="texto" rows="6" placeholder="Escribe y listo: se guarda en Mis notas" aria-label="Texto de la nota rápida"></textarea>
+      <div class="nota__pie">
+        <a class="btn btn--sm btn--ghost" href="/app/notas" style="margin-right:auto">Ver mis notas</a>
+        <button class="btn btn--sm btn--ghost" value="cancelar" formnovalidate>Cancelar</button>
+        <button class="btn btn--sm" type="button" data-nota-rapida-guardar>💾 Guardar</button>
+      </div>
+    </form>
+  </dialog>
 </div>
 {% endblock %}

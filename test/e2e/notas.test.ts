@@ -43,7 +43,97 @@ describe('🗒️ Mis notas', () => {
     expect(ajena.status).toBe(422);
 
     await post(`/app/notas/${id}/eliminar`, {});
-    expect(t.notaPersonalRepo.porUid.get(SUP.uid)).toEqual([]);
+    expect(t.notaPersonalRepo.porUid.get(SUP.uid)![0]!.eliminadaEn).toBeInstanceOf(Date);
+  });
+
+  it('🗑️ papelera: borrar, deshacer/restaurar, borrar para siempre; se purga sola a los 30 días', async () => {
+    const t = makeTestApp({ usuarios: [SUP] });
+    const { agent, csrf } = await login(t.app, SUP.email, SUP.password);
+    const post = (url: string, body: object = {}) => agent.post(url).set('x-csrf-token', csrf).send(body);
+    const id = (await post('/app/notas', { texto: 'llamar a CANUL' })).body.nota.id as string;
+
+    await post(`/app/notas/${id}/eliminar`);
+    let vista = await agent.get('/app/notas');
+    expect(vista.text).toContain('data-nota-borrada');
+    expect(vista.text).toContain('quedan 30 días');
+    expect((await post('/app/notas', { id, texto: 'editar borrada' })).status).toBe(422);
+
+    expect((await post(`/app/notas/${id}/restaurar`)).body.ok).toBe(true);
+    expect(t.notaPersonalRepo.porUid.get(SUP.uid)![0]!.eliminadaEn).toBeNull();
+
+    // Borrar para siempre solo desde la papelera.
+    await post(`/app/notas/${id}/borrar-definitivo`);
+    expect(t.notaPersonalRepo.porUid.get(SUP.uid)).toHaveLength(1);
+    await post(`/app/notas/${id}/eliminar`);
+    await post(`/app/notas/${id}/borrar-definitivo`);
+    expect(t.notaPersonalRepo.porUid.get(SUP.uid)).toHaveLength(0);
+
+    // Una nota que lleva más de 30 días en la papelera desaparece en el siguiente guardado.
+    const vieja = (await post('/app/notas', { texto: 'vieja' })).body.nota.id as string;
+    await post(`/app/notas/${vieja}/eliminar`);
+    t.notaPersonalRepo.porUid.get(SUP.uid)![0]!.eliminadaEn = new Date(Date.now() - 31 * 86_400_000);
+    await post('/app/notas', { texto: 'nueva' });
+    expect(t.notaPersonalRepo.porUid.get(SUP.uid)!.map((n) => n.texto)).toEqual(['nueva']);
+    vista = await agent.get('/app/notas');
+    expect(vista.text).not.toContain('vieja');
+
+    // La bitácora anota las acciones, SIN el texto de las notas.
+    const bit = await t.bitacoraRepo.listar({ modulo: 'notas' });
+    expect(bit.map((b) => b.accion)).toEqual(expect.arrayContaining(['crear', 'archivar', 'restaurar', 'eliminar_definitivo']));
+    expect(JSON.stringify(bit)).not.toContain('CANUL');
+  });
+
+  it('📌 fijar sale primero; ⏰ recordatorio de hoy sale en el Dashboard', async () => {
+    const t = makeTestApp({ usuarios: [SUP] });
+    const { agent, csrf } = await login(t.app, SUP.email, SUP.password);
+    const post = (body: object) => agent.post('/app/notas').set('x-csrf-token', csrf).send(body);
+    const a = (await post({ texto: 'PRIMERA fijada' })).body.nota.id as string;
+    await post({ texto: 'SEGUNDA normal' });
+    await post({ id: a, fijada: true });
+
+    const vista = await agent.get('/app/notas');
+    expect(vista.text.indexOf('PRIMERA fijada')).toBeLessThan(vista.text.indexOf('SEGUNDA normal'));
+    expect(vista.text).toContain('nota--fijada');
+
+    expect((await post({ id: a, recordarEn: '31-12-2026' })).status).toBe(422);
+    const hoy = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Mexico_City' });
+    const r = await post({ id: a, recordarEn: hoy });
+    expect(r.body.nota.recordatorio).toMatchObject({ texto: 'Hoy', estado: 'hoy' });
+    const dash = await agent.get('/app');
+    expect(dash.text).toContain('Recordatorios de tus notas');
+    expect(dash.text).toContain('PRIMERA fijada');
+
+    await post({ id: a, recordarEn: '' });
+    expect((await agent.get('/app')).text).not.toContain('Recordatorios de tus notas');
+  });
+
+  it('🎫 la nota que pasa por Captura rápida queda marcada con su ticket y se aparta', async () => {
+    const t = makeTestApp({ usuarios: [SUP] });
+    const { agent, csrf } = await login(t.app, SUP.email, SUP.password);
+    const id = (await agent.post('/app/notas').set('x-csrf-token', csrf).send({ texto: 'EMPRESA X - 27/10/2026\nRevisar timbrado' })).body.nota.id as string;
+
+    const rev = await agent.post('/app/tickets/captura').type('form').send({ _csrf: csrf, texto: 'EMPRESA X - 27/10/2026\nRevisar timbrado', notaId: id });
+    expect(rev.text).toContain(`data-nota-id="${id}"`);
+    expect(rev.text).toContain('Viene de');
+
+    const c = await agent.post('/app/tickets/captura/crear').set('x-csrf-token', csrf)
+      .send({ tipo: 'General', asunto: 'Revisar timbrado', descripcion: 'Revisar timbrado', estado: 'Resuelto', notaId: id });
+    expect(c.body.ok).toBe(true);
+    expect(t.notaPersonalRepo.porUid.get(SUP.uid)![0]!.tickets).toEqual([{ id: c.body.id, numero: c.body.numero }]);
+
+    const vista = await agent.get('/app/notas');
+    expect(vista.text).toContain('Ya convertidas en ticket');
+    expect(vista.text).toContain(`🎫 #${c.body.numero}`);
+    const bit = await t.bitacoraRepo.listar({ modulo: 'notas' });
+    expect(bit.some((b) => b.resumen.includes(`#${c.body.numero}`))).toBe(true);
+  });
+
+  it('🗒️ la nota rápida (Alt+N) está en todas las pantallas', async () => {
+    const t = makeTestApp({ usuarios: [SUP] });
+    const { agent } = await login(t.app, SUP.email, SUP.password);
+    const res = await agent.get('/app/tickets');
+    expect(res.text).toContain('data-nota-rapida');
+    expect(res.text).toContain('data-nota-rapida-abrir');
   });
 
   it('una nota demasiado larga se rechaza', async () => {

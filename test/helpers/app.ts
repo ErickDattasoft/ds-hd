@@ -1,3 +1,4 @@
+import { InMemoryConsumoFirestoreRepository } from '../fakes/InMemoryConsumoFirestoreRepository.js';
 import { ticketRepoConBitacora } from '../../src/application/tickets/ticketRepoConBitacora.js';
 import { createApp } from '../../src/app.js';
 import { buildContainer, type ContainerOverrides } from '../../src/config/container.js';
@@ -75,6 +76,7 @@ export interface TestApp {
   captchaVerifier: FakeCaptchaVerifier;
   filtroGuardadoRepo: InMemoryFiltroGuardadoRepository;
   notaPersonalRepo: InMemoryNotaPersonalRepository;
+  consumoFirestoreRepo: InMemoryConsumoFirestoreRepository;
   respuestaSinLeerRepo: InMemoryRespuestaSinLeerRepository;
   oportunidadRepo: InMemoryOportunidadRepository;
   adjuntoTicketRepo: InMemoryAdjuntoTicketRepository;
@@ -149,6 +151,7 @@ export function makeTestApp(opts: { usuarios?: { uid: string; email: string; pas
     intentosLoginRepo: new InMemoryIntentosLoginRepository(),
     filtroGuardadoRepo: new InMemoryFiltroGuardadoRepository(),
     notaPersonalRepo: new InMemoryNotaPersonalRepository(),
+    consumoFirestoreRepo: new InMemoryConsumoFirestoreRepository(),
     respuestaSinLeerRepo: new InMemoryRespuestaSinLeerRepository(),
     oportunidadRepo,
     unionEmpresasRepo: new InMemoryUnionEmpresasRepository({
@@ -217,6 +220,7 @@ export function makeTestApp(opts: { usuarios?: { uid: string; email: string; pas
     captchaVerifier,
     filtroGuardadoRepo: overrides.filtroGuardadoRepo as InMemoryFiltroGuardadoRepository,
     notaPersonalRepo: overrides.notaPersonalRepo as InMemoryNotaPersonalRepository,
+    consumoFirestoreRepo: overrides.consumoFirestoreRepo as InMemoryConsumoFirestoreRepository,
     respuestaSinLeerRepo: overrides.respuestaSinLeerRepo as InMemoryRespuestaSinLeerRepository,
     oportunidadRepo: overrides.oportunidadRepo as InMemoryOportunidadRepository,
     adjuntoTicketRepo,

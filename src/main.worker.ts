@@ -17,6 +17,7 @@ import { loadConfig } from './config/env.js';
 import { APP_VERSION } from './config/version.js';
 import { ConsoleLogger } from './infrastructure/system/ConsoleLogger.js';
 import { conLecturas } from './infrastructure/firestore-rest/lecturas.js';
+import { guardarConsumoSiToca, type ClienteIncrementos } from './infrastructure/firestore-rest/medidorConsumo.js';
 import { registrarBindingIA } from './infrastructure/ia/WorkersAIRedactor.js';
 
 const PORT = 8787;
@@ -39,6 +40,14 @@ app.listen(PORT, () => {
 
 const http = httpServerHandler({ port: PORT });
 
+/** El cliente REST de Firestore (lo único que sabe hacer incrementos sin leer). */
+const clienteConsumo = container.cradle.firestoreDb as unknown as ClienteIncrementos;
+/** Al terminar cada petición o cron: guarda el consumo de Firestore si ya toca (ver medidorConsumo). */
+function anotarConsumo(ctx: unknown, forzar = false): void {
+  const c = ctx as { waitUntil?(p: Promise<unknown>): void } | undefined;
+  c?.waitUntil?.(guardarConsumoSiToca(clienteConsumo, { forzar }));
+}
+
 /**
  * Jobs que antes corrían solo desde el cron de GitHub (que en la práctica se atrasa 5-6 h).
  * Cada cron de Cloudflare es una invocación aparte, con su propio presupuesto de
@@ -51,9 +60,11 @@ const JOBS_POR_CRON: Record<string, string[]> = {
 };
 
 export default {
-  fetch: (request: Request, env: unknown, ctx: unknown) => {
+  fetch: async (request: Request, env: unknown, ctx: unknown) => {
     registrarBindingIA(env);
-    return http.fetch(request, env, ctx);
+    const respuesta = await http.fetch(request, env, ctx);
+    anotarConsumo(ctx);
+    return respuesta;
   },
   /**
    * Cron Triggers de Cloudflare (`triggers.crons` en wrangler.jsonc). Cada 5 min: buzón de Zoho
@@ -83,6 +94,7 @@ export default {
               logger.warn(`cron ${job} falló`, { err: err instanceof Error ? err.message : String(err) });
             }
           }
+          await guardarConsumoSiToca(clienteConsumo, { forzar: true });
         })(),
       );
       return;
@@ -93,7 +105,9 @@ export default {
         .catch((err: unknown) => {
           logger.warn('Revisión de Zoho (cron) falló', { err: err instanceof Error ? err.message : String(err) });
         })
-        .finally(() => logger.info('cron Zoho', { lecturas: lecturas() })),
+        .finally(() => logger.info('cron Zoho', { lecturas: lecturas() }))
+        // Cada 5 min: también guarda lo que haya juntado esta instancia aunque nadie entre.
+        .then(() => guardarConsumoSiToca(clienteConsumo, { forzar: true })),
     );
   },
 };

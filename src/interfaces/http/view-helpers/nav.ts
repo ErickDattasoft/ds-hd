@@ -24,7 +24,9 @@ export type ContadorNavKey =
   | 'versionesNuevas'
   /** Avisos globales (no son de un item del menú): buzón público y tickets de correo abiertos. */
   | 'ticketsPublicosPendientes'
-  | 'ticketsCorreoSinLeer';
+  | 'ticketsCorreoSinLeer'
+  /** % de la cuota diaria de Firestore gastado hoy (aviso arriba a partir del 80 %). */
+  | 'consumoFirestore';
 
 export interface NavItem {
   etiqueta: string;

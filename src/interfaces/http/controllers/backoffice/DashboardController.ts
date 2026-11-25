@@ -5,6 +5,9 @@ import type { ObtenerMetricasService } from '../../../../application/dashboard/O
 import type { AgendaService } from '../../../../application/dashboard/AgendaService.js';
 import type { CumpleanosService } from '../../../../application/dashboard/CumpleanosService.js';
 import type { RespuestasSinLeerService } from '../../../../application/tickets/RespuestasSinLeerService.js';
+import type { ConsumoFirestoreService } from '../../../../application/dashboard/ConsumoFirestoreService.js';
+import type { NotasPersonalesService } from '../../../../application/notas/NotasPersonalesService.js';
+import { diaCorto, hoyMexico } from './NotasController.js';
 
 const str = (v: unknown): string => (typeof v === 'string' ? v : '');
 
@@ -16,6 +19,8 @@ export class DashboardController {
     private readonly backup?: BackupService,
     private readonly cumpleanos?: CumpleanosService,
     private readonly respuestas?: RespuestasSinLeerService,
+    private readonly consumo?: ConsumoFirestoreService,
+    private readonly notas?: NotasPersonalesService,
   ) {}
 
   ver = async (req: Request, res: Response): Promise<void> => {
@@ -28,13 +33,17 @@ export class DashboardController {
       res.cookie('dash_meses', String(meses), { maxAge: 365 * 86_400_000, sameSite: 'lax', httpOnly: true });
     }
     const verRespuestas = this.respuestas && req.user!.permisos.includes('tickets:leer');
-    const [m, backup, fechasEspeciales, respuestas] = await Promise.all([
+    const [m, backup, fechasEspeciales, respuestas, consumo, recordatorios] = await Promise.all([
       this.metricas.ejecutar(req.user!, { mesesGrafica: meses }),
       verBackup ? this.backup!.estado().catch(() => null) : Promise.resolve(null),
       // Un fallo aquí (p. ej. cuota) no debe tumbar el tablero entero.
       this.cumpleanos ? this.cumpleanos.proximos(req.user!).catch(() => null) : Promise.resolve(null),
       // «💬 Respuestas sin leer»: lo mismo que la campana 🔔 (una lectura chica).
       verRespuestas ? this.respuestas!.listarPara(req.user!).catch(() => null) : Promise.resolve(null),
+      // 📊 Consumo de Firebase de hoy (1 lectura): para ver venir el corte de la cuota.
+      this.consumo ? this.consumo.hoy().catch(() => null) : Promise.resolve(null),
+      // ⏰ Notas propias con recordatorio para hoy o atrasado (1 lectura: el documento de sus notas).
+      this.notas ? this.notas.recordatorios(req.user!.uid, hoyMexico(new Date())).catch(() => []) : Promise.resolve([]),
     ]);
     res.render('pages/backoffice/dashboard', {
       titulo: 'Dashboard',
@@ -44,6 +53,13 @@ export class DashboardController {
       backupAtrasado: backup?.atrasado ? backup : null,
       fechasEspeciales,
       respuestas,
+      consumo,
+      recordatorios: recordatorios.map((n) => ({
+        id: n.id,
+        texto: n.texto.trim().split('\n')[0]!.slice(0, 140) || '(nota vacía)',
+        atrasado: n.recordarEn! < hoyMexico(new Date()),
+        dia: diaCorto(n.recordarEn!),
+      })),
       hoyIso: new Date().toLocaleDateString('en-CA', { timeZone: 'America/Mexico_City' }),
     });
   };

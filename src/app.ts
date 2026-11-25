@@ -56,6 +56,8 @@ function installViewEngine(app: Express, config: AppConfig, precompiled: boolean
   app.set('view engine', 'njk');
 
   env.addGlobal('APP_VERSION', APP_VERSION);
+  // 12345 → «12,345» (cifras grandes legibles, como el medidor de consumo).
+  env.addFilter('miles', (v: unknown) => (Number.isFinite(Number(v)) ? Math.round(Number(v)).toLocaleString('es-MX') : ''));
   env.addFilter('json', (value: unknown) => JSON.stringify(value, null, 2));
 
   // El Worker corre en UTC: sin zona, toda hora salía 6 h adelantada.

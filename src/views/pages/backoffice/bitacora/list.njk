@@ -14,7 +14,7 @@
   <form method="get" class="filterbar">
     <select name="modulo" aria-label="Módulo">
       <option value="">Todos los módulos</option>
-      {% for m in ['empresas','contactos','tickets','cotizaciones','versiones','kb','eventos','usuarios','seguimiento','papelera','bitacora'] %}
+      {% for m in ['empresas','contactos','tickets','cotizaciones','versiones','kb','eventos','usuarios','seguimiento','papelera','notas','bitacora'] %}
         <option value="{{ m }}" {{ 'selected' if f.modulo == m }}>{{ m }}</option>
       {% endfor %}
     </select>

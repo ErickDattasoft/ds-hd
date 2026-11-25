@@ -10,6 +10,15 @@ export const MAX_TEXTO_NOTA = 10_000;
 /** Firestore no acepta documentos de más de 1 MiB: se deja margen para el resto del documento. */
 export const MAX_BYTES_NOTAS = 900_000;
 
+/** Días que una nota borrada se queda en la papelera antes de irse para siempre. */
+export const DIAS_PAPELERA_NOTAS = 30;
+
+/** Ticket que salió de una nota (vía ⚡ Captura rápida). */
+export interface TicketDeNota {
+  id: string;
+  numero: number;
+}
+
 /** Nota personal tipo Sticky Notes: solo la ve quien la escribió. */
 export interface NotaPersonal {
   id: string;
@@ -17,6 +26,65 @@ export interface NotaPersonal {
   color: ColorNota;
   creadaEn: Date;
   actualizadaEn: Date;
+  /** 📌 Fijada: sale hasta arriba. */
+  fijada: boolean;
+  /** ⏰ Día del recordatorio («AAAA-MM-DD», hora de México) o null. */
+  recordarEn: string | null;
+  /** En la papelera desde esta fecha (null = activa). */
+  eliminadaEn: Date | null;
+  /** Tickets creados a partir de esta nota (🎫 #N). */
+  tickets: TicketDeNota[];
+}
+
+const fechaDe = (v: unknown): Date | null => {
+  if (v instanceof Date) return Number.isNaN(v.getTime()) ? null : v;
+  if (typeof v !== 'string' || !v) return null;
+  const d = new Date(v);
+  return Number.isNaN(d.getTime()) ? null : d;
+};
+
+/** ¿Es un día «AAAA-MM-DD» válido? */
+export function esDiaRecordatorio(v: unknown): v is string {
+  return typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v) && !Number.isNaN(new Date(`${v}T12:00:00Z`).getTime());
+}
+
+/**
+ * Arma una nota desde datos guardados (Firestore o respaldo), con valores por defecto para lo que
+ * falte (las notas de antes no traían fijada/recordatorio/papelera/tickets). Null si no trae id.
+ */
+export function notaDesdeDatos(n: Record<string, unknown> | null | undefined): NotaPersonal | null {
+  if (!n || typeof n !== 'object' || !n.id) return null;
+  const tickets = Array.isArray(n.tickets)
+    ? (n.tickets as Record<string, unknown>[])
+        .filter((t) => t && typeof t.id === 'string')
+        .map((t) => ({ id: String(t.id), numero: Number(t.numero ?? 0) }))
+    : [];
+  return {
+    id: String(n.id),
+    texto: String(n.texto ?? ''),
+    color: esColorNota(n.color) ? n.color : 'amarillo',
+    creadaEn: fechaDe(n.creadaEn) ?? new Date(0),
+    actualizadaEn: fechaDe(n.actualizadaEn) ?? new Date(0),
+    fijada: n.fijada === true,
+    recordarEn: esDiaRecordatorio(n.recordarEn) ? n.recordarEn : null,
+    eliminadaEn: fechaDe(n.eliminadaEn),
+    tickets,
+  };
+}
+
+/** La nota lista para guardar (fechas como texto ISO: van dentro de un arreglo de Firestore). */
+export function notaADatos(n: NotaPersonal): Record<string, unknown> {
+  return {
+    id: n.id,
+    texto: n.texto,
+    color: n.color,
+    creadaEn: n.creadaEn.toISOString(),
+    actualizadaEn: n.actualizadaEn.toISOString(),
+    fijada: n.fijada,
+    recordarEn: n.recordarEn,
+    eliminadaEn: n.eliminadaEn ? n.eliminadaEn.toISOString() : null,
+    tickets: n.tickets.map((t) => ({ id: t.id, numero: t.numero })),
+  };
 }
 
 /** ¿Es un color válido? */

@@ -2142,3 +2142,56 @@ dialog.facturar-cerrar h2 { margin: 0 0 var(--space-2); font-size: 1.2rem; }
 .nota[data-color="rosa"] .nota__color.nota--rosa, .nota[data-color="morado"] .nota__color.nota--morado,
 .nota[data-color="azul"] .nota__color.nota--azul, .nota[data-color="gris"] .nota__color.nota--gris { outline: 2px solid currentColor; outline-offset: 1px; }
 @media (hover: hover) { .nota__pie { opacity: .35; transition: opacity .15s; } .nota:hover .nota__pie, .nota:focus-within .nota__pie { opacity: 1; } }
+
+/* ── 🔥 Consumo de Firebase (Dashboard) y aviso en la barra de arriba ───────── */
+.consumo { --consumo-color: var(--success); border-top: 4px solid var(--consumo-color); }
+.consumo--atento { --consumo-color: var(--warning); }
+.consumo--peligro { --consumo-color: var(--danger); background: var(--danger-weak); }
+.consumo__cifra { margin: 0 0 var(--space-2); }
+.consumo__cifra strong { font-size: 1.8rem; color: var(--consumo-color); }
+.consumo__barra { height: 0.75rem; border-radius: 999px; background: color-mix(in srgb, var(--consumo-color) 18%, transparent); overflow: hidden; }
+.consumo__barra > span { display: block; height: 100%; border-radius: inherit; background: var(--consumo-color); }
+.consumo__nota { margin: var(--space-2) 0; }
+.consumo__horas { display: flex; align-items: flex-end; gap: 3px; height: 4.5rem; margin-top: var(--space-2); }
+.consumo__hora { flex: 1 1 0; min-width: 0; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; }
+.consumo__hora > span { display: block; width: 100%; min-height: 2px; border-radius: 3px 3px 0 0; background: var(--consumo-color); opacity: 0.85; }
+.consumo__hora small { font-size: 0.65rem; color: var(--color-text-muted); line-height: 1.4; }
+.consumo__pie { font-size: var(--text-xs); margin: var(--space-2) 0 0; }
+.aviso-consumo { background: var(--danger-solid); color: #fff; border-color: transparent; font-weight: 600; animation: campana-pulso 2s ease-out infinite; }
+.aviso-consumo:hover { color: #fff; filter: brightness(1.1); }
+
+/* ── 🗒️ Mis notas: fijar, recordatorio, tickets, papelera, deshacer y nota rápida ── */
+.nota__cab { align-items: center; gap: .35rem; }
+.nota__cuando { margin-left: auto; }
+.nota__fijar { background: none; border: 0; padding: 0 .1rem; cursor: pointer; font-size: .9rem; opacity: .35; filter: grayscale(1); color: inherit; }
+.nota__fijar[aria-pressed="true"] { opacity: 1; filter: none; }
+.nota--fijada { box-shadow: var(--shadow-sm), 0 0 0 2px var(--n-band); }
+.nota__aviso { font-weight: 600; font-size: .75rem; padding: 0 .4rem; border-radius: 999px; background: color-mix(in srgb, var(--n-text) 12%, transparent); }
+.nota--recordar-hoy .nota__aviso, .nota--recordar-vencido .nota__aviso { background: var(--danger-solid); color: #fff; }
+.nota__tickets { display: flex; flex-wrap: wrap; gap: .35rem; margin: .15rem 0 0; font-size: .85rem; }
+.nota__tickets a { color: inherit; font-weight: 600; padding: 0 .4rem; border-radius: 999px; background: color-mix(in srgb, var(--n-band) 35%, transparent); text-decoration: none; }
+.nota__tickets a:hover { text-decoration: underline; }
+.nota__recordar { position: relative; overflow: hidden; }
+.nota__recordar input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; }
+.nota__recordar input::-webkit-calendar-picker-indicator { position: absolute; inset: 0; width: 100%; height: 100%; cursor: pointer; }
+.notas__seccion { margin-top: var(--space-5, 1.5rem); }
+.notas__seccion > summary { cursor: pointer; font-weight: 600; font-size: 1.05rem; padding: .35rem 0; }
+.notas__papelera { list-style: none; margin: .5rem 0 0; padding: 0; display: grid; gap: .4rem; }
+.nota-borrada { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; padding: .45rem .7rem; border-radius: 8px; border-left: 6px solid var(--n-band); background: var(--color-surface, transparent); box-shadow: var(--shadow-sm); }
+.nota-borrada__texto { flex: 1 1 14rem; min-width: 0; white-space: pre-line; }
+.notas__deshacer { position: fixed; left: 50%; bottom: 1.25rem; transform: translateX(-50%); z-index: 50; display: flex; align-items: center; gap: .75rem;
+  padding: .6rem .9rem; border-radius: 10px; background: var(--color-text); color: var(--color-bg, #fff); box-shadow: var(--shadow); max-width: calc(100vw - 2rem); }
+.notas__deshacer[hidden] { display: none; }
+.nota-rapida { border: 0; padding: 0; background: transparent; width: min(32rem, calc(100vw - 2rem)); }
+.nota-rapida::backdrop { background: rgb(0 0 0 / .35); }
+.nota-rapida__caja { margin: 0; }
+.nota-rapida__cab { display: flex; justify-content: space-between; align-items: center; gap: .5rem; margin: 0 0 .25rem; font-size: .9rem; }
+.nota-rapida .nota__pie { opacity: 1; }
+.recordatorios-notas { border-left: 4px solid var(--warning); }
+.recordatorios-notas ul { margin: .25rem 0 0; padding-left: 1.1rem; display: grid; gap: .3rem; }
+/* Con ⏰ el pie ya no cabe en una fila en tarjetas angostas: los botones bajan de renglón. */
+.nota__pie { flex-wrap: wrap; row-gap: .3rem; }
+.nota__pie > * { flex-shrink: 0; }
+.nota__colores { flex: 1 0 100%; margin-right: 0; }
+/* En celular la barra de arriba ya va llena: la nota rápida se abre desde Mis notas. */
+@media (max-width: 640px) { [data-nota-rapida-abrir] { display: none; } }

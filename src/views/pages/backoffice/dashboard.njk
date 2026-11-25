@@ -133,6 +133,18 @@
   </div>
   {% endif %}
 
+  {% if recordatorios and recordatorios.length %}
+  <section class="card recordatorios-notas" aria-labelledby="recordatorios-titulo">
+    <h2 id="recordatorios-titulo">⏰ Recordatorios de tus notas</h2>
+    <ul>
+      {% for r in recordatorios %}
+        <li><a href="/app/notas" class="sensible">{{ r.texto }}</a>
+          {% if r.atrasado %}<span class="badge badge--danger">desde {{ r.dia }}</span>{% else %}<span class="badge badge--warning">hoy</span>{% endif %}</li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% endif %}
+
   {% if fechasEspeciales %}
   <section class="card cumples" aria-labelledby="cumples-titulo">
     <h2 id="cumples-titulo" class="cumples__titulo">🎂 Cumpleaños y aniversarios <span class="muted">— hoy y los próximos 7 días</span></h2>
@@ -201,6 +213,35 @@
   </div>
 
   <div class="dash-grid">
+    {% if consumo %}
+    {# 📊 Cuota diaria gratuita de Firestore: si se acaba, nadie puede entrar hasta que se reinicia. #}
+    <div class="card consumo consumo--{{ consumo.nivel }}" aria-labelledby="consumo-titulo">
+      <h2 id="consumo-titulo">🔥 Consumo de Firebase hoy</h2>
+      <p class="consumo__cifra"><strong>{{ consumo.porcentaje }} %</strong>
+        <span class="muted">— {{ consumo.lecturas | miles }} de {{ consumo.limite | miles }} lecturas</span></p>
+      <div class="consumo__barra" role="meter" aria-valuemin="0" aria-valuemax="{{ consumo.limite }}" aria-valuenow="{{ consumo.lecturas }}"
+           aria-label="Lecturas usadas hoy"><span style="width: {{ consumo.anchoBarra }}%"></span></div>
+      <p class="consumo__nota">
+        {% if consumo.lecturas >= consumo.limite %}
+          ⛔ <strong>Se acabó la cuota:</strong> el CRM no deja entrar hasta las {{ consumo.reinicia }}
+        {% elif consumo.seAcabaAntesDelReinicio %}
+          ⚠️ <strong>A este ritmo ({{ consumo.ritmoPorHora | miles }}/hora) se acaba en ~{{ consumo.horasRestantes }} h</strong>, antes de reiniciarse a las {{ consumo.reinicia }}
+        {% elif consumo.ritmoPorHora %}
+          ✅ A este ritmo ({{ consumo.ritmoPorHora | miles }}/hora) alcanza hasta que se reinicia a las {{ consumo.reinicia }}
+        {% else %}
+          ✅ Se reinicia a las {{ consumo.reinicia }}
+        {% endif %}
+      </p>
+      {% if consumo.horas | length %}
+      <div class="consumo__horas" aria-label="Lecturas por hora">
+        {% for h in consumo.horas %}
+          <span class="consumo__hora" title="{{ h.hora }}:00 — {{ h.valor | miles }} lecturas"><span style="height: {{ h.alto }}%"></span><small>{{ h.hora }}</small></span>
+        {% endfor %}
+      </div>
+      {% endif %}
+      <p class="muted consumo__pie">Lo cuenta el CRM (aproximado). Lo exacto está en Firebase → Firestore → Uso.</p>
+    </div>
+    {% endif %}
     <div class="card">
       <h2>Tickets abiertos por estado</h2>
       {{ reparto(m.tickets.porEstado) }}

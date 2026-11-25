@@ -13,6 +13,10 @@
       <a class="btn btn--ghost btn--sm campana{{ ' campana--activa' if nResp }}" href="/app/tickets/respuestas" data-campana-respuestas
          title="Respuestas de clientes sin leer" aria-label="Respuestas de clientes sin leer: {{ nResp }}">🔔<span class="campana__n" data-campana-n>{{ nResp }}</span></a>
     {% endif %}
+    {% if area == 'backoffice' %}<button type="button" class="btn btn--ghost btn--sm" data-nota-rapida-abrir title="Nota rápida (Alt+N): se guarda en Mis notas" aria-label="Nota rápida">🗒️</button>{% endif %}
+    {% if area == 'backoffice' and avisosGlobales and avisosGlobales.consumoFirestore %}
+      <a class="btn btn--sm aviso-consumo" href="/app" title="Se está acabando la cuota diaria de Firebase: si llega a 100 % nadie podrá entrar al CRM hasta que se reinicie (2:00 a.m.)">🔥 Firebase {{ avisosGlobales.consumoFirestore }} %</a>
+    {% endif %}
     {% if can('tickets:crear') %}<a class="btn btn--sm" href="/app/tickets/nuevo" title="Crear un ticket nuevo — funciona desde cualquier sección" aria-label="Nuevo ticket">➕<span class="topbar__etiqueta"> Ticket</span></a>{% endif %}
     {% if can('configuracion:integraciones') %}<a class="btn btn--ghost btn--sm" href="/app/configuracion/backup/descargar" data-respaldar hx-boost="false" title="Descargar backup completo — funciona desde cualquier sección" aria-label="Respaldar">🛡️<span class="topbar__etiqueta"> Respaldar</span></a>{% endif %}
     {% if area == 'backoffice' %}

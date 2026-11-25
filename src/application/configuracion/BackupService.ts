@@ -1,5 +1,5 @@
 import type { INotaPersonalRepository } from '../../core/ports/repositories/INotaPersonalRepository.js';
-import { esColorNota, type NotaPersonal } from '../../core/entities/NotaPersonal.js';
+import { notaDesdeDatos, type NotaPersonal } from '../../core/entities/NotaPersonal.js';
 import type { BitacoraService } from '../shared/BitacoraService.js';
 import type { IEmpresaRepository } from '../../core/ports/repositories/IEmpresaRepository.js';
 import type { IContactoRepository } from '../../core/ports/repositories/IContactoRepository.js';
@@ -455,13 +455,7 @@ export class BackupService {
         const notas = (Array.isArray(d.notas) ? d.notas : []) as Record<string, unknown>[];
         await r.notas.guardar(
           d.uid,
-          notas.map((n) => ({
-            id: String(n.id),
-            texto: String(n.texto ?? ''),
-            color: esColorNota(n.color) ? n.color : 'amarillo',
-            creadaEn: new Date(String(n.creadaEn)),
-            actualizadaEn: new Date(String(n.actualizadaEn)),
-          })),
+          notas.map(notaDesdeDatos).filter((n): n is NotaPersonal => n !== null),
         );
       } catch (err) {
         resumen.errores.push(`notas personales: ${err instanceof Error ? err.message : err}`);

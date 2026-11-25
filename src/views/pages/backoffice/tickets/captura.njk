@@ -11,6 +11,8 @@
 
   <form method="post" action="/app/tickets/captura" class="card">
     <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+    {% if notaId %}<input type="hidden" name="notaId" value="{{ notaId }}" />
+    <p class="alert alert--ok">🗒️ Viene de <a href="/app/notas">Mis notas</a>: al crear los tickets, la nota queda marcada con su número 🎫.</p>{% endif %}
     <p class="muted">Pega aquí tus notas, todas juntas. Cada nota empieza con su renglón de encabezado,
       por ejemplo <strong>«CANUL Y ASOCIADOS - ALFONSO 28/10/2026»</strong>, y abajo lo que pasó.
       Si alguna no se separa bien, pon una línea con <code>---</code> entre notas.
@@ -36,7 +38,7 @@
   {% if filas %}
     {% set sinEmpresa = [] %}
     {% for f in filas %}{% if not f.empresaId %}{% set _ = sinEmpresa.push(1) %}{% endif %}{% endfor %}
-    <div class="card" data-captura data-tipo="{{ valores.tipo }}">
+    <div class="card" data-captura data-tipo="{{ valores.tipo }}" data-nota-id="{{ notaId or '' }}">
       <h2>Revisa antes de crear <span class="muted">({{ filas.length }} notas)</span></h2>
       <p class="muted">Corrige aquí empresa, asunto, fecha, agente y estado; lo demás (tipo, sistema, prioridad…)
         lo ajustas después en cada ticket con ✏️. Quita la palomita ✓ de lo que no quieras crear.

@@ -7,17 +7,18 @@
 1. [Iniciar sesión y solicitar acceso](#iniciar-sesion-y-solicitar-acceso)
 2. [Panel principal (dashboard)](#panel-principal-dashboard)
 3. [Tickets y agentes técnicos](#tickets-y-agentes-tecnicos)
-4. [Empresas y contactos](#empresas-y-contactos)
-5. [Cotizaciones y Calculadora Compac](#cotizaciones-y-calculadora-compac)
-6. [Versiones de sistemas](#versiones-de-sistemas)
-7. [Base de conocimiento](#base-de-conocimiento)
-8. [Seguimiento comercial (tareas e interacciones)](#seguimiento-comercial-tareas-e-interacciones)
-9. [Papelera de reciclaje](#papelera-de-reciclaje)
-10. [Bitácora de auditoría](#bitacora-de-auditoria)
-11. [Eventos, invitaciones y comunicados (gestión)](#eventos-invitaciones-y-comunicados-gestion)
-12. [Usuarios, roles y permisos](#usuarios-roles-y-permisos)
-13. [Mi perfil, firma y Acerca de](#mi-perfil-firma-y-acerca-de)
-14. [Configuración](#configuracion)
+4. [Mis notas y Captura rápida](#mis-notas-y-captura-rapida)
+5. [Empresas y contactos](#empresas-y-contactos)
+6. [Cotizaciones y Calculadora Compac](#cotizaciones-y-calculadora-compac)
+7. [Versiones de sistemas](#versiones-de-sistemas)
+8. [Base de conocimiento](#base-de-conocimiento)
+9. [Seguimiento comercial (tareas e interacciones)](#seguimiento-comercial-tareas-e-interacciones)
+10. [Papelera de reciclaje](#papelera-de-reciclaje)
+11. [Bitácora de auditoría](#bitacora-de-auditoria)
+12. [Eventos, invitaciones y comunicados (gestión)](#eventos-invitaciones-y-comunicados-gestion)
+13. [Usuarios, roles y permisos](#usuarios-roles-y-permisos)
+14. [Mi perfil, firma y Acerca de](#mi-perfil-firma-y-acerca-de)
+15. [Configuración](#configuracion)
 
 ---
 
@@ -69,6 +70,10 @@ tu rol puede ver (un agente solo ve lo suyo; admin/supervisor/lectura ven el glo
 - **Cotizaciones**: cuántas están en borrador, enviadas y aprobadas.
 - **Próximos eventos**: los de los siguientes 30 días (webinars, presenciales y felicitaciones), con su tipo y fecha. Los que siguen en borrador salen con «📝 en preparación».
 - **Actividad reciente**: últimas entradas de la bitácora relevantes a tu rol.
+- **⏰ Recordatorios de tus notas**: las notas de *Mis notas* a las que les pusiste recordatorio
+  para hoy (o que ya se pasaron). Solo ves las tuyas.
+- **🔥 Consumo de Firebase hoy**: cuántas de las 50 mil lecturas diarias gratuitas de la base
+  de datos se llevan gastadas (ver abajo).
 
 Las barras y totales se recalculan en cada carga de la página; no hay botón de "actualizar"
 porque no cachea nada.
@@ -77,6 +82,27 @@ porque no cachea nada.
 
 Es el punto de partida del día: de un vistazo ves si hay tickets urgentes sin atender o
 vencidos, y saltas a *Tickets* o a tu panel de *Mis asignados* desde el menú lateral.
+
+## 🔥 Consumo de Firebase
+
+El CRM guarda sus datos en Firebase (Firestore), que en el plan gratuito permite **50 mil
+lecturas al día**. Si se acaban, **nadie puede entrar al CRM** hasta que se reinicia la cuota:
+a las **2:00 a.m.** (1:00 a.m. cuando EE. UU. está en horario de verano).
+
+La tarjeta muestra:
+
+- El **porcentaje** gastado hoy y la barra de color: verde, amarilla a partir del 60 % y roja a
+  partir del 80 %.
+- El **ritmo** de la última hora y, si a ese ritmo se acabaría antes de reiniciarse, cuántas
+  horas quedan (⚠️).
+- Una gráfica de **lecturas por hora**, para ver a qué hora se gasta más.
+
+Cuando pasa del **80 %**, en la barra de arriba de **todas** las pantallas aparece el botón rojo
+**«🔥 Firebase N %»**. Si lo ves, conviene cerrar pestañas del CRM que no se estén usando: cada
+pestaña abierta consulta la campana 🔔 cada minuto.
+
+La cuenta la lleva el propio CRM y es **aproximada** (no incluye lo que se consulta desde la
+consola de Firebase). El dato exacto está en Firebase → Firestore → Uso.
 
 ---
 
@@ -155,6 +181,58 @@ mantenimiento de adjuntos de *Configuración → Backup* no lo toca.
 Muestra, por agente, cuántos tickets abiertos tiene contra su capacidad máxima configurada
 en su perfil (*Usuarios*) — útil para decidir a quién asignar el siguiente ticket sin
 saturar a nadie.
+
+---
+
+## Mis notas y Captura rápida
+
+## 🗒️ Mis notas
+
+`/app/notas` es tu borrador personal, como las notas adhesivas (Sticky Notes) de Windows:
+**solo tú ves tus notas** y se guardan solas mientras escribes (el ✓ de arriba de la nota dice
+que ya quedó guardada).
+
+- **＋ Nota** crea una nota nueva; los círculos de colores le cambian el color.
+- **📌** la fija hasta arriba (otra vez 📌 la desfija).
+- **⏰** le pone un recordatorio: ese día la nota sale marcada en rojo y aparece en tu
+  **Dashboard** en «⏰ Recordatorios de tus notas». Para quitarlo, borra la fecha.
+- **🔍 Buscar** filtra tus notas por lo que escribiste.
+- **🗑** la manda a la **🗑️ Papelera** (abajo de la página). Durante unos segundos aparece
+  **↩ Deshacer** por si fue sin querer. Desde la papelera puedes **↩ Restaurar** o **❌ borrarla
+  para siempre**; las notas que llevan **30 días** en la papelera se borran solas.
+
+### Nota rápida desde cualquier pantalla
+
+Con **Alt + N** (o el botón **🗒️** de la barra de arriba) se abre una nota sin salir de donde
+estás. Escribe y dale **💾 Guardar** (o **Ctrl + Enter**): queda en *Mis notas*. **Esc** cierra.
+
+### De nota a ticket
+
+El botón **🎫 Ticket** de una nota la manda a **⚡ Captura rápida**. Al crear los tickets, la nota
+queda marcada con su número (**🎫 #1129**, con enlace al ticket) y pasa a la sección
+**«🎫 Ya convertidas en ticket»**, para que no se capture dos veces.
+
+## ⚡ Captura rápida
+
+`/app/tickets/captura` convierte varias notas en tickets de una vez (útil para el trabajo que
+se hizo por teléfono y se anotó a la carrera).
+
+1. **Pega tus notas**, todas juntas. Cada una empieza con un renglón de encabezado, por ejemplo
+   **«CANUL Y ASOCIADOS - ALFONSO 28/10/2026»**, y abajo lo que pasó. Si alguna no se separa
+   bien, pon una línea con `---` entre notas.
+2. Dale **🔍 Separar y revisar**. Todavía **no se crea nada**: sale una tabla con lo que el CRM
+   reconoció (empresa, contacto, agente, fecha y sistema). Corrige lo que haga falta.
+   - El **agente** es el que dice la nota; si no dice, quien inició sesión (o el que elijas en
+     «Agente si la nota no dice»).
+   - La **fecha** del ticket es la de la nota (nunca en el futuro).
+   - La casilla **✉️** de cada renglón manda el correo del ticket al cliente. Viene **sin marcar**
+     y solo se puede marcar si hay correo de contacto.
+3. **✅ Crear tickets marcados**. Se crean uno por uno como **📝 Pre-tickets**, en estado
+   *Resuelto*, con tu **firma** (la del agente asignado) al final de la descripción.
+
+Los pre-tickets se ven en *Tickets* con el filtro **📝 Pre-tickets**. Ábrelos con **✏️ Editar**,
+revisa tipo, sistema y contacto, y al guardar quedan como ticket normal. Confirmarlo **no manda
+ningún correo**; si quieres avisarle al cliente, usa **✉️ Reenviar correo** en el ticket.
 
 ---
 

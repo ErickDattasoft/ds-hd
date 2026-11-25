@@ -12,7 +12,23 @@ export function conLecturas<T>(fn: () => T): { resultado: T; lecturas: () => num
   return { resultado: almacen.run(caja, fn), lecturas: () => caja.n };
 }
 
+/** Lecturas de esta instancia del Worker que el medidor de consumo aún no guarda. */
+let pendientes = 0;
+
 export function sumarLecturas(n: number): void {
+  pendientes += n;
   const caja = almacen.getStore();
   if (caja) caja.n += n;
+}
+
+/** Entrega las lecturas pendientes de guardar en el medidor y las pone en cero. */
+export function tomarLecturasPendientes(): number {
+  const n = pendientes;
+  pendientes = 0;
+  return n;
+}
+
+/** Regresa lecturas que no se pudieron guardar, para intentarlo en la siguiente vuelta. */
+export function devolverLecturasPendientes(n: number): void {
+  pendientes += n;
 }

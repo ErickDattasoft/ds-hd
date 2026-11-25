@@ -287,6 +287,26 @@ export class FirestoreRestClient {
     return resultado;
   }
 
+  /**
+   * Suma números a campos de un documento SIN leerlo (transformación `increment` del servidor;
+   * si el documento no existe, lo crea). Lo usa el medidor de consumo: cuenta como escritura,
+   * no como lectura. `campos` admite rutas con punto (`horas.08`).
+   */
+  async incrementar(path: string, campos: Record<string, number>): Promise<void> {
+    const entradas = Object.entries(campos).filter(([, n]) => Number.isFinite(n) && n !== 0);
+    if (!entradas.length) return;
+    await this._write([
+      {
+        update: { name: this._name(path), fields: {} },
+        updateMask: { fieldPaths: [] },
+        updateTransforms: entradas.map(([fieldPath, n]) => ({
+          fieldPath: fieldPath.split('.').map((p) => (/^[A-Za-z_][A-Za-z_0-9]*$/.test(p) ? p : `\`${p}\``)).join('.'),
+          increment: { integerValue: String(Math.round(n)) },
+        })),
+      },
+    ]);
+  }
+
   // ── internos (los usan las clases de arriba) ─────────────────────────────
 
   /** Nombre de recurso relativo (`projects/.../documents/<path>`) para `update`/`delete`. */
