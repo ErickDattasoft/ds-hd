@@ -456,6 +456,9 @@ export function backofficeRoutes(container: Container): Router {
   r.post('/notas', (req, res) => notas().guardarPost(req, res));
   r.post('/notas/:id/eliminar', (req, res) => notas().eliminarPost(req, res));
   r.post('/notas/:id/restaurar', (req, res) => notas().restaurarPost(req, res));
+  r.get('/notas/imagenes/:imgId', (req, res) => notas().imagenGet(req, res));
+  r.post('/notas/:id/imagenes', (req, res) => notas().imagenPost(req, res));
+  r.post('/notas/:id/imagenes/:imgId/eliminar', (req, res) => notas().quitarImagenPost(req, res));
   r.post('/notas/:id/borrar-definitivo', (req, res) => notas().borrarDefinitivoPost(req, res));
   const filtros = () => container.resolve('filtrosController');
   r.post('/filtros', (req, res) => filtros().guardarPost(req, res));

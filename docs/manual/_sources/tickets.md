@@ -46,10 +46,14 @@ aviso con cuántas esperan. Desde ahí:
 
 ## Conversación por correo
 
-En el detalle del ticket, **💬 Conversación** muestra lo más reciente arriba: en verde lo que
-llegó por correo y en azul lo que se mandó desde el CRM. La caja de respuesta manda el mensaje
-por correo al cliente (con *Con copia* opcional y hasta 5 capturas, que también puedes pegar con
-Ctrl+V). Todos los correos de un ticket llevan `[Ticket #N]` en el asunto: cuando el cliente o un
+En el detalle del ticket, **📝 Descripción** muestra la solicitud original y todo lo que se ha
+escrito: en verde lo que llegó por correo, en azul lo que se mandó desde el CRM y en amarillo las
+notas internas. Abajo hay **dos recuadros separados**:
+
+- **💬 Respuesta al cliente** (verde): lo que escribas ahí **se le manda por correo al cliente**
+  (con *Con copia* opcional y hasta 5 capturas, que también puedes pegar con Ctrl+V).
+- **🔒 Notas internas** (amarillo): solo para el equipo — folio de factura, avances, pendientes.
+  **No la ve el cliente ni manda correo.** También acepta capturas. Todos los correos de un ticket llevan `[Ticket #N]` en el asunto: cuando el cliente o un
 agente en copia contesta, su respuesta (con sus capturas) aparece sola en la conversación y queda
 en la actividad del ticket y en la Bitácora. Se configura en *Configuración → Correo entrante*.
 

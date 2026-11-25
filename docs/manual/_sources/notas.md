@@ -15,6 +15,10 @@ que ya quedó guardada).
 - **📌** la fija hasta arriba (otra vez 📌 la desfija).
 - **⏰** le pone un recordatorio: ese día la nota sale marcada en rojo y aparece en tu
   **Dashboard** en «⏰ Recordatorios de tus notas». Para quitarlo, borra la fecha.
+- **🖼** le agrega imágenes (también puedes **pegar una captura con Ctrl+V** o arrastrarla a la
+  nota). Se ven en miniatura; con clic se abren en grande y con la **✕** se quitan. Máximo 10 por
+  nota. Si la nota pasa a ticket con **🎫 Ticket**, sus imágenes se van como **adjuntos** del
+  ticket. En el respaldo van en el **.zip de imágenes**, carpeta `notas/`.
 - **🔍 Buscar** filtra tus notas por lo que escribiste.
 - **🗑** la manda a la **🗑️ Papelera** (abajo de la página). Durante unos segundos aparece
   **↩ Deshacer** por si fue sin querer. Desde la papelera puedes **↩ Restaurar** o **❌ borrarla

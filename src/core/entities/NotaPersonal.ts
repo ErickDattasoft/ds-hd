@@ -13,6 +13,31 @@ export const MAX_BYTES_NOTAS = 900_000;
 /** Días que una nota borrada se queda en la papelera antes de irse para siempre. */
 export const DIAS_PAPELERA_NOTAS = 30;
 
+/** Máximo de imágenes por nota (cada una vive en su propio documento, `notas_imagenes/{id}`). */
+export const MAX_IMAGENES_NOTA = 10;
+/** Tipos de imagen que se aceptan en una nota (SVG no: puede llevar scripts). */
+export const TIPOS_IMAGEN_NOTA: readonly string[] = ['image/png', 'image/jpeg', 'image/gif', 'image/webp'];
+
+/** Referencia a una imagen de la nota (el contenido va aparte). */
+export interface ImagenDeNota {
+  id: string;
+  nombre: string;
+}
+
+/** Imagen pegada en una nota, con su contenido (`data:<tipo>;base64,…`). Solo la ve su dueño. */
+export interface NotaImagen {
+  id: string;
+  uid: string;
+  notaId: string;
+  nombre: string;
+  contentType: string;
+  /** Bytes del archivo (antes de base64). */
+  tamano: number;
+  /** `data:<contentType>;base64,<...>`. */
+  data: string;
+  creadaEn: Date;
+}
+
 /** Ticket que salió de una nota (vía ⚡ Captura rápida). */
 export interface TicketDeNota {
   id: string;
@@ -34,6 +59,8 @@ export interface NotaPersonal {
   eliminadaEn: Date | null;
   /** Tickets creados a partir de esta nota (🎫 #N). */
   tickets: TicketDeNota[];
+  /** 🖼 Imágenes pegadas en la nota. */
+  imagenes: ImagenDeNota[];
 }
 
 const fechaDe = (v: unknown): Date | null => {
@@ -59,7 +86,13 @@ export function notaDesdeDatos(n: Record<string, unknown> | null | undefined): N
         .filter((t) => t && typeof t.id === 'string')
         .map((t) => ({ id: String(t.id), numero: Number(t.numero ?? 0) }))
     : [];
+  const imagenes = Array.isArray(n.imagenes)
+    ? (n.imagenes as Record<string, unknown>[])
+        .filter((i) => i && typeof i.id === 'string')
+        .map((i) => ({ id: String(i.id), nombre: String(i.nombre ?? 'imagen') }))
+    : [];
   return {
+    imagenes,
     id: String(n.id),
     texto: String(n.texto ?? ''),
     color: esColorNota(n.color) ? n.color : 'amarillo',
@@ -84,6 +117,7 @@ export function notaADatos(n: NotaPersonal): Record<string, unknown> {
     recordarEn: n.recordarEn,
     eliminadaEn: n.eliminadaEn ? n.eliminadaEn.toISOString() : null,
     tickets: n.tickets.map((t) => ({ id: t.id, numero: t.numero })),
+    imagenes: n.imagenes.map((i) => ({ id: i.id, nombre: i.nombre })),
   };
 }
 

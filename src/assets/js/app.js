@@ -4434,6 +4434,85 @@
     if (e.target.closest && e.target.closest('[data-nota-rapida-guardar]')) notaRapidaGuardar();
   });
 
+  // ── 🖼 Imágenes en las notas: pegar (Ctrl+V), arrastrar o elegir. Se comprimen como en los tickets.
+  function notaComprimir(file) {
+    return new Promise(function (ok, mal) {
+      var reader = new FileReader();
+      reader.onload = function () {
+        var img = new Image();
+        img.onload = function () {
+          var escala = Math.min(1, 1600 / Math.max(img.width, img.height));
+          var c = document.createElement('canvas');
+          c.width = Math.round(img.width * escala);
+          c.height = Math.round(img.height * escala);
+          c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+          var d = c.toDataURL('image/jpeg', 0.82);
+          ok(d.slice(d.indexOf(',') + 1));
+        };
+        img.onerror = function () { mal(new Error('No se pudo leer la imagen')); };
+        img.src = String(reader.result || '');
+      };
+      reader.onerror = function () { mal(new Error('No se pudo leer la imagen')); };
+      reader.readAsDataURL(file);
+    });
+  }
+  async function notaSubirImagenes(card, files) {
+    var imgs = Array.prototype.filter.call(files || [], function (f) { return /^image\//.test(f.type); });
+    if (!imgs.length || !card.dataset.id) return;
+    for (var i = 0; i < imgs.length; i++) {
+      notaEstado(card, '⏳ Subiendo imagen…');
+      try {
+        var b64 = await notaComprimir(imgs[i]);
+        var nombre = (imgs[i].name || 'captura').replace(/\.[^.]+$/, '') + '.jpg';
+        var d = await notaPost('/app/notas/' + encodeURIComponent(card.dataset.id) + '/imagenes', { nombre: nombre, contentType: 'image/jpeg', base64: b64 });
+        if (!d.ok) { notaEstado(card, '⚠️ ' + (d.detalle || 'No se subió')); return; }
+        var s = document.createElement('span');
+        s.className = 'nota__img';
+        s.setAttribute('data-nota-img', d.imagen.id);
+        s.innerHTML = '<a target="_blank" rel="noopener"><img class="adjunto-thumb" alt="" /></a>' +
+          '<button type="button" class="nota__img-quitar" data-nota-img-quitar title="Quitar imagen" aria-label="Quitar imagen">✕</button>';
+        s.querySelector('a').href = d.imagen.url;
+        s.querySelector('img').src = d.imagen.url;
+        card.querySelector('[data-nota-imgs]').appendChild(s);
+        notaEstado(card, '✓');
+      } catch (err) {
+        notaEstado(card, '⚠️ ' + (err && err.message ? err.message : 'No se subió'));
+        return;
+      }
+    }
+  }
+  document.addEventListener('paste', function (e) {
+    var card = e.target.closest && e.target.closest('[data-notas] [data-nota]');
+    var files = e.clipboardData && e.clipboardData.files;
+    if (!card || !files || !files.length) return;
+    e.preventDefault();
+    notaSubirImagenes(card, files);
+  });
+  document.addEventListener('dragover', function (e) {
+    if (e.target.closest && e.target.closest('[data-notas] [data-nota]')) e.preventDefault();
+  });
+  document.addEventListener('drop', function (e) {
+    var card = e.target.closest && e.target.closest('[data-notas] [data-nota]');
+    if (!card || !e.dataTransfer || !e.dataTransfer.files.length) return;
+    e.preventDefault();
+    notaSubirImagenes(card, e.dataTransfer.files);
+  });
+  document.addEventListener('change', function (e) {
+    var inp = e.target.closest && e.target.closest('[data-nota-img-file]');
+    if (!inp) return;
+    notaSubirImagenes(inp.closest('[data-nota]'), inp.files).then(function () { inp.value = ''; });
+  });
+  document.addEventListener('click', async function (e) {
+    var b = e.target.closest && e.target.closest('[data-nota-img-quitar]');
+    if (!b) return;
+    e.preventDefault();
+    if (!confirm('¿Quitar esta imagen de la nota?')) return;
+    var s = b.closest('[data-nota-img]');
+    var card = b.closest('[data-nota]');
+    var d = await notaPost('/app/notas/' + encodeURIComponent(card.dataset.id) + '/imagenes/' + encodeURIComponent(s.getAttribute('data-nota-img')) + '/eliminar').catch(function () { return { ok: false }; });
+    if (d.ok) s.remove(); else notaEstado(card, '⚠️ No se quitó');
+  });
+
   // ⏰ Recordatorio: se guarda al elegir el día (vacío = quitarlo).
   document.addEventListener('change', function (e) {
     var inp = e.target.closest && e.target.closest('[data-nota-recordar]');

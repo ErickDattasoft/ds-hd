@@ -2195,3 +2195,22 @@ dialog.facturar-cerrar h2 { margin: 0 0 var(--space-2); font-size: 1.2rem; }
 .nota__colores { flex: 1 0 100%; margin-right: 0; }
 /* En celular la barra de arriba ya va llena: la nota rápida se abre desde Mis notas. */
 @media (max-width: 640px) { [data-nota-rapida-abrir] { display: none; } }
+/* 🖼 Imágenes dentro de las notas */
+.nota__imgs { display: flex; flex-wrap: wrap; gap: .35rem; }
+.nota__imgs:empty { display: none; }
+.nota__img { position: relative; display: inline-block; }
+.nota__img img { width: 4.5rem; height: 4.5rem; object-fit: cover; border-radius: 6px; display: block; border: 1px solid color-mix(in srgb, var(--n-text) 20%, transparent); cursor: zoom-in; }
+.nota__img-quitar { position: absolute; top: -6px; right: -6px; width: 1.25rem; height: 1.25rem; border-radius: 50%; border: 0; padding: 0; font-size: .7rem; line-height: 1; cursor: pointer; background: var(--danger-solid); color: #fff; opacity: 0; transition: opacity .15s; }
+.nota__img:hover .nota__img-quitar, .nota__img-quitar:focus-visible { opacity: 1; }
+@media (hover: none) { .nota__img-quitar { opacity: 1; } }
+
+/* ── Ticket: «💬 Respuesta al cliente» y «🔒 Notas internas» en recuadros separados ── */
+.chat__escribir-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr)); gap: var(--space-3); margin-top: var(--space-3); align-items: start; }
+.chat__escribir-grid .form.chat__escribir { margin-top: 0; padding: var(--space-3); border-radius: var(--radius-md, 10px); border: 1px solid var(--color-border); }
+.chat__escribir--cliente { border-top: 4px solid var(--success) !important; background: var(--success-weak); }
+.chat__escribir--interna { border: 1px dashed var(--warning) !important; border-top: 4px solid var(--warning) !important; background: var(--warning-weak); }
+.chat__escribir-titulo { margin: 0; font-size: 1rem; }
+.chat__escribir-titulo .muted { font-weight: 400; font-size: var(--text-sm); }
+.chat__escribir--cliente .chat__escribir-titulo { color: var(--success); }
+.chat__escribir--interna .chat__escribir-titulo { color: var(--warning); }
+.chat__escribir .chat__mas { flex: 1 1 12rem; }

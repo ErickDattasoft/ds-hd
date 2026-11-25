@@ -4,10 +4,13 @@ import type { ITicketQueries } from '../../core/ports/repositories/ITicketQuerie
 import type { AdjuntoTicket } from '../../core/entities/AdjuntoTicket.js';
 import { ForbiddenError } from '../../core/errors/DomainError.js';
 import type { SessionUser } from '../shared/SessionUser.js';
+import type { INotaImagenRepository } from '../../core/ports/repositories/INotaImagenRepository.js';
 
 /** Tickets que tienen imágenes, para avisar al respaldar. */
 export interface ResumenImagenes {
   total: number;
+  /** 🖼 Imágenes pegadas en 🗒️ Mis notas (de todo el equipo); van en la carpeta `notas/` del .zip. */
+  notas?: number;
   tickets: { numero: number; imagenes: number }[];
 }
 
@@ -27,11 +30,14 @@ export class ImagenesRespaldoService {
   constructor(
     private readonly adjuntos: IAdjuntoTicketRepository,
     private readonly tickets: ITicketQueries,
+    private readonly notaImagenes?: INotaImagenRepository,
   ) {}
 
   async resumen(actor: SessionUser): Promise<ResumenImagenes> {
     const porTicket = await this.agrupar(actor);
+    const notas = this.notaImagenes ? (await this.notaImagenes.listarTodas()).length : 0;
     return {
+      ...(notas ? { notas } : {}),
       total: porTicket.reduce((n, g) => n + g.imagenes.length, 0),
       tickets: porTicket.map((g) => ({ numero: g.numero, imagenes: g.imagenes.length })),
     };
@@ -48,6 +54,16 @@ export class ImagenesRespaldoService {
         const ext = EXTENSION[img.contentType] ?? img.contentType.split('/')[1] ?? 'img';
         archivos[`ticket-${g.numero}-${i + 1}.${ext}`] = new Uint8Array(Buffer.from(base64, 'base64'));
       });
+    }
+    // 🗒️ Imágenes de las notas (solo en el respaldo completo, no al elegir folios): `notas/<uid>/…`.
+    if (!elegidos && this.notaImagenes) {
+      for (const img of await this.notaImagenes.listarTodas()) {
+        const ext = EXTENSION[img.contentType] ?? 'img';
+        const base = img.nombre.replace(/\.[^.]+$/, '').replace(/[^\w.-]+/g, '-').slice(0, 60) || 'imagen';
+        archivos[`notas/${img.uid}/${img.notaId.slice(0, 8)}-${base}-${img.id.slice(0, 6)}.${ext}`] = new Uint8Array(
+          Buffer.from(img.data.slice(img.data.indexOf(',') + 1), 'base64'),
+        );
+      }
     }
     // Las imágenes ya vienen comprimidas: se guardan tal cual (level 0), más rápido y del mismo tamaño.
     return Buffer.from(zipSync(archivos, { level: 0 }));

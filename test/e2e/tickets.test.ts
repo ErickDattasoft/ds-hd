@@ -879,3 +879,22 @@ describe('⚡ captura rápida', () => {
     expect(sinAsignar.text).not.toMatch(yo);
   });
 });
+
+describe('detalle del ticket: respuesta al cliente y notas internas separadas', () => {
+  it('trae los dos recuadros con su encabezado; la nota interna se guarda como interna y no manda correo', async () => {
+    const t = makeTestApp({ usuarios: [SUP] });
+    const { agent, csrf } = await login(t.app, SUP.email, SUP.password);
+    const c = await agent.post('/app/tickets/captura/crear').set('x-csrf-token', csrf)
+      .send({ tipo: 'General', asunto: 'Revisar timbrado', estado: 'Abierto', contactoCorreo: 'cliente@empresa.mx' });
+    const det = await agent.get(`/app/tickets/${c.body.id}`);
+    expect(det.text).toContain('💬 Respuesta al cliente');
+    expect(det.text).toContain('🔒 Notas internas');
+    expect(det.text).toContain('name="tipo" value="interna"');
+
+    const enviados = t.emailSender.enviados.length;
+    await agent.post(`/app/tickets/${c.body.id}/nota`).type('form').send({ _csrf: csrf, tipo: 'interna', cuerpo: 'Factura MID 1574' });
+    const notas = t.ticketStore.notas.get(c.body.id) ?? [];
+    expect(notas.find((n) => n.cuerpo.includes('MID 1574'))?.tipo).toBe('interna');
+    expect(t.emailSender.enviados.length).toBe(enviados);
+  });
+});

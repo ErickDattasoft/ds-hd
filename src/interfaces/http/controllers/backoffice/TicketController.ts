@@ -479,9 +479,25 @@ export class TicketController {
           .catch(() => false);
       }
       if (str(b.notaId) && this.notasPersonales) {
-        await this.notasPersonales
-          .marcarTicket({ uid: actor.uid, nombre: actor.nombre }, str(b.notaId), { id: ticket.id, numero: ticket.numero })
-          .catch(() => undefined);
+        const persona = { uid: actor.uid, nombre: actor.nombre };
+        const imagenes = await this.notasPersonales
+          .marcarTicket(persona, str(b.notaId), { id: ticket.id, numero: ticket.numero })
+          .catch(() => []);
+        // 🖼 Las imágenes de la nota se van como adjuntos del (primer) ticket que sale de ella.
+        for (const ref of imagenes) {
+          try {
+            const img = await this.notasPersonales.imagen(actor.uid, ref.id);
+            await this.adjuntos.subir({
+              actor,
+              ticketId: ticket.id,
+              nombre: img.nombre,
+              contentType: img.contentType,
+              base64: img.data.slice(img.data.indexOf(',') + 1),
+            });
+          } catch {
+            /* una imagen que no se pudo copiar no detiene la captura */
+          }
+        }
       }
       res.json({ ok: true, id: ticket.id, numero: ticket.numero, correo });
     } catch (err) {

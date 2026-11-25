@@ -3,15 +3,21 @@ import type { IClock } from '../../core/ports/services/IClock.js';
 import type { IIdGenerator } from '../../core/ports/services/IIdGenerator.js';
 import {
   DIAS_PAPELERA_NOTAS,
+  MAX_IMAGENES_NOTA,
   MAX_NOTAS,
+  TIPOS_IMAGEN_NOTA,
   esColorNota,
   esDiaRecordatorio,
   validarTamanoNotas,
   validarTextoNota,
   type ColorNota,
   type NotaPersonal,
+  type ImagenDeNota,
+  type NotaImagen,
   type TicketDeNota,
 } from '../../core/entities/NotaPersonal.js';
+import { MAX_ADJUNTO_BYTES } from '../../core/entities/AdjuntoTicket.js';
+import type { INotaImagenRepository } from '../../core/ports/repositories/INotaImagenRepository.js';
 import { NotFoundError, ValidationError } from '../../core/errors/DomainError.js';
 import type { BitacoraService } from '../shared/BitacoraService.js';
 
@@ -51,6 +57,7 @@ export class NotasPersonalesService {
     private readonly ids: IIdGenerator,
     private readonly clock: IClock,
     private readonly bitacora?: BitacoraService,
+    private readonly imagenes?: INotaImagenRepository,
   ) {}
 
   /** Deja rastro en la bitácora SIN el texto de la nota (las notas son privadas). */
@@ -64,15 +71,24 @@ export class NotasPersonalesService {
     return notas.filter((n) => !n.eliminadaEn || n.eliminadaEn.getTime() > limite);
   }
 
-  /** Lee, cambia y guarda en una transacción, purgando la papelera de paso. */
-  private modificar<T>(uid: string, cambiar: (notas: NotaPersonal[], ahora: Date) => T): Promise<T> {
+  /**
+   * Lee, cambia y guarda en una transacción, purgando la papelera de paso. Las imágenes que se
+   * quedan sin nota (quitadas, o de notas borradas para siempre o purgadas) se borran después.
+   */
+  private async modificar<T>(uid: string, cambiar: (notas: NotaPersonal[], ahora: Date) => T): Promise<T> {
     const ahora = this.clock.now();
-    return this.repo.modificar(uid, (todas) => {
+    let huerfanas: string[] = [];
+    const resultado = await this.repo.modificar(uid, (todas) => {
+      const antes = todas.flatMap((n) => n.imagenes.map((i) => i.id));
       const notas = this.purgar(todas, ahora);
-      const resultado = cambiar(notas, ahora);
+      const r = cambiar(notas, ahora);
       validarTamanoNotas(notas);
-      return { notas, resultado };
+      const quedan = new Set(notas.flatMap((n) => n.imagenes.map((i) => i.id)));
+      huerfanas = antes.filter((id) => !quedan.has(id));
+      return { notas, resultado: r };
     });
+    if (huerfanas.length && this.imagenes) await this.imagenes.eliminarVarias(huerfanas).catch(() => undefined);
+    return resultado;
   }
 
   /** Las notas de la persona repartidas en activas, con ticket y papelera (1 lectura). */
@@ -130,6 +146,7 @@ export class NotasPersonalesService {
           recordarEn: null,
           eliminadaEn: null,
           tickets: [],
+          imagenes: [],
         };
         notas.push(nota);
       }
@@ -177,14 +194,83 @@ export class NotasPersonalesService {
     if (borrada) await this.anotar(persona, 'eliminar_definitivo', id, '❌ Borró una nota para siempre');
   }
 
-  /** 🎫 Anota en la nota el ticket que salió de ella (si la nota ya no existe, no pasa nada). */
-  async marcarTicket(persona: PersonaNotas, id: string, ticket: TicketDeNota): Promise<void> {
-    const marcada = await this.modificar(persona.uid, (notas) => {
+  /**
+   * 🎫 Anota en la nota el ticket que salió de ella (si la nota ya no existe, no pasa nada).
+   * Devuelve las imágenes de la nota si es su PRIMER ticket (para adjuntárselas sin repetirlas
+   * en cada ticket que salga de la misma nota); si no, una lista vacía.
+   */
+  async marcarTicket(persona: PersonaNotas, id: string, ticket: TicketDeNota): Promise<ImagenDeNota[]> {
+    const r = await this.modificar(persona.uid, (notas) => {
       const nota = notas.find((n) => n.id === id);
-      if (!nota || nota.tickets.some((t) => t.id === ticket.id)) return false;
+      if (!nota || nota.tickets.some((t) => t.id === ticket.id)) return null;
+      const primero = nota.tickets.length === 0;
       nota.tickets.push({ id: ticket.id, numero: ticket.numero });
-      return true;
+      return primero ? nota.imagenes.map((i) => ({ ...i })) : [];
     });
-    if (marcada) await this.anotar(persona, 'convertir', id, `🎫 Convirtió una nota en el ticket #${ticket.numero}`);
+    if (r) await this.anotar(persona, 'convertir', id, `🎫 Convirtió una nota en el ticket #${ticket.numero}`);
+    return r ?? [];
+  }
+
+  /** 🖼 Agrega una imagen a la nota (pegada o elegida). Se guarda aparte; la nota solo la apunta. */
+  async agregarImagen(
+    persona: PersonaNotas,
+    notaId: string,
+    archivo: { nombre: string; contentType: string; base64: string },
+  ): Promise<ImagenDeNota> {
+    if (!this.imagenes) throw new ValidationError('Las imágenes en notas no están disponibles');
+    const contentType = archivo.contentType.trim().toLowerCase();
+    if (!TIPOS_IMAGEN_NOTA.includes(contentType)) {
+      throw new ValidationError('Solo se pueden pegar imágenes (PNG, JPG, GIF o WEBP)', { archivo: 'Tipo no válido' });
+    }
+    const base64 = archivo.base64.replace(/\s/g, '');
+    const tamano = Math.floor((base64.length * 3) / 4) - (base64.endsWith('==') ? 2 : base64.endsWith('=') ? 1 : 0);
+    if (!base64 || tamano <= 0) throw new ValidationError('La imagen llegó vacía', { archivo: 'Vacía' });
+    if (tamano > MAX_ADJUNTO_BYTES) {
+      throw new ValidationError(`La imagen pesa más de ${Math.round(MAX_ADJUNTO_BYTES / 1024)} KB`, { archivo: 'Muy pesada' });
+    }
+    const ref: ImagenDeNota = {
+      id: this.ids.newId(),
+      nombre: (archivo.nombre || 'imagen').replace(/[\\/:*?"<>|]+/g, '-').slice(0, 120),
+    };
+    const imagen: NotaImagen = {
+      ...ref,
+      uid: persona.uid,
+      notaId,
+      contentType,
+      tamano,
+      data: `data:${contentType};base64,${base64}`,
+      creadaEn: this.clock.now(),
+    };
+    // Primero el contenido y luego la nota: si la nota ya no se puede (borrada, llena), se quita.
+    await this.imagenes.crear(imagen);
+    try {
+      await this.modificar(persona.uid, (notas) => {
+        const nota = notas.find((n) => n.id === notaId && !n.eliminadaEn);
+        if (!nota) throw new NotFoundError('La nota ya no existe');
+        if (nota.imagenes.length >= MAX_IMAGENES_NOTA) {
+          throw new ValidationError(`Máximo ${MAX_IMAGENES_NOTA} imágenes por nota`, { archivo: 'Límite alcanzado' });
+        }
+        nota.imagenes.push(ref);
+      });
+    } catch (err) {
+      await this.imagenes.eliminarVarias([ref.id]).catch(() => undefined);
+      throw err;
+    }
+    return ref;
+  }
+
+  /** La imagen con su contenido, solo si es de esta persona (si no, como si no existiera). */
+  async imagen(uid: string, imagenId: string): Promise<NotaImagen> {
+    const img = this.imagenes ? await this.imagenes.obtener(imagenId) : null;
+    if (!img || img.uid !== uid) throw new NotFoundError('La imagen no existe');
+    return img;
+  }
+
+  /** Quita una imagen de la nota (y la borra). */
+  async quitarImagen(persona: PersonaNotas, notaId: string, imagenId: string): Promise<void> {
+    await this.modificar(persona.uid, (notas) => {
+      const nota = notas.find((n) => n.id === notaId);
+      if (nota) nota.imagenes = nota.imagenes.filter((i) => i.id !== imagenId);
+    });
   }
 }

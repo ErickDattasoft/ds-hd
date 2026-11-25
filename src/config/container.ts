@@ -80,6 +80,8 @@ import { FirestoreOportunidadRepository } from '../infrastructure/firestore/Fire
 import type { IUnionEmpresasRepository } from '../core/ports/repositories/IUnionEmpresasRepository.js';
 import { FirestoreUnionEmpresasRepository } from '../infrastructure/firestore/FirestoreUnionEmpresasRepository.js';
 import { CacheColecciones, conSelloDeCambios } from '../infrastructure/firestore/CacheColecciones.js';
+import type { INotaImagenRepository } from '../core/ports/repositories/INotaImagenRepository.js';
+import { FirestoreNotaImagenRepository } from '../infrastructure/firestore/FirestoreNotaImagenRepository.js';
 import type { IConsumoFirestoreRepository } from '../core/ports/repositories/IConsumoFirestoreRepository.js';
 import { FirestoreConsumoRepository } from '../infrastructure/firestore/FirestoreConsumoRepository.js';
 import { ConsumoFirestoreService } from '../application/dashboard/ConsumoFirestoreService.js';
@@ -252,6 +254,7 @@ export interface Cradle {
   filtrosController: FiltrosController;
   notaPersonalRepo: INotaPersonalRepository;
   notasPersonalesService: NotasPersonalesService;
+  notaImagenRepo: INotaImagenRepository;
   notasController: NotasController;
   respuestaSinLeerRepo: IRespuestaSinLeerRepository;
   respuestasSinLeerService: RespuestasSinLeerService;
@@ -570,8 +573,12 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
       ({ firestoreDb }: Cradle): INotaPersonalRepository =>
         new FirestoreNotaPersonalRepository(requireFirestore(firestoreDb)),
     ).singleton(),
+    notaImagenRepo: asFunction(
+      ({ firestoreDb }: Cradle): INotaImagenRepository => new FirestoreNotaImagenRepository(requireFirestore(firestoreDb)),
+    ).singleton(),
     notasPersonalesService: asFunction(
-      (c: Cradle) => new NotasPersonalesService(c.notaPersonalRepo, c.idGenerator, c.clock, c.bitacoraService),
+      (c: Cradle) =>
+        new NotasPersonalesService(c.notaPersonalRepo, c.idGenerator, c.clock, c.bitacoraService, c.notaImagenRepo),
     ).singleton(),
     notasController: asFunction((c: Cradle) => new NotasController(c.notasPersonalesService, c.clock)).singleton(),
     respuestaSinLeerRepo: asFunction(
@@ -1222,7 +1229,7 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
           c.adjuntoTicketService,
           c.excelUnificadoService,
           c.correoEntranteService,
-          new ImagenesRespaldoService(c.adjuntoTicketRepo, c.ticketQueries),
+          new ImagenesRespaldoService(c.adjuntoTicketRepo, c.ticketQueries, c.notaImagenRepo),
           new LimpiezaAdjuntosService(
             c.adjuntoTicketRepo,
             c.ticketQueries,

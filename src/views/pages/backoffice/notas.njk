@@ -13,6 +13,11 @@
         <time class="nota__cuando" data-nota-cuando>{{ n.cuando }}</time>
       </header>
       <textarea class="nota__texto sensible" data-nota-texto rows="3" placeholder="Escribe una nota…" aria-label="Texto de la nota">{{ n.texto }}</textarea>
+      <div class="nota__imgs" data-nota-imgs>
+        {% for i in n.imagenes %}
+          <span class="nota__img" data-nota-img="{{ i.id }}"><a href="{{ i.url }}" target="_blank" rel="noopener"><img class="adjunto-thumb" src="{{ i.url }}" alt="{{ i.nombre }}" loading="lazy" /></a><button type="button" class="nota__img-quitar" data-nota-img-quitar title="Quitar imagen" aria-label="Quitar imagen">✕</button></span>
+        {% endfor %}
+      </div>
       {% if n.tickets and n.tickets.length %}
         <p class="nota__tickets">{% for t in n.tickets %}<a href="/app/tickets/{{ t.id }}" title="Ticket creado con esta nota">🎫 #{{ t.numero }}</a>{% endfor %}</p>
       {% endif %}
@@ -22,6 +27,8 @@
         </span>
         <label class="btn btn--sm btn--ghost nota__recordar" title="Recordatorio: ese día sale en tu Dashboard">⏰
           <input type="date" data-nota-recordar value="{{ n.recordarEn }}" aria-label="Día del recordatorio" /></label>
+        <label class="btn btn--sm btn--ghost nota__subir" title="Agregar imagen (también puedes pegarla con Ctrl+V o arrastrarla)">🖼
+          <input type="file" accept="image/*" multiple data-nota-img-file hidden /></label>
         <button type="button" class="btn btn--sm btn--ghost" data-nota-ticket title="Mandar esta nota a ⚡ Captura rápida para volverla pre-ticket">🎫 Ticket</button>
         <button type="button" class="btn btn--sm btn--ghost" data-nota-borrar title="Mandar a la papelera" aria-label="Mandar a la papelera">🗑</button>
       </footer>
@@ -37,7 +44,7 @@
       </div>
     </div>
     <p class="muted">Tu borrador personal, como Sticky Notes: solo tú ves tus notas y se guardan solas mientras escribes.
-      <strong>📌</strong> la fija arriba, <strong>⏰</strong> te la recuerda en el Dashboard ese día y <strong>🎫 Ticket</strong>
+      <strong>📌</strong> la fija arriba, <strong>🖼</strong> (o Ctrl+V) le pega imágenes, <strong>⏰</strong> te la recuerda en el Dashboard ese día y <strong>🎫 Ticket</strong>
       la pasa a ⚡ Captura rápida. Desde cualquier pantalla, <kbd>Alt</kbd>+<kbd>N</kbd> abre una nota rápida.</p>
 
     <div class="notas" data-notas-lista>
@@ -60,7 +67,7 @@
       <ul class="notas__papelera">
         {% for n in papelera %}
           <li class="nota-borrada nota--{{ n.color }}" data-nota-borrada data-id="{{ n.id }}">
-            <span class="nota-borrada__texto sensible">{{ (n.texto | truncate(160)) or '(vacía)' }}</span>
+            <span class="nota-borrada__texto sensible">{{ (n.texto | truncate(160)) or '(vacía)' }}{% if n.imagenes.length %} <span class="muted">🖼 {{ n.imagenes.length }}</span>{% endif %}</span>
             <span class="muted">quedan {{ n.quedanDias }} día{{ 's' if n.quedanDias != 1 }}</span>
             <button type="button" class="btn btn--sm btn--secondary" data-nota-restaurar>↩ Restaurar</button>
             <button type="button" class="btn btn--sm btn--ghost" data-nota-borrar-definitivo title="Borrar para siempre">❌</button>
@@ -73,7 +80,7 @@
       🗑️ Nota enviada a la papelera <button type="button" class="btn btn--sm" data-nota-deshacer>↩ Deshacer</button>
     </div>
 
-    <template data-nota-plantilla>{{ tarjeta({ id: '', texto: '', color: 'amarillo', cuando: '', fijada: false, recordarEn: '', recordatorio: null, tickets: [] }, colores, nombresColor) }}</template>
+    <template data-nota-plantilla>{{ tarjeta({ id: '', texto: '', color: 'amarillo', cuando: '', fijada: false, recordarEn: '', recordatorio: null, tickets: [], imagenes: [] }, colores, nombresColor) }}</template>
 
     <form method="post" action="/app/tickets/captura" data-nota-ticket-form hidden>
       <input type="hidden" name="_csrf" value="{{ csrfToken }}" />

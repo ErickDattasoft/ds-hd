@@ -59,6 +59,7 @@ export class NotasController {
           }
         : null,
       tickets: n.tickets,
+      imagenes: n.imagenes.map((i) => ({ id: i.id, nombre: i.nombre, url: `/app/notas/imagenes/${encodeURIComponent(i.id)}` })),
       quedanDias,
     };
   }
@@ -106,6 +107,41 @@ export class NotasController {
       res.json({ ok: true, nota: this.vm(nota) });
     } catch (err) {
       res.status(404).json({ ok: false, detalle: err instanceof Error ? err.message : 'No se pudo restaurar' });
+    }
+  };
+
+  /** 🖼 Sube una imagen a la nota (la página ya la comprimió). JSON. */
+  imagenPost = async (req: Request, res: Response): Promise<void> => {
+    const b = req.body ?? {};
+    try {
+      const img = await this.notas.agregarImagen(this.persona(req), str(req.params.id), {
+        nombre: str(b.nombre),
+        contentType: str(b.contentType),
+        base64: str(b.base64),
+      });
+      res.json({ ok: true, imagen: { ...img, url: `/app/notas/imagenes/${encodeURIComponent(img.id)}` } });
+    } catch (err) {
+      res.status(422).json({ ok: false, detalle: err instanceof Error ? err.message : 'No se pudo subir la imagen' });
+    }
+  };
+
+  /** Quita una imagen de la nota. JSON. */
+  quitarImagenPost = async (req: Request, res: Response): Promise<void> => {
+    await this.notas.quitarImagen(this.persona(req), str(req.params.id), str(req.params.imgId));
+    res.json({ ok: true });
+  };
+
+  /** La imagen (solo a su dueño). No cambia nunca: el navegador la guarda y no la vuelve a pedir. */
+  imagenGet = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const img = await this.notas.imagen(req.user!.uid, str(req.params.imgId));
+      const base64 = img.data.slice(img.data.indexOf(',') + 1);
+      res.setHeader('Content-Type', img.contentType);
+      res.setHeader('Content-Disposition', `inline; filename="${img.nombre.replace(/"/g, '')}"`);
+      res.setHeader('Cache-Control', 'private, max-age=31536000, immutable');
+      res.send(Buffer.from(base64, 'base64'));
+    } catch {
+      res.status(404).send('No existe');
     }
   };
 

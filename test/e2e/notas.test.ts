@@ -195,3 +195,60 @@ describe('🗒️ Mis notas en el respaldo', () => {
     expect(t.notaPersonalRepo.porUid.get(ADMIN.uid)?.[0]).toMatchObject({ texto: 'EXAMEN FE', color: 'azul' });
   });
 });
+
+describe('🖼 imágenes en Mis notas', () => {
+  const PNG = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
+
+  it('subir, verla solo su dueño, quitarla; al borrar la nota para siempre se borran sus imágenes', async () => {
+    const t = makeTestApp({ usuarios: [SUP, AG] });
+    const { agent, csrf } = await login(t.app, SUP.email, SUP.password);
+    const post = (url: string, body: object = {}) => agent.post(url).set('x-csrf-token', csrf).send(body);
+    const id = (await post('/app/notas', { texto: 'con captura' })).body.nota.id as string;
+
+    const sub = await post(`/app/notas/${id}/imagenes`, { nombre: 'error.png', contentType: 'image/png', base64: PNG });
+    expect(sub.body.ok).toBe(true);
+    const url = sub.body.imagen.url as string;
+    expect((await post(`/app/notas/${id}/imagenes`, { nombre: 'x.svg', contentType: 'image/svg+xml', base64: PNG })).status).toBe(422);
+
+    const img = await agent.get(url);
+    expect(img.status).toBe(200);
+    expect(img.headers['content-type']).toBe('image/png');
+    expect(img.headers['cache-control']).toContain('immutable');
+    const ajeno = await login(t.app, AG.email, AG.password);
+    expect((await ajeno.agent.get(url)).status).toBe(404);
+
+    const vista = await agent.get('/app/notas');
+    expect(vista.text).toContain(url);
+
+    // Una segunda imagen, quitar la primera.
+    const otra = (await post(`/app/notas/${id}/imagenes`, { nombre: 'b.png', contentType: 'image/png', base64: PNG })).body.imagen.id as string;
+    await post(`/app/notas/${id}/imagenes/${sub.body.imagen.id}/eliminar`);
+    expect(t.notaImagenRepo.items.has(sub.body.imagen.id)).toBe(false);
+    expect(t.notaPersonalRepo.porUid.get(SUP.uid)![0]!.imagenes.map((i) => i.id)).toEqual([otra]);
+
+    // Papelera: la imagen sigue (se puede restaurar); borrada para siempre, se va.
+    await post(`/app/notas/${id}/eliminar`);
+    expect(t.notaImagenRepo.items.has(otra)).toBe(true);
+    await post(`/app/notas/${id}/borrar-definitivo`);
+    expect(t.notaImagenRepo.items.size).toBe(0);
+  });
+
+  it('máximo 10 por nota; al volverse ticket, las imágenes van como adjuntos del ticket', async () => {
+    const t = makeTestApp({ usuarios: [SUP] });
+    const { agent, csrf } = await login(t.app, SUP.email, SUP.password);
+    const post = (url: string, body: object = {}) => agent.post(url).set('x-csrf-token', csrf).send(body);
+    const id = (await post('/app/notas', { texto: 'EMPRESA X - 27/10/2026\nError al timbrar' })).body.nota.id as string;
+    for (let i = 0; i < 10; i++) expect((await post(`/app/notas/${id}/imagenes`, { nombre: `c${i}.png`, contentType: 'image/png', base64: PNG })).body.ok).toBe(true);
+    const once = await post(`/app/notas/${id}/imagenes`, { nombre: 'c10.png', contentType: 'image/png', base64: PNG });
+    expect(once.status).toBe(422);
+    expect(t.notaImagenRepo.items.size).toBe(10); // la que no cupo no se queda huérfana
+
+    const c = await post('/app/tickets/captura/crear', { tipo: 'General', asunto: 'Error al timbrar', estado: 'Resuelto', notaId: id });
+    expect(c.body.ok).toBe(true);
+    const adjuntos = await t.adjuntoTicketRepo.listarPorTicket(c.body.id);
+    expect(adjuntos).toHaveLength(10);
+    // Un segundo ticket de la misma nota ya no las repite.
+    const c2 = await post('/app/tickets/captura/crear', { tipo: 'General', asunto: 'Otra cosa', estado: 'Resuelto', notaId: id });
+    expect(await t.adjuntoTicketRepo.listarPorTicket(c2.body.id)).toHaveLength(0);
+  });
+});
