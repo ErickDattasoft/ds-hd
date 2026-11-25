@@ -20,7 +20,10 @@ con botones arriba para saltar entre ellas.
   **🆕 Ticket nuevo**, **💬 Respuestas** (lo que se le contesta al cliente y cuando el cliente
   responde), **📈 Avances** (el aviso al cliente cuando su ticket pasa a un estado intermedio, como
   «En proceso»), **✔️ Cerrado** y **💲 Facturado**. Para que alguien no reciba nada, se le quitan
-  todas las palomitas. Las notas internas no mandan correo.
+  todas las palomitas.
+  La primera fila, **👤 CLIENTE**, decide qué correos automáticos recibe el contacto de cada ticket:
+  🆕 ticket nuevo, 📈 avances y ✔️ cerrado (con la encuesta) se pueden apagar; lo que le escribes en
+  «💬 Respuesta al cliente» siempre le llega. Las notas internas no mandan correo.
 - **Respuestas rápidas** y **valores predeterminados** del formulario de ticket nuevo.
 
 ## 💰 Cotizaciones y 🧮 Calculadora

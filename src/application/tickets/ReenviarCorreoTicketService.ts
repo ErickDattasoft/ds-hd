@@ -1,4 +1,4 @@
-import { correosCopia } from '../../core/entities/ConfiguracionTickets.js';
+import { avisaCliente, correosCopia } from '../../core/entities/ConfiguracionTickets.js';
 import type { ITicketRepository } from '../../core/ports/repositories/ITicketRepository.js';
 import type { IConfiguracionRepository } from '../../core/ports/repositories/IConfiguracionRepository.js';
 import type { IUsuarioRepository } from '../../core/ports/repositories/IUsuarioRepository.js';
@@ -51,10 +51,13 @@ export class ReenviarCorreoTicketService {
     }
 
     const cfg = await this.config.obtenerTickets();
+    // 👤 Si en Configuración se apagó «🆕 Ticket nuevo» para el CLIENTE, el correo del ticket nuevo
+    // solo va al equipo. Un reenvío a mano (botón ✉️ Reenviar correo) sí le llega.
+    const soloEquipo = input.soloEquipo === true || (input.esReenvio === false && !avisaCliente(cfg, 'nuevo'));
     // Copias al equipo: solo quien eligió «🆕 Ticket nuevo» (Configuración → Tickets).
     const copias = correosCopia(cfg, 'nuevo');
     const hayLista = copias.length > 0;
-    if (input.soloEquipo && !hayLista && !ticket.agenteAsignadoUid) return { enviadoA: [] };
+    if (soloEquipo && !hayLista && !ticket.agenteAsignadoUid) return { enviadoA: [] };
     if (!ticket.contactoCorreo?.trim() && !hayLista) {
       throw new ValidationError(
         'El ticket no tiene correo de contacto y no hay correos de notificación configurados',
@@ -66,7 +69,7 @@ export class ReenviarCorreoTicketService {
       ? await this.usuarios.findByUid(ticket.agenteAsignadoUid)
       : null;
     const dest = destinatariosTicket(
-      input.soloEquipo ? { contactoCorreo: null, contactoNombre: null } : ticket,
+      soloEquipo ? { contactoCorreo: null, contactoNombre: null } : ticket,
       copias,
       agente?.email.value ?? input.actor.email,
       cfg.correosNotificacion,
@@ -86,7 +89,7 @@ export class ReenviarCorreoTicketService {
       html: resumenTicketHtml(ticket, eventos, {
         reenvio: input.esReenvio !== false,
         sinContacto: dest.sinContacto,
-        soloEquipo: input.soloEquipo === true,
+        soloEquipo,
         adjuntos,
         baseUrl: this.baseUrl,
       }),
@@ -96,7 +99,7 @@ export class ReenviarCorreoTicketService {
     const enviadoA = dest.para.map((p) => p.email);
     await registrarEvento(this.tickets, this.ids, ticket.id, {
       tipo: 'correo',
-      resumen: `${input.soloEquipo ? 'Aviso al equipo del ticket nuevo (sin correo al cliente)' : input.esReenvio === false ? 'Correo del ticket nuevo' : 'Reenvío de correo'} a ${enviadoA.join(', ')}`,
+      resumen: `${soloEquipo ? 'Aviso al equipo del ticket nuevo (sin correo al cliente)' : input.esReenvio === false ? 'Correo del ticket nuevo' : 'Reenvío de correo'} a ${enviadoA.join(', ')}`,
       actor: input.actor,
       at: ahora,
     });

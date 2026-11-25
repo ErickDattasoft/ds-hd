@@ -765,6 +765,47 @@ describe('avisos de cerrado y facturado por persona (Configuración → Tickets)
     expect(t.emailSender.enviados.flatMap(destinatarios)).toContain('soporte@dattasoft.mx');
   });
 
+  it('👤 CLIENTE: se le pueden apagar ticket nuevo, avances y cerrado; las respuestas siempre le llegan', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    const cfg = await t.configuracionRepo.obtenerTickets();
+    await t.configuracionRepo.guardarTickets({ ...cfg, correosNotificacion: ['soporte@dattasoft.mx'] });
+    const { agent, csrf } = await login(t.app, ADMIN.email, ADMIN.password);
+    expect((await agent.get('/app/configuracion/tickets')).text).toContain('👤 CLIENTE');
+
+    await agent.post('/app/configuracion/tickets').type('form').send({
+      _csrf: csrf,
+      tipos: cfg.tipos.join('\n'), sistemas: cfg.sistemas.join('\n'), grupos: cfg.grupos.join('\n'),
+      estados: cfg.estados.join('\n'), prioridades: cfg.prioridades.join('\n'), tiposFacturables: '',
+      estadoInicial: cfg.estadoInicial, correosNotificacion: 'soporte@dattasoft.mx', avisarClienteEstados: 'En proceso',
+      clienteEnviado: '1', clienteNuevo: '0', clienteAvances: '0', clienteCerrado: '0',
+      avisosEnviado: '1', avisoCorreo: ['soporte@dattasoft.mx'],
+      avisoNuevo: ['1'], avisoRespuestas: ['1'], avisoAvances: ['1'], avisoCerrado: ['1'], avisoFacturado: ['1'],
+    });
+    expect((await t.configuracionRepo.obtenerTickets()).avisosCliente).toEqual({ nuevo: false, avances: false, cerrado: false });
+
+    const crear = await agent.post('/app/tickets').type('form').send({
+      _csrf: csrf, asunto: 'Cliente callado', descripcion: 'descripción de prueba larga', tipo: 'General', prioridad: 'Media',
+      contactoCorreo: 'cliente@empresa.mx', enviarCorreo: 'on',
+    });
+    const id = String(crear.headers.location).split('/').pop()!;
+    const alCrear = t.emailSender.enviados.flatMap(destinatarios);
+    expect(alCrear).toContain('soporte@dattasoft.mx');
+    expect(alCrear).not.toContain('cliente@empresa.mx');
+
+    t.emailSender.enviados.length = 0;
+    await agent.post(`/app/tickets/${id}/estado`).type('form').send({ _csrf: csrf, estado: 'En proceso' });
+    expect(t.emailSender.enviados.flatMap(destinatarios)).not.toContain('cliente@empresa.mx');
+
+    await agent.post(`/app/tickets/${id}/nota`).type('form').send({ _csrf: csrf, cuerpo: 'Le escribimos directo' });
+    expect(t.emailSender.enviados.flatMap(destinatarios)).toContain('cliente@empresa.mx');
+
+    t.emailSender.enviados.length = 0;
+    await agent.post(`/app/tickets/${id}/estado`).type('form').send({ _csrf: csrf, estado: 'Cerrado', facturarCon: '' });
+    const cierre = t.emailSender.enviados.flatMap(destinatarios);
+    expect(cierre).toContain('soporte@dattasoft.mx');
+    expect(cierre).not.toContain('cliente@empresa.mx');
+  });
+
   it('un correo inválido no se guarda y avisa', async () => {
     const t = makeTestApp({ usuarios: [ADMIN] });
     const cfg = await t.configuracionRepo.obtenerTickets();

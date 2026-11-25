@@ -36,7 +36,7 @@ const textoPredFacturacion = (config: ConfiguracionTickets): string => {
   const v = config.predeterminados?.estadoFacturacion;
   return v ? (catalogoFacturacion(config.facturacion).find((o) => o.valor === v)?.etiqueta ?? '') : '';
 };
-import { avisosCierreDe, avisosParaTabla, respuestasATexto } from '../../../../core/entities/ConfiguracionTickets.js';
+import { avisaCliente, avisosCierreDe, avisosParaTabla, respuestasATexto } from '../../../../core/entities/ConfiguracionTickets.js';
 import { camposDeError } from '../../support/errores.js';
 
 const str = (v: unknown): string => (typeof v === 'string' ? v : '');
@@ -345,6 +345,7 @@ export class ConfiguracionController {
       respuestasATexto,
       avisosCierreDe,
       avisosParaTabla,
+      avisaCliente,
       titulo: 'Configuración de tickets',
       config,
       errores: {},
@@ -389,6 +390,10 @@ export class ConfiguracionController {
         estadoInicial: str(b.estadoInicial),
         correosNotificacion: str(b.correosNotificacion),
         ...(b.avisosEnviado ? { avisosCierre: avisosDelForm(b) } : {}),
+        // 👤 Fila CLIENTE (una página vieja no la manda: se queda como estaba).
+        ...(b.clienteEnviado
+          ? { avisosCliente: { nuevo: b.clienteNuevo === '1', avances: b.clienteAvances === '1', cerrado: b.clienteCerrado === '1' } }
+          : {}),
         slaHoras,
         respuestas: str(b.respuestas),
         avisarClienteEstados: ([] as string[]).concat((b.avisarClienteEstados as string[]) ?? []).filter(Boolean),
@@ -412,6 +417,7 @@ export class ConfiguracionController {
       respuestasATexto,
       avisosCierreDe,
       avisosParaTabla,
+      avisaCliente,
         titulo: 'Configuración de tickets',
         config,
         errores: {},
@@ -428,6 +434,7 @@ export class ConfiguracionController {
       respuestasATexto,
       avisosCierreDe,
       avisosParaTabla,
+      avisaCliente,
         titulo: 'Configuración de tickets',
         config,
         errores: camposDeError(err),

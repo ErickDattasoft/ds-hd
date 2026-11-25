@@ -134,6 +134,16 @@
         <table class="avisos__tabla">
           <thead><tr><th>Correo</th><th>🆕 Ticket nuevo</th><th>💬 Respuestas</th><th>📈 Avances</th><th>✔️ Cerrado</th><th>💲 Facturado</th><th></th></tr></thead>
           <tbody data-avisos-filas>
+            {# 👤 El cliente (contacto de cada ticket): qué correos automáticos le llegan. #}
+            <tr class="avisos__cliente">
+              <td><strong>👤 CLIENTE</strong> <span class="muted">— el contacto de cada ticket</span><input type="hidden" name="clienteEnviado" value="1" /></td>
+              <td><label class="avisos__check"><input type="checkbox" data-aviso-check {{ 'checked' if avisaCliente(config, 'nuevo') }} aria-label="Cliente: ticket nuevo" /><input type="hidden" name="clienteNuevo" value="{{ '1' if avisaCliente(config, 'nuevo') else '0' }}" /></label></td>
+              <td><label class="avisos__check" title="Lo que escribes en «💬 Respuesta al cliente» siempre le llega"><input type="checkbox" checked disabled aria-label="Cliente: respuestas (siempre)" /></label></td>
+              <td><label class="avisos__check"><input type="checkbox" data-aviso-check {{ 'checked' if avisaCliente(config, 'avances') }} aria-label="Cliente: avances" /><input type="hidden" name="clienteAvances" value="{{ '1' if avisaCliente(config, 'avances') else '0' }}" /></label></td>
+              <td><label class="avisos__check"><input type="checkbox" data-aviso-check {{ 'checked' if avisaCliente(config, 'cerrado') }} aria-label="Cliente: cerrado" /><input type="hidden" name="clienteCerrado" value="{{ '1' if avisaCliente(config, 'cerrado') else '0' }}" /></label></td>
+              <td class="muted" title="El aviso de facturado es solo para el equipo">—</td>
+              <td></td>
+            </tr>
             {% for a in avisosParaTabla(config) %}
               <tr data-aviso-fila>
                 <td><input type="email" name="avisoCorreo" value="{{ a.correo }}" placeholder="correo@dattasoft.mx" aria-label="Correo" /></td>
@@ -160,6 +170,8 @@
         </template>
         <button type="button" class="btn btn--ghost" data-aviso-agregar>＋ Agregar persona</button>
         <p class="muted avisos__ayuda">Ejemplo: Facturación solo 💲 Facturado; Soporte todo menos 💲; el gerente lo que quiera. Para que alguien no reciba nada, quítale todas las palomitas.
+          <strong>👤 CLIENTE</strong>: lo que le escribes en «💬 Respuesta al cliente» siempre le llega; los demás son correos automáticos que puedes apagar
+          (con ✔️ Cerrado apagado no recibe el aviso de cierre ni la encuesta; con 🆕 apagado, el correo del ticket nuevo solo va al equipo y el botón «✉️ Reenviar correo» sí le llega).
           El agente asignado al ticket siempre recibe su copia (es su ticket). Las <strong>notas internas</strong> no mandan correo a nadie.</p>
       </div>
     </details>

@@ -1,7 +1,7 @@
 import type { IConfiguracionRepository } from '../../core/ports/repositories/IConfiguracionRepository.js';
 import type { ILogger } from '../../core/ports/services/ILogger.js';
 import type { ConfiguracionTickets } from '../../core/entities/ConfiguracionTickets.js';
-import type { AvisoCierre, PredeterminadosTicket } from '../../core/entities/ConfiguracionTickets.js';
+import type { AvisoCierre, AvisosCliente, PredeterminadosTicket } from '../../core/entities/ConfiguracionTickets.js';
 import { CONFIG_TICKETS_POR_DEFECTO, distribuidoresDe, parsearRespuestas } from '../../core/entities/ConfiguracionTickets.js';
 import { ForbiddenError, ValidationError } from '../../core/errors/DomainError.js';
 import type { SessionUser } from '../shared/SessionUser.js';
@@ -70,6 +70,8 @@ export class ConfiguracionTicketsService {
     avisarClienteEstados?: string[];
     /** Quién recibe los avisos de cerrado y de facturado; sin definir = se queda lo guardado. */
     avisosCierre?: AvisoCierre[];
+    /** 👤 Qué correos automáticos le llegan al cliente (sin mandar = se quedan como estaban). */
+    avisosCliente?: AvisosCliente;
     /** Estados renombrados en su renglón (nombre anterior → nuevo): los tickets que lo tienen se pasan al nuevo. */
     renombresEstados?: Record<string, string>;
   }): Promise<{ ticketsRenombrados: number }> {
@@ -122,6 +124,8 @@ export class ConfiguracionTicketsService {
       const previa = (await this.repo.obtenerTickets()).avisosCierre;
       if (previa) config.avisosCierre = previa;
     }
+    // Se guarda con merge: si la página no lo manda, se queda lo que había.
+    if (input.avisosCliente) config.avisosCliente = { ...input.avisosCliente };
     if (input.respuestas !== undefined) config.respuestas = parsearRespuestas(input.respuestas);
     else config.respuestas = (await this.repo.obtenerTickets()).respuestas ?? [];
     if (input.predeterminados) {

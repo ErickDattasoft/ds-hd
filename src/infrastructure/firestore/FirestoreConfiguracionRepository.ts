@@ -73,6 +73,15 @@ export class FirestoreConfiguracionRepository implements IConfiguracionRepositor
             })),
           }
         : {}),
+      ...(d.avisosCliente && typeof d.avisosCliente === 'object'
+        ? {
+            avisosCliente: {
+              nuevo: (d.avisosCliente as Record<string, unknown>).nuevo !== false,
+              avances: (d.avisosCliente as Record<string, unknown>).avances !== false,
+              cerrado: (d.avisosCliente as Record<string, unknown>).cerrado !== false,
+            },
+          }
+        : {}),
       predeterminados: (d.predeterminados as ConfiguracionTickets['predeterminados']) ?? {
         ...CONFIG_TICKETS_POR_DEFECTO.predeterminados,
       },

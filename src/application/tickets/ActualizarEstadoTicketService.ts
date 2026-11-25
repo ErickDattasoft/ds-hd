@@ -7,7 +7,7 @@ import type { ILogger } from '../../core/ports/services/ILogger.js';
 import type { IEmailSender } from '../../core/ports/services/IEmailSender.js';
 import type { IWebhookPublisher } from '../../core/ports/services/IWebhookPublisher.js';
 import type { Ticket } from '../../core/entities/Ticket.js';
-import { correosAvisoCerrado, correosAvisoFacturado, correosCopia } from '../../core/entities/ConfiguracionTickets.js';
+import { avisaCliente, correosAvisoCerrado, correosAvisoFacturado, correosCopia } from '../../core/entities/ConfiguracionTickets.js';
 import { esFacturacionCompletada } from '../../core/entities/value-objects/EstadoFacturacion.js';
 import { ForbiddenError, NotFoundError } from '../../core/errors/DomainError.js';
 import { publicarNotaInterna, registrarEvento } from './efectos.js';
@@ -133,6 +133,8 @@ export class ActualizarEstadoTicketService {
     anterior?: string,
   ): Promise<void> {
     const cfg = await this.config.obtenerTickets();
+    // 👤 Apagado para el CLIENTE en Configuración: no sale el aviso de avance (era para él).
+    if (!avisaCliente(cfg, 'avances')) return;
     const copiaInterna = await this.emailAgenteOActor(ticket, input.actor.email);
     const dest = destinatariosTicket(ticket, correosCopia(cfg, 'avances'), copiaInterna, cfg.correosNotificacion);
     // Sin correo de contacto no hay a quién avisarle el avance (al equipo no le sirve otra copia).
@@ -177,13 +179,22 @@ export class ActualizarEstadoTicketService {
     const cfg = await this.config.obtenerTickets();
     const copiaInterna = await this.emailAgenteOActor(ticket, input.actor.email);
     // Copia del cierre: solo quien marcó «✔️ Cerrado» en Configuración → Tickets.
-    const dest = destinatariosTicket(ticket, correosAvisoCerrado(cfg), copiaInterna, cfg.correosNotificacion);
+    // 👤 Apagado para el CLIENTE en Configuración: el aviso de cierre solo le llega al equipo.
+    const alCliente = avisaCliente(cfg, 'cerrado');
+    const dest = destinatariosTicket(
+      alCliente ? ticket : { contactoCorreo: null, contactoNombre: null },
+      correosAvisoCerrado(cfg),
+      copiaInterna,
+      cfg.correosNotificacion,
+    );
     if (dest.para.length === 0) return;
 
     const historial = historialActividadHtml(await this.tickets.listarEventos(ticket.id), 'cliente');
-    const avisoSinContacto = dest.sinContacto
-      ? `<p style="background:#fef3c7;color:#92400e;padding:8px 12px;border-radius:6px">⚠️ El contacto del ticket no tiene correo — este aviso solo llegó al equipo.</p>`
-      : '';
+    const avisoSinContacto = !alCliente
+      ? `<p style="background:#eef2ff;color:#3730a3;padding:8px 12px;border-radius:6px">ℹ️ Aviso solo para el equipo: el correo de cierre al cliente está apagado (Configuración → Tickets).</p>`
+      : dest.sinContacto
+        ? `<p style="background:#fef3c7;color:#92400e;padding:8px 12px;border-radius:6px">⚠️ El contacto del ticket no tiene correo — este aviso solo llegó al equipo.</p>`
+        : '';
     await this.email.enviar({
       para: dest.para,
       ...(dest.cc.length ? { cc: dest.cc } : {}),

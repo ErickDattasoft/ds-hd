@@ -2235,3 +2235,7 @@ dialog.facturar-cerrar h2 { margin: 0 0 var(--space-2); font-size: 1.2rem; }
 /* Tabla de avisos con 4 tipos: casillas centradas; en celular se desplaza de lado dentro de su caja. */
 .avisos__tabla th:nth-child(n+2):not(:last-child), .avisos__tabla td:nth-child(n+2):not(:last-child) { text-align: center; width: 105px; white-space: normal; }
 [data-avisos] { overflow-x: auto; }
+/* 👤 Fila CLIENTE de «¿Quién recibe qué avisos?»: distinta del equipo. */
+.avisos__cliente td { background: var(--info-weak); }
+.avisos__cliente td:first-child { padding: 8px 10px; border-radius: 6px 0 0 6px; }
+.avisos__cliente td:last-child { border-radius: 0 6px 6px 0; }

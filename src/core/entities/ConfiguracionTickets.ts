@@ -36,6 +36,26 @@ export interface ConfiguracionTickets {
    * ha guardado aún) = la lista `correosNotificacion` recibe los dos, como antes.
    */
   avisosCierre?: AvisoCierre[];
+  /**
+   * 👤 Qué correos AUTOMÁTICOS le llegan al cliente. Sin definir = todos (como antes). Las
+   * respuestas que se le escriben en «💬 Respuestas al cliente» siempre le llegan.
+   */
+  avisosCliente?: AvisosCliente;
+}
+
+/** Los correos automáticos al cliente que se pueden apagar. */
+export interface AvisosCliente {
+  /** 🆕 Correo del ticket nuevo (al crearlo con «✉️ Enviar correo» o desde la Captura rápida). */
+  nuevo: boolean;
+  /** 📈 Aviso de avance al pasar a un estado intermedio («En proceso»…). */
+  avances: boolean;
+  /** ✔️ Aviso de resuelto/cerrado (con la encuesta). */
+  cerrado: boolean;
+}
+
+/** ¿Se le manda al cliente este correo automático? (sin configurar = sí, como siempre) */
+export function avisaCliente(config: Pick<ConfiguracionTickets, 'avisosCliente'>, tipo: keyof AvisosCliente): boolean {
+  return config.avisosCliente?.[tipo] !== false;
 }
 
 /** Un renglón de «¿Quién recibe los avisos de cierre?»: a quién y cuáles de los dos. */
