@@ -842,6 +842,26 @@ describe('⚡ captura rápida', () => {
     expect(t.ticketStore.tickets.get(tk.id)!.preTicket).toBe(false);
   });
 
+  it('la descripción del pre-ticket lleva la firma del agente (o la de quien captura si no hay agente)', async () => {
+    const t = makeTestApp({ usuarios: [SUP, AG] });
+    (await t.usuarioRepo.findByUid(AG.uid))!.fijarFirma('Ing. Agente\nSoporte DATTASOFT', new Date());
+    (await t.usuarioRepo.findByUid(SUP.uid))!.fijarFirma('<p><b>Sup</b> — Supervisión</p>', new Date());
+    const { agent, csrf } = await login(t.app, SUP.email, SUP.password);
+    const crear = (extra: object) =>
+      agent.post('/app/tickets/captura/crear').set('x-csrf-token', csrf).send({
+        tipo: 'General', asunto: 'Revisar timbrado', descripcion: 'EMPRESA X\nRevisar timbrado', estado: 'Resuelto', ...extra,
+      });
+
+    const conAgente = await crear({ agenteUid: AG.uid });
+    const d1 = t.ticketStore.tickets.get(conAgente.body.id)!.descripcion;
+    expect(d1).toContain('Revisar timbrado');
+    expect(d1).toContain('Ing. Agente<br>Soporte DATTASOFT');
+    expect(d1.indexOf('Ing. Agente')).toBeGreaterThan(d1.indexOf('Revisar timbrado'));
+
+    const sinAgente = await crear({ agenteUid: '' });
+    expect(t.ticketStore.tickets.get(sinAgente.body.id)!.descripcion).toContain('<b>Sup</b> — Supervisión');
+  });
+
   it('el agente por defecto es quien inició sesión (también al llegar desde 🗒️ Mis notas); «Sin asignar» se respeta', async () => {
     const t = makeTestApp({ usuarios: [SUP, AG] });
     const { agent, csrf } = await login(t.app, SUP.email, SUP.password);

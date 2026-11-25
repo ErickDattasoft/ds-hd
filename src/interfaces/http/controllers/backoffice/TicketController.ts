@@ -45,6 +45,7 @@ import { camposDeError } from '../../support/errores.js';
 import { ValidationError } from '../../../../core/errors/DomainError.js';
 import { esEstadoCerrado, esEstadoFinal, esEstadoResuelto } from '../../../../core/entities/value-objects/EstadoTicket.js';
 import { descripcionDeNota, interpretarNota, separarNotas } from '../../../../application/tickets/capturaRapida.js';
+import { textoOHtmlASeguro } from '../../../../core/entities/value-objects/descripcionHtml.js';
 import { instanteMexico } from '../../../../core/entities/value-objects/horaMexico.js';
 
 /** Valores de casillas con el mismo `name` (llegan como string o como arreglo). */
@@ -446,10 +447,12 @@ export class TicketController {
       const agenteUid = actor.permisos.includes('tickets:asignar') ? str(b.agenteUid) : '';
       const agente = agenteUid ? await this.usuarios.findByUid(agenteUid).catch(() => null) : null;
       const texto = str(b.descripcion).trim();
+      // Siempre con firma: la del agente que hizo el trabajo y, si no tiene, la de quien captura.
+      const firma = textoOHtmlASeguro(agente?.firma || actor.firma);
       const ticket = await this.crear.ejecutar({
         actor,
         asunto: str(b.asunto).trim(),
-        descripcion: descripcionDeNota(texto || str(b.asunto)),
+        descripcion: descripcionDeNota(texto || str(b.asunto)) + (firma ? `<p><br></p><div>${firma}</div>` : ''),
         tipo: str(b.tipo),
         prioridad: parsePrioridad('Media'),
         sistema: str(b.sistema) || null,
