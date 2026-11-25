@@ -3060,6 +3060,12 @@
 
   // ── Impresión: checkbox de "incluir logo", recordado entre documentos ───
   function initLogoImpresion() {
+    // Impresión: «Incluir 🔒 notas internas» (por defecto no: la hoja suele ser para el cliente).
+    var chkInt = document.querySelector('[data-toggle-internas]');
+    if (chkInt && !chkInt.dataset.listo) {
+      chkInt.dataset.listo = '1';
+      chkInt.addEventListener('change', function () { document.body.classList.toggle('con-internas', chkInt.checked); });
+    }
     var chk = document.querySelector('[data-toggle-logo]');
     if (!chk) return;
     var clave = 'ds_hd_imprimir_logo';

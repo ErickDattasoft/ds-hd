@@ -65,7 +65,7 @@ export class FirestoreRespuestaSinLeerRepository implements IRespuestaSinLeerRep
       // Respuesta nueva: vuelve a estar pendiente para todos.
       leidaPor: [],
     });
-    await this.cache?.marcarCambio(COL);
+    await this.cache?.marcarCambio([COL]);
   }
 
   async marcarLeidaPor(ticketId: string, persona: { uid: string; nombre: string }): Promise<boolean> {
@@ -82,7 +82,7 @@ export class FirestoreRespuestaSinLeerRepository implements IRespuestaSinLeerRep
       .collection(COL)
       .doc(ticketId)
       .set({ leidaPor: [...(actual.leidaPor ?? []), { uid: persona.uid, nombre: persona.nombre }] }, { merge: true });
-    await this.cache?.marcarCambio(COL);
+    await this.cache?.marcarCambio([COL]);
     return true;
   }
 
@@ -98,7 +98,7 @@ export class FirestoreRespuestaSinLeerRepository implements IRespuestaSinLeerRep
     const snap = await ref.get();
     if (!snap.exists) return false;
     await ref.delete();
-    await this.cache?.marcarCambio(COL);
+    await this.cache?.marcarCambio([COL]);
     return true;
   }
 }

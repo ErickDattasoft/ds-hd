@@ -865,14 +865,27 @@ export class TicketController {
 
   imprimirView = async (req: Request, res: Response): Promise<void> => {
     const d = await this.ver.ejecutar(req.user!, str(req.params.id));
+    // Cada imagen se imprime UNA vez: la que va dentro de la descripción se queda ahí, la de cada
+    // mensaje va con su mensaje, y en «Adjuntos» solo lo que no salió en otro lado.
+    const enDescripcion = new Set(
+      [...d.descripcionHtml.matchAll(/(?:data-adj-id="|adjuntos?\/)([\w-]+)/g)].map((m) => m[1]!),
+    );
+    const enNotas = new Set(d.notas.flatMap((n) => n.adjuntoIds ?? []));
+    const esImagen = new Map(d.adjuntos.map((a) => [a.id, a.contentType.startsWith('image/')]));
+    const conImagenes = (n: (typeof d.notas)[number]) => ({
+      ...n,
+      imagenes: (n.adjuntoIds ?? []).filter((id) => esImagen.get(id)),
+    });
     res.render('pages/backoffice/tickets/imprimir', {
       titulo: `Ticket #${d.ticket.numero}`,
       vm: ticketVM(d.ticket, this.clock.now()),
       ticket: d.ticket,
       descripcionHtml: d.descripcionHtml,
-      notas: d.notas,
+      notas: d.notas.filter((n) => n.tipo !== 'interna').map(conImagenes),
+      notasInternas: d.notas.filter((n) => n.tipo === 'interna').map(conImagenes),
       notasTotal: d.notasTotal,
       adjuntos: d.adjuntos,
+      adjuntosAparte: d.adjuntos.filter((a) => !enDescripcion.has(a.id) && !enNotas.has(a.id)),
       conLogo: req.query.logo !== '0',
       auto: req.query.auto === '1',
       impresoEl: this.clock.now(),

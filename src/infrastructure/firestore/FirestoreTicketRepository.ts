@@ -137,7 +137,7 @@ export class FirestoreTicketRepository implements ITicketRepository {
     }
     const batch = this.db.batch();
     batch.set(ref.collection('notas').doc(nota.id), TicketMapper.notaToDoc(nota));
-    batch.set(ref, { conPlatica: true }, { merge: true });
+    batch.set(ref, { conPlatica: true, cacheMod: Timestamp.now() }, { merge: true });
     await batch.commit();
   }
 
@@ -154,7 +154,7 @@ export class FirestoreTicketRepository implements ITicketRepository {
     const ref = this.db.collection(COL).doc(ticketId);
     await ref.collection('notas').doc(notaId).delete();
     const quedan = await this.listarNotas(ticketId);
-    if (!quedan.some(esPlatica)) await ref.set({ conPlatica: false }, { merge: true });
+    if (!quedan.some(esPlatica)) await ref.set({ conPlatica: false, cacheMod: Timestamp.now() }, { merge: true });
   }
 
   async marcarConPlatica(): Promise<number> {
@@ -171,7 +171,7 @@ export class FirestoreTicketRepository implements ITicketRepository {
       }
     }
     await this.enTandas([...pendientes], (batch, id) =>
-      batch.set(this.db.collection(COL).doc(id), { conPlatica: true }, { merge: true }),
+      batch.set(this.db.collection(COL).doc(id), { conPlatica: true, cacheMod: Timestamp.now() }, { merge: true }),
     );
     return pendientes.size;
   }
@@ -179,7 +179,7 @@ export class FirestoreTicketRepository implements ITicketRepository {
   async renombrarEstado(viejo: string, nuevo: string): Promise<number> {
     const snap = await this.db.collection(COL).where('estado', '==', viejo).get();
     await this.enTandas(snap.docs, (batch, d) =>
-      batch.set(d.ref, { estado: nuevo, estadoSlug: nuevo.toLowerCase() }, { merge: true }),
+      batch.set(d.ref, { estado: nuevo, estadoSlug: nuevo.toLowerCase(), cacheMod: Timestamp.now() }, { merge: true }),
     );
     return snap.docs.length;
   }
@@ -192,7 +192,7 @@ export class FirestoreTicketRepository implements ITicketRepository {
     const docs = new Map([...exacto.docs, ...porSlug.docs].map((d) => [d.id, d]));
     const pendientes = [...docs.values()].filter((d) => d.data().estado !== nuevo);
     await this.enTandas(pendientes, (batch, d) =>
-      batch.set(d.ref, { estado: nuevo, estadoSlug: nuevo.toLowerCase() }, { merge: true }),
+      batch.set(d.ref, { estado: nuevo, estadoSlug: nuevo.toLowerCase(), cacheMod: Timestamp.now() }, { merge: true }),
     );
     return pendientes.length;
   }

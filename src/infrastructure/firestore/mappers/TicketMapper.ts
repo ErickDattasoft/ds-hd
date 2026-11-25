@@ -85,6 +85,9 @@ export const TicketMapper = {
 
   toDocument(t: Ticket): DocumentData {
     return {
+      // Cuándo se escribió por última vez: la copia en memoria de las demás instancias lee SOLO
+      // los tickets con este campo más nuevo (ver CacheColecciones), no la colección completa.
+      cacheMod: Timestamp.now(),
       numero: t.numero,
       asunto: t.asunto,
       descripcion: t.descripcion,

@@ -4,22 +4,36 @@
 
 {% block head %}
 <style>
-  .doc { max-width: 800px; margin: 2rem auto; padding: 0 1rem; }
-  .doc__brand { font-size: 1.3rem; font-weight: 700; }
-  .doc table.datos { width: 100%; border-collapse: collapse; margin: 1rem 0 1.5rem; }
-  .doc table.datos th, .doc table.datos td { border: 1px solid var(--color-border); padding: 0.4rem 0.6rem; text-align: left; font-size: 0.9rem; }
-  .doc table.datos th { background: var(--color-surface-2); width: 8rem; }
-  .doc h2 { font-size: 1.05rem; margin: 1.4rem 0 0.4rem; }
-  .doc .bloque { white-space: pre-wrap; background: var(--color-surface-2); border: 1px solid var(--color-border); border-radius: 6px; padding: 0.8rem; }
-  .doc .bloque img { max-width: 100%; }
-  .doc .nota { border-left: 3px solid var(--color-border); padding: 0.2rem 0 0.2rem 0.7rem; margin: 0.6rem 0; }
+  .doc { max-width: 820px; margin: 1.5rem auto; padding: 0 1rem; font-size: 0.92rem; }
+  .doc__cab { display: flex; align-items: center; gap: 1rem; border-bottom: 2px solid var(--color-border); padding-bottom: .6rem; margin-bottom: .8rem; }
+  .doc__brand { flex-shrink: 0; font-weight: 700; font-size: 1.1rem; white-space: nowrap; }
+  .doc__brand img { display: inline-block; max-height: 40px; margin: 0 8px 0 0; vertical-align: middle; }
+  .doc__cab h1 { font-size: 1.25rem; line-height: 1.3; margin: 0; }
+  .doc__folio { color: var(--color-text-muted); font-weight: 600; white-space: nowrap; }
+  .doc table.datos { width: 100%; border-collapse: collapse; margin: 0 0 1rem; }
+  .doc table.datos th, .doc table.datos td { border: 1px solid var(--color-border); padding: 0.3rem 0.55rem; text-align: left; font-size: 0.85rem; }
+  .doc table.datos th { background: var(--color-surface-2); width: 7.5rem; }
+  .doc h2 { font-size: 1rem; margin: 1rem 0 0.35rem; }
+  .doc .bloque { background: var(--color-surface-2); border: 1px solid var(--color-border); border-radius: 6px; padding: 0.6rem 0.8rem; }
+  .doc .bloque p { margin: 0 0 .4rem; }
+  /* Imágenes de alto limitado y sin partirse entre hojas: así no salen hojas casi vacías. */
+  .doc img { max-width: 100%; max-height: 9cm; object-fit: contain; display: block; margin: .4rem 0; break-inside: avoid; page-break-inside: avoid; }
+  .doc .nota { border-left: 3px solid var(--color-border); padding: 0.15rem 0 0.15rem 0.7rem; margin: 0.45rem 0; break-inside: avoid; }
+  .doc .nota--interna { border-left-color: var(--warning); }
   .doc .nota div { white-space: pre-wrap; }
-  .doc__actions { margin: 1.5rem auto; max-width: 800px; padding: 0 1rem; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+  .doc .nota img { max-height: 6cm; }
+  .doc__miniaturas { display: grid; grid-template-columns: repeat(2, 1fr); gap: .5rem; }
+  .doc__miniaturas figure { margin: 0; break-inside: avoid; }
+  .doc__miniaturas img { max-height: 6cm; margin: 0 auto; }
+  .doc__miniaturas figcaption { font-size: .75rem; color: var(--color-text-muted); text-align: center; }
+  .doc__actions { margin: 1.5rem auto; max-width: 820px; padding: 0 1rem; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
   .doc__footer { display: none; }
+  body:not(.con-internas) .doc__internas { display: none; }
   @media print {
+    @page { margin: 1.2cm; }
     .doc__actions, .skip-link { display: none !important; }
-    .doc { margin: 0; }
-    .doc__footer { display: block; margin-top: 2rem; font-size: 0.8rem; color: var(--color-text-muted); }
+    .doc { margin: 0; max-width: none; padding: 0; }
+    .doc__footer { display: block; margin-top: 1rem; font-size: 0.75rem; color: var(--color-text-muted); }
     a[href]::after { content: none !important; }
   }
 </style>
@@ -30,17 +44,20 @@
   <button type="button" class="btn btn--sm" data-print>Imprimir / Guardar como PDF</button>
   <a class="btn btn--sm btn--ghost" href="/app/tickets/{{ ticket.id }}">Volver</a>
   <label class="field--check"><input type="checkbox" data-toggle-logo {{ 'checked' if conLogo }} /> Incluir logo</label>
+  {% if notasInternas | length %}<label class="field--check"><input type="checkbox" data-toggle-internas /> Incluir 🔒 notas internas ({{ notasInternas | length }})</label>{% endif %}
 </div>
 {% if auto %}<span data-print-auto hidden></span>{% endif %}
 
 <article class="doc" id="contenido">
-  {% if conLogo %}{{ marca.brand() }}{% endif %}
-  <h1>Ticket #{{ ticket.numero }} — {{ ticket.asunto }}</h1>
+  <header class="doc__cab">
+    {% if conLogo %}{{ marca.brand() }}{% endif %}
+    <h1><span class="doc__folio">Ticket #{{ ticket.numero }}</span><br>{{ ticket.asunto }}</h1>
+  </header>
 
   <table class="datos">
     <tr><th>Empresa</th><td>{{ ticket.empresaNombre or '—' }}</td><th>Contacto</th><td>{{ ticket.contactoNombre or '—' }}</td></tr>
     <tr><th>Tipo</th><td>{{ ticket.tipo }}</td><th>Sistema</th><td>{{ ticket.sistema or '—' }}</td></tr>
-    <tr><th>Prioridad</th><td><span class="{{ ticket.prioridad | prioridadClase }}">{{ ticket.prioridad }}</span></td><th>Estado</th><td><span class="{{ ticket.estado | estadoClase }}">{{ ticket.estado }}</span></td></tr>
+    <tr><th>Prioridad</th><td>{{ ticket.prioridad }}</td><th>Estado</th><td>{{ ticket.estado }}</td></tr>
     <tr><th>Agente</th><td>{{ ticket.agenteAsignadoNombre or 'Sin asignar' }}</td><th>Grupo</th><td>{{ ticket.grupo or '—' }}</td></tr>
     {% if ticket.solicitadoPor or ticket.canalizadoA %}
       <tr><th>Solicitado por</th><td>{{ ticket.solicitadoPor or '—' }}</td><th>Canalizado a</th><td>{{ ticket.canalizadoA or '—' }}</td></tr>
@@ -49,25 +66,40 @@
     <tr><th>Facturación</th><td>{{ vm.facturacion.etiqueta }}</td><th>🧾 Factura</th><td><strong>{{ ticket.facturacion.folio or '—' }}</strong></td></tr>
   </table>
 
-  <h2>Descripción</h2>
+  <h2>📝 Descripción</h2>
   <div class="bloque">{{ descripcionHtml | safe }}</div>
 
+  {% macro mensaje(n, ticket, interna) %}
+    <div class="nota{{ ' nota--interna' if interna }}">
+      <p class="muted" style="margin:0">{{ n.autorNombre }} · {{ n.createdAt | fechahora }}</p>
+      <div>{{ (n.cuerpo | sinMarcasMigracion) if n.autorUid == 'migracion' else n.cuerpo }}</div>
+      {% for id in n.imagenes %}<img src="/app/tickets/{{ ticket.id }}/adjuntos/{{ id }}" alt="Captura" />{% endfor %}
+    </div>
+  {% endmacro %}
+
   {% if notas | length %}
-    <h2>Descripción</h2>
-    {% for n in notas %}
-      <div class="nota">
-        <p class="muted" style="margin:0">{{ n.autorNombre }} · {{ n.createdAt | fechahora }}</p>
-        <div>{{ (n.cuerpo | sinMarcasMigracion) if n.autorUid == 'migracion' else n.cuerpo }}</div>
-      </div>
-    {% endfor %}
+    <h2>💬 Seguimiento con el cliente</h2>
+    {% for n in notas %}{{ mensaje(n, ticket, false) }}{% endfor %}
   {% endif %}
 
-  {% if adjuntos | length %}
-    <h2>Adjuntos</h2>
-    <ul>{% for a in adjuntos %}<li>{{ a.nombre }} <span class="muted">({{ (a.tamano / 1024) | round }} KB)</span></li>{% endfor %}</ul>
-    {% for a in adjuntos %}{% if a.contentType.startsWith('image/') %}
-      <img src="/app/tickets/{{ ticket.id }}/adjuntos/{{ a.id }}" alt="{{ a.nombre }}" style="max-width:100%;margin-top:8px" />
-    {% endif %}{% endfor %}
+  {% if notasInternas | length %}
+    <section class="doc__internas">
+      <h2>🔒 Notas internas</h2>
+      {% for n in notasInternas %}{{ mensaje(n, ticket, true) }}{% endfor %}
+    </section>
+  {% endif %}
+
+  {% if adjuntosAparte | length %}
+    <h2>📎 Adjuntos</h2>
+    <div class="doc__miniaturas">
+      {% for a in adjuntosAparte %}
+        {% if a.contentType.startsWith('image/') %}
+          <figure><img src="/app/tickets/{{ ticket.id }}/adjuntos/{{ a.id }}" alt="{{ a.nombre }}" /><figcaption>{{ a.nombre }}</figcaption></figure>
+        {% else %}
+          <figure><figcaption>📄 {{ a.nombre }} ({{ (a.tamano / 1024) | round }} KB)</figcaption></figure>
+        {% endif %}
+      {% endfor %}
+    </div>
   {% endif %}
   <footer class="doc__footer">Impreso el {{ impresoEl | fechahora }}</footer>
 </article>

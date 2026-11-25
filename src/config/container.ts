@@ -514,7 +514,7 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
             'marcarConPlatica',
             'renombrarEstado',
             'renombrarEstadoSinMayusculas',
-          ]),
+          ], ['eliminar', 'eliminarVarios']),
           bitacoraRepo,
           idGenerator,
         ),
@@ -533,7 +533,8 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
     ).singleton(),
     unionEmpresasRepo: asFunction(
       ({ firestoreDb, cacheColecciones }: Cradle): IUnionEmpresasRepository =>
-        conSelloDeCambios(new FirestoreUnionEmpresasRepository(requireFirestore(firestoreDb)), cacheColecciones, ['tickets', 'contactos'], [
+        // Mueve referencias sin `cacheMod`: los tickets se releen completos (es raro).
+        conSelloDeCambios(new FirestoreUnionEmpresasRepository(requireFirestore(firestoreDb)), cacheColecciones, ['tickets', 'contactos'], [], [
           'moverReferencias',
           'moverReferenciasContacto',
         ]),

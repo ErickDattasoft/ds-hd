@@ -18,6 +18,19 @@ function firestoreFalso() {
   };
   const db = {
     collection: (nombre: string) => ({
+      // Solo lo que usa la copia por partes: where(campo, '>=', Timestamp).
+      where: (campo: string, _op: string, valor: { toDate(): Date }) => ({
+        get: async () => {
+          const docs = [...col(nombre).entries()]
+            .filter(([, data]) => {
+              const v = data[campo] as { toDate(): Date } | undefined;
+              return v && v.toDate().getTime() >= valor.toDate().getTime();
+            })
+            .map(([id, data]) => ({ id, data: () => data }));
+          lecturas.total += Math.max(1, docs.length);
+          return { docs };
+        },
+      }),
       get: async () => {
         const docs = [...col(nombre).entries()].map(([id, data]) => ({ id, data: () => data }));
         lecturas.total += docs.length;
@@ -60,7 +73,7 @@ describe('CacheColecciones (copia en memoria con sello de cambios)', () => {
     await instanciaB.todos('tickets');
     // B guarda un ticket y pone sello nuevo: A lo ve en su siguiente consulta.
     f.col('tickets').set('t51', { numero: 51 });
-    await instanciaB.marcarCambio('tickets');
+    await instanciaB.marcarCambio(['tickets'], { completo: true });
     expect(await instanciaA.todos('tickets')).toHaveLength(51);
   });
 
@@ -145,5 +158,30 @@ describe('CacheColecciones (copia en memoria con sello de cambios)', () => {
     const sello = JSON.stringify(f.col('sistema').get('sellos_colecciones'));
     expect(await repoB.quitar('no-existe')).toBe(false);
     expect(JSON.stringify(f.col('sistema').get('sellos_colecciones'))).toBe(sello);
+  });
+
+  it('tickets por partes: un cambio en otra instancia cuesta el sello + los tickets que cambiaron, no los 50', async () => {
+    const { Timestamp } = await import('../../src/core/entities/value-objects/Timestamp.js');
+    const f = firestoreFalso();
+    let reloj = Date.parse('2026-11-25T18:00:00Z');
+    const viejo = Timestamp.fromDate(new Date(reloj - 86_400_000));
+    for (let i = 1; i <= 50; i++) f.col('tickets').set(`t${i}`, { numero: i, cacheMod: viejo });
+    const a = new CacheColecciones(f.db, () => reloj);
+    const b = new CacheColecciones(f.db, () => reloj);
+    await a.todos('tickets');
+    const antes = f.lecturas.total;
+
+    reloj += 60_000;
+    f.col('tickets').set('t7', { numero: 7, asunto: 'cambiado', cacheMod: Timestamp.fromDate(new Date(reloj)) });
+    await b.marcarCambio(['tickets']);
+    const docs = await a.todos('tickets');
+    expect(f.lecturas.total - antes).toBe(2); // sello + 1 ticket (antes: 51)
+    expect(docs).toHaveLength(50);
+    expect(docs.find((d) => d.id === 't7')!.data.asunto).toBe('cambiado');
+
+    // Un borrado obliga a releer completa (para que desaparezca de todas las copias).
+    f.col('tickets').delete('t1');
+    await b.marcarCambio(['tickets'], { completo: true });
+    expect(await a.todos('tickets')).toHaveLength(49);
   });
 });
