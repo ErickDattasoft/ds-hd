@@ -164,3 +164,49 @@ describe('papelera de empresas y contactos (paridad con el viejo)', () => {
     expect(t.empresaRepo.items.get('e1')?.activa).toBe(true);
   });
 });
+
+describe('papelera: liberar el último folio de ticket', () => {
+  async function preparar() {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    const { agent, csrf } = await login(t.app, ADMIN.email, ADMIN.password);
+    const crear = async (asunto: string) =>
+      (await agent.post('/app/tickets/captura/crear').set('x-csrf-token', csrf).send({ tipo: 'General', asunto, estado: 'Resuelto' })).body as {
+        id: string;
+        numero: number;
+      };
+    const borrar = async (id: string) => {
+      await agent.post(`/app/tickets/${id}/archivar`).type('form').send({ _csrf: csrf });
+      return agent.post('/app/papelera/eliminar').type('form').send({ _csrf: csrf, tipo: 'tickets', ids: [id] }).redirects(1);
+    };
+    return { t, agent, csrf, crear, borrar };
+  }
+
+  it('el último ticket sin correos al cliente: se borra, sin marcador, y el siguiente reusa su folio', async () => {
+    const { t, crear, borrar } = await preparar();
+    await crear('Primero de verdad');
+    const prueba = await crear('Pre-ticket de prueba');
+    const r = await borrar(prueba.id);
+    expect(r.text).toContain(`Folio #${prueba.numero} liberado`);
+    expect([...t.ticketStore.tickets.values()].some((x) => x.numero === prueba.numero)).toBe(false); // ni marcador
+    const siguiente = await crear('El bueno');
+    expect(siguiente.numero).toBe(prueba.numero);
+    const bit = await t.bitacoraRepo.listar({ modulo: 'papelera' });
+    expect(bit.some((b) => b.resumen.includes('liberado'))).toBe(true);
+  });
+
+  it('si no es el último, o ya se le mandó correo al cliente, el folio se conserva con su marcador', async () => {
+    const { t, crear, borrar } = await preparar();
+    const viejo = await crear('No es el último');
+    await crear('Otro después');
+    await borrar(viejo.id);
+    expect([...t.ticketStore.tickets.values()].some((x) => x.numero === viejo.numero && x.eliminadoPorAdmin)).toBe(true);
+
+    const conCorreo = await crear('Con correo al cliente');
+    t.ticketStore.eventos.set(conCorreo.id, [
+      ...(t.ticketStore.eventos.get(conCorreo.id) ?? []),
+      { id: 'ev-correo', tipo: 'correo', descripcion: 'Correo enviado al cliente', actorUid: 'u-a', actorNombre: 'Admin', at: new Date() } as never,
+    ]);
+    await borrar(conCorreo.id);
+    expect((await crear('Siguiente')).numero).toBe(conCorreo.numero + 1);
+  });
+});
