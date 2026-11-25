@@ -227,6 +227,7 @@
         </p>
         <p><strong>Facturación:</strong>
           {% if vm.facturacion.clase %}<span class="badge badge--{{ vm.facturacion.clase }}">{{ vm.facturacion.etiqueta }}</span>{% else %}{{ vm.facturacion.etiqueta }}{% endif %}
+          {% if ticket.facturacion.folio %}<span title="Folio de factura">🧾 <strong>{{ ticket.facturacion.folio }}</strong></span>{% endif %}
         </p>
         <p><strong>Agente:</strong> {{ ticket.agenteAsignadoNombre or 'Sin asignar' }}</p>
         <p><strong>Empresa:</strong> <span class="nombre-sensible">{{ ticket.empresaNombre or '—' }}</span></p>
@@ -301,9 +302,9 @@
         </details>
 
         <details class="disclosure">
-          <summary class="disclosure__summary">Facturación <span class="disclosure__hint">— {{ vm.facturacion.etiqueta }}</span></summary>
+          <summary class="disclosure__summary">Facturación <span class="disclosure__hint">— {{ vm.facturacion.etiqueta }}{% if vm.facturacion.folio %} · 🧾 {{ vm.facturacion.folio }}{% endif %}</span></summary>
           <form method="post" action="/app/tickets/{{ ticket.id }}/facturar" class="form"
-            {%- if not ticket.esCerrado and estadoCerrado %} data-facturar-cerrar="{{ estadoCerrado }}"{{ ' data-puede-cerrar' if permisos.cambiarEstado }}{% endif %}>
+            {%- if not ticket.esCerrado and estadoCerrado %} data-facturar-cerrar="{{ estadoCerrado }}" data-facturar-original="{{ ticket.facturacion.estado }}"{{ ' data-puede-cerrar' if permisos.cambiarEstado }}{% endif %}>
             <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
             <input type="hidden" name="cerrarCon" value="" />
             <label class="field"><span>Estado</span>
@@ -311,6 +312,13 @@
                 {% for ef in estadosFacturacion %}<option value="{{ ef.valor }}" {{ 'selected' if ticket.facturacion.estado == ef.valor }}>{{ ef.etiqueta }}</option>{% endfor %}
               </select>
             </label>
+            <label class="field"><span>🧾 Folio de factura</span>
+              <input type="text" name="folioFactura" value="{{ ticket.facturacion.folio or '' }}" maxlength="60" placeholder="Ej: SER 1445" autocomplete="off" />
+              <em class="field__hint">Se guarda en el ticket sin mandar correo.</em></label>
+            {% if ticket.contactoCorreo %}
+            <label class="field--check"><input type="checkbox" name="avisarFolio" />
+              <span>✉️ Mandárselo al cliente <span class="muted">({{ ticket.contactoCorreo }}, solo a él)</span></span></label>
+            {% endif %}
             <button class="btn btn--sm" type="submit">Guardar</button>
           </form>
         </details>

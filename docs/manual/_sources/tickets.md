@@ -57,6 +57,14 @@ notas internas. Abajo hay **dos recuadros separados**:
 agente en copia contesta, su respuesta (con sus capturas) aparece sola en la conversación y queda
 en la actividad del ticket y en la Bitácora. Se configura en *Configuración → Correo entrante*.
 
+## 🧾 Folio de factura
+
+En el recuadro **Facturación** del ticket (panel derecho), además del estado, va el **🧾 Folio de
+factura** (p. ej. «SER 1445»). Se guarda **sin mandar correo** y se ve en el ticket, en la lista,
+en el Excel y en el portal del cliente. Si el cliente lo pide, marca **«✉️ Mandárselo al cliente»**:
+le llega un solo correo corto con el folio, sin copias al equipo. Al cerrar el ticket, el folio va
+también en el correo de cierre al cliente y en el aviso interno «[FACTURADO]».
+
 ## 🔔 Respuestas sin leer (cada quien la suya)
 
 Cuando un cliente contesta (por correo o desde su portal), el ticket aparece en la **🔔 campana**

@@ -67,6 +67,8 @@ export interface FacturacionState {
   /** Catálogo fijo: no_facturado/en_proceso/facturado/garantia/no_aplica/factura_mensual/consulta_sin_costo. */
   estado: EstadoFacturacion;
   notificadaEn: Date | null;
+  /** 🧾 Folio de la factura (p. ej. «SER 1445»), si ya se facturó. */
+  folio?: string | null;
 }
 
 /** Props para construir un {@link Ticket}. */
@@ -264,6 +266,7 @@ export class Ticket {
       // Respaldo al esquema viejo (`facturacion.facturado: boolean`) para tickets ya guardados.
       estado: sanearEstadoFacturacion(props.facturacion?.estado, props.facturacion?.facturado),
       notificadaEn: props.facturacion?.notificadaEn ?? null,
+      folio: props.facturacion?.folio?.trim() || null,
     };
     this.agenda = sanearAgenda(props.agenda);
     this.archivado = props.archivado ?? false;
@@ -493,6 +496,12 @@ export class Ticket {
 
   cambiarEstadoFacturacion(estado: EstadoFacturacion, ahora: Date): void {
     this.facturacion.estado = estado;
+    this.updatedAt = ahora;
+  }
+
+  /** 🧾 Guarda (o borra, con vacío) el folio de la factura. */
+  fijarFolioFactura(folio: string | null | undefined, ahora: Date): void {
+    this.facturacion.folio = (folio ?? '').trim().slice(0, 60) || null;
     this.updatedAt = ahora;
   }
 

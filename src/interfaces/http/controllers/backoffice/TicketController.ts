@@ -875,6 +875,8 @@ export class TicketController {
       actor: req.user!,
       ticketId,
       estado: parseEstadoFacturacion(req.body?.estado),
+      ...(typeof req.body?.folioFactura === 'string' ? { folio: req.body.folioFactura } : {}),
+      avisarFolio: req.body?.avisarFolio === 'on' || req.body?.avisarFolio === '1',
     });
     // «✅ Facturar y cerrar»: primero la facturación y luego el cierre, así el aviso [FACTURADO]
     // sale una sola vez (al cerrar) junto con el correo de cierre al cliente.

@@ -59,6 +59,8 @@ export interface TicketVM {
     etiqueta: string;
     /** Clase de badge para colorear el total facturable — `null` = sin marcar (no aplica). */
     clase: 'ok' | 'info' | 'warning' | null;
+    /** 🧾 Folio de la factura, si lo capturaron. */
+    folio: string | null;
   };
   /** Programación de atención, o `null` si el ticket no tiene agenda. */
   agenda: {
@@ -134,6 +136,7 @@ export function ticketVM(t: Ticket, ahora: Date): TicketVM {
     facturacion: {
       estado: t.facturacion.estado,
       etiqueta: etiquetaFacturacion(t.facturacion.estado),
+      folio: t.facturacion.folio ?? null,
       clase: esFacturacionCompletada(t.facturacion.estado)
         ? 'ok'
         : t.facturacion.estado === 'en_proceso'

@@ -856,7 +856,7 @@ describe('facturar y cerrar en un paso', () => {
     const t = makeTestApp({ usuarios: [SUP] });
     const { agent, csrf } = await login(t.app, SUP.email, SUP.password);
     const id = await nuevo(agent, csrf);
-    expect((await agent.get(`/app/tickets/${id}`)).text).toMatch(/data-facturar-cerrar="Cerrado" data-puede-cerrar/);
+    expect((await agent.get(`/app/tickets/${id}`)).text).toMatch(/data-facturar-cerrar="Cerrado" data-facturar-original="[a-z_]+" data-puede-cerrar/);
     await agent.post(`/app/tickets/${id}/estado`).type('form').send({ _csrf: csrf, estado: 'Cerrado' });
     expect((await agent.get(`/app/tickets/${id}`)).text).not.toContain('data-facturar-cerrar');
   });
@@ -1087,5 +1087,44 @@ describe('notas internas aparte de la conversación', () => {
     expect(hilo).not.toContain('Folio SER 4115');
     expect(hilo).toContain('Sin respuestas todavía');
     expect(recuadro).toContain('Folio SER 4115');
+  });
+});
+
+describe('🧾 folio de factura', () => {
+  it('se guarda sin mandar correo; con «Mandárselo al cliente» sale uno solo al cliente; va en el [FACTURADO] y en el cierre', async () => {
+    const ADMIN = { uid: 'u-adm2', email: 'adm2@dattasoft.mx', password: 'admin12345', nombre: 'Adm', rol: 'admin' as const };
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    const cfg = await t.configuracionRepo.obtenerTickets();
+    await t.configuracionRepo.guardarTickets({
+      ...cfg,
+      correosNotificacion: ['soporte@dattasoft.mx'],
+      avisosCierre: [{ correo: 'soporte@dattasoft.mx', cerrado: true, facturado: true, nuevo: true, respuestas: true }],
+    });
+    const { agent, csrf } = await login(t.app, ADMIN.email, ADMIN.password);
+    const crear = await agent.post('/app/tickets').type('form').send({
+      _csrf: csrf, asunto: 'Con factura', descripcion: 'descripción de prueba larga', tipo: 'General', prioridad: 'Media',
+      contactoCorreo: 'cliente@empresa.mx',
+    });
+    const id = String(crear.headers.location).split('/').pop()!;
+
+    t.emailSender.enviados.length = 0;
+    await agent.post(`/app/tickets/${id}/facturar`).type('form').send({ _csrf: csrf, estado: 'facturado', folioFactura: 'SER 1445' });
+    expect(t.ticketStore.tickets.get(id)!.facturacion.folio).toBe('SER 1445');
+    expect(t.emailSender.enviados).toHaveLength(0);
+    const det = await agent.get(`/app/tickets/${id}`);
+    expect(det.text).toContain('🧾 <strong>SER 1445</strong>');
+    expect((await agent.get('/app/tickets')).text).toContain('🧾 SER 1445');
+
+    await agent.post(`/app/tickets/${id}/facturar`).type('form').send({ _csrf: csrf, estado: 'facturado', folioFactura: 'SER 1445', avisarFolio: 'on' });
+    expect(t.emailSender.enviados).toHaveLength(1);
+    const alCliente = t.emailSender.enviados[0]!;
+    expect(alCliente.para.map((p) => p.email)).toEqual(['cliente@empresa.mx']);
+    expect(alCliente.cc ?? []).toEqual([]);
+    expect(alCliente.html).toContain('SER 1445');
+
+    t.emailSender.enviados.length = 0;
+    await agent.post(`/app/tickets/${id}/estado`).type('form').send({ _csrf: csrf, estado: 'Cerrado' });
+    expect(t.emailSender.enviados.find((c) => c.asunto.includes('[FACTURADO SER 1445]'))).toBeTruthy();
+    expect(t.emailSender.enviados.find((c) => c.tags?.includes('ticket-cerrado'))!.html).toContain('SER 1445');
   });
 });

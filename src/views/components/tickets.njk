@@ -14,6 +14,7 @@
   {% elif vm.facturacion.clase == 'info' %}<span class="badge badge--info">{{ vm.facturacion.etiqueta }}</span>
   {% elif vm.facturacion.clase == 'warning' %}<span class="badge badge--danger">{{ vm.facturacion.etiqueta }}</span>
   {% else %}<span class="muted">{{ vm.facturacion.etiqueta }}</span>{% endif %}
+  {% if vm.facturacion.folio %}<br><span class="muted" title="Folio de factura">🧾 {{ vm.facturacion.folio }}</span>{% endif %}
 {% endmacro %}
 
 {# El cliente contestó y nadie del equipo lo ha visto (mismo buzón que la campana 🔔). #}

@@ -37,10 +37,12 @@ export async function avisarSiQuedoCerradoYFacturado(input: {
   if (para.length) {
     await input.email.enviar({
       para,
-      asunto: `✅ Ticket #${ticket.numero} cerrado${ticket.empresaNombre ? ` — ${ticket.empresaNombre}` : ''} [FACTURADO]`,
+      asunto: `✅ Ticket #${ticket.numero} cerrado${ticket.empresaNombre ? ` — ${ticket.empresaNombre}` : ''} [FACTURADO${ticket.facturacion.folio ? ` ${ticket.facturacion.folio}` : ''}]`,
       html: `<p>El ticket <strong>#${ticket.numero} — ${ticket.asunto}</strong>${
         ticket.empresaNombre ? ` de <strong>${ticket.empresaNombre}</strong>` : ''
-      } fue cerrado y marcado como <strong>FACTURADO</strong>.</p>`,
+      } fue cerrado y marcado como <strong>FACTURADO</strong>.</p>${
+        ticket.facturacion.folio ? `<p>🧾 Folio de factura: <strong>${ticket.facturacion.folio.replace(/&/g, '&amp;').replace(/</g, '&lt;')}</strong></p>` : ''
+      }`,
       tags: ['ticket-cerrado-facturado', `ticket-${ticket.numero}`],
     });
   }

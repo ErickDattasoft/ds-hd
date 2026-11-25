@@ -15,6 +15,7 @@ export const COLUMNAS_TICKETS: ColumnaExcel[] = [
   { header: 'Canal', key: 'canal' },
   { header: 'Agente asignado', key: 'agente', width: 22 },
   { header: 'Facturación', key: 'facturado', width: 16 },
+  { header: 'Folio de factura', key: 'folioFactura', width: 16 },
   { header: 'Creado', key: 'creado', width: 14 },
 ];
 
@@ -46,6 +47,7 @@ export class TicketExcelService {
       canal: t.canal,
       agente: t.agenteAsignadoNombre ?? '',
       facturado: etiquetaFacturacion(t.facturacion.estado),
+      folioFactura: t.facturacion.folio ?? '',
       creado: t.createdAt.toISOString().slice(0, 10),
     }));
   }

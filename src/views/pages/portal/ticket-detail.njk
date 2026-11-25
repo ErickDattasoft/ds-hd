@@ -9,6 +9,7 @@
 
   <p>
     <span class="{{ ticket.estado | estadoClase }}">{{ ticket.estado }}</span>
+    {% if ticket.facturacion and ticket.facturacion.folio %}<span class="badge" title="Folio de tu factura">🧾 Factura {{ ticket.facturacion.folio }}</span>{% endif %}
     <span class="muted">Prioridad</span> <span class="{{ ticket.prioridad | prioridadClase }}">{{ ticket.prioridad }}</span>
   </p>
 

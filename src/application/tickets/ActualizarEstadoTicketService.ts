@@ -202,7 +202,9 @@ export class ActualizarEstadoTicketService {
       ...(dest.cco.length ? { cco: dest.cco } : {}),
       ...(dest.responderA ? { responderA: dest.responderA } : {}),
       asunto: `[Ticket #${ticket.numero}] ${ticket.asunto}`,
-      html: `${avisoSinContacto}<p>El ticket <strong>#${ticket.numero} — ${escaparHtml(ticket.asunto)}</strong> fue marcado como <strong>${tipo}</strong>.</p>${historial}${
+      html: `${avisoSinContacto}<p>El ticket <strong>#${ticket.numero} — ${escaparHtml(ticket.asunto)}</strong> fue marcado como <strong>${tipo}</strong>.</p>${
+        ticket.facturacion.folio ? `<p>🧾 Factura: <strong>${escaparHtml(ticket.facturacion.folio)}</strong></p>` : ''
+      }${historial}${
         this.encuesta && !dest.sinContacto ? this.encuesta.bloqueCorreo(ticket) : ''
       }`,
       tags: [`ticket-${tipo}`, `ticket-${ticket.numero}`],
