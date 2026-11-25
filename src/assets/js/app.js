@@ -2084,6 +2084,55 @@
     if (primero) primero.focus();
   }, true);
 
+  // ── 🧾 Una «Respuesta al cliente» que es solo un folio de factura («SER 4120») ──
+  // Mandarlo como respuesta llega por correo al cliente y al equipo; lo normal es guardarlo en el
+  // recuadro «🧾 Factura» (no manda correo). Se pregunta antes de enviar.
+  var FOLIO_SOLO = /^\s*(folio\s*(de\s*factura)?\s*[:#]?\s*|factura\s*[:#]?\s*)?[A-Za-z]{1,5}[\s-]?\d{1,7}(\s*([-,\/]|y)\s*[A-Za-z]{1,5}[\s-]?\d{1,7}){0,3}\s*$/i;
+  document.addEventListener('submit', function (e) {
+    var form = e.target.closest && e.target.closest('form.chat__escribir--cliente');
+    if (!form || form.dataset.folioDecidido) return;
+    var ta = form.querySelector('textarea[name=cuerpo]');
+    var texto = ta ? ta.value.trim() : '';
+    var factura = document.querySelector('form.factura-box__form');
+    if (!texto || !factura || !FOLIO_SOLO.test(texto)) return;
+    e.preventDefault();
+    e.stopPropagation();
+    var folio = texto.replace(/^\s*(folio\s*(de\s*factura)?\s*[:#]?\s*|factura\s*[:#]?\s*)/i, '').trim().toUpperCase();
+    var dlg = document.createElement('dialog');
+    dlg.className = 'card facturar-cerrar';
+    dlg.innerHTML =
+      '<h2>🧾 ¿Es el folio de la factura?</h2>' +
+      '<p>Escribiste <strong></strong> en «Respuesta al cliente»: eso le manda un correo al cliente (y copias al equipo).</p>' +
+      '<p class="muted">Si es el folio, guárdalo en el recuadro «🧾 Factura»: queda a la vista en el ticket, sale en los correos y al imprimir, y no manda correo.</p>' +
+      '<div class="facturar-cerrar__botones">' +
+      '<button type="button" class="btn" data-fo="folio">🧾 Guardarlo como folio</button>' +
+      '<button type="button" class="btn btn--ghost" data-fo="enviar">✉️ Enviarlo al cliente de todos modos</button>' +
+      '<button type="button" class="btn btn--ghost" data-fo="cancelar">Cancelar</button></div>';
+    dlg.querySelector('strong').textContent = folio;
+    document.body.appendChild(dlg);
+    dlg.addEventListener('close', function () { dlg.remove(); });
+    dlg.addEventListener('click', function (ev) {
+      var b = ev.target.closest('[data-fo]');
+      if (!b) return;
+      var accion = b.getAttribute('data-fo');
+      dlg.close();
+      if (accion === 'cancelar') return;
+      if (accion === 'enviar') {
+        form.dataset.folioDecidido = '1';
+        if (form.requestSubmit) form.requestSubmit(); else form.submit();
+        return;
+      }
+      var campo = factura.querySelector('input[name=folioFactura]');
+      if (campo) campo.value = folio;
+      var est = factura.querySelector('select[name=estado]');
+      if (est && est.value === 'no_facturado' && est.querySelector('option[value=facturado]')) est.value = 'facturado';
+      if (ta) ta.value = '';
+      if (factura.requestSubmit) factura.requestSubmit(); else factura.submit();
+    });
+    dlg.showModal();
+    dlg.querySelector('[data-fo]').focus();
+  }, true);
+
   // ── Ticket: al CERRAR uno que sigue en «No facturado», «💲 ¿Ya se facturó?» ──
   // data-cerrar-cobro = «facturado|Facturado;factura_mensual|Factura mensual» (las del catálogo).
   // alElegir(valor): valor de facturación, '' = cerrar sin facturar; Cancelar no lo llama.
