@@ -162,9 +162,9 @@ en la actividad del ticket y en la Bitácora. Se configura en *Configuración �
 
 ## 🧾 Folio de factura
 
-En el recuadro **Facturación** del ticket (panel derecho), además del estado, va el **🧾 Folio de
+En el recuadro **🧾 Factura** del ticket (junto a «💬 Respuesta al cliente» y «🔒 Notas internas»), además del estado, va el **🧾 Folio de
 factura** (p. ej. «SER 1445»). Se guarda **sin mandar correo** y se ve en el ticket, en la lista,
-en el Excel y en el portal del cliente. Si el cliente lo pide, marca **«✉️ Mandárselo al cliente»**:
+en el Excel, en el portal del cliente, en todos los correos del ticket y al imprimir. Si el cliente lo pide, marca **«✉️ Mandárselo al cliente»**:
 le llega un solo correo corto con el folio, sin copias al equipo. Al cerrar el ticket, el folio va
 también en el correo de cierre al cliente y en el aviso interno «[FACTURADO]».
 

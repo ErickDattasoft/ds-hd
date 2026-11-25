@@ -13,7 +13,7 @@ import { ForbiddenError, NotFoundError } from '../../core/errors/DomainError.js'
 import { publicarNotaInterna, registrarEvento } from './efectos.js';
 import { avisarSiQuedoCerradoYFacturado } from './cerradoFacturado.js';
 import { escaparHtml, historialActividadHtml } from './historialCorreo.js';
-import { destinatariosTicket } from './notificacionTicket.js';
+import { destinatariosTicket, folioFacturaHtml } from './notificacionTicket.js';
 import type { EncuestaSatisfaccionService } from './EncuestaSatisfaccionService.js';
 import type { CambiarEstadoInput } from './dto.js';
 import { ticketVisiblePara } from './alcance.js';
@@ -152,7 +152,7 @@ export class ActualizarEstadoTicketService {
         `<p>📌 Actualización de tu ticket <strong>#${ticket.numero} — ${escaparHtml(ticket.asunto)}</strong>:</p>` +
         `<p style="background:#f0fdf4;color:#166534;padding:10px 14px;border-radius:6px">Estado: ` +
         `${anterior ? `<strong>${escaparHtml(anterior)}</strong> → ` : ''}<strong>${escaparHtml(estado)}</strong></p>` +
-        `${ticket.agenteAsignadoNombre ? `<p>Lo atiende: ${escaparHtml(ticket.agenteAsignadoNombre)}.</p>` : ''}${historial}` +
+        `${ticket.agenteAsignadoNombre ? `<p>Lo atiende: ${escaparHtml(ticket.agenteAsignadoNombre)}.</p>` : ''}${folioFacturaHtml(ticket)}${historial}` +
         '<p>Puedes responder a este correo para agregar información.</p>',
       tags: ['ticket-avance', `ticket-${ticket.numero}`],
     });
@@ -202,9 +202,7 @@ export class ActualizarEstadoTicketService {
       ...(dest.cco.length ? { cco: dest.cco } : {}),
       ...(dest.responderA ? { responderA: dest.responderA } : {}),
       asunto: `[Ticket #${ticket.numero}] ${ticket.asunto}`,
-      html: `${avisoSinContacto}<p>El ticket <strong>#${ticket.numero} — ${escaparHtml(ticket.asunto)}</strong> fue marcado como <strong>${tipo}</strong>.</p>${
-        ticket.facturacion.folio ? `<p>🧾 Factura: <strong>${escaparHtml(ticket.facturacion.folio)}</strong></p>` : ''
-      }${historial}${
+      html: `${avisoSinContacto}<p>El ticket <strong>#${ticket.numero} — ${escaparHtml(ticket.asunto)}</strong> fue marcado como <strong>${tipo}</strong>.</p>${folioFacturaHtml(ticket)}${historial}${
         this.encuesta && !dest.sinContacto ? this.encuesta.bloqueCorreo(ticket) : ''
       }`,
       tags: [`ticket-${tipo}`, `ticket-${ticket.numero}`],

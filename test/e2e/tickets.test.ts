@@ -1126,5 +1126,12 @@ describe('🧾 folio de factura', () => {
     await agent.post(`/app/tickets/${id}/estado`).type('form').send({ _csrf: csrf, estado: 'Cerrado' });
     expect(t.emailSender.enviados.find((c) => c.asunto.includes('[FACTURADO SER 1445]'))).toBeTruthy();
     expect(t.emailSender.enviados.find((c) => c.tags?.includes('ticket-cerrado'))!.html).toContain('SER 1445');
+
+    // A la vista: recuadro 🧾 Factura junto a respuestas y notas, en cada correo y al imprimir.
+    expect(det.text).toContain('class="factura-box__folio" title="Folio de factura">SER 1445');
+    t.emailSender.enviados.length = 0;
+    await agent.post(`/app/tickets/${id}/nota`).type('form').send({ _csrf: csrf, cuerpo: 'Seguimos' });
+    expect(t.emailSender.enviados[0]!.html).toContain('🧾 Factura: <strong>SER 1445</strong>');
+    expect((await agent.get(`/app/tickets/${id}/imprimir`)).text).toContain('<strong>SER 1445</strong>');
   });
 });

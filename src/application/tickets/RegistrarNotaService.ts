@@ -19,7 +19,7 @@ import { Email } from '../../core/entities/value-objects/Email.js';
 import { ForbiddenError, NotFoundError, ValidationError } from '../../core/errors/DomainError.js';
 import { publicarNotaInterna, registrarEvento } from './efectos.js';
 import { historialActividadHtml } from './historialCorreo.js';
-import { avisoResponderHtml, destinatariosTicket } from './notificacionTicket.js';
+import { avisoResponderHtml, destinatariosTicket, folioFacturaHtml } from './notificacionTicket.js';
 import type { RegistrarNotaInput } from './dto.js';
 import { ticketVisiblePara } from './alcance.js';
 import type { SessionUser } from '../shared/SessionUser.js';
@@ -184,7 +184,7 @@ export class RegistrarNotaService {
           ...(dest.responderA ? { responderA: dest.responderA } : {}),
           // "[Ticket #N]" en el asunto: si el cliente contesta, su respuesta regresa a este ticket.
           asunto: `[Ticket #${ticket.numero}] ${ticket.asunto}`,
-          html: `${avisoSinContacto}<div>${textoOHtmlASeguro(cuerpo)}</div>${imagenesHtml}${firma}<hr />${avisoResponderHtml(ticket.numero)}<p class="muted">Ticket #${ticket.numero} — ${ticket.asunto}</p>${historial}`,
+          html: `${avisoSinContacto}<div>${textoOHtmlASeguro(cuerpo)}</div>${imagenesHtml}${firma}${folioFacturaHtml(ticket)}<hr />${avisoResponderHtml(ticket.numero)}<p class="muted">Ticket #${ticket.numero} — ${ticket.asunto}</p>${historial}`,
           tags: ['ticket-nota', `ticket-${ticket.numero}`],
         });
       }

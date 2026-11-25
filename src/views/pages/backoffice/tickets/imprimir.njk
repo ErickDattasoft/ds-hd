@@ -46,6 +46,7 @@
       <tr><th>Solicitado por</th><td>{{ ticket.solicitadoPor or '—' }}</td><th>Canalizado a</th><td>{{ ticket.canalizadoA or '—' }}</td></tr>
     {% endif %}
     <tr><th>Creado</th><td>{{ ticket.createdAt | fechahora }}</td><th>Tiempo trab.</th><td>{{ vm.tiempoTrabajado }}</td></tr>
+    <tr><th>Facturación</th><td>{{ vm.facturacion.etiqueta }}</td><th>🧾 Factura</th><td><strong>{{ ticket.facturacion.folio or '—' }}</strong></td></tr>
   </table>
 
   <h2>Descripción</h2>

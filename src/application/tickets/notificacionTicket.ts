@@ -67,6 +67,14 @@ export function destinatariosTicket(
   return { para: copias.map((email) => ({ email })), cc: [], cco, responderA, sinContacto: true };
 }
 
+/** 🧾 Recuadro con el folio de la factura para los correos del ticket ('' si no hay folio). */
+export function folioFacturaHtml(ticket: Pick<Ticket, 'facturacion'>): string {
+  const folio = ticket.facturacion.folio?.trim();
+  if (!folio) return '';
+  const e = folio.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  return `<p style="background:#eef2ff;color:#3730a3;padding:8px 12px;border-radius:6px;font-family:sans-serif;font-size:15px">🧾 Factura: <strong>${e}</strong></p>`;
+}
+
 /**
  * Leyenda para el cliente: puede contestar el correo tal cual. El "[Ticket #N]" del asunto es lo
  * que hace que su respuesta regrese a este ticket (ver CorreoEntranteService).
@@ -127,6 +135,7 @@ export function resumenTicketHtml(
       ${fila('Prioridad', ticket.prioridad)}
       ${fila('Estado', ticket.estado)}
       ${fila('Agente', ticket.agenteAsignadoNombre)}
+      ${ticket.facturacion.folio ? fila('🧾 Factura', ticket.facturacion.folio) : ''}
     </table>
     <h3 style="font-family:sans-serif;margin-top:16px">Descripción</h3>
     <div style="background:#f9fafb;padding:12px;border-radius:6px;font-family:sans-serif;white-space:pre-wrap">${desc.html}</div>
