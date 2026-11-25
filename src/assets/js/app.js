@@ -2087,7 +2087,7 @@
   // ── 🧾 Una «Respuesta al cliente» que es solo un folio de factura («SER 4120») ──
   // Mandarlo como respuesta llega por correo al cliente y al equipo; lo normal es guardarlo en el
   // recuadro «🧾 Factura» (no manda correo). Se pregunta antes de enviar.
-  var FOLIO_SOLO = /^\s*(folio\s*(de\s*factura)?\s*[:#]?\s*|factura\s*[:#]?\s*)?[A-Za-z]{1,5}[\s-]?\d{1,7}(\s*([-,\/]|y)\s*[A-Za-z]{1,5}[\s-]?\d{1,7}){0,3}\s*$/i;
+  var FOLIO_SOLO = /^\s*(folio\s*(de\s*factura)?\s*[:#]?\s*|factura\s*[:#]?\s*)?[A-Za-z]{1,5}[\s-]?\d{1,7}(\s*([-,/]|y)\s*[A-Za-z]{1,5}[\s-]?\d{1,7}){0,3}\s*$/i;
   document.addEventListener('submit', function (e) {
     var form = e.target.closest && e.target.closest('form.chat__escribir--cliente');
     if (!form || form.dataset.folioDecidido) return;
