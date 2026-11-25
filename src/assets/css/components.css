@@ -2221,3 +2221,14 @@ dialog.facturar-cerrar h2 { margin: 0 0 var(--space-2); font-size: 1.2rem; }
 .notas-internas__vacio { margin: 0; font-size: var(--text-sm); }
 .notas-internas__form { display: flex; flex-direction: column; gap: var(--space-2); max-width: none; margin: 0; }
 .notas-internas__form textarea { width: 100%; }
+/* Eventos: todas las tablas con las mismas columnas y anchos (Fecha, Estado, Van y Cupo alineados). */
+.ev-tabla { table-layout: fixed; width: 100%; }
+.ev-tabla__titulo { width: 40%; }
+.ev-tabla__fecha { width: 22%; }
+.ev-tabla__estado { width: 14%; }
+.ev-tabla__van { width: 10%; }
+.ev-tabla__cupo { width: 14%; }
+.ev-tabla td:first-child { overflow-wrap: anywhere; }
+.ev-van { font-weight: 700; font-size: 1.05rem; text-decoration: none; white-space: nowrap; }
+.ev-van:hover { text-decoration: underline; }
+@media (max-width: 640px) { .ev-tabla { table-layout: auto; } }

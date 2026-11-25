@@ -48,15 +48,19 @@
     <section class="ev-paso ev-grupo ev-grupo--{{ g.tipo }}" id="tipo-{{ g.tipo }}">
       <h2 class="ev-paso__titulo">{{ g.titulo }} <span class="badge">{{ g.eventos | length }}</span></h2>
       {% if g.eventos | length %}
-        <div class="table-wrap"><table class="data-table">
-          <thead><tr><th>Título</th><th>{{ 'Creado' if g.tipo == 'comunicado' else 'Fecha' }}</th><th>Estado</th>{% if g.tipo != 'comunicado' and g.tipo != 'felicitacion' %}<th>Cupo</th>{% endif %}</tr></thead>
+        <div class="table-wrap"><table class="data-table ev-tabla">
+          {# Mismas columnas y anchos en todos los tipos, para que Fecha, Estado, Van y Cupo queden alineados. #}
+          <colgroup><col class="ev-tabla__titulo" /><col class="ev-tabla__fecha" /><col class="ev-tabla__estado" /><col class="ev-tabla__van" /><col class="ev-tabla__cupo" /></colgroup>
+          <thead><tr><th>Título</th><th>{{ 'Creado' if g.tipo == 'comunicado' else 'Fecha' }}</th><th>Estado</th><th>👥 Van</th><th>Cupo</th></tr></thead>
           <tbody>
             {% for e in g.eventos %}
+              {% set confirma = g.tipo != 'comunicado' and g.tipo != 'felicitacion' %}
               <tr>
                 <td><a href="/app/eventos/{{ e.id }}">{{ e.titulo }}</a></td>
                 <td>{{ (e.createdAt if g.tipo == 'comunicado' else e.fechaHora) | fechahora }}</td>
                 <td><span class="{{ e.estado | estadoClase }}">{{ e.estado }}</span></td>
-                {% if g.tipo != 'comunicado' and g.tipo != 'felicitacion' %}<td>{{ e.cupo if e.cupo else 'sin límite' }}</td>{% endif %}
+                <td>{% if confirma and van[e.id] !== undefined %}<a class="ev-van" href="/app/eventos/{{ e.id }}" title="Total que van: invitados que confirmaron + los «Sí» del link abierto">👥 {{ van[e.id] }}</a>{% else %}<span class="muted">—</span>{% endif %}</td>
+                <td>{% if confirma %}{{ e.cupo if e.cupo else 'sin límite' }}{% else %}<span class="muted">—</span>{% endif %}</td>
               </tr>
             {% endfor %}
           </tbody>

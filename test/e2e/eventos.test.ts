@@ -1382,3 +1382,20 @@ describe('🔔 aviso al equipo de cada registro', () => {
     expect(t.inscripcionRepo.items).toHaveLength(1);
   });
 });
+
+describe('lista de eventos: 👥 cuántos van', () => {
+  it('muestra el total que van (link abierto con «Sí» y sus acompañantes) sin abrir el evento', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    t.eventoRepo.items.set('ev1', new Evento({ id: 'ev1', titulo: 'POSADA DATTASOFT', tipo: 'presencial', fechaHora: new Date(Date.now() + 9 * 86_400_000), estado: 'borrador' }));
+    const ins = (id: string, asistira: string, personas: number) => ({
+      id, eventoId: 'ev1', nombre: id, email: null, telefono: null, empresa: null, estado: 'confirmada', origen: 'publico',
+      correoEstado: null, recordatoriosEnviados: [], ip: null, correoSospechoso: false, asistira, personas, usaSistema: null,
+      createdAt: new Date(),
+    });
+    t.inscripcionRepo.items.push(ins('a', 'Sí', 3) as never, ins('b', 'Sí', 1) as never, ins('c', 'No', 2) as never);
+    const { agent } = await login(t.app, ADMIN.email, ADMIN.password);
+    const res = await agent.get('/app/eventos');
+    expect(res.text).toContain('👥 4');
+    expect(res.text).toContain('ev-tabla__cupo');
+  });
+});

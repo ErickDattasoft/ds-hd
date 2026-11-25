@@ -1,5 +1,5 @@
 import type { Request, Response } from 'express';
-import type { EventoService } from '../../../../application/eventos/EventoService.js';
+import { personasQueVanDelLink, type EventoService } from '../../../../application/eventos/EventoService.js';
 import type { EstadoInscripcion } from '../../../../core/entities/Inscripcion.js';
 import {
   RESPUESTAS_INVITACION,
@@ -46,9 +46,21 @@ export class EventoController {
 
   listar = async (req: Request, res: Response): Promise<void> => {
     const eventos = await this.eventos.listar();
+    // 👥 Cuántos van, para no tener que abrir cada evento (solo los que piden confirmar; los ya
+    // pasados no, para no gastar lecturas en eventos viejos).
+    const ayer = Date.now() - 86_400_000;
+    const van: Record<string, number> = {};
+    await Promise.all(
+      eventos
+        .filter((e) => e.pideConfirmacion && (!e.fechaHora || e.fechaHora.getTime() >= ayer))
+        .map(async (e) => {
+          van[e.id] = await this.eventos.totalQueVan(e).catch(() => e.resumenInvitaciones.personas);
+        }),
+    );
     res.render('pages/backoffice/eventos/list', {
       titulo: 'Eventos',
       eventos,
+      van,
       // Un recuadro por tipo, en el mismo orden que las tarjetas de arriba.
       grupos: TIPOS_EVENTO.map((tipo) => ({
         tipo,
@@ -235,9 +247,7 @@ export class EventoController {
       difusionVM,
       mensajeLinkAbierto: this.eventos.mensajeWhatsAppLinkAbierto(evento, ''),
       // Del link público cuentan quienes dijeron «Sí» (cada uno con sus acompañantes).
-      personasInscritos: inscritos
-        .filter((i) => (i.asistira ?? '').trim().toLowerCase() === 'sí' || (i.asistira ?? '').trim().toLowerCase() === 'si')
-        .reduce((t, i) => t + (i.personas ?? 1), 0),
+      personasInscritos: personasQueVanDelLink(inscritos),
       avisoInvitaciones: str(req.query.aviso),
       MAX_PASES,
       TIPO_EVENTO_ETIQUETA,

@@ -107,6 +107,13 @@ function plantillaPropia(texto: string | null): string | null {
 }
 
 /** Personas de un registro público: solo cuenta si dijo que sí va y el evento deja anotar a más. */
+/** Del link abierto cuentan quienes dijeron «Sí» (cada uno con sus acompañantes). */
+export function personasQueVanDelLink(inscritos: readonly { asistira?: string | null; personas?: number | null }[]): number {
+  return inscritos
+    .filter((i) => ['sí', 'si'].includes((i.asistira ?? '').trim().toLowerCase()))
+    .reduce((t, i) => t + (i.personas ?? 1), 0);
+}
+
 function personasRegistro(max: number, input: { asistira?: string; personas?: number }): number | null {
   if (max <= 1 || (input.asistira ?? '').trim().toLowerCase() === 'no') return null;
   const n = Math.trunc(Number(input.personas ?? 1));
@@ -144,6 +151,15 @@ export class EventoService {
   ) {}
 
   // ── Consulta ─────────────────────────────────────────────────────────────
+  /**
+   * 👥 Total que van: invitados con nombre que confirmaron (con sus acompañantes) + quienes dijeron
+   * «Sí» en el link abierto. Lo mismo que muestra la página del evento.
+   */
+  async totalQueVan(evento: Evento): Promise<number> {
+    const inscritos = await this.inscripciones.listPorEvento(evento.id);
+    return evento.resumenInvitaciones.personas + personasQueVanDelLink(inscritos);
+  }
+
   listar(soloPublicados = false): Promise<Evento[]> {
     return this.eventos.list(soloPublicados);
   }
@@ -1540,11 +1556,7 @@ export class EventoService {
     try {
       const para = await this.destinatariosAviso(evento);
       if (!para.length) return;
-      const inscritos = await this.inscripciones.listPorEvento(evento.id);
-      const vanDelLink = inscritos
-        .filter((i) => ['sí', 'si'].includes((i.asistira ?? '').trim().toLowerCase()))
-        .reduce((t, i) => t + (i.personas ?? 1), 0);
-      const total = evento.resumenInvitaciones.personas + vanDelLink;
+      const total = await this.totalQueVan(evento);
       const esc = (t: string): string =>
         t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
       const filas = aviso.datos
