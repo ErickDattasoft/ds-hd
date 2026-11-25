@@ -841,4 +841,21 @@ describe('⚡ captura rápida', () => {
     });
     expect(t.ticketStore.tickets.get(tk.id)!.preTicket).toBe(false);
   });
+
+  it('el agente por defecto es quien inició sesión (también al llegar desde 🗒️ Mis notas); «Sin asignar» se respeta', async () => {
+    const t = makeTestApp({ usuarios: [SUP, AG] });
+    const { agent, csrf } = await login(t.app, SUP.email, SUP.password);
+    const yo = new RegExp(`<option value="${SUP.uid}" selected>`);
+
+    const vista = await agent.get('/app/tickets/captura');
+    expect(vista.text).toMatch(yo);
+
+    // Desde Mis notas el formulario solo trae el texto: cada fila queda con quien inició sesión.
+    const desdeNotas = await agent.post('/app/tickets/captura').type('form').send({ _csrf: csrf, texto: 'EMPRESA X - 27/10/2026\nRevisar timbrado' });
+    expect(desdeNotas.status).toBe(200);
+    expect(desdeNotas.text.match(new RegExp(yo, 'g'))?.length).toBeGreaterThanOrEqual(2);
+
+    const sinAsignar = await agent.post('/app/tickets/captura').type('form').send({ _csrf: csrf, texto: 'EMPRESA X - 27/10/2026\nRevisar timbrado', agenteUid: '' });
+    expect(sinAsignar.text).not.toMatch(yo);
+  });
 });

@@ -381,6 +381,8 @@ export class TicketController {
       agentes: agentes.map((a) => ({ uid: a.uid, nombre: a.nombre })).sort((a, b) => a.nombre.localeCompare(b.nombre, 'es')),
       estadoResuelto,
       puedeAsignar: user.permisos.includes('tickets:asignar'),
+      // Agente por defecto: quien inició sesión, si es de los que pueden recibir tickets.
+      agenteDeSesion: agentes.some((a) => a.uid === user.uid) ? user.uid : '',
     };
   }
 
@@ -392,7 +394,7 @@ export class TicketController {
       ...d,
       texto: '',
       filas: null,
-      valores: { tipo: d.config.predeterminados?.tipo || '', agenteUid: req.user!.esTecnico ? req.user!.uid : '' },
+      valores: { tipo: d.config.predeterminados?.tipo || '', agenteUid: d.agenteDeSesion },
     });
   };
 
@@ -405,7 +407,10 @@ export class TicketController {
       this.empresasRepo.list({ activa: true }),
       this.contactosRepo.list({ activo: true }),
     ]);
-    const agenteDefecto = str(b.agenteUid);
+    // Si el formulario no trae el campo (viene de 🗒️ Mis notas), el agente es quien inició
+    // sesión; si lo trae vacío es «— Sin asignar —» elegido a propósito.
+    const agenteDefecto = typeof b.agenteUid === 'string' ? b.agenteUid : d.agenteDeSesion;
+    const tipo = str(b.tipo) || d.config.predeterminados?.tipo || '';
     const filas = separarNotas(texto)
       .slice(0, 100)
       .map((n) =>
@@ -424,7 +429,7 @@ export class TicketController {
       filas,
       hoy: new Date(this.clock.now().getTime() - 6 * 3_600_000).toISOString().slice(0, 10),
       empresasNombres: empresas.map((e) => e.nombre).sort((a, b) => a.localeCompare(b, 'es')),
-      valores: { tipo: str(b.tipo), agenteUid: agenteDefecto },
+      valores: { tipo, agenteUid: agenteDefecto },
     });
   };
 
