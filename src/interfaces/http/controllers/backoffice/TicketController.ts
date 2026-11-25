@@ -650,7 +650,13 @@ export class TicketController {
       vm: ticketVM(d.ticket, ahora),
       ticket: d.ticket,
       descripcionHtml: d.descripcionHtml,
-      notas: d.notas.map((n) => ({ ...n, modificable: RegistrarNotaService.puedeModificarNota(req.user!, n) })),
+      // La conversación con el cliente y las notas internas van en lugares distintos de la página.
+      notas: d.notas
+        .filter((n) => n.tipo !== 'interna')
+        .map((n) => ({ ...n, modificable: RegistrarNotaService.puedeModificarNota(req.user!, n) })),
+      notasInternas: d.notas
+        .filter((n) => n.tipo === 'interna')
+        .map((n) => ({ ...n, modificable: RegistrarNotaService.puedeModificarNota(req.user!, n) })),
       notasTotal: d.notasTotal,
       // El campo de notas internas de antes, si su texto no está ya en la conversación (los
       // tickets migrados lo traen también como nota de «Migración»). Solo a quien ve internas.

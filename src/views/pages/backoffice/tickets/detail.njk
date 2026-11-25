@@ -2,59 +2,8 @@
 {% import "components/tickets.njk" as tk %}
 {% block title %}Ticket #{{ ticket.numero }}{% endblock %}
 {% block content %}
-  <div class="page-head">
-    <h1>#{{ ticket.numero }} — {{ ticket.asunto }}</h1>
-    <div class="page-head__actions">
-      {% if permisos.editar and not ticket.eliminadoPorAdmin %}<a class="btn btn--sm" href="/app/tickets/{{ ticket.id }}/editar">✏️ Editar</a>{% endif %}
-      <a class="btn btn--sm btn--ghost" href="/app/tickets/{{ ticket.id }}/imprimir?auto=1" target="_blank" rel="noopener">🖨️ Imprimir</a>
-      {% if cotizacionLigada %}
-        <a class="btn btn--sm btn--ghost" href="/app/cotizaciones/{{ cotizacionLigada.id }}" title="Cotización hecha desde este ticket">🧾 Cotización: {{ cotizacionLigada.folio }}</a>
-      {% endif %}
-      {# Como el viejo: ya no se ofrece «Cotizar» si hay una cotización ligada que no fue rechazada. #}
-      {% if permisos.cotizar and (not cotizacionLigada or cotizacionLigada.estado == 'rechazada') %}
-        <a class="btn btn--sm btn--ghost" href="/app/cotizaciones/nueva?empresa={{ ticket.empresaId or '' }}&ticket={{ ticket.id }}&ticketNumero={{ ticket.numero }}&contacto={{ (ticket.contactoNombre or '') | urlencode }}&correo={{ (ticket.contactoCorreo or '') | urlencode }}&conceptos=[{{ '{' }}&quot;descripcion&quot;:&quot;{{ ticket.asunto }}&quot;,&quot;cantidad&quot;:1,&quot;precioUnitario&quot;:0{{ '}' }}]">🧾 Cotizar</a>
-      {% endif %}
-      {% if permisos.eliminar and not ticket.eliminadoPorAdmin %}<button type="submit" form="archivar-ticket" class="btn btn--sm btn--ghost" title="{{ 'Restaurar ticket' if ticket.archivado else 'Enviar a la papelera' }}">{{ '♻️ Restaurar' if ticket.archivado else '🗑️ Papelera' }}</button>{% endif %}
-      <a class="btn btn--sm btn--ghost" href="/app/tickets">← Volver</a>
-    </div>
-  </div>
-  {% if ticket.preTicket %}<p class="alert">📝 <strong>Pre-ticket</strong> de la ⚡ Captura rápida. Revísalo con <a href="/app/tickets/{{ ticket.id }}/editar">✏️ Editar</a> (tipo, sistema, contacto…) y al guardar queda como ticket normal.</p>{% endif %}
-
-  {% if aviso == 'correo-reenviado' %}
-    <p class="alert alert--ok">✉️ Correo reenviado{% if avisoDetalle %} a {{ avisoDetalle }}{% endif %}.</p>
-  {% elif aviso == 'correo-sin-destinatario' %}
-    <p class="alert alert--warn">No se pudo reenviar: el ticket no tiene correo de contacto y no hay correos de notificación configurados.</p>
-  {% endif %}
-
-  <div class="ticket-grid">
-    <section>
-      {# Conversación tipo chat: la solicitud original es el primer mensaje, luego todo en orden
-         (lo más reciente abajo, junto a la caja para escribir). Cliente a la izquierda, equipo a la derecha. #}
-      <div class="card chat" id="conversacion" data-marcar-leida="/app/tickets/{{ ticket.id }}/leida">
-        <p class="chat__titulo"><strong>📝 Descripción</strong> <span class="muted">— cliente a la izquierda · equipo a la derecha · 🔒 notas internas en amarillo</span></p>
-
-        <div class="chat__hilo" data-chat-hilo data-chat-conteo="/app/tickets/{{ ticket.id }}/notas/conteo" data-chat-n="{{ notasTotal }}">
-          <div class="chat__msg chat__msg--cliente">
-            <div class="chat__meta">
-              <span class="chat__autor">📝 <span class="nombre-sensible">{{ ticket.contactoNombre or ticket.solicitadoPor or 'Cliente' }}</span></span>
-              <span class="badge">solicitud original</span>
-            </div>
-            <div class="chat__cuerpo ticket-descripcion">{{ descripcionHtml | safe }}</div>
-            <div class="chat__hora">{{ (ticket.abiertoEn or ticket.createdAt) | fechahora }}</div>
-          </div>
-
-          {% if notaInternaAnterior %}
-          {# El campo «Notas internas» de antes (un solo texto por ticket): se muestra como nota, sin editar. #}
-          <div class="chat__msg chat__msg--interna">
-            <div class="chat__meta">
-              <span class="chat__autor">🔒 Nota interna anterior</span>
-              <span class="badge badge--warning">interna</span>
-            </div>
-            <div class="chat__cuerpo sensible" style="white-space: pre-line">{{ notaInternaAnterior }}</div>
-          </div>
-          {% endif %}
-
-          {% for n in notas %}
+{# Un mensaje de la conversación o una nota interna (mismo diseño, ⋮ para editar/borrar). #}
+{% macro mensaje(n, ticket, csrfToken) %}
             {% set cuerpo = (n.cuerpo | sinMarcasMigracion) if n.autorUid == 'migracion' else n.cuerpo %}
             {% if cuerpo or (n.adjuntoIds and n.adjuntoIds.length) %}
             {% set recibida = n.autorUid == 'correo-entrante' or n.correoDe %}
@@ -99,6 +48,51 @@
               <div class="chat__hora">{% if n.editadaEn %}<span title="Editado {{ n.editadaEn | fechahora }}">editado · </span>{% endif %}{{ n.createdAt | fechahora }}{% if recibida %} · por correo{% endif %}</div>
             </div>
             {% endif %}
+{% endmacro %}
+  <div class="page-head">
+    <h1>#{{ ticket.numero }} — {{ ticket.asunto }}</h1>
+    <div class="page-head__actions">
+      {% if permisos.editar and not ticket.eliminadoPorAdmin %}<a class="btn btn--sm" href="/app/tickets/{{ ticket.id }}/editar">✏️ Editar</a>{% endif %}
+      <a class="btn btn--sm btn--ghost" href="/app/tickets/{{ ticket.id }}/imprimir?auto=1" target="_blank" rel="noopener">🖨️ Imprimir</a>
+      {% if cotizacionLigada %}
+        <a class="btn btn--sm btn--ghost" href="/app/cotizaciones/{{ cotizacionLigada.id }}" title="Cotización hecha desde este ticket">🧾 Cotización: {{ cotizacionLigada.folio }}</a>
+      {% endif %}
+      {# Como el viejo: ya no se ofrece «Cotizar» si hay una cotización ligada que no fue rechazada. #}
+      {% if permisos.cotizar and (not cotizacionLigada or cotizacionLigada.estado == 'rechazada') %}
+        <a class="btn btn--sm btn--ghost" href="/app/cotizaciones/nueva?empresa={{ ticket.empresaId or '' }}&ticket={{ ticket.id }}&ticketNumero={{ ticket.numero }}&contacto={{ (ticket.contactoNombre or '') | urlencode }}&correo={{ (ticket.contactoCorreo or '') | urlencode }}&conceptos=[{{ '{' }}&quot;descripcion&quot;:&quot;{{ ticket.asunto }}&quot;,&quot;cantidad&quot;:1,&quot;precioUnitario&quot;:0{{ '}' }}]">🧾 Cotizar</a>
+      {% endif %}
+      {% if permisos.eliminar and not ticket.eliminadoPorAdmin %}<button type="submit" form="archivar-ticket" class="btn btn--sm btn--ghost" title="{{ 'Restaurar ticket' if ticket.archivado else 'Enviar a la papelera' }}">{{ '♻️ Restaurar' if ticket.archivado else '🗑️ Papelera' }}</button>{% endif %}
+      <a class="btn btn--sm btn--ghost" href="/app/tickets">← Volver</a>
+    </div>
+  </div>
+  {% if ticket.preTicket %}<p class="alert">📝 <strong>Pre-ticket</strong> de la ⚡ Captura rápida. Revísalo con <a href="/app/tickets/{{ ticket.id }}/editar">✏️ Editar</a> (tipo, sistema, contacto…) y al guardar queda como ticket normal.</p>{% endif %}
+
+  {% if aviso == 'correo-reenviado' %}
+    <p class="alert alert--ok">✉️ Correo reenviado{% if avisoDetalle %} a {{ avisoDetalle }}{% endif %}.</p>
+  {% elif aviso == 'correo-sin-destinatario' %}
+    <p class="alert alert--warn">No se pudo reenviar: el ticket no tiene correo de contacto y no hay correos de notificación configurados.</p>
+  {% endif %}
+
+  <div class="ticket-grid">
+    <section>
+      {# Conversación tipo chat: la solicitud original es el primer mensaje, luego todo en orden
+         (lo más reciente abajo, junto a la caja para escribir). Cliente a la izquierda, equipo a la derecha. #}
+      <div class="card chat" id="conversacion" data-marcar-leida="/app/tickets/{{ ticket.id }}/leida">
+        <p class="chat__titulo"><strong>📝 Descripción</strong> <span class="muted">— lo que escribe el cliente a la izquierda · lo que le mandamos a la derecha</span></p>
+
+        <div class="chat__hilo" data-chat-hilo data-chat-conteo="/app/tickets/{{ ticket.id }}/notas/conteo" data-chat-n="{{ notasTotal }}">
+          <div class="chat__msg chat__msg--cliente">
+            <div class="chat__meta">
+              <span class="chat__autor">📝 <span class="nombre-sensible">{{ ticket.contactoNombre or ticket.solicitadoPor or 'Cliente' }}</span></span>
+              <span class="badge">solicitud original</span>
+            </div>
+            <div class="chat__cuerpo ticket-descripcion">{{ descripcionHtml | safe }}</div>
+            <div class="chat__hora">{{ (ticket.abiertoEn or ticket.createdAt) | fechahora }}</div>
+          </div>
+
+
+          {% for n in notas %}
+            {{ mensaje(n, ticket, csrfToken) }}
           {% else %}
             <p class="muted chat__vacio">Sin respuestas todavía.</p>
           {% endfor %}
@@ -130,8 +124,26 @@
           </form>
 
           {% if permisos.notasInternas %}
-          <form method="post" action="/app/tickets/{{ ticket.id }}/nota" class="form chat__escribir chat__escribir--interna" data-nota-form>
+          <div class="chat__escribir chat__escribir--interna notas-internas">
             <h3 class="chat__escribir-titulo">🔒 Notas internas <span class="muted">— solo el equipo, no manda correo</span></h3>
+            <div class="notas-internas__lista">
+              {% if notaInternaAnterior %}
+          {# El campo «Notas internas» de antes (un solo texto por ticket): se muestra como nota, sin editar. #}
+          <div class="chat__msg chat__msg--interna">
+            <div class="chat__meta">
+              <span class="chat__autor">🔒 Nota interna anterior</span>
+              <span class="badge badge--warning">interna</span>
+            </div>
+            <div class="chat__cuerpo sensible" style="white-space: pre-line">{{ notaInternaAnterior }}</div>
+          </div>
+          {% endif %}
+              {% for n in notasInternas %}
+                {{ mensaje(n, ticket, csrfToken) }}
+              {% else %}
+                {% if not notaInternaAnterior %}<p class="muted notas-internas__vacio">Sin notas internas todavía.</p>{% endif %}
+              {% endfor %}
+            </div>
+          <form method="post" action="/app/tickets/{{ ticket.id }}/nota" class="form notas-internas__form" data-nota-form>
             <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
             <input type="hidden" name="tipo" value="interna" />
             <input type="hidden" name="imagenesNota" value="" data-nota-imagenes-campo />
@@ -142,6 +154,7 @@
               <button class="btn btn--sm btn--secondary" type="submit">🔒 Guardar nota interna</button>
             </div>
           </form>
+          </div>
           {% endif %}
         </div>
         {% endif %}

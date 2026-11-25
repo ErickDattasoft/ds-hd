@@ -923,3 +923,18 @@ describe('detalle del ticket sin «Gestión»', () => {
     expect(form.text).not.toContain('name="notasInternas"');
   });
 });
+
+describe('notas internas aparte de la conversación', () => {
+  it('la nota interna sale en su recuadro amarillo y no en la plática con el cliente', async () => {
+    const t = makeTestApp({ usuarios: [SUP] });
+    const { agent, csrf } = await login(t.app, SUP.email, SUP.password);
+    const c = await agent.post('/app/tickets/captura/crear').set('x-csrf-token', csrf).send({ tipo: 'General', asunto: 'Revisar timbrado', estado: 'Abierto' });
+    await agent.post(`/app/tickets/${c.body.id}/nota`).type('form').send({ _csrf: csrf, tipo: 'interna', cuerpo: 'Folio SER 4115' });
+    const det = (await agent.get(`/app/tickets/${c.body.id}`)).text;
+    const hilo = det.slice(det.indexOf('data-chat-hilo'), det.indexOf('chat__escribir-grid'));
+    const recuadro = det.slice(det.indexOf('notas-internas__lista'), det.indexOf('notas-internas__form'));
+    expect(hilo).not.toContain('Folio SER 4115');
+    expect(hilo).toContain('Sin respuestas todavía');
+    expect(recuadro).toContain('Folio SER 4115');
+  });
+});

@@ -2852,6 +2852,10 @@
             if (!nuevo || !actual) return;
             var abajo = actual.scrollHeight - actual.scrollTop - actual.clientHeight < 80;
             actual.innerHTML = nuevo.innerHTML;
+            // Las notas internas van en su recuadro amarillo: también se refrescan.
+            var internasNuevas = html && new DOMParser().parseFromString(html, 'text/html').querySelector('.notas-internas__lista');
+            var internas = document.querySelector('.notas-internas__lista');
+            if (internasNuevas && internas) internas.innerHTML = internasNuevas.innerHTML;
             actual.setAttribute('data-chat-n', nuevo.getAttribute('data-chat-n') || String(d.n));
             if (abajo) actual.scrollTop = actual.scrollHeight;
             toast('💬 Llegó un mensaje nuevo al chat');
