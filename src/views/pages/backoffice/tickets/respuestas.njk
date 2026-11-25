@@ -12,7 +12,8 @@
       </div>
     {% endif %}
   </div>
-  <p class="muted">Tickets en los que el cliente contestó (por correo o desde su portal) y <strong>tú</strong> no has abierto todavía.
+  <p class="muted">Aquí llegan las respuestas de clientes y, con <span class="badge badge--info">👥</span>, lo que un compañero escribió en un ticket asignado a ti.
+    Tickets en los que el cliente contestó (por correo o desde su portal) y <strong>tú</strong> no has abierto todavía.
     Cada quien lleva su cuenta: al abrir el ticket sale de <em>tu</em> lista, pero tus compañeros lo siguen viendo hasta que lo abran ellos.
     Cuando alguien le contesta al cliente, sale de la lista de todos.</p>
 
@@ -23,7 +24,7 @@
           <strong>#{{ r.numero }} — {{ r.asunto }}</strong>
           <span class="muted">{{ r.at | fechahora }}</span>
         </span>
-        <span class="muted">💬 <span class="nombre-sensible">{{ r.autorNombre }}</span>{% if r.empresaNombre %} · <span class="nombre-sensible">{{ r.empresaNombre }}</span>{% endif %}{% if r.agenteAsignadoNombre %} · agente: {{ r.agenteAsignadoNombre }}{% endif %}</span>
+        <span class="muted">{% if r.paraUid %}<span class="badge badge--info">👥 de {{ r.autorNombre }} · {{ '🔒 nota interna' if r.tipoNota == 'interna' else '💬 respuesta al cliente' }}</span>{% else %}💬 <span class="nombre-sensible">{{ r.autorNombre }}</span>{% endif %}{% if r.empresaNombre %} · <span class="nombre-sensible">{{ r.empresaNombre }}</span>{% endif %}{% if r.agenteAsignadoNombre %} · agente: {{ r.agenteAsignadoNombre }}{% endif %}</span>
         <span class="buzon-respuestas__extracto">{{ r.extracto }}</span>
         {% if r.leidaPor and r.leidaPor.length %}<span class="muted buzon-respuestas__leida">👁 Leído por: {% for p in r.leidaPor %}{{ p.nombre }}{{ ', ' if not loop.last }}{% endfor %}</span>{% endif %}
       </a>

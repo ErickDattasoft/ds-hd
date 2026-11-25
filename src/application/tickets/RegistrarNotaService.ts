@@ -141,6 +141,10 @@ export class RegistrarNotaService {
     });
 
     if (nota.tipo === 'interna') await publicarNotaInterna(this.webhooks, ticket, cuerpo, input.actor.nombre);
+    // 👥 Si escribe un compañero en un ticket asignado a otra persona, a ella le llega el aviso.
+    if (input.actor.esStaff) {
+      await this.respuestas?.registrarDeCompanero(ticket, input.actor, cuerpo, nota.tipo, ahora);
+    }
 
     if (input.actor.esStaff) {
       ticket.registrarPrimeraRespuesta(ahora);

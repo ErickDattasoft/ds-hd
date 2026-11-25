@@ -29,7 +29,13 @@ export class RespuestasController {
     res.json({
       n: lista.length,
       ultima: ultima
-        ? { ticketId: ultima.ticketId, numero: ultima.numero, autorNombre: ultima.autorNombre, extracto: ultima.extracto }
+        ? {
+            ticketId: ultima.ticketId,
+            numero: ultima.numero,
+            autorNombre: ultima.autorNombre,
+            extracto: ultima.extracto,
+            deEquipo: Boolean(ultima.paraUid),
+          }
         : null,
     });
   };

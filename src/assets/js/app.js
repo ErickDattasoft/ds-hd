@@ -2873,7 +2873,9 @@
         try { previo = localStorage.getItem('crm_respuestas_vistas'); } catch { /* sin almacenamiento */ }
         try { localStorage.setItem('crm_respuestas_vistas', String(d.n)); } catch { /* sin almacenamiento */ }
         if (!avisar || previo === null || d.n <= Number(previo) || !d.ultima) return;
-        var titulo = '💬 ' + d.ultima.autorNombre + ' respondió en el ticket #' + d.ultima.numero;
+        var titulo = d.ultima.deEquipo
+          ? '👥 ' + d.ultima.autorNombre + ' escribió en tu ticket #' + d.ultima.numero
+          : '💬 ' + d.ultima.autorNombre + ' respondió en el ticket #' + d.ultima.numero;
         toast(titulo, 'ok');
         if (!('Notification' in window) || Notification.permission !== 'granted') return;
         var aviso = new Notification(titulo, { body: d.ultima.extracto, icon: '/logo', tag: 'respuesta-' + d.ultima.ticketId });

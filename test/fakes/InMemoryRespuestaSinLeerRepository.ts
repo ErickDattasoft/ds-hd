@@ -1,12 +1,12 @@
 import type { IRespuestaSinLeerRepository } from '../../src/core/ports/repositories/IRespuestaSinLeerRepository.js';
-import type { RespuestaSinLeer } from '../../src/core/entities/RespuestaSinLeer.js';
+import { idAvisoRespuesta, type RespuestaSinLeer } from '../../src/core/entities/RespuestaSinLeer.js';
 
 /** Fake en memoria de {@link IRespuestaSinLeerRepository}. */
 export class InMemoryRespuestaSinLeerRepository implements IRespuestaSinLeerRepository {
   readonly items = new Map<string, RespuestaSinLeer>();
 
   async guardar(r: RespuestaSinLeer): Promise<void> {
-    this.items.set(r.ticketId, r);
+    this.items.set(idAvisoRespuesta(r), r);
   }
 
   async listar(): Promise<RespuestaSinLeer[]> {

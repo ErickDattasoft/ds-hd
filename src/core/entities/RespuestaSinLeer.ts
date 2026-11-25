@@ -25,6 +25,18 @@ export interface RespuestaSinLeer {
   distribuidor: string;
   /** Quiénes del equipo ya la leyeron (abrieron el ticket después de que llegó). */
   leidaPor?: { uid: string; nombre: string }[];
+  /**
+   * 👥 Aviso de un COMPAÑERO (no del cliente): alguien del equipo escribió en un ticket asignado a
+   * otra persona. Solo lo ve esa persona (`paraUid`) y se quita cuando ella abre el ticket.
+   */
+  paraUid?: string | null;
+  /** «nota interna» o «respuesta al cliente» (solo en avisos de compañero). */
+  tipoNota?: 'interna' | 'publica' | null;
+}
+
+/** Id del documento: uno por ticket para el cliente, y uno por ticket y persona para compañeros. */
+export function idAvisoRespuesta(r: Pick<RespuestaSinLeer, 'ticketId' | 'paraUid'>): string {
+  return r.paraUid ? `${r.ticketId}--${r.paraUid}` : r.ticketId;
 }
 
 /** Días que un aviso se queda en el buzón aunque no lo lea todo el equipo. */

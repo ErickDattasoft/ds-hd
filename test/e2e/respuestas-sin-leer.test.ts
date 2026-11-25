@@ -130,3 +130,36 @@ describe('buzón 🔔 de respuestas de clientes', () => {
     expect(await n(yo)).toBe(1);
   });
 });
+
+describe('👥 avisos de compañeros', () => {
+  it('si un compañero escribe en un ticket asignado a otra persona, a ella le llega el aviso; se quita al abrirlo', async () => {
+    const GABY = { uid: 'u-gaby', email: 'gaby@dattasoft.mx', password: 'super12345', nombre: 'Gaby', rol: 'supervisor' as const };
+    const t = makeTestApp({ usuarios: [SUP, GABY] });
+    const yo = await login(t.app, SUP.email, SUP.password);
+    const gaby = await login(t.app, GABY.email, GABY.password);
+    const n = async (a: typeof yo) => (await a.agent.get('/app/tickets/respuestas/contador')).body as { n: number; ultima: { deEquipo: boolean } | null };
+
+    const crear = await yo.agent.post('/app/tickets').type('form').send({
+      _csrf: yo.csrf, asunto: 'Mío', descripcion: 'descripción de prueba larga', tipo: 'General', prioridad: 'Media',
+    });
+    const id = String(crear.headers.location).split('/').pop()!;
+    await yo.agent.post(`/app/tickets/${id}/asignar`).type('form').send({ _csrf: yo.csrf, agenteUid: SUP.uid });
+
+    // Yo escribo en mi propio ticket: nadie recibe aviso.
+    await yo.agent.post(`/app/tickets/${id}/nota`).type('form').send({ _csrf: yo.csrf, tipo: 'interna', cuerpo: 'Lo reviso yo' });
+    expect((await n(yo)).n).toBe(0);
+    expect((await n(gaby)).n).toBe(0);
+
+    // Gaby escribe en MI ticket: me llega a mí, a ella no.
+    await gaby.agent.post(`/app/tickets/${id}/nota`).type('form').send({ _csrf: gaby.csrf, tipo: 'interna', cuerpo: 'Ya se facturó' });
+    const mio = await n(yo);
+    expect(mio.n).toBe(1);
+    expect(mio.ultima!.deEquipo).toBe(true);
+    expect((await n(gaby)).n).toBe(0);
+    expect((await yo.agent.get('/app/tickets/respuestas')).text).toContain('👥 de Gaby · 🔒 nota interna');
+
+    // Lo abro: se me quita.
+    await yo.agent.post(`/app/tickets/${id}/leida`).set('x-csrf-token', yo.csrf);
+    expect((await n(yo)).n).toBe(0);
+  });
+});

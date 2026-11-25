@@ -1,7 +1,7 @@
 import type { Firestore } from 'firebase-admin/firestore';
 import { Timestamp } from '../../core/entities/value-objects/Timestamp.js';
 import type { IRespuestaSinLeerRepository } from '../../core/ports/repositories/IRespuestaSinLeerRepository.js';
-import type { RespuestaSinLeer } from '../../core/entities/RespuestaSinLeer.js';
+import { idAvisoRespuesta, type RespuestaSinLeer } from '../../core/entities/RespuestaSinLeer.js';
 import { normalizarDistribuidor } from '../../core/entities/Ticket.js';
 import type { CacheColecciones } from './CacheColecciones.js';
 
@@ -19,10 +19,15 @@ interface Doc {
   canalizadoA?: string | null;
   distribuidor?: string | null;
   leidaPor?: { uid?: string; nombre?: string }[];
+  ticketId?: string;
+  paraUid?: string | null;
+  tipoNota?: 'interna' | 'publica' | null;
 }
 
 const toDomain = (id: string, d: Doc): RespuestaSinLeer => ({
-  ticketId: id,
+  ticketId: d.ticketId ?? id,
+  paraUid: d.paraUid ?? null,
+  tipoNota: d.tipoNota ?? null,
   numero: Number(d.numero ?? 0),
   asunto: String(d.asunto ?? ''),
   empresaNombre: d.empresaNombre ?? null,
@@ -51,7 +56,10 @@ export class FirestoreRespuestaSinLeerRepository implements IRespuestaSinLeerRep
   ) {}
 
   async guardar(r: RespuestaSinLeer): Promise<void> {
-    await this.db.collection(COL).doc(r.ticketId).set({
+    await this.db.collection(COL).doc(idAvisoRespuesta(r)).set({
+      ticketId: r.ticketId,
+      paraUid: r.paraUid ?? null,
+      tipoNota: r.tipoNota ?? null,
       numero: r.numero,
       asunto: r.asunto,
       empresaNombre: r.empresaNombre,
@@ -71,7 +79,7 @@ export class FirestoreRespuestaSinLeerRepository implements IRespuestaSinLeerRep
   async marcarLeidaPor(ticketId: string, persona: { uid: string; nombre: string }): Promise<boolean> {
     // Con la copia en memoria no cuesta lectura saber si había aviso (lo normal es que no).
     const actual = this.cache
-      ? (await this.listar()).find((r) => r.ticketId === ticketId) ?? null
+      ? (await this.listar()).find((r) => r.ticketId === ticketId && !r.paraUid) ?? null
       : await this.db
           .collection(COL)
           .doc(ticketId)
@@ -95,8 +103,12 @@ export class FirestoreRespuestaSinLeerRepository implements IRespuestaSinLeerRep
   async quitar(ticketId: string): Promise<boolean> {
     // Se lee antes de borrar: abrir un ticket sin respuestas pendientes (lo normal) no escribe nada.
     const ref = this.db.collection(COL).doc(ticketId);
-    const snap = await ref.get();
-    if (!snap.exists) return false;
+    // Con la copia en memoria saber si existe no cuesta lectura (al abrir un ticket, lo normal es que no).
+    if (this.cache) {
+      if (!(await this.listar()).some((r) => idAvisoRespuesta(r) === ticketId)) return false;
+    } else if (!(await ref.get()).exists) {
+      return false;
+    }
     await ref.delete();
     await this.cache?.marcarCambio([COL]);
     return true;

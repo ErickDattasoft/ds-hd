@@ -76,6 +76,9 @@ respuestas que **tú** no has leído.
 - Cuando **alguien le contesta al cliente**, sale de la lista de todos.
 - Si el cliente vuelve a escribir, queda pendiente otra vez para todos.
 - Los avisos de más de 15 días se quitan solos.
+- **👥 Avisos de compañeros:** si alguien del equipo escribe (respuesta o nota interna) en un ticket
+  **asignado a otra persona**, a esa persona le llega el aviso en su campana (con la etiqueta
+  «👥 de …»). Se quita cuando ella abre el ticket. Quien escribe en su propio ticket no genera aviso.
 
 ## Quién ve qué ticket
 

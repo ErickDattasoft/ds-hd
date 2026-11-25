@@ -1,7 +1,7 @@
 import type { IRespuestaSinLeerRepository } from '../../core/ports/repositories/IRespuestaSinLeerRepository.js';
 import type { ILogger } from '../../core/ports/services/ILogger.js';
 import type { Ticket } from '../../core/entities/Ticket.js';
-import { DIAS_RESPUESTA_SIN_LEER, MAX_EXTRACTO_RESPUESTA, type RespuestaSinLeer } from '../../core/entities/RespuestaSinLeer.js';
+import { DIAS_RESPUESTA_SIN_LEER, MAX_EXTRACTO_RESPUESTA, idAvisoRespuesta, type RespuestaSinLeer } from '../../core/entities/RespuestaSinLeer.js';
 import type { SessionUser } from '../shared/SessionUser.js';
 import { ticketVisiblePara } from './alcance.js';
 
@@ -42,10 +42,44 @@ export class RespuestasSinLeerService {
       // De paso se borran los avisos viejos (no se acumulan aunque alguien nunca los abra).
       const limite = at.getTime() - DIAS_RESPUESTA_SIN_LEER * 86_400_000;
       for (const viejo of (await this.repo.listar()).filter((r) => r.at.getTime() < limite)) {
-        await this.repo.quitar(viejo.ticketId);
+        await this.repo.quitar(idAvisoRespuesta(viejo));
       }
     } catch (err) {
       this.logger.warn('No se pudo marcar la respuesta como sin leer', { ticket: ticket.numero, err: String(err) });
+    }
+  }
+
+  /**
+   * 👥 Un compañero escribió (respuesta o nota interna) en un ticket asignado a OTRA persona: a
+   * esa persona le llega el aviso en su campana. Quien escribe en su propio ticket no se avisa.
+   */
+  async registrarDeCompanero(
+    ticket: Ticket,
+    autor: { uid: string; nombre: string },
+    cuerpo: string,
+    tipoNota: 'interna' | 'publica',
+    at: Date,
+  ): Promise<void> {
+    const para = ticket.agenteAsignadoUid;
+    if (!para || para === autor.uid) return;
+    try {
+      await this.repo.guardar({
+        ticketId: ticket.id,
+        numero: ticket.numero,
+        asunto: ticket.asunto,
+        empresaNombre: ticket.empresaNombre ?? null,
+        autorNombre: autor.nombre,
+        extracto: extractoDe(cuerpo),
+        at,
+        agenteAsignadoUid: ticket.agenteAsignadoUid ?? null,
+        agenteAsignadoNombre: ticket.agenteAsignadoNombre ?? null,
+        canalizadoA: ticket.canalizadoA ?? null,
+        distribuidor: ticket.distribuidor,
+        paraUid: para,
+        tipoNota,
+      });
+    } catch (err) {
+      this.logger.warn('No se pudo avisar al agente del ticket', { ticket: ticket.numero, err: String(err) });
     }
   }
 
@@ -61,6 +95,8 @@ export class RespuestasSinLeerService {
     await this.repo.marcarLeidaPor(ticketId, { uid: persona.uid, nombre: persona.nombre }).catch((err) => {
       this.logger.warn('No se pudo marcar la respuesta como leída', { ticketId, err: String(err) });
     });
+    // Su aviso de compañero (si tenía) ya lo vio: se quita.
+    await this.repo.quitar(idAvisoRespuesta({ ticketId, paraUid: persona.uid })).catch(() => undefined);
   }
 
   /** Las que el actor puede abrir y AÚN NO HA LEÍDO él, la más reciente primero. */
@@ -73,7 +109,7 @@ export class RespuestasSinLeerService {
     const limite = Date.now() - DIAS_RESPUESTA_SIN_LEER * 86_400_000;
     const todas = await this.repo.listar();
     return todas
-      .filter((r) => r.at.getTime() >= limite && ticketVisiblePara(r, actor))
+      .filter((r) => r.at.getTime() >= limite && (r.paraUid ? r.paraUid === actor.uid : ticketVisiblePara(r, actor)))
       .sort((a, b) => b.at.getTime() - a.at.getTime());
   }
 
