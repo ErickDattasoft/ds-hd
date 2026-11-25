@@ -1135,3 +1135,24 @@ describe('🧾 folio de factura', () => {
     expect((await agent.get(`/app/tickets/${id}/imprimir`)).text).toContain('<strong>SER 1445</strong>');
   });
 });
+
+describe('🔄 estado del ticket', () => {
+  it('el estado actual viene seleccionado; enviarlo sin cambiar solo guarda el motivo como nota interna', async () => {
+    const ADMIN = { uid: 'u-adm3', email: 'adm3@dattasoft.mx', password: 'admin12345', nombre: 'Adm', rol: 'admin' as const };
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    const { agent, csrf } = await login(t.app, ADMIN.email, ADMIN.password);
+    const crear = await agent.post('/app/tickets').type('form').send({
+      _csrf: csrf, asunto: 'Estado actual', descripcion: 'descripción de prueba larga', tipo: 'General', prioridad: 'Media',
+    });
+    const id = String(crear.headers.location).split('/').pop()!;
+    const estado = t.ticketStore.tickets.get(id)!.estado;
+    const det = await agent.get(`/app/tickets/${id}`);
+    expect(det.text).toContain(`<option value="${estado}" selected>${estado} (actual)</option>`);
+
+    const r = await agent.post(`/app/tickets/${id}/estado`).type('form')
+      .send({ _csrf: csrf, estado, estadoActual: estado, nota: 'Esperando respuesta del PAC' });
+    expect(r.status).toBe(302);
+    expect(t.ticketStore.tickets.get(id)!.estado).toBe(estado);
+    expect((t.ticketStore.notas.get(id) ?? []).some((n) => n.tipo === 'interna' && n.cuerpo === 'Esperando respuesta del PAC')).toBe(true);
+  });
+});

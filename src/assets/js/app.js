@@ -2133,6 +2133,9 @@
     if (!form || form.dataset.decidido) return;
     var selEstado = form.querySelector('select[name=estado]');
     if (!selEstado || !esCerrado(selEstado.value)) return;
+    // Ya estaba cerrado y no lo cambiaron (el actual viene seleccionado): no hay nada que preguntar.
+    var actual = form.querySelector('input[name=estadoActual]');
+    if (actual && actual.value === selEstado.value) return;
     // En ✏️ Editar la facturación está en el mismo formulario; en el detalle, en otro.
     var selFact = form.querySelector('select[name=estadoFacturacion]');
     if (selFact && selFact.value !== 'no_facturado') return;

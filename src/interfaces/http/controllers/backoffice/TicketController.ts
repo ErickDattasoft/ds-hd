@@ -693,6 +693,16 @@ export class TicketController {
   };
 
   cambiarEstadoPost = async (req: Request, res: Response): Promise<void> => {
+    // El estado actual viene seleccionado: si no lo cambiaron, solo se guarda el motivo (si hay)
+    // como nota interna, sin marcar error.
+    const actual = str(req.body?.estadoActual);
+    if (actual && str(req.body?.estado) === actual) {
+      const nota = str(req.body?.nota).trim();
+      if (nota) {
+        await this.registrarNota.ejecutar({ actor: req.user!, ticketId: str(req.params.id), cuerpo: nota, tipo: 'interna' });
+      }
+      return res.redirect(`/app/tickets/${str(req.params.id)}`);
+    }
     // «¿Ya se facturó?» al cerrar: primero la facturación y luego el cierre, así el aviso
     // [FACTURADO] sale una sola vez (al cerrar) junto con el correo de cierre al cliente.
     const facturarCon = str(req.body?.facturarCon);
