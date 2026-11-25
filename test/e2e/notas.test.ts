@@ -52,6 +52,38 @@ describe('🗒️ Mis notas', () => {
     const r = await agent.post('/app/notas').set('x-csrf-token', csrf).send({ texto: 'x'.repeat(10_001) });
     expect(r.status).toBe(422);
   });
+
+  it('texto y color guardados al mismo tiempo (y dos notas a la vez) no se pisan', async () => {
+    const t = makeTestApp({ usuarios: [SUP] });
+    const { agent, csrf } = await login(t.app, SUP.email, SUP.password);
+    const post = (body: object) => agent.post('/app/notas').set('x-csrf-token', csrf).send(body);
+    const a = (await post({ texto: '' })).body.nota.id as string;
+    const b = (await post({ texto: '' })).body.nota.id as string;
+
+    await Promise.all([post({ id: a, texto: 'texto de A' }), post({ id: a, color: 'rosa' }), post({ id: b, texto: 'texto de B' })]);
+
+    const notas = t.notaPersonalRepo.porUid.get(SUP.uid)!;
+    expect(notas.find((n) => n.id === a)).toMatchObject({ texto: 'texto de A', color: 'rosa' });
+    expect(notas.find((n) => n.id === b)).toMatchObject({ texto: 'texto de B' });
+  });
+
+  it('si todas las notas ya no caben en el documento, avisa en vez de fallar', async () => {
+    const t = makeTestApp({ usuarios: [SUP] });
+    const { agent, csrf } = await login(t.app, SUP.email, SUP.password);
+    const post = (body: object) => agent.post('/app/notas').set('x-csrf-token', csrf).send(body);
+    // Cada nota de 10 mil letras ocupa ~10 KB: unas 88 caben en los 900 KB.
+    let guardadas = 0;
+    let r = await post({ texto: 'x'.repeat(10_000) });
+    while (r.status === 200 && guardadas < 200) {
+      guardadas++;
+      r = await post({ texto: 'x'.repeat(10_000) });
+    }
+    expect(guardadas).toBeGreaterThan(80);
+    expect(guardadas).toBeLessThan(90);
+    expect(r.status).toBe(422);
+    expect(r.body.detalle).toContain('muy llenas');
+    expect(t.notaPersonalRepo.porUid.get(SUP.uid)).toHaveLength(guardadas);
+  });
 });
 
 describe('🗒️ Mis notas en el respaldo', () => {

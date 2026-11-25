@@ -4,6 +4,7 @@ import type { IIdGenerator } from '../../core/ports/services/IIdGenerator.js';
 import {
   MAX_NOTAS,
   esColorNota,
+  validarTamanoNotas,
   validarTextoNota,
   type ColorNota,
   type NotaPersonal,
@@ -23,31 +24,35 @@ export class NotasPersonalesService {
     return (await this.repo.obtener(uid)).sort((a, b) => b.actualizadaEn.getTime() - a.actualizadaEn.getTime());
   }
 
-  /** Crea (sin `id`) o actualiza una nota. Devuelve la nota guardada. */
+  /**
+   * Crea (sin `id`) o actualiza una nota. Devuelve la nota guardada. Va en transacción: si la
+   * página manda el texto y el color al mismo tiempo, ninguno borra al otro.
+   */
   async guardar(uid: string, datos: { id?: string; texto?: string; color?: string }): Promise<NotaPersonal> {
-    const notas = await this.repo.obtener(uid);
     const ahora = this.clock.now();
     const color: ColorNota | undefined = esColorNota(datos.color) ? datos.color : undefined;
-    let nota = datos.id ? notas.find((n) => n.id === datos.id) : undefined;
-    if (datos.id && !nota) throw new NotFoundError('La nota ya no existe (¿la borraste en otra pestaña?)');
-    if (!nota) {
-      if (notas.length >= MAX_NOTAS) {
-        throw new ValidationError(`Ya tienes ${MAX_NOTAS} notas: borra algunas para hacer nuevas`);
+    const texto = datos.texto !== undefined ? validarTextoNota(datos.texto) : undefined;
+    const idNueva = datos.id ? undefined : this.ids.newId();
+    return this.repo.modificar(uid, (notas) => {
+      let nota = datos.id ? notas.find((n) => n.id === datos.id) : undefined;
+      if (datos.id && !nota) throw new NotFoundError('La nota ya no existe (¿la borraste en otra pestaña?)');
+      if (!nota) {
+        if (notas.length >= MAX_NOTAS) {
+          throw new ValidationError(`Ya tienes ${MAX_NOTAS} notas: borra algunas para hacer nuevas`);
+        }
+        nota = { id: idNueva!, texto: '', color: color ?? 'amarillo', creadaEn: ahora, actualizadaEn: ahora };
+        notas.push(nota);
       }
-      nota = { id: this.ids.newId(), texto: '', color: color ?? 'amarillo', creadaEn: ahora, actualizadaEn: ahora };
-      notas.push(nota);
-    }
-    if (datos.texto !== undefined) nota.texto = validarTextoNota(datos.texto);
-    if (color) nota.color = color;
-    nota.actualizadaEn = ahora;
-    await this.repo.guardar(uid, notas);
-    return nota;
+      if (texto !== undefined) nota.texto = texto;
+      if (color) nota.color = color;
+      nota.actualizadaEn = ahora;
+      validarTamanoNotas(notas);
+      return { notas, resultado: { ...nota } };
+    });
   }
 
   /** Borra una nota (si ya no estaba, no pasa nada). */
   async eliminar(uid: string, id: string): Promise<void> {
-    const notas = await this.repo.obtener(uid);
-    const quedan = notas.filter((n) => n.id !== id);
-    if (quedan.length !== notas.length) await this.repo.guardar(uid, quedan);
+    await this.repo.modificar(uid, (notas) => ({ notas: notas.filter((n) => n.id !== id), resultado: undefined }));
   }
 }

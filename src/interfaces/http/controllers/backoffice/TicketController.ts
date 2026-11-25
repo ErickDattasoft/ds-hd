@@ -193,8 +193,8 @@ export class TicketController {
   };
 
   private async datosFormNuevo(user: NonNullable<Request['user']>) {
-    const [{ config }, empresas, contactos, ultimoFolio] = await Promise.all([
-      this.listar.listar(user, { limite: 0 }),
+    const [config, empresas, contactos, ultimoFolio] = await Promise.all([
+      this.listar.configuracion(),
       this.empresasRepo.list({ activa: true }),
       this.contactosRepo.list({ activo: true }),
       this.contadores.actual(CONTADOR_TICKETS),
@@ -370,8 +370,8 @@ export class TicketController {
 
   /** Catálogos y valores fijos de la «⚡ Captura rápida». */
   private async datosCaptura(user: NonNullable<Request['user']>) {
-    const [{ config }, agentes] = await Promise.all([
-      this.listar.listar(user, { limite: 0 }),
+    const [config, agentes] = await Promise.all([
+      this.listar.configuracion(),
       this.usuarios.list({ roles: ROLES_ASIGNABLES, activo: true }),
     ]);
     const estadoResuelto =

@@ -19,6 +19,11 @@ export class ListarTicketsService {
     return { ...filtro, ...alcanceTickets(actor) };
   }
 
+  /** Solo la configuración de tickets (estados, tipos, sistemas…), sin leer ningún ticket. */
+  configuracion(): Promise<ConfiguracionTickets> {
+    return this.config.obtenerTickets();
+  }
+
   async listar(
     actor: SessionUser,
     filtro: FiltroTickets,

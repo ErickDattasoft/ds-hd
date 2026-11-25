@@ -15,6 +15,14 @@ export class InMemoryNotaPersonalRepository implements INotaPersonalRepository {
     return [...this.porUid.entries()].map(([uid, notas]) => ({ uid, notas: notas.map((n) => ({ ...n })) }));
   }
 
+  async modificar<T>(uid: string, cambiar: (notas: NotaPersonal[]) => { notas: NotaPersonal[]; resultado: T }): Promise<T> {
+    // Sin `await` entre leer y escribir: atómico, como la transacción de Firestore.
+    this.lecturas++;
+    const { notas, resultado } = cambiar((this.porUid.get(uid) ?? []).map((n) => ({ ...n })));
+    this.porUid.set(uid, notas.map((n) => ({ ...n })));
+    return resultado;
+  }
+
   async guardar(uid: string, notas: NotaPersonal[]): Promise<void> {
     this.porUid.set(uid, notas.map((n) => ({ ...n })));
   }
