@@ -279,13 +279,13 @@
           {%- if permisos.editar and estadoCerrado and ticket.facturacion.estado == 'no_facturado' %} data-cerrar-cobro="{{ tk.opcionesCobro(estadosFacturacion) }}" data-estado-cerrado="{{ estadoCerrado }}" data-ticket-numero="{{ ticket.numero }}"{% endif %}>
           <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
           <input type="hidden" name="facturarCon" value="" />
-          <label class="field"><span>Cambiar estado</span>
-            <select name="estado">
+          <label class="field"><span>🔄 Estado del ticket <span class="muted">— hoy: {{ ticket.estado }}</span></span>
+            <select name="estado" aria-label="Pasar el ticket a">
               {% for e in config.estados %}{% if e != ticket.estado %}<option>{{ e }}</option>{% endif %}{% endfor %}
             </select>
           </label>
-          <textarea name="nota" rows="2" placeholder="Nota interna opcional"></textarea>
-          <button class="btn btn--sm" type="submit">Actualizar estado</button>
+          <textarea name="nota" rows="2" placeholder="Motivo del cambio (opcional, queda como nota interna)" aria-label="Motivo del cambio"></textarea>
+          <button class="btn btn--sm" type="submit">🔄 Cambiar estado del ticket</button>
         </form>
       {% endif %}
 
