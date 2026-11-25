@@ -51,14 +51,26 @@ export interface AvisoCierre {
    */
   nuevo?: boolean;
   /**
-   * 💬 Copia de las respuestas y avances que se le mandan al cliente, y aviso cuando el cliente
-   * contesta. Sin definir = lo que diga la lista «Correos de notificación» (como antes).
+   * 💬 Copia de las respuestas que se le mandan al cliente, y aviso cuando el cliente contesta.
+   * Sin definir = lo que diga la lista «Correos de notificación» (como antes).
    */
   respuestas?: boolean;
+  /**
+   * 📈 Copia del aviso de avance que recibe el cliente cuando su ticket pasa a un estado intermedio
+   * («En proceso»…). Sin definir = igual que `respuestas` (antes iban juntos).
+   */
+  avances?: boolean;
 }
 
 /** Las copias que se eligen persona por persona además de cerrado/facturado. */
-export type TipoCopiaEquipo = 'nuevo' | 'respuestas';
+export type TipoCopiaEquipo = 'nuevo' | 'respuestas' | 'avances';
+
+/** La casilla de esa persona para ese tipo; «avances» sin elegir sigue a «respuestas» (antes iban juntos). */
+function eleccion(a: AvisoCierre | undefined, tipo: TipoCopiaEquipo): boolean | undefined {
+  if (!a) return undefined;
+  if (tipo === 'avances') return a.avances ?? a.respuestas;
+  return a[tipo];
+}
 
 const correoOk = (c: string): boolean => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(c.trim());
 
@@ -80,8 +92,8 @@ export function correosCopia(
     vistos.add(k);
     out.push(c.trim());
   };
-  for (const c of config.correosNotificacion) if (filas.get(c.trim().toLowerCase())?.[tipo] !== false) agregar(c);
-  for (const a of config.avisosCierre ?? []) if (a[tipo] === true) agregar(a.correo);
+  for (const c of config.correosNotificacion) if (eleccion(filas.get(c.trim().toLowerCase()), tipo) !== false) agregar(c);
+  for (const a of config.avisosCierre ?? []) if (eleccion(a, tipo) === true) agregar(a.correo);
   return out;
 }
 
@@ -94,6 +106,7 @@ export function avisosParaTabla(
 ): Required<AvisoCierre>[] {
   const nuevo = new Set(correosCopia(config, 'nuevo').map((c) => c.toLowerCase()));
   const resp = new Set(correosCopia(config, 'respuestas').map((c) => c.toLowerCase()));
+  const avances = new Set(correosCopia(config, 'avances').map((c) => c.toLowerCase()));
   const filas = avisosCierreDe(config).map((a) => ({ ...a }));
   const ya = new Set(filas.map((a) => a.correo.trim().toLowerCase()));
   for (const c of config.correosNotificacion) {
@@ -107,6 +120,7 @@ export function avisosParaTabla(
     facturado: a.facturado,
     nuevo: nuevo.has(a.correo.trim().toLowerCase()),
     respuestas: resp.has(a.correo.trim().toLowerCase()),
+    avances: avances.has(a.correo.trim().toLowerCase()),
   }));
 }
 

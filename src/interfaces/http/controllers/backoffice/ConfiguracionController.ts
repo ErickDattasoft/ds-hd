@@ -771,6 +771,7 @@ function avisosDelForm(b: Record<string, unknown>): AvisoCierre[] {
   const facturado = lista(b.avisoFacturado);
   const nuevo = lista(b.avisoNuevo);
   const respuestas = lista(b.avisoRespuestas);
+  const avances = lista(b.avisoAvances);
   return correos.map((correo, i) => ({
     correo,
     cerrado: cerrado[i] === '1',
@@ -778,5 +779,6 @@ function avisosDelForm(b: Record<string, unknown>): AvisoCierre[] {
     // Una página abierta antes de existir estas columnas no las manda: se quedan como estaban.
     ...(nuevo.length ? { nuevo: nuevo[i] === '1' } : {}),
     ...(respuestas.length ? { respuestas: respuestas[i] === '1' } : {}),
+    ...(avances.length ? { avances: avances[i] === '1' } : {}),
   }));
 }

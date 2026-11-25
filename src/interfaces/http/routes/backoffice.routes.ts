@@ -1,5 +1,5 @@
 import { PORCENTAJE_AVISO } from '../../../application/dashboard/ConsumoFirestoreService.js';
-import { Router, type Request } from 'express';
+import { Router, type Request, type Response } from 'express';
 import type { Container } from '../../../config/container.js';
 import { requireAuth, requireStaff, requirePermission } from '../middlewares/authz.js';
 import { uploadSingleFile } from '../middlewares/uploadSingleFile.js';
@@ -96,18 +96,18 @@ export function backofficeRoutes(container: Container): Router {
     if (req.method === 'GET' && req.get('HX-Preloaded') === 'true') res.setHeader('Cache-Control', 'private, max-age=15');
     next();
   });
-  r.use(async (req, res, next) => {
+  /** Menú con sus contadores, la campana 🔔 y los avisos de arriba, para la página que se va a mostrar. */
+  async function prepararMenu(req: Request, res: Response): Promise<void> {
     const secciones = construirNavSecciones(req.user!);
-    // Los POST casi siempre redirigen: no vale la pena contar (ni cachear un conteo previo al cambio).
-    const claves = req.method === 'GET' ? contadoresNecesarios(secciones) : [];
-    const permisos = req.method === 'GET' ? req.user!.permisos : [];
+    const permisos = req.user!.permisos;
+    const claves = contadoresNecesarios(secciones);
     if (permisos.includes('tickets:leer')) claves.push('ticketsCorreoSinLeer');
     if (permisos.includes('tickets:crear')) claves.push('ticketsPublicosPendientes');
-    if (req.method === 'GET') claves.push('consumoFirestore');
-    // El buzón 🔔 no pasa por el caché de 20 s: al abrir un ticket tiene que bajar de inmediato.
+    claves.push('consumoFirestore');
+    // El buzón 🔔 no pasa por el caché de contadores: al abrir un ticket tiene que bajar de inmediato.
     const [contadores, respuestasSinLeer] = await Promise.all([
       contadoresDelMenu(container, claves, req.user!),
-      req.method === 'GET' && permisos.includes('tickets:leer')
+      permisos.includes('tickets:leer')
         ? container.resolve('respuestasSinLeerService').listarPara(req.user!).then((l) => l.length).catch(() => 0)
         : Promise.resolve(null),
     ]);
@@ -120,7 +120,22 @@ export function backofficeRoutes(container: Container): Router {
       respuestasSinLeer,
       consumoFirestore: (contadores.consumoFirestore ?? 0) >= PORCENTAJE_AVISO ? contadores.consumoFirestore : null,
     };
+  }
+  r.use(async (req, res, next) => {
     res.locals.area = 'backoffice';
+    if (req.method === 'GET') {
+      await prepararMenu(req, res);
+      return next();
+    }
+    // Un POST casi siempre redirige: los contadores solo se calculan si de verdad muestra una
+    // página (p. ej. «Guardar configuración»), y DESPUÉS del cambio, para que salgan al día.
+    res.locals.navSecciones = construirNavSecciones(req.user!);
+    const render = res.render.bind(res) as (...args: unknown[]) => void;
+    res.render = ((...args: unknown[]) => {
+      prepararMenu(req, res)
+        .catch(() => undefined)
+        .finally(() => render(...args));
+    }) as typeof res.render;
     next();
   });
 

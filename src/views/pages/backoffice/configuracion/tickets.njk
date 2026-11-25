@@ -127,17 +127,19 @@
         <input type="hidden" name="avisosEnviado" value="1" />
         {% if errores.avisosCierre %}<p class="alert alert--error">{{ errores.avisosCierre }} — no se guardó nada, corrígelo y vuelve a guardar.</p>{% endif %}
         <p class="muted avisos__ayuda"><strong>🆕 Ticket nuevo</strong> = copia del correo de ticket nuevo (y de los reenvíos) y aviso de tickets del portal público.
-          <strong>💬 Respuestas y avances</strong> = copia de lo que se le responde al cliente, de los avisos de avance y aviso cuando el cliente contesta.
+          <strong>💬 Respuestas</strong> = copia de lo que se le responde al cliente y aviso cuando el cliente contesta.
+          <strong>📈 Avances</strong> = copia del aviso que recibe el cliente cuando su ticket pasa a un estado intermedio (p. ej. «En proceso»; los estados se eligen arriba).
           <strong>✔️ Cerrado</strong> = copia del correo que recibe el cliente cuando su ticket se resuelve o se cierra (tenga o no facturación).
           <strong>💲 Facturado</strong> = aviso interno «✅ Ticket #N cerrado [FACTURADO]», que sale cuando el ticket queda cerrado <em>y</em> facturado.</p>
         <table class="avisos__tabla">
-          <thead><tr><th>Correo</th><th>🆕 Ticket nuevo</th><th>💬 Respuestas y avances</th><th>✔️ Cerrado</th><th>💲 Facturado</th><th></th></tr></thead>
+          <thead><tr><th>Correo</th><th>🆕 Ticket nuevo</th><th>💬 Respuestas</th><th>📈 Avances</th><th>✔️ Cerrado</th><th>💲 Facturado</th><th></th></tr></thead>
           <tbody data-avisos-filas>
             {% for a in avisosParaTabla(config) %}
               <tr data-aviso-fila>
                 <td><input type="email" name="avisoCorreo" value="{{ a.correo }}" placeholder="correo@dattasoft.mx" aria-label="Correo" /></td>
                 <td><label class="avisos__check"><input type="checkbox" data-aviso-check {{ 'checked' if a.nuevo }} aria-label="Ticket nuevo" /><input type="hidden" name="avisoNuevo" value="{{ '1' if a.nuevo else '0' }}" /></label></td>
-                <td><label class="avisos__check"><input type="checkbox" data-aviso-check {{ 'checked' if a.respuestas }} aria-label="Respuestas y avances" /><input type="hidden" name="avisoRespuestas" value="{{ '1' if a.respuestas else '0' }}" /></label></td>
+                <td><label class="avisos__check"><input type="checkbox" data-aviso-check {{ 'checked' if a.respuestas }} aria-label="Respuestas" /><input type="hidden" name="avisoRespuestas" value="{{ '1' if a.respuestas else '0' }}" /></label></td>
+                <td><label class="avisos__check"><input type="checkbox" data-aviso-check {{ 'checked' if a.avances }} aria-label="Avances" /><input type="hidden" name="avisoAvances" value="{{ '1' if a.avances else '0' }}" /></label></td>
                 <td><label class="avisos__check"><input type="checkbox" data-aviso-check {{ 'checked' if a.cerrado }} aria-label="Cerrado" /><input type="hidden" name="avisoCerrado" value="{{ '1' if a.cerrado else '0' }}" /></label></td>
                 <td><label class="avisos__check"><input type="checkbox" data-aviso-check {{ 'checked' if a.facturado }} aria-label="Facturado" /><input type="hidden" name="avisoFacturado" value="{{ '1' if a.facturado else '0' }}" /></label></td>
                 <td><button type="button" class="cat-btn" data-aviso-quitar title="Quitar" aria-label="Quitar">🗑</button></td>
@@ -149,14 +151,15 @@
           <tr data-aviso-fila>
             <td><input type="email" name="avisoCorreo" value="" placeholder="correo@dattasoft.mx" aria-label="Correo" /></td>
             <td><label class="avisos__check"><input type="checkbox" data-aviso-check checked aria-label="Ticket nuevo" /><input type="hidden" name="avisoNuevo" value="1" /></label></td>
-            <td><label class="avisos__check"><input type="checkbox" data-aviso-check checked aria-label="Respuestas y avances" /><input type="hidden" name="avisoRespuestas" value="1" /></label></td>
+            <td><label class="avisos__check"><input type="checkbox" data-aviso-check checked aria-label="Respuestas" /><input type="hidden" name="avisoRespuestas" value="1" /></label></td>
+            <td><label class="avisos__check"><input type="checkbox" data-aviso-check checked aria-label="Avances" /><input type="hidden" name="avisoAvances" value="1" /></label></td>
             <td><label class="avisos__check"><input type="checkbox" data-aviso-check checked aria-label="Cerrado" /><input type="hidden" name="avisoCerrado" value="1" /></label></td>
             <td><label class="avisos__check"><input type="checkbox" data-aviso-check checked aria-label="Facturado" /><input type="hidden" name="avisoFacturado" value="1" /></label></td>
             <td><button type="button" class="cat-btn" data-aviso-quitar title="Quitar" aria-label="Quitar">🗑</button></td>
           </tr>
         </template>
         <button type="button" class="btn btn--ghost" data-aviso-agregar>＋ Agregar persona</button>
-        <p class="muted avisos__ayuda">Ejemplo: Facturación solo 💲 Facturado; Soporte todo menos 💲; el gerente lo que quiera. Para que alguien no reciba nada, quítale las cuatro palomitas.
+        <p class="muted avisos__ayuda">Ejemplo: Facturación solo 💲 Facturado; Soporte todo menos 💲; el gerente lo que quiera. Para que alguien no reciba nada, quítale todas las palomitas.
           El agente asignado al ticket siempre recibe su copia (es su ticket). Las <strong>notas internas</strong> no mandan correo a nadie.</p>
       </div>
     </details>

@@ -685,7 +685,7 @@ describe('avisos de cerrado y facturado por persona (Configuración → Tickets)
     // Antes de guardar, la tabla muestra a los dos con 🆕 y 💬 marcados (como funciona hoy).
     const vista = await agent.get('/app/configuracion/tickets');
     expect(vista.text).toContain('name="avisoNuevo" value="1"');
-    expect(vista.text).toContain('Respuestas y avances');
+    expect(vista.text).toContain('📈 Avances');
 
     await agent.post('/app/configuracion/tickets').type('form').send({
       _csrf: csrf,
@@ -723,6 +723,46 @@ describe('avisos de cerrado y facturado por persona (Configuración → Tickets)
     expect(destinatarios(facturado!)).toContain('factura@dattasoft.mx');
     const cierre = t.emailSender.enviados.find((c) => c.tags?.includes('ticket-cerrado'));
     expect(destinatarios(cierre!)).not.toContain('factura@dattasoft.mx');
+  });
+
+  it('📈 avances va aparte de 💬 respuestas; la página tras guardar trae los contadores del menú', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    const cfg = await t.configuracionRepo.obtenerTickets();
+    await t.configuracionRepo.guardarTickets({ ...cfg, correosNotificacion: ['soporte@dattasoft.mx'], avisarClienteEstados: ['En proceso'] });
+    const { agent, csrf } = await login(t.app, ADMIN.email, ADMIN.password);
+    // Una fila guardada antes de existir la columna: «avances» sigue a «respuestas».
+    await t.configuracionRepo.guardarTickets({
+      ...(await t.configuracionRepo.obtenerTickets()),
+      avisosCierre: [{ correo: 'soporte@dattasoft.mx', cerrado: true, facturado: true, nuevo: true, respuestas: true }],
+    });
+    expect((await agent.get('/app/configuracion/tickets')).text).toContain('name="avisoAvances" value="1"');
+
+    const guardar = await agent.post('/app/configuracion/tickets').type('form').send({
+      _csrf: csrf,
+      tipos: cfg.tipos.join('\n'), sistemas: cfg.sistemas.join('\n'), grupos: cfg.grupos.join('\n'),
+      estados: cfg.estados.join('\n'), prioridades: cfg.prioridades.join('\n'), tiposFacturables: '',
+      estadoInicial: cfg.estadoInicial, correosNotificacion: 'soporte@dattasoft.mx', avisarClienteEstados: 'En proceso',
+      avisosEnviado: '1', avisoCorreo: ['soporte@dattasoft.mx'],
+      avisoNuevo: ['1'], avisoRespuestas: ['1'], avisoAvances: ['0'], avisoCerrado: ['1'], avisoFacturado: ['1'],
+    });
+    expect(guardar.status).toBe(200);
+    // Contadores del menú y campana también en la página que sale después de guardar.
+    expect(guardar.text).toContain('data-campana-respuestas');
+    expect(guardar.text).toContain('sidebar__badge--total');
+
+    const crear = await agent.post('/app/tickets').type('form').send({
+      _csrf: csrf, asunto: 'Avances aparte', descripcion: 'descripción de prueba larga', tipo: 'General', prioridad: 'Media',
+      contactoCorreo: 'cliente@empresa.mx',
+    });
+    const id = String(crear.headers.location).split('/').pop()!;
+    t.emailSender.enviados.length = 0;
+    await agent.post(`/app/tickets/${id}/estado`).type('form').send({ _csrf: csrf, estado: 'En proceso' });
+    const avance = t.emailSender.enviados.flatMap(destinatarios);
+    expect(avance).toContain('cliente@empresa.mx');
+    expect(avance).not.toContain('soporte@dattasoft.mx');
+    t.emailSender.enviados.length = 0;
+    await agent.post(`/app/tickets/${id}/nota`).type('form').send({ _csrf: csrf, cuerpo: 'Seguimos revisando' });
+    expect(t.emailSender.enviados.flatMap(destinatarios)).toContain('soporte@dattasoft.mx');
   });
 
   it('un correo inválido no se guarda y avisa', async () => {

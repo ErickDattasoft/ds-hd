@@ -69,6 +69,7 @@ export class FirestoreConfiguracionRepository implements IConfiguracionRepositor
               facturado: a.facturado === true,
               ...(typeof a.nuevo === 'boolean' ? { nuevo: a.nuevo } : {}),
               ...(typeof a.respuestas === 'boolean' ? { respuestas: a.respuestas } : {}),
+              ...(typeof a.avances === 'boolean' ? { avances: a.avances } : {}),
             })),
           }
         : {}),

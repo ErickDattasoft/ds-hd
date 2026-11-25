@@ -134,7 +134,7 @@ export class ActualizarEstadoTicketService {
   ): Promise<void> {
     const cfg = await this.config.obtenerTickets();
     const copiaInterna = await this.emailAgenteOActor(ticket, input.actor.email);
-    const dest = destinatariosTicket(ticket, correosCopia(cfg, 'respuestas'), copiaInterna, cfg.correosNotificacion);
+    const dest = destinatariosTicket(ticket, correosCopia(cfg, 'avances'), copiaInterna, cfg.correosNotificacion);
     // Sin correo de contacto no hay a quién avisarle el avance (al equipo no le sirve otra copia).
     if (dest.sinContacto || dest.para.length === 0) return;
 

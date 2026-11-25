@@ -173,6 +173,7 @@ function avisosLimpios(lista: AvisoCierre[]): AvisoCierre[] {
       facturado: Boolean(a.facturado),
       ...(typeof a.nuevo === 'boolean' ? { nuevo: a.nuevo } : {}),
       ...(typeof a.respuestas === 'boolean' ? { respuestas: a.respuestas } : {}),
+      ...(typeof a.avances === 'boolean' ? { avances: a.avances } : {}),
     });
   }
   return out.slice(0, 50);
