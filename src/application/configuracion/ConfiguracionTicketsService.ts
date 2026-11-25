@@ -167,7 +167,13 @@ function avisosLimpios(lista: AvisoCierre[]): AvisoCierre[] {
     const clave = correo.toLowerCase();
     if (vistos.has(clave)) continue;
     vistos.add(clave);
-    out.push({ correo, cerrado: Boolean(a.cerrado), facturado: Boolean(a.facturado) });
+    out.push({
+      correo,
+      cerrado: Boolean(a.cerrado),
+      facturado: Boolean(a.facturado),
+      ...(typeof a.nuevo === 'boolean' ? { nuevo: a.nuevo } : {}),
+      ...(typeof a.respuestas === 'boolean' ? { respuestas: a.respuestas } : {}),
+    });
   }
   return out.slice(0, 50);
 }

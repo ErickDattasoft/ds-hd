@@ -1,3 +1,4 @@
+import { correosCopia } from '../../core/entities/ConfiguracionTickets.js';
 import type { ITicketRepository } from '../../core/ports/repositories/ITicketRepository.js';
 import type { IConfiguracionRepository } from '../../core/ports/repositories/IConfiguracionRepository.js';
 import type { IUsuarioRepository } from '../../core/ports/repositories/IUsuarioRepository.js';
@@ -50,7 +51,9 @@ export class ReenviarCorreoTicketService {
     }
 
     const cfg = await this.config.obtenerTickets();
-    const hayLista = cfg.correosNotificacion.some((e) => e.includes('@'));
+    // Copias al equipo: solo quien eligió «🆕 Ticket nuevo» (Configuración → Tickets).
+    const copias = correosCopia(cfg, 'nuevo');
+    const hayLista = copias.length > 0;
     if (input.soloEquipo && !hayLista && !ticket.agenteAsignadoUid) return { enviadoA: [] };
     if (!ticket.contactoCorreo?.trim() && !hayLista) {
       throw new ValidationError(
@@ -64,8 +67,9 @@ export class ReenviarCorreoTicketService {
       : null;
     const dest = destinatariosTicket(
       input.soloEquipo ? { contactoCorreo: null, contactoNombre: null } : ticket,
-      cfg.correosNotificacion,
+      copias,
       agente?.email.value ?? input.actor.email,
+      cfg.correosNotificacion,
     );
 
     const [eventos, adjuntos] = await Promise.all([

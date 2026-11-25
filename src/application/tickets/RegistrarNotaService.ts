@@ -1,3 +1,4 @@
+import { correosCopia } from '../../core/entities/ConfiguracionTickets.js';
 import { textoOHtmlASeguro } from '../../core/entities/value-objects/descripcionHtml.js';
 import type { ITicketRepository } from '../../core/ports/repositories/ITicketRepository.js';
 import type { IConfiguracionRepository } from '../../core/ports/repositories/IConfiguracionRepository.js';
@@ -152,10 +153,12 @@ export class RegistrarNotaService {
       const agente = ticket.agenteAsignadoUid
         ? await this.usuarios.findByUid(ticket.agenteAsignadoUid)
         : null;
+      // Copias al equipo: solo quien eligió «💬 Respuestas y avances» (Configuración → Tickets).
       const dest = destinatariosTicket(
         ticket,
-        cfg.correosNotificacion,
+        correosCopia(cfg, 'respuestas'),
         agente?.email.value ?? input.actor.email,
+        cfg.correosNotificacion,
       );
       if (dest.para.length > 0) {
         const firma = input.actor.firma ? `<hr />${textoOHtmlASeguro(input.actor.firma)}` : '';

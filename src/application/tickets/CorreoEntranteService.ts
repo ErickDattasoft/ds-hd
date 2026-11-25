@@ -1,3 +1,4 @@
+import { correosCopia } from '../../core/entities/ConfiguracionTickets.js';
 import type { ITicketRepository } from '../../core/ports/repositories/ITicketRepository.js';
 import type { IConfiguracionRepository } from '../../core/ports/repositories/IConfiguracionRepository.js';
 import type { IBuzonEntrante, CorreoRecibido } from '../../core/ports/services/IBuzonEntrante.js';
@@ -361,7 +362,7 @@ export class CorreoEntranteService {
     if (!this.deps.email) return;
     try {
       const cfg = await this.config.obtenerTickets();
-      const para = cfg.correosNotificacion.map((c) => c.trim()).filter(Boolean).map((email) => ({ email }));
+      const para = correosCopia(cfg, 'respuestas').map((email) => ({ email }));
       if (!para.length) return;
       await this.deps.email.enviar({
         para,

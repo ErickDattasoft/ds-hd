@@ -67,6 +67,8 @@ export class FirestoreConfiguracionRepository implements IConfiguracionRepositor
               correo: String(a.correo ?? ''),
               cerrado: a.cerrado === true,
               facturado: a.facturado === true,
+              ...(typeof a.nuevo === 'boolean' ? { nuevo: a.nuevo } : {}),
+              ...(typeof a.respuestas === 'boolean' ? { respuestas: a.respuestas } : {}),
             })),
           }
         : {}),

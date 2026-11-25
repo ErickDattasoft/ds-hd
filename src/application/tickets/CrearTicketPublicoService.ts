@@ -1,3 +1,4 @@
+import { correosCopia } from '../../core/entities/ConfiguracionTickets.js';
 import type { ITicketPublicoRepository } from '../../core/ports/repositories/ITicketPublicoRepository.js';
 import type { IConfiguracionRepository } from '../../core/ports/repositories/IConfiguracionRepository.js';
 import type { ICaptchaVerifier } from '../../core/ports/services/ICaptchaVerifier.js';
@@ -73,7 +74,7 @@ export class CrearTicketPublicoService {
     });
 
     // Notificación al staff + confirmación al cliente (best-effort).
-    const staff = cfg.correosNotificacion.map((e) => Email.tryCreate(e)).filter((e) => e !== null);
+    const staff = correosCopia(cfg, 'nuevo').map((e) => Email.tryCreate(e)).filter((e) => e !== null);
     if (staff.length > 0) {
       await this.email.enviar({
         para: staff.map((e) => ({ email: e.value })),

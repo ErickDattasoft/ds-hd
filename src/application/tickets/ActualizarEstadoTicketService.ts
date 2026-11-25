@@ -7,7 +7,7 @@ import type { ILogger } from '../../core/ports/services/ILogger.js';
 import type { IEmailSender } from '../../core/ports/services/IEmailSender.js';
 import type { IWebhookPublisher } from '../../core/ports/services/IWebhookPublisher.js';
 import type { Ticket } from '../../core/entities/Ticket.js';
-import { correosAvisoCerrado, correosAvisoFacturado } from '../../core/entities/ConfiguracionTickets.js';
+import { correosAvisoCerrado, correosAvisoFacturado, correosCopia } from '../../core/entities/ConfiguracionTickets.js';
 import { esFacturacionCompletada } from '../../core/entities/value-objects/EstadoFacturacion.js';
 import { ForbiddenError, NotFoundError } from '../../core/errors/DomainError.js';
 import { publicarNotaInterna, registrarEvento } from './efectos.js';
@@ -134,7 +134,7 @@ export class ActualizarEstadoTicketService {
   ): Promise<void> {
     const cfg = await this.config.obtenerTickets();
     const copiaInterna = await this.emailAgenteOActor(ticket, input.actor.email);
-    const dest = destinatariosTicket(ticket, cfg.correosNotificacion, copiaInterna);
+    const dest = destinatariosTicket(ticket, correosCopia(cfg, 'respuestas'), copiaInterna, cfg.correosNotificacion);
     // Sin correo de contacto no hay a quién avisarle el avance (al equipo no le sirve otra copia).
     if (dest.sinContacto || dest.para.length === 0) return;
 

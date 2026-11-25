@@ -45,6 +45,69 @@ export interface AvisoCierre {
   cerrado: boolean;
   /** Aviso interno «✅ Ticket #N cerrado [FACTURADO]». */
   facturado: boolean;
+  /**
+   * 🆕 Copia del correo de ticket nuevo (y reenvíos) y aviso de ticket del portal público.
+   * Sin definir = lo que diga la lista «Correos de notificación» (como antes).
+   */
+  nuevo?: boolean;
+  /**
+   * 💬 Copia de las respuestas y avances que se le mandan al cliente, y aviso cuando el cliente
+   * contesta. Sin definir = lo que diga la lista «Correos de notificación» (como antes).
+   */
+  respuestas?: boolean;
+}
+
+/** Las copias que se eligen persona por persona además de cerrado/facturado. */
+export type TipoCopiaEquipo = 'nuevo' | 'respuestas';
+
+const correoOk = (c: string): boolean => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(c.trim());
+
+/**
+ * Quién del equipo recibe copia de un tipo de correo. Parte de «Correos de notificación» y aplica
+ * lo elegido en la tabla «¿Quién recibe qué avisos?»: una palomita quitada saca a esa persona y una
+ * puesta la agrega. Quien no tiene renglón (o no lo ha elegido) sigue como antes.
+ */
+export function correosCopia(
+  config: Pick<ConfiguracionTickets, 'avisosCierre' | 'correosNotificacion'>,
+  tipo: TipoCopiaEquipo,
+): string[] {
+  const filas = new Map((config.avisosCierre ?? []).map((a) => [a.correo.trim().toLowerCase(), a]));
+  const out: string[] = [];
+  const vistos = new Set<string>();
+  const agregar = (c: string): void => {
+    const k = c.trim().toLowerCase();
+    if (!correoOk(c) || vistos.has(k)) return;
+    vistos.add(k);
+    out.push(c.trim());
+  };
+  for (const c of config.correosNotificacion) if (filas.get(c.trim().toLowerCase())?.[tipo] !== false) agregar(c);
+  for (const a of config.avisosCierre ?? []) if (a[tipo] === true) agregar(a.correo);
+  return out;
+}
+
+/**
+ * Renglones para la tabla de Configuración: los guardados más quien está en «Correos de
+ * notificación» y aún no tiene renglón, con cada casilla como funciona HOY para esa persona.
+ */
+export function avisosParaTabla(
+  config: Pick<ConfiguracionTickets, 'avisosCierre' | 'correosNotificacion'>,
+): Required<AvisoCierre>[] {
+  const nuevo = new Set(correosCopia(config, 'nuevo').map((c) => c.toLowerCase()));
+  const resp = new Set(correosCopia(config, 'respuestas').map((c) => c.toLowerCase()));
+  const filas = avisosCierreDe(config).map((a) => ({ ...a }));
+  const ya = new Set(filas.map((a) => a.correo.trim().toLowerCase()));
+  for (const c of config.correosNotificacion) {
+    if (!correoOk(c) || ya.has(c.trim().toLowerCase())) continue;
+    ya.add(c.trim().toLowerCase());
+    filas.push({ correo: c.trim(), cerrado: false, facturado: false });
+  }
+  return filas.map((a) => ({
+    correo: a.correo,
+    cerrado: a.cerrado,
+    facturado: a.facturado,
+    nuevo: nuevo.has(a.correo.trim().toLowerCase()),
+    respuestas: resp.has(a.correo.trim().toLowerCase()),
+  }));
 }
 
 /** Los renglones de avisos de cierre; si nunca se han guardado, la lista de notificación con ambos. */

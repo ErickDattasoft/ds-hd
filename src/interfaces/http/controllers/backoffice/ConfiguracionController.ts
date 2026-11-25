@@ -36,7 +36,7 @@ const textoPredFacturacion = (config: ConfiguracionTickets): string => {
   const v = config.predeterminados?.estadoFacturacion;
   return v ? (catalogoFacturacion(config.facturacion).find((o) => o.valor === v)?.etiqueta ?? '') : '';
 };
-import { avisosCierreDe, respuestasATexto } from '../../../../core/entities/ConfiguracionTickets.js';
+import { avisosCierreDe, avisosParaTabla, respuestasATexto } from '../../../../core/entities/ConfiguracionTickets.js';
 import { camposDeError } from '../../support/errores.js';
 
 const str = (v: unknown): string => (typeof v === 'string' ? v : '');
@@ -344,6 +344,7 @@ export class ConfiguracionController {
       agentesPred: await this.configTickets.agentesAsignables(),
       respuestasATexto,
       avisosCierreDe,
+      avisosParaTabla,
       titulo: 'Configuración de tickets',
       config,
       errores: {},
@@ -410,6 +411,7 @@ export class ConfiguracionController {
       agentesPred: await this.configTickets.agentesAsignables(),
       respuestasATexto,
       avisosCierreDe,
+      avisosParaTabla,
         titulo: 'Configuración de tickets',
         config,
         errores: {},
@@ -425,6 +427,7 @@ export class ConfiguracionController {
       agentesPred: await this.configTickets.agentesAsignables(),
       respuestasATexto,
       avisosCierreDe,
+      avisosParaTabla,
         titulo: 'Configuración de tickets',
         config,
         errores: camposDeError(err),
@@ -766,5 +769,14 @@ function avisosDelForm(b: Record<string, unknown>): AvisoCierre[] {
   const correos = lista(b.avisoCorreo);
   const cerrado = lista(b.avisoCerrado);
   const facturado = lista(b.avisoFacturado);
-  return correos.map((correo, i) => ({ correo, cerrado: cerrado[i] === '1', facturado: facturado[i] === '1' }));
+  const nuevo = lista(b.avisoNuevo);
+  const respuestas = lista(b.avisoRespuestas);
+  return correos.map((correo, i) => ({
+    correo,
+    cerrado: cerrado[i] === '1',
+    facturado: facturado[i] === '1',
+    // Una página abierta antes de existir estas columnas no las manda: se quedan como estaban.
+    ...(nuevo.length ? { nuevo: nuevo[i] === '1' } : {}),
+    ...(respuestas.length ? { respuestas: respuestas[i] === '1' } : {}),
+  }));
 }
