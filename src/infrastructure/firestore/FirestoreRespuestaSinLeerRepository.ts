@@ -18,6 +18,7 @@ interface Doc {
   agenteAsignadoNombre?: string | null;
   canalizadoA?: string | null;
   distribuidor?: string | null;
+  leidaPor?: { uid?: string; nombre?: string }[];
 }
 
 const toDomain = (id: string, d: Doc): RespuestaSinLeer => ({
@@ -32,6 +33,9 @@ const toDomain = (id: string, d: Doc): RespuestaSinLeer => ({
   agenteAsignadoNombre: d.agenteAsignadoNombre ?? null,
   canalizadoA: d.canalizadoA ?? null,
   distribuidor: normalizarDistribuidor(d.distribuidor),
+  leidaPor: Array.isArray(d.leidaPor)
+    ? d.leidaPor.filter((p) => p && p.uid).map((p) => ({ uid: String(p.uid), nombre: String(p.nombre ?? '') }))
+    : [],
 });
 
 /** Sirve para ambos drivers (Admin SDK y REST): solo get/set/delete por id y la colección entera. */
@@ -58,8 +62,28 @@ export class FirestoreRespuestaSinLeerRepository implements IRespuestaSinLeerRep
       agenteAsignadoNombre: r.agenteAsignadoNombre,
       canalizadoA: r.canalizadoA,
       distribuidor: r.distribuidor,
+      // Respuesta nueva: vuelve a estar pendiente para todos.
+      leidaPor: [],
     });
     await this.cache?.marcarCambio(COL);
+  }
+
+  async marcarLeidaPor(ticketId: string, persona: { uid: string; nombre: string }): Promise<boolean> {
+    // Con la copia en memoria no cuesta lectura saber si había aviso (lo normal es que no).
+    const actual = this.cache
+      ? (await this.listar()).find((r) => r.ticketId === ticketId) ?? null
+      : await this.db
+          .collection(COL)
+          .doc(ticketId)
+          .get()
+          .then((s) => (s.exists ? toDomain(s.id, s.data() as Doc) : null));
+    if (!actual || (actual.leidaPor ?? []).some((p) => p.uid === persona.uid)) return false;
+    await this.db
+      .collection(COL)
+      .doc(ticketId)
+      .set({ leidaPor: [...(actual.leidaPor ?? []), { uid: persona.uid, nombre: persona.nombre }] }, { merge: true });
+    await this.cache?.marcarCambio(COL);
+    return true;
   }
 
   async listar(): Promise<RespuestaSinLeer[]> {

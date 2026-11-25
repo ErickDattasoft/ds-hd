@@ -12,7 +12,9 @@
       </div>
     {% endif %}
   </div>
-  <p class="muted">Tickets en los que el cliente contestó (por correo o desde su portal) y nadie del equipo lo ha abierto todavía. Al abrir el ticket sale de aquí.</p>
+  <p class="muted">Tickets en los que el cliente contestó (por correo o desde su portal) y <strong>tú</strong> no has abierto todavía.
+    Cada quien lleva su cuenta: al abrir el ticket sale de <em>tu</em> lista, pero tus compañeros lo siguen viendo hasta que lo abran ellos.
+    Cuando alguien le contesta al cliente, sale de la lista de todos.</p>
 
   <div class="buzon-respuestas">
     {% for r in respuestas %}
@@ -23,9 +25,28 @@
         </span>
         <span class="muted">💬 <span class="nombre-sensible">{{ r.autorNombre }}</span>{% if r.empresaNombre %} · <span class="nombre-sensible">{{ r.empresaNombre }}</span>{% endif %}{% if r.agenteAsignadoNombre %} · agente: {{ r.agenteAsignadoNombre }}{% endif %}</span>
         <span class="buzon-respuestas__extracto">{{ r.extracto }}</span>
+        {% if r.leidaPor and r.leidaPor.length %}<span class="muted buzon-respuestas__leida">👁 Leído por: {% for p in r.leidaPor %}{{ p.nombre }}{{ ', ' if not loop.last }}{% endfor %}</span>{% endif %}
       </a>
     {% else %}
       <p class="muted">✅ No hay respuestas pendientes de leer.</p>
     {% endfor %}
   </div>
+
+  {% if leidas and leidas.length %}
+    <details class="disclosure buzon-respuestas__leidas" data-seccion="buzon-leidas">
+      <summary class="disclosure__summary">👁 Ya las leíste <span class="disclosure__hint">— {{ leidas.length }}, nadie le ha contestado al cliente todavía</span></summary>
+      <div class="disclosure__body buzon-respuestas">
+        {% for r in leidas %}
+          <a class="buzon-respuestas__item" href="/app/tickets/{{ r.ticketId }}">
+            <span class="buzon-respuestas__head">
+              <strong>#{{ r.numero }} — {{ r.asunto }}</strong>
+              <span class="muted">{{ r.at | fechahora }}</span>
+            </span>
+            <span class="muted">💬 <span class="nombre-sensible">{{ r.autorNombre }}</span>{% if r.empresaNombre %} · <span class="nombre-sensible">{{ r.empresaNombre }}</span>{% endif %}</span>
+            <span class="muted buzon-respuestas__leida">👁 Leído por: {% for p in r.leidaPor %}{{ p.nombre }}{{ ', ' if not loop.last }}{% endfor %}</span>
+          </a>
+        {% endfor %}
+      </div>
+    </details>
+  {% endif %}
 {% endblock %}

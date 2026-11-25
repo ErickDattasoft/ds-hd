@@ -2805,6 +2805,8 @@
     badge.textContent = String(n);
     a.classList.toggle('campana--activa', n > 0);
     a.setAttribute('aria-label', 'Respuestas de clientes sin leer: ' + n);
+    // El 💬 del menú (junto a Tickets) es el mismo número.
+    document.querySelectorAll('.sidebar__badge--total[data-ir="/app/tickets/respuestas"]').forEach(function (b) { b.textContent = '💬' + n; });
   }
   /** Pide el conteo al servidor; con `avisar`, una respuesta nueva da toast y aviso del navegador. */
   function revisarRespuestas(avisar) {

@@ -14,8 +14,12 @@ con botones arriba para saltar entre ellas.
 
 - **Catálogos**: tipos, sistemas, grupos, estados (y cuál es el inicial) y prioridades.
 - **SLA**: horas máximas por prioridad; lo que las pase se marca en rojo.
-- **Facturación y avisos**: tipos facturables, correos del equipo que reciben las
-  notificaciones de tickets y en qué estados se le avisa al cliente del avance.
+- **Facturación y avisos**: tipos facturables y en qué estados se le avisa al cliente del avance.
+- **📨 Correos de notificación**: el primero es la dirección a la que contesta el cliente.
+- **🔔 ¿Quién recibe qué avisos?**: cada persona del equipo marca qué copias quiere —
+  **🆕 Ticket nuevo**, **💬 Respuestas y avances** (lo que se le contesta al cliente, los avisos de
+  avance de estado y cuando el cliente responde), **✔️ Cerrado** y **💲 Facturado**. Para que alguien
+  no reciba nada, se le quitan las cuatro palomitas. Las notas internas no mandan correo.
 - **Respuestas rápidas** y **valores predeterminados** del formulario de ticket nuevo.
 
 ## 💰 Cotizaciones y 🧮 Calculadora

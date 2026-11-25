@@ -160,6 +160,18 @@ notas internas. Abajo hay **dos recuadros separados**:
 agente en copia contesta, su respuesta (con sus capturas) aparece sola en la conversación y queda
 en la actividad del ticket y en la Bitácora. Se configura en *Configuración → Correo entrante*.
 
+## 🔔 Respuestas sin leer (cada quien la suya)
+
+Cuando un cliente contesta (por correo o desde su portal), el ticket aparece en la **🔔 campana**
+de arriba y en el **💬** junto a *Tickets* en el menú — los dos muestran el mismo número: las
+respuestas que **tú** no has leído.
+
+- Al **abrir el ticket**, baja a cero **solo para ti**; tus compañeros lo siguen viendo hasta que
+  lo abran ellos. En la lista de la campana se ve **«👁 Leído por: …»** para no contestar dos veces.
+- Cuando **alguien le contesta al cliente**, sale de la lista de todos.
+- Si el cliente vuelve a escribir, queda pendiente otra vez para todos.
+- Los avisos de más de 15 días se quitan solos.
+
 ## Quién ve qué ticket
 
 Administradores, supervisores y lectura ven todos. Un agente (o soporte) ve los suyos —por
@@ -757,8 +769,12 @@ con botones arriba para saltar entre ellas.
 
 - **Catálogos**: tipos, sistemas, grupos, estados (y cuál es el inicial) y prioridades.
 - **SLA**: horas máximas por prioridad; lo que las pase se marca en rojo.
-- **Facturación y avisos**: tipos facturables, correos del equipo que reciben las
-  notificaciones de tickets y en qué estados se le avisa al cliente del avance.
+- **Facturación y avisos**: tipos facturables y en qué estados se le avisa al cliente del avance.
+- **📨 Correos de notificación**: el primero es la dirección a la que contesta el cliente.
+- **🔔 ¿Quién recibe qué avisos?**: cada persona del equipo marca qué copias quiere —
+  **🆕 Ticket nuevo**, **💬 Respuestas y avances** (lo que se le contesta al cliente, los avisos de
+  avance de estado y cuando el cliente responde), **✔️ Cerrado** y **💲 Facturado**. Para que alguien
+  no reciba nada, se le quitan las cuatro palomitas. Las notas internas no mandan correo.
 - **Respuestas rápidas** y **valores predeterminados** del formulario de ticket nuevo.
 
 ## 💰 Cotizaciones y 🧮 Calculadora

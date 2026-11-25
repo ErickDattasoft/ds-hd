@@ -111,6 +111,8 @@ export function backofficeRoutes(container: Container): Router {
         ? container.resolve('respuestasSinLeerService').listarPara(req.user!).then((l) => l.length).catch(() => 0)
         : Promise.resolve(null),
     ]);
+    // 💬 del menú = tus respuestas sin leer (las mismas de la campana; por persona, sin caché compartido).
+    if (respuestasSinLeer !== null) contadores.respuestasSinLeer = respuestasSinLeer;
     res.locals.navSecciones = conContadores(secciones, contadores);
     res.locals.avisosGlobales = {
       buzonPendientes: contadores.ticketsPublicosPendientes ?? null,

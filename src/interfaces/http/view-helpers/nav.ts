@@ -26,7 +26,9 @@ export type ContadorNavKey =
   | 'ticketsPublicosPendientes'
   | 'ticketsCorreoSinLeer'
   /** % de la cuota diaria de Firestore gastado hoy (aviso arriba a partir del 80 %). */
-  | 'consumoFirestore';
+  | 'consumoFirestore'
+  /** Respuestas de clientes que ESTA persona no ha leído (la campana 🔔; no va en el caché compartido). */
+  | 'respuestasSinLeer';
 
 export interface NavItem {
   etiqueta: string;
@@ -85,8 +87,8 @@ export const NAV_BACKOFFICE: readonly NavItem[] = [
   { etiqueta: 'Tickets', href: '/app/tickets', icono: '🎫', permiso: 'tickets:leer', grupo: 'soporte',
     contadorKey: 'ticketsAbiertos', contadorTitulo: '{n} tickets sin cerrar (ni resueltos ni cerrados)',
     // El total ya está en el recuadro «Total tickets» de la lista; aquí, cuántos tuvieron plática.
-    contadorTotalKey: 'ticketsConPlatica', contadorTotalIcono: '💬', contadorTotalHref: '/app/tickets?platica=1',
-    contadorTotalTitulo: '{n} tickets con plática con el cliente (tienen o tuvieron mensajes, sin contar la papelera) — clic para verlos' },
+    contadorTotalKey: 'respuestasSinLeer', contadorTotalIcono: '💬', contadorTotalHref: '/app/tickets/respuestas',
+    contadorTotalTitulo: '{n} respuestas de clientes que no has leído — clic para verlas (cada quien lleva su cuenta)' },
   { etiqueta: 'Reportes', href: '/app/reportes', icono: '📈', permiso: 'tickets:leer_todos', grupo: 'soporte' },
 
   { etiqueta: 'Empresas', href: '/app/empresas', icono: '🏢', permiso: 'empresas:leer', grupo: 'comercial', contadorKey: 'empresasTotal', contadorTitulo: '{n} empresas' },

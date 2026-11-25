@@ -8,9 +8,13 @@ export class RespuestasController {
   constructor(private readonly respuestas: RespuestasSinLeerService) {}
 
   listarView = async (req: Request, res: Response): Promise<void> => {
+    const visibles = await this.respuestas.listarVisibles(req.user!);
+    const yaLeiste = (r: (typeof visibles)[number]): boolean => (r.leidaPor ?? []).some((p) => p.uid === req.user!.uid);
     res.render('pages/backoffice/tickets/respuestas', {
       titulo: '🔔 Respuestas de clientes',
-      respuestas: await this.respuestas.listarPara(req.user!),
+      respuestas: visibles.filter((r) => !yaLeiste(r)),
+      // Las que tú ya leíste pero nadie ha contestado: siguen pendientes para el equipo.
+      leidas: visibles.filter(yaLeiste),
     });
   };
 
@@ -32,7 +36,7 @@ export class RespuestasController {
 
   /** La pide el detalle del ticket al mostrarse (no al precargarse con el mouse). */
   leidaPost = async (req: Request, res: Response): Promise<void> => {
-    await this.respuestas.marcarLeida(str(req.params.id));
+    await this.respuestas.marcarLeidaPor(str(req.params.id), req.user!);
     res.status(204).end();
   };
 

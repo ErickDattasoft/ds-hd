@@ -74,7 +74,7 @@ describe('buzón 🔔 de respuestas de clientes', () => {
     expect(otra.body).toEqual({ ok: true, marcados: 0, yaHecho: true });
   });
 
-  it('contestarle al cliente también lo quita; «marcar todas» vacía el buzón', async () => {
+  it('contestarle al cliente lo quita para todos; «marcar todas» vacía TU buzón', async () => {
     const t = makeTestApp({ usuarios: [SUP, CLI] });
     const cli = await login(t.app, CLI.email, CLI.password);
     const ids: string[] = [];
@@ -94,6 +94,39 @@ describe('buzón 🔔 de respuestas de clientes', () => {
     expect([...t.respuestaSinLeerRepo.items.keys()]).toEqual([ids[1]]);
 
     await sup.agent.post('/app/tickets/respuestas/leidas').type('form').send({ _csrf: sup.csrf });
-    expect(t.respuestaSinLeerRepo.items.size).toBe(0);
+    expect((await sup.agent.get('/app/tickets/respuestas/contador')).body.n).toBe(0);
+    expect(t.respuestaSinLeerRepo.items.get(ids[1]!)!.leidaPor).toEqual([{ uid: SUP.uid, nombre: SUP.nombre }]);
+  });
+
+  it('«sin leer» por persona: si uno abre el ticket, a los demás les sigue apareciendo', async () => {
+    const SUP2 = { uid: 'u-sup2', email: 'sup2@dattasoft.mx', password: 'super12345', nombre: 'Gaby', rol: 'supervisor' as const };
+    const t = makeTestApp({ usuarios: [SUP, SUP2, CLI] });
+    const cli = await login(t.app, CLI.email, CLI.password);
+    const crear = await cli.agent
+      .post('/portal/tickets')
+      .type('form')
+      .send({ _csrf: cli.csrf, asunto: 'Uno', descripcion: 'Falla al timbrar', tipo: 'General', prioridad: 'Media' });
+    const id = String(crear.headers.location).split('/').pop()!;
+    await cli.agent.post(`/portal/tickets/${id}/responder`).type('form').send({ _csrf: cli.csrf, cuerpo: 'hola' });
+
+    const yo = await login(t.app, SUP.email, SUP.password);
+    const gaby = await login(t.app, SUP2.email, SUP2.password);
+    const n = async (a: typeof yo) => (await a.agent.get('/app/tickets/respuestas/contador')).body.n as number;
+    expect(await n(yo)).toBe(1);
+    expect(await n(gaby)).toBe(1);
+
+    // Yo lo abro: baja a 0 solo para mí; el 💬 del menú dice lo mismo.
+    await yo.agent.post(`/app/tickets/${id}/leida`).set('x-csrf-token', yo.csrf);
+    expect(await n(yo)).toBe(0);
+    expect(await n(gaby)).toBe(1);
+    const menuGaby = await gaby.agent.get('/app/tickets');
+    expect(menuGaby.text).toContain('data-ir="/app/tickets/respuestas"');
+    expect(menuGaby.text).toMatch(/💬1<\/span>/);
+    const buzonGaby = await gaby.agent.get('/app/tickets/respuestas');
+    expect(buzonGaby.text).toContain('👁 Leído por: Sup');
+
+    // El cliente vuelve a escribir: pendiente otra vez para los dos.
+    await cli.agent.post(`/portal/tickets/${id}/responder`).type('form').send({ _csrf: cli.csrf, cuerpo: 'otra cosa' });
+    expect(await n(yo)).toBe(1);
   });
 });

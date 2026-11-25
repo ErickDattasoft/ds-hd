@@ -8,4 +8,6 @@ export interface IRespuestaSinLeerRepository {
   listar(): Promise<RespuestaSinLeer[]>;
   /** `true` si había una y se borró. */
   quitar(ticketId: string): Promise<boolean>;
+  /** Anota que esta persona ya la leyó (solo escribe si había aviso y no lo tenía). `true` si escribió. */
+  marcarLeidaPor(ticketId: string, persona: { uid: string; nombre: string }): Promise<boolean>;
 }

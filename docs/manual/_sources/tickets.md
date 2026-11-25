@@ -57,6 +57,18 @@ notas internas. Abajo hay **dos recuadros separados**:
 agente en copia contesta, su respuesta (con sus capturas) aparece sola en la conversación y queda
 en la actividad del ticket y en la Bitácora. Se configura en *Configuración → Correo entrante*.
 
+## 🔔 Respuestas sin leer (cada quien la suya)
+
+Cuando un cliente contesta (por correo o desde su portal), el ticket aparece en la **🔔 campana**
+de arriba y en el **💬** junto a *Tickets* en el menú — los dos muestran el mismo número: las
+respuestas que **tú** no has leído.
+
+- Al **abrir el ticket**, baja a cero **solo para ti**; tus compañeros lo siguen viendo hasta que
+  lo abran ellos. En la lista de la campana se ve **«👁 Leído por: …»** para no contestar dos veces.
+- Cuando **alguien le contesta al cliente**, sale de la lista de todos.
+- Si el cliente vuelve a escribir, queda pendiente otra vez para todos.
+- Los avisos de más de 15 días se quitan solos.
+
 ## Quién ve qué ticket
 
 Administradores, supervisores y lectura ven todos. Un agente (o soporte) ve los suyos —por
