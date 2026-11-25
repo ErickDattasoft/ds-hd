@@ -252,11 +252,6 @@ export class InMemoryContadorRepository implements IContadorRepository {
   async fijar(nombre: string, valor: number): Promise<void> {
     this.valores.set(nombre, valor);
   }
-  async retrocederSiEs(nombre: string, valor: number): Promise<boolean> {
-    if ((this.valores.get(nombre) ?? 0) !== valor || valor <= 0) return false;
-    this.valores.set(nombre, valor - 1);
-    return true;
-  }
 }
 
 export class InMemoryConfiguracionRepository implements IConfiguracionRepository {

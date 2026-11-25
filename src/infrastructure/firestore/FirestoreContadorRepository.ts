@@ -19,18 +19,6 @@ export class FirestoreContadorRepository implements IContadorRepository {
     });
   }
 
-  async retrocederSiEs(nombre: string, valor: number): Promise<boolean> {
-    const ref = this.db.collection(COL).doc(nombre);
-    return this.db.runTransaction(async (tx) => {
-      const snap = await tx.get(ref);
-      const actual = snap.exists ? Number(snap.data()!.valor ?? 0) : 0;
-      // Si mientras tanto alguien creó otro ticket, el folio ya no es el último: no se toca.
-      if (actual !== valor || valor <= 0) return false;
-      tx.set(ref, { valor: valor - 1, actualizadoEn: Timestamp.now() }, { merge: true });
-      return true;
-    });
-  }
-
   async actual(nombre: string): Promise<number> {
     const snap = await this.db.collection(COL).doc(nombre).get();
     return snap.exists ? Number(snap.data()!.valor ?? 0) : 0;

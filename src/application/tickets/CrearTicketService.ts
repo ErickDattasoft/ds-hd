@@ -44,7 +44,12 @@ export class CrearTicketService {
     const estadoInicial = naceFinal ? cfg.estadoInicial : estadoPedido;
 
     const ahora = input.fechaCreacion ?? this.clock.now();
-    const numero = await this.contadores.siguiente(CONTADOR_TICKETS);
+    // Si el folio ya está ocupado (un ticket o el marcador de uno eliminado), se salta al siguiente:
+    // nunca dos tickets con el mismo número.
+    let numero = await this.contadores.siguiente(CONTADOR_TICKETS);
+    for (let intentos = 0; intentos < 5 && (await this.tickets.findByNumero(numero)); intentos++) {
+      numero = await this.contadores.siguiente(CONTADOR_TICKETS);
+    }
     // El id se genera aquí (no dentro de Ticket.crear) para poder "desinflar" las imágenes
     // pegadas en la descripción — cada una se sube como adjunto de ESTE ticket antes de
     // construir la entidad, que ya nunca confía en un `src` embebido (ver el porqué en

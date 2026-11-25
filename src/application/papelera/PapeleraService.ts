@@ -12,9 +12,6 @@ import type { IClock } from '../../core/ports/services/IClock.js';
 import { Ticket } from '../../core/entities/Ticket.js';
 import { ForbiddenError } from '../../core/errors/DomainError.js';
 import type { SessionUser } from '../shared/SessionUser.js';
-import type { IContadorRepository } from '../../core/ports/repositories/IContadorRepository.js';
-import { esPlatica } from '../../core/entities/NotaTicket.js';
-import { CONTADOR_TICKETS } from '../tickets/constantes.js';
 
 /** Entidades que pueden estar en la papelera. */
 export type TipoPapelera = 'empresas' | 'contactos' | 'tickets';
@@ -25,8 +22,6 @@ const TIPOS: readonly TipoPapelera[] = ['empresas', 'contactos', 'tickets'];
 export interface ResultadoLote {
   ok: number;
   errores: number;
-  /** Folios de ticket que se liberaron (era el último y nunca se le escribió al cliente). */
-  foliosLiberados?: number[];
 }
 
 /**
@@ -47,7 +42,6 @@ export class PapeleraService {
     private readonly bitacora: BitacoraService,
     private readonly logger: ILogger,
     private readonly clock: IClock,
-    private readonly contadores?: IContadorRepository,
   ) {}
 
   static esTipo(v: unknown): v is TipoPapelera {
@@ -66,11 +60,7 @@ export class PapeleraService {
   /** Borra definitivamente los elementos indicados (deben estar archivados). */
   async eliminar(actor: SessionUser, tipo: TipoPapelera, ids: string[]): Promise<ResultadoLote> {
     this.exigirGestion(actor);
-    const liberados: number[] = [];
-    const res = await this.porCada(ids, async (id) => {
-      const folio = await this.eliminarUno(tipo, id);
-      if (folio) liberados.push(folio);
-    });
+    const res = await this.porCada(ids, (id) => this.eliminarUno(tipo, id));
     if (res.ok) {
       await this.bitacora.registrar({
         actor,
@@ -78,12 +68,10 @@ export class PapeleraService {
         modulo: 'papelera',
         entidadTipo: tipo,
         entidadId: ids.slice(0, 5).join(',') || '-',
-        resumen:
-          `Borrado definitivo de ${res.ok} ${tipo} desde la papelera` +
-          (liberados.length ? ` (folio ${liberados.map((n) => `#${n}`).join(', ')} liberado: se vuelve a usar)` : ''),
+        resumen: `Borrado definitivo de ${res.ok} ${tipo} desde la papelera`,
       });
     }
-    return liberados.length ? { ...res, foliosLiberados: liberados } : res;
+    return res;
   }
 
   /** Vacía la papelera de un tipo: borra definitivamente todo lo archivado. */
@@ -108,46 +96,28 @@ export class PapeleraService {
     }
   }
 
-  /**
-   * ¿Se puede liberar el folio de este ticket? Solo si es el ÚLTIMO que se creó y nunca se le
-   * escribió al cliente (ningún correo enviado ni respuesta en la plática): así nadie de fuera
-   * conoció ese número y el siguiente ticket lo puede volver a usar sin confusiones.
-   */
-  private async folioLiberable(t: Ticket): Promise<boolean> {
-    if (!this.contadores || (await this.contadores.actual(CONTADOR_TICKETS)) !== t.numero) return false;
-    const [eventos, notas] = await Promise.all([this.ticketRepo.listarEventos(t.id), this.ticketRepo.listarNotas(t.id)]);
-    return !eventos.some((e) => e.tipo === 'correo') && !notas.some(esPlatica);
-  }
-
-  /** Borra uno; con un ticket devuelve su folio si se liberó (si no, null). */
-  private async eliminarUno(tipo: TipoPapelera, id: string): Promise<number | null> {
+  private async eliminarUno(tipo: TipoPapelera, id: string): Promise<void> {
     if (tipo === 'empresas') {
       const e = await this.empresaRepo.findById(id);
       if (e && !e.activa) await this.empresaRepo.eliminar(id);
-      return null;
+      return;
     }
     if (tipo === 'contactos') {
       const c = await this.contactoRepo.findById(id);
       if (c && !c.activo) await this.contactoRepo.eliminar(id);
-      return null;
+      return;
     }
     // El folio no desaparece: su marcador "Ticket eliminado por administrador" (creado al
     // mandarlo a la papelera) se queda en la lista. Los tickets archivados antes de que existiera
     // el marcador no lo tienen: se crea aquí.
     const t = await this.ticketRepo.findById(id);
-    if (!t || !t.archivado) return null;
-    const liberable = await this.folioLiberable(t);
-    await this.adjuntoRepo.eliminarPorTicket(id);
-    await this.ticketRepo.eliminar(id);
-    // Folio liberado: se va también su marcador y el contador regresa uno (si nadie creó otro).
-    if (liberable && (await this.contadores!.retrocederSiEs(CONTADOR_TICKETS, t.numero))) {
-      if (await this.ticketRepo.findById(Ticket.idMarcador(id))) await this.ticketRepo.eliminar(Ticket.idMarcador(id));
-      return t.numero;
+    if (t && t.archivado) {
+      await this.adjuntoRepo.eliminarPorTicket(id);
+      await this.ticketRepo.eliminar(id);
+      if (!(await this.ticketRepo.findById(Ticket.idMarcador(id)))) {
+        await this.ticketRepo.save(Ticket.marcadorDe(t, this.clock.now()));
+      }
     }
-    if (!(await this.ticketRepo.findById(Ticket.idMarcador(id)))) {
-      await this.ticketRepo.save(Ticket.marcadorDe(t, this.clock.now()));
-    }
-    return null;
   }
 
   private async idsArchivados(tipo: TipoPapelera): Promise<string[]> {

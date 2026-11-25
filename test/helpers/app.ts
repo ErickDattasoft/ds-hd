@@ -77,6 +77,7 @@ export interface TestApp {
   captchaVerifier: FakeCaptchaVerifier;
   filtroGuardadoRepo: InMemoryFiltroGuardadoRepository;
   notaPersonalRepo: InMemoryNotaPersonalRepository;
+  contadorRepo: InMemoryContadorRepository;
   notaImagenRepo: InMemoryNotaImagenRepository;
   consumoFirestoreRepo: InMemoryConsumoFirestoreRepository;
   respuestaSinLeerRepo: InMemoryRespuestaSinLeerRepository;
@@ -223,6 +224,7 @@ export function makeTestApp(opts: { usuarios?: { uid: string; email: string; pas
     captchaVerifier,
     filtroGuardadoRepo: overrides.filtroGuardadoRepo as InMemoryFiltroGuardadoRepository,
     notaPersonalRepo: overrides.notaPersonalRepo as InMemoryNotaPersonalRepository,
+    contadorRepo: overrides.contadorRepo as InMemoryContadorRepository,
     notaImagenRepo: overrides.notaImagenRepo as InMemoryNotaImagenRepository,
     consumoFirestoreRepo: overrides.consumoFirestoreRepo as InMemoryConsumoFirestoreRepository,
     respuestaSinLeerRepo: overrides.respuestaSinLeerRepo as InMemoryRespuestaSinLeerRepository,

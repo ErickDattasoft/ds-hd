@@ -41,10 +41,7 @@ export class PapeleraController {
   eliminarPost = async (req: Request, res: Response): Promise<void> => {
     const tipo = this.tipo(req);
     const r = await this.papelera.eliminar(req.user!, tipo, ids(req.body?.ids));
-    const folios = r.foliosLiberados?.length
-      ? ` Folio ${r.foliosLiberados.map((n) => `#${n}`).join(', ')} liberado: el siguiente ticket lo vuelve a usar.`
-      : '';
-    this.volver(res, `Eliminados definitivamente: ${r.ok}${r.errores ? `, con ${r.errores} error(es)` : ''}.${folios}`);
+    this.volver(res, `Eliminados definitivamente: ${r.ok}${r.errores ? `, con ${r.errores} error(es)` : ''}.`);
   };
 
   vaciarPost = async (req: Request, res: Response): Promise<void> => {
