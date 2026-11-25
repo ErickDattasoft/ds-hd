@@ -1,4 +1,4 @@
-import { avisaCliente, correosCopia } from '../../core/entities/ConfiguracionTickets.js';
+import { avisaCliente, copiaAgenteSiQuiere, correosCopia } from '../../core/entities/ConfiguracionTickets.js';
 import type { ITicketRepository } from '../../core/ports/repositories/ITicketRepository.js';
 import type { IConfiguracionRepository } from '../../core/ports/repositories/IConfiguracionRepository.js';
 import type { IUsuarioRepository } from '../../core/ports/repositories/IUsuarioRepository.js';
@@ -71,7 +71,7 @@ export class ReenviarCorreoTicketService {
     const dest = destinatariosTicket(
       soloEquipo ? { contactoCorreo: null, contactoNombre: null } : ticket,
       copias,
-      agente?.email.value ?? input.actor.email,
+      copiaAgenteSiQuiere(cfg, agente?.email.value ?? input.actor.email, 'nuevo'),
       cfg.correosNotificacion,
     );
 

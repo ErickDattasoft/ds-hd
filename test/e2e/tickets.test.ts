@@ -806,6 +806,27 @@ describe('avisos de cerrado y facturado por persona (Configuración → Tickets)
     expect(cierre).not.toContain('cliente@empresa.mx');
   });
 
+  it('el agente que cierra (o el asignado) respeta su casilla ✔️ Cerrado si está en la tabla', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    const cfg = await t.configuracionRepo.obtenerTickets();
+    await t.configuracionRepo.guardarTickets({
+      ...cfg,
+      correosNotificacion: [ADMIN.email],
+      avisosCierre: [{ correo: ADMIN.email, cerrado: false, facturado: false, nuevo: true, respuestas: true }],
+    });
+    const { agent, csrf } = await login(t.app, ADMIN.email, ADMIN.password);
+    const crear = await agent.post('/app/tickets').type('form').send({
+      _csrf: csrf, asunto: 'Cierre sin copia', descripcion: 'descripción de prueba larga', tipo: 'General', prioridad: 'Media',
+      contactoCorreo: 'cliente@empresa.mx',
+    });
+    const id = String(crear.headers.location).split('/').pop()!;
+    t.emailSender.enviados.length = 0;
+    await agent.post(`/app/tickets/${id}/estado`).type('form').send({ _csrf: csrf, estado: 'Cerrado', facturarCon: '' });
+    const cierre = t.emailSender.enviados.flatMap(destinatarios);
+    expect(cierre).toContain('cliente@empresa.mx');
+    expect(cierre).not.toContain(ADMIN.email);
+  });
+
   it('un correo inválido no se guarda y avisa', async () => {
     const t = makeTestApp({ usuarios: [ADMIN] });
     const cfg = await t.configuracionRepo.obtenerTickets();

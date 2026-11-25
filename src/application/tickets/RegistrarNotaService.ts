@@ -1,4 +1,4 @@
-import { correosCopia } from '../../core/entities/ConfiguracionTickets.js';
+import { copiaAgenteSiQuiere, correosCopia } from '../../core/entities/ConfiguracionTickets.js';
 import { textoOHtmlASeguro } from '../../core/entities/value-objects/descripcionHtml.js';
 import type { ITicketRepository } from '../../core/ports/repositories/ITicketRepository.js';
 import type { IConfiguracionRepository } from '../../core/ports/repositories/IConfiguracionRepository.js';
@@ -157,7 +157,7 @@ export class RegistrarNotaService {
       const dest = destinatariosTicket(
         ticket,
         correosCopia(cfg, 'respuestas'),
-        agente?.email.value ?? input.actor.email,
+        copiaAgenteSiQuiere(cfg, agente?.email.value ?? input.actor.email, 'respuestas'),
         cfg.correosNotificacion,
       );
       if (dest.para.length > 0) {

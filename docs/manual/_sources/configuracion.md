@@ -19,7 +19,7 @@ con botones arriba para saltar entre ellas.
 - **🔔 ¿Quién recibe qué avisos?**: cada persona del equipo marca qué copias quiere —
   **🆕 Ticket nuevo**, **💬 Respuestas** (lo que se le contesta al cliente y cuando el cliente
   responde), **📈 Avances** (el aviso al cliente cuando su ticket pasa a un estado intermedio, como
-  «En proceso»), **✔️ Cerrado** y **💲 Facturado**. Para que alguien no reciba nada, se le quitan
+  «En proceso»), **✔️ Cerrado** y **💲 Facturado**. El agente asignado también respeta sus casillas. Para que alguien no reciba nada, se le quitan
   todas las palomitas.
   La primera fila, **👤 CLIENTE**, decide qué correos automáticos recibe el contacto de cada ticket:
   🆕 ticket nuevo, 📈 avances y ✔️ cerrado (con la encuesta) se pueden apagar; lo que le escribes en

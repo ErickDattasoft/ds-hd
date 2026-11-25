@@ -118,6 +118,23 @@ export function correosCopia(
 }
 
 /**
+ * La copia al agente asignado (o a quien hace el cambio) respeta su propia casilla: si su correo
+ * está en «¿Quién recibe qué avisos?» con ese aviso desmarcado, no se le manda. Si no está en la
+ * tabla, la recibe como siempre (es su ticket).
+ */
+export function copiaAgenteSiQuiere(
+  config: Pick<ConfiguracionTickets, 'avisosCierre'>,
+  correo: string | null | undefined,
+  tipo: TipoCopiaEquipo | 'cerrado',
+): string | null {
+  if (!correo) return null;
+  const fila = (config.avisosCierre ?? []).find((a) => a.correo.trim().toLowerCase() === correo.trim().toLowerCase());
+  if (!fila) return correo;
+  const quiere = tipo === 'cerrado' ? fila.cerrado : eleccion(fila, tipo);
+  return quiere === false ? null : correo;
+}
+
+/**
  * Renglones para la tabla de Configuración: los guardados más quien está en «Correos de
  * notificación» y aún no tiene renglón, con cada casilla como funciona HOY para esa persona.
  */

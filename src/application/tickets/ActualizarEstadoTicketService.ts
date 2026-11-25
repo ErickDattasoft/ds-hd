@@ -7,7 +7,7 @@ import type { ILogger } from '../../core/ports/services/ILogger.js';
 import type { IEmailSender } from '../../core/ports/services/IEmailSender.js';
 import type { IWebhookPublisher } from '../../core/ports/services/IWebhookPublisher.js';
 import type { Ticket } from '../../core/entities/Ticket.js';
-import { avisaCliente, correosAvisoCerrado, correosAvisoFacturado, correosCopia } from '../../core/entities/ConfiguracionTickets.js';
+import { avisaCliente, copiaAgenteSiQuiere, correosAvisoCerrado, correosAvisoFacturado, correosCopia } from '../../core/entities/ConfiguracionTickets.js';
 import { esFacturacionCompletada } from '../../core/entities/value-objects/EstadoFacturacion.js';
 import { ForbiddenError, NotFoundError } from '../../core/errors/DomainError.js';
 import { publicarNotaInterna, registrarEvento } from './efectos.js';
@@ -135,7 +135,7 @@ export class ActualizarEstadoTicketService {
     const cfg = await this.config.obtenerTickets();
     // 👤 Apagado para el CLIENTE en Configuración: no sale el aviso de avance (era para él).
     if (!avisaCliente(cfg, 'avances')) return;
-    const copiaInterna = await this.emailAgenteOActor(ticket, input.actor.email);
+    const copiaInterna = copiaAgenteSiQuiere(cfg, await this.emailAgenteOActor(ticket, input.actor.email), 'avances');
     const dest = destinatariosTicket(ticket, correosCopia(cfg, 'avances'), copiaInterna, cfg.correosNotificacion);
     // Sin correo de contacto no hay a quién avisarle el avance (al equipo no le sirve otra copia).
     if (dest.sinContacto || dest.para.length === 0) return;
@@ -177,7 +177,8 @@ export class ActualizarEstadoTicketService {
     });
 
     const cfg = await this.config.obtenerTickets();
-    const copiaInterna = await this.emailAgenteOActor(ticket, input.actor.email);
+    // El agente también respeta su casilla «✔️ Cerrado» si está en la tabla.
+    const copiaInterna = copiaAgenteSiQuiere(cfg, await this.emailAgenteOActor(ticket, input.actor.email), 'cerrado');
     // Copia del cierre: solo quien marcó «✔️ Cerrado» en Configuración → Tickets.
     // 👤 Apagado para el CLIENTE en Configuración: el aviso de cierre solo le llega al equipo.
     const alCliente = avisaCliente(cfg, 'cerrado');
