@@ -106,7 +106,6 @@ function plantillaPropia(texto: string | null): string | null {
   return t;
 }
 
-/** Personas de un registro público: solo cuenta si dijo que sí va y el evento deja anotar a más. */
 /** Del link abierto cuentan quienes dijeron «Sí» (cada uno con sus acompañantes). */
 export function personasQueVanDelLink(inscritos: readonly { asistira?: string | null; personas?: number | null }[]): number {
   return inscritos
@@ -114,6 +113,7 @@ export function personasQueVanDelLink(inscritos: readonly { asistira?: string | 
     .reduce((t, i) => t + (i.personas ?? 1), 0);
 }
 
+/** Personas de un registro público: solo cuenta si dijo que sí va y el evento deja anotar a más. */
 function personasRegistro(max: number, input: { asistira?: string; personas?: number }): number | null {
   if (max <= 1 || (input.asistira ?? '').trim().toLowerCase() === 'no') return null;
   const n = Math.trunc(Number(input.personas ?? 1));
