@@ -2,7 +2,7 @@ import type { DocumentData, Firestore } from 'firebase-admin/firestore';
 import { Timestamp } from '../../core/entities/value-objects/Timestamp.js';
 
 /** Colecciones que se guardan completas en memoria (las que más se releen en cada página). */
-export type ColeccionEnCache = 'tickets' | 'empresas' | 'contactos';
+export type ColeccionEnCache = 'tickets' | 'empresas' | 'contactos' | 'respuestas_sin_leer';
 
 /** Un documento crudo de Firestore: id + datos. */
 export interface DocCrudo {

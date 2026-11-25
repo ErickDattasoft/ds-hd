@@ -3,6 +3,7 @@ import { Timestamp } from '../../core/entities/value-objects/Timestamp.js';
 import type { IRespuestaSinLeerRepository } from '../../core/ports/repositories/IRespuestaSinLeerRepository.js';
 import type { RespuestaSinLeer } from '../../core/entities/RespuestaSinLeer.js';
 import { normalizarDistribuidor } from '../../core/entities/Ticket.js';
+import type { CacheColecciones } from './CacheColecciones.js';
 
 const COL = 'respuestas_sin_leer';
 
@@ -35,7 +36,15 @@ const toDomain = (id: string, d: Doc): RespuestaSinLeer => ({
 
 /** Sirve para ambos drivers (Admin SDK y REST): solo get/set/delete por id y la colección entera. */
 export class FirestoreRespuestaSinLeerRepository implements IRespuestaSinLeerRepository {
-  constructor(private readonly db: Firestore) {}
+  /**
+   * `cache`: copia en memoria con sello de cambios (ver {@link CacheColecciones}). La campana 🔔
+   * consulta cada minuto en cada pestaña: sin copia, cada vuelta leía TODOS los avisos (~50
+   * lecturas) y con dos personas trabajando se acababa la cuota diaria. Con ella lee 1 (el sello).
+   */
+  constructor(
+    private readonly db: Firestore,
+    private readonly cache?: CacheColecciones,
+  ) {}
 
   async guardar(r: RespuestaSinLeer): Promise<void> {
     await this.db.collection(COL).doc(r.ticketId).set({
@@ -50,9 +59,11 @@ export class FirestoreRespuestaSinLeerRepository implements IRespuestaSinLeerRep
       canalizadoA: r.canalizadoA,
       distribuidor: r.distribuidor,
     });
+    await this.cache?.marcarCambio(COL);
   }
 
   async listar(): Promise<RespuestaSinLeer[]> {
+    if (this.cache) return (await this.cache.todos(COL)).map((d) => toDomain(d.id, d.data as Doc));
     const snap = await this.db.collection(COL).get();
     return snap.docs.map((d) => toDomain(d.id, d.data() as Doc));
   }
@@ -63,6 +74,7 @@ export class FirestoreRespuestaSinLeerRepository implements IRespuestaSinLeerRep
     const snap = await ref.get();
     if (!snap.exists) return false;
     await ref.delete();
+    await this.cache?.marcarCambio(COL);
     return true;
   }
 }

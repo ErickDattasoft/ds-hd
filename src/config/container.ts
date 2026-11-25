@@ -563,8 +563,8 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
     ).singleton(),
     notasController: asFunction((c: Cradle) => new NotasController(c.notasPersonalesService, c.clock)).singleton(),
     respuestaSinLeerRepo: asFunction(
-      ({ firestoreDb }: Cradle): IRespuestaSinLeerRepository =>
-        new FirestoreRespuestaSinLeerRepository(requireFirestore(firestoreDb)),
+      ({ firestoreDb, cacheColecciones }: Cradle): IRespuestaSinLeerRepository =>
+        new FirestoreRespuestaSinLeerRepository(requireFirestore(firestoreDb), cacheColecciones),
     ).singleton(),
     respuestasSinLeerService: asFunction(
       (c: Cradle) => new RespuestasSinLeerService(c.respuestaSinLeerRepo, c.logger),

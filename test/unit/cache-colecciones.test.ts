@@ -6,6 +6,7 @@ import {
   cumpleIgualdades,
 } from '../../src/infrastructure/firestore/CacheColecciones.js';
 import { FirestoreTicketQueries } from '../../src/infrastructure/firestore/FirestoreTicketQueries.js';
+import { FirestoreRespuestaSinLeerRepository } from '../../src/infrastructure/firestore/FirestoreRespuestaSinLeerRepository.js';
 
 /** Firestore de mentira, compartido por varias «instancias del Worker», que cuenta lecturas. */
 function firestoreFalso() {
@@ -31,6 +32,9 @@ function firestoreFalso() {
         },
         set: async (datos: Record<string, unknown>, opt?: { merge?: boolean }) => {
           col(nombre).set(id, opt?.merge ? { ...(col(nombre).get(id) ?? {}), ...datos } : datos);
+        },
+        delete: async () => {
+          col(nombre).delete(id);
         },
       }),
     }),
@@ -116,5 +120,30 @@ describe('CacheColecciones (copia en memoria con sello de cambios)', () => {
     const antes = f.lecturas.total;
     expect(await q.contar({ soloAbiertos: true, archivado: false })).toBe(2);
     expect(f.lecturas.total - antes).toBe(1); // solo el sello
+  });
+
+  it('🔔 la campana lee solo el sello; un aviso nuevo o leído en otra instancia se ve enseguida', async () => {
+    const f = firestoreFalso();
+    for (let i = 1; i <= 50; i++) f.col('respuestas_sin_leer').set(`t${i}`, { numero: i, autorNombre: 'Cliente' });
+    const repoA = new FirestoreRespuestaSinLeerRepository(f.db, new CacheColecciones(f.db));
+    const repoB = new FirestoreRespuestaSinLeerRepository(f.db, new CacheColecciones(f.db));
+
+    expect(await repoA.listar()).toHaveLength(50);
+    const antes = f.lecturas.total;
+    await repoA.listar();
+    expect(f.lecturas.total - antes).toBe(1); // antes eran 50 por cada vuelta de la campana
+
+    await repoB.guardar({
+      ticketId: 't51', numero: 51, asunto: 'x', empresaNombre: null, autorNombre: 'Cliente', extracto: 'hola',
+      at: new Date(), agenteAsignadoUid: null, agenteAsignadoNombre: null, canalizadoA: null, distribuidor: 'DATTASOFT',
+    });
+    expect(await repoA.listar()).toHaveLength(51);
+    expect(await repoB.quitar('t1')).toBe(true);
+    expect(await repoA.listar()).toHaveLength(50);
+
+    // Abrir un ticket sin avisos pendientes no cambia el sello (la copia de A sigue sirviendo).
+    const sello = JSON.stringify(f.col('sistema').get('sellos_colecciones'));
+    expect(await repoB.quitar('no-existe')).toBe(false);
+    expect(JSON.stringify(f.col('sistema').get('sellos_colecciones'))).toBe(sello);
   });
 });
