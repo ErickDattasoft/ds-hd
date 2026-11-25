@@ -135,14 +135,7 @@
       {% if errores.descripcion %}<em class="field__error">{{ errores.descripcion }}</em>{% endif %}
     </div>
 
-    {% if puedeNotasInternas %}
-      <details class="disclosure"{{ ' open' if valores.notasInternas }}>
-        <summary class="disclosure__summary">🔒 Notas internas <span class="disclosure__hint">— uso interno, no se envía al cliente</span></summary>
-        <div class="disclosure__body">
-          <textarea name="notasInternas" rows="3" placeholder="Ej: Factura A-001, pendiente autorización, contactar el lunes…">{{ valores.notasInternas }}</textarea>
-        </div>
-      </details>
-    {% endif %}
+    {# Las notas internas ya no van aquí: se escriben en el recuadro «🔒 Notas internas» del ticket. #}
 
 
     <details class="disclosure"{{ ' open' if valores.agendaFecha or errores.agendaFecha or errores.agendaHora }}>

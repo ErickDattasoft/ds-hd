@@ -652,6 +652,14 @@ export class TicketController {
       descripcionHtml: d.descripcionHtml,
       notas: d.notas.map((n) => ({ ...n, modificable: RegistrarNotaService.puedeModificarNota(req.user!, n) })),
       notasTotal: d.notasTotal,
+      // El campo de notas internas de antes, si su texto no está ya en la conversación (los
+      // tickets migrados lo traen también como nota de «Migración»). Solo a quien ve internas.
+      notaInternaAnterior:
+        req.user!.permisos.includes('tickets:ver_notas_internas') &&
+        d.ticket.notasInternas?.trim() &&
+        !d.notas.some((n) => n.cuerpo.includes(d.ticket.notasInternas!.trim()))
+          ? d.ticket.notasInternas.trim()
+          : null,
       eventos: d.eventos,
       adjuntos: d.adjuntos,
       config: d.config,

@@ -898,3 +898,28 @@ describe('detalle del ticket: respuesta al cliente y notas internas separadas', 
     expect(t.emailSender.enviados.length).toBe(enviados);
   });
 });
+
+describe('detalle del ticket sin «Gestión»', () => {
+  it('ya no trae el recuadro Gestión; la nota interna de antes se ve como nota (sin repetir la migrada)', async () => {
+    const t = makeTestApp({ usuarios: [SUP] });
+    const { agent, csrf } = await login(t.app, SUP.email, SUP.password);
+    const c = await agent.post('/app/tickets/captura/crear').set('x-csrf-token', csrf)
+      .send({ tipo: 'General', asunto: 'Revisar timbrado', estado: 'Abierto', solicitadoPor: 'Auxiliar Pedro' });
+    const tk = t.ticketStore.tickets.get(c.body.id)!;
+    tk.notasInternas = 'Factura MID 1574';
+
+    let det = await agent.get(`/app/tickets/${c.body.id}`);
+    expect(det.text).not.toContain('Guardar gestión');
+    expect(det.text).toContain('Solicitado por:');
+    expect(det.text).toContain('Nota interna anterior');
+    expect(det.text).toContain('Factura MID 1574');
+
+    // Si ya está en la conversación (como la trae la migración), no se repite.
+    await agent.post(`/app/tickets/${c.body.id}/nota`).type('form').send({ _csrf: csrf, tipo: 'interna', cuerpo: 'Factura MID 1574' });
+    det = await agent.get(`/app/tickets/${c.body.id}`);
+    expect(det.text).not.toContain('Nota interna anterior');
+
+    const form = await agent.get(`/app/tickets/${c.body.id}/editar`);
+    expect(form.text).not.toContain('name="notasInternas"');
+  });
+});

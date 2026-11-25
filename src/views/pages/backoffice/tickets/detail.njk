@@ -43,6 +43,17 @@
             <div class="chat__hora">{{ (ticket.abiertoEn or ticket.createdAt) | fechahora }}</div>
           </div>
 
+          {% if notaInternaAnterior %}
+          {# El campo «Notas internas» de antes (un solo texto por ticket): se muestra como nota, sin editar. #}
+          <div class="chat__msg chat__msg--interna">
+            <div class="chat__meta">
+              <span class="chat__autor">🔒 Nota interna anterior</span>
+              <span class="badge badge--warning">interna</span>
+            </div>
+            <div class="chat__cuerpo sensible" style="white-space: pre-line">{{ notaInternaAnterior }}</div>
+          </div>
+          {% endif %}
+
           {% for n in notas %}
             {% set cuerpo = (n.cuerpo | sinMarcasMigracion) if n.autorUid == 'migracion' else n.cuerpo %}
             {% if cuerpo or (n.adjuntoIds and n.adjuntoIds.length) %}
@@ -137,22 +148,8 @@
       </div>
 
       {% if permisos.editar %}
-        <div class="card">
-          <p><strong>Gestión</strong> <span class="muted">— datos internos del ticket</span></p>
-          <form method="post" action="/app/tickets/{{ ticket.id }}/gestion" class="form">
-            <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
-            <div class="form-grid">
-              <label class="field"><span>Solicitado por</span><input name="solicitadoPor" value="{{ ticket.solicitadoPor or '' }}" placeholder="—" /></label>
-              <label class="field"><span>Canalizado a</span><input name="canalizadoA" value="{{ ticket.canalizadoA or '' }}" placeholder="—" /></label>
-            </div>
-            {% if permisos.notasInternas %}
-              <label class="field"><span>🔒 Notas internas <span class="muted">(no se envían al cliente)</span></span>
-                <textarea name="notasInternas" rows="3" placeholder="Ej: Factura A-001, pendiente autorización…">{{ ticket.notasInternas or '' }}</textarea>
-              </label>
-            {% endif %}
-            <button class="btn btn--sm" type="submit">Guardar gestión</button>
-          </form>
-        </div>
+        {# «Gestión» se quitó: Solicitado por / Canalizado a se llenan al crear el ticket (se ven en el
+           panel de la derecha y se cambian con ✏️ Editar) y las notas internas van en su recuadro. #}
       {% endif %}
 
       {{ tk.adjuntosTicket(adjuntos, '/app/tickets/' + ticket.id, csrfToken, permisos.editar, permisos.editar) }}
