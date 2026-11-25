@@ -31,7 +31,7 @@
       {# Conversación tipo chat: la solicitud original es el primer mensaje, luego todo en orden
          (lo más reciente abajo, junto a la caja para escribir). Cliente a la izquierda, equipo a la derecha. #}
       <div class="card chat" id="conversacion" data-marcar-leida="/app/tickets/{{ ticket.id }}/leida">
-        <p class="chat__titulo"><strong>💬 Conversación</strong> <span class="muted">— cliente a la izquierda · equipo a la derecha · 🔒 notas internas en amarillo</span></p>
+        <p class="chat__titulo"><strong>📝 Descripción</strong> <span class="muted">— cliente a la izquierda · equipo a la derecha · 🔒 notas internas en amarillo</span></p>
 
         <div class="chat__hilo" data-chat-hilo data-chat-conteo="/app/tickets/{{ ticket.id }}/notas/conteo" data-chat-n="{{ notasTotal }}">
           <div class="chat__msg chat__msg--cliente">
