@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import request from 'supertest';
 import { makeTestApp, cookieValor } from '../helpers/app.js';
 
@@ -402,5 +402,35 @@ describe('base de conocimiento — acceso por persona, solo lectura e indexado',
     expect([...orden].sort((a, b) => a - b)).toEqual(orden);
     const za = (await agent.get('/app/kb?orden=za')).text;
     expect(pos(za, 'Error 10 al timbrar')).toBeLessThan(pos(za, 'Álbum de scripts'));
+  });
+});
+
+describe('contador «Versiones nuevas» del menú', () => {
+  it('se guarda 30 minutos: navegar no relee toda la colección de versiones cada 2 minutos', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    t.configuracionRepo.versionesContpaqi = {
+      ...t.configuracionRepo.versionesContpaqi,
+      ultimas: { COMERCIAL: { version: '12.1.0', base: '12.1.0', fecha: '2026-11-01', linkDescarga: '' } as never },
+    };
+    let lecturas = 0;
+    const original = t.versionRepo.list.bind(t.versionRepo);
+    t.versionRepo.list = async () => { lecturas++; return original(); };
+    const { agent } = await login(t.app, ADMIN.email, ADMIN.password);
+
+    const inicio = Date.now();
+    vi.useFakeTimers({ toFake: ['Date'], now: inicio });
+    try {
+      await agent.get('/app/tickets');
+      const primera = lecturas;
+      expect(primera).toBeGreaterThan(0);
+      vi.setSystemTime(inicio + 10 * 60_000); // 10 min después: sigue guardado
+      await agent.get('/app/tickets');
+      expect(lecturas).toBe(primera);
+      vi.setSystemTime(inicio + 31 * 60_000); // 31 min después: se recalcula
+      await agent.get('/app/tickets');
+      expect(lecturas).toBe(primera + 1);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

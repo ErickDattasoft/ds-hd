@@ -15,6 +15,12 @@ const uploadExcel = uploadSingleFile('archivo', 10 * 1024 * 1024);
  * unos segundos por instancia de la app, para que ir de un apartado a otro no los repita.
  */
 const CONTADORES_TTL_MS = 120_000;
+/**
+ * Contadores caros que casi no cambian, con vigencia más larga. «Versiones nuevas» lee TODA la
+ * colección de versiones (~150 lecturas por vuelta, en cada instancia): solo cambia si CONTPAQi
+ * publica o si alguien actualiza una versión, y al guardar una versión el contador se olvida.
+ */
+const TTL_POR_CONTADOR: Partial<Record<string, number>> = { versionesNuevas: 30 * 60_000 };
 const cacheContadores = new WeakMap<object, Map<string, { valor: number; exp: number }>>();
 
 async function contadoresDelMenu(
@@ -64,7 +70,7 @@ async function contadoresDelMenu(
           return;
         }
         const valor = await calcular[k]!().catch(() => guardado?.valor ?? 0);
-        cache.set(clave, { valor, exp: ahora + CONTADORES_TTL_MS });
+        cache.set(clave, { valor, exp: ahora + (TTL_POR_CONTADOR[k] ?? CONTADORES_TTL_MS) });
         (contadores as Record<string, number>)[k] = valor;
       }),
   );
