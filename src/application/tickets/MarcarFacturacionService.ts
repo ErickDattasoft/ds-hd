@@ -33,6 +33,8 @@ export class MarcarFacturacionService {
     estado: EstadoFacturacion;
     /** 🧾 Folio de la factura (vacío = quitarlo; sin mandar = no se toca). */
     folio?: string;
+    /** 📝 Nota al cliente de la factura (vacío = quitarla; sin mandar = no se toca). */
+    nota?: string;
     /** ✉️ Mandarle al cliente un correo corto con el folio (solo a él, sin copias al equipo). */
     avisarFolio?: boolean;
   }): Promise<void> {
@@ -45,8 +47,20 @@ export class MarcarFacturacionService {
     const anterior = ticket.facturacion.estado;
     const ahora = this.clock.now();
     const folioAntes = ticket.facturacion.folio ?? null;
+    const notaAntes = ticket.facturacion.nota ?? null;
     if (input.folio !== undefined) ticket.fijarFolioFactura(input.folio, ahora);
+    if (input.nota !== undefined) ticket.fijarNotaFactura(input.nota, ahora);
     const folio = ticket.facturacion.folio ?? null;
+    const nota = ticket.facturacion.nota ?? null;
+    if (nota !== notaAntes && folio === folioAntes) {
+      await this.tickets.save(ticket);
+      await registrarEvento(this.tickets, this.ids, ticket.id, {
+        tipo: 'facturacion',
+        resumen: nota ? '📝 Nota de factura para el cliente actualizada' : '📝 Se quitó la nota de factura',
+        actor: input.actor,
+        at: ahora,
+      });
+    }
     if (folio !== folioAntes) {
       await this.tickets.save(ticket);
       await registrarEvento(this.tickets, this.ids, ticket.id, {
@@ -56,7 +70,7 @@ export class MarcarFacturacionService {
         at: ahora,
       });
     }
-    if (input.avisarFolio && folio) await this.mandarFolioAlCliente(ticket, folio, input.actor, ahora);
+    if (input.avisarFolio && (folio || nota)) await this.mandarFolioAlCliente(ticket, folio, nota, input.actor, ahora);
     if (anterior === input.estado) return;
 
     const cumpliaAntes = ticket.esCerrado && esFacturacionCompletada(anterior);
@@ -91,8 +105,14 @@ export class MarcarFacturacionService {
     });
   }
 
-  /** Un solo correo corto al cliente con el folio, sin copias al equipo (lo piden algunos clientes). */
-  private async mandarFolioAlCliente(ticket: Ticket, folio: string, actor: SessionUser, ahora: Date): Promise<void> {
+  /** Un solo correo corto al cliente con el folio y/o la nota, sin copias al equipo (lo piden algunos clientes). */
+  private async mandarFolioAlCliente(
+    ticket: Ticket,
+    folio: string | null,
+    nota: string | null,
+    actor: SessionUser,
+    ahora: Date,
+  ): Promise<void> {
     const correo = ticket.contactoCorreo?.trim();
     if (!correo) return;
     const cfg = await this.config.obtenerTickets();
@@ -101,16 +121,19 @@ export class MarcarFacturacionService {
     await this.email.enviar({
       para: [{ email: correo, ...(ticket.contactoNombre ? { nombre: ticket.contactoNombre } : {}) }],
       ...(responder ? { responderA: { email: responder } } : {}),
-      asunto: `[Ticket #${ticket.numero}] ${ticket.asunto} — Factura ${folio}`,
+      asunto: `[Ticket #${ticket.numero}] ${ticket.asunto} — Factura${folio ? ` ${folio}` : ''}`,
       html:
         `<p>Hola${ticket.contactoNombre ? ` ${e(ticket.contactoNombre)}` : ''},</p>` +
-        `<p>La factura de tu ticket <strong>#${ticket.numero} — ${e(ticket.asunto)}</strong> es: <strong style="font-size:1.15em">🧾 ${e(folio)}</strong></p>` +
+        (folio
+          ? `<p>La factura de tu ticket <strong>#${ticket.numero} — ${e(ticket.asunto)}</strong> es: <strong style="font-size:1.15em">🧾 ${e(folio)}</strong></p>`
+          : `<p>Sobre la factura de tu ticket <strong>#${ticket.numero} — ${e(ticket.asunto)}</strong>:</p>`) +
+        (nota ? `<p style="white-space:pre-line">${e(nota)}</p>` : '') +
         `<p>Saludos.</p>`,
       tags: ['ticket-folio-factura', `ticket-${ticket.numero}`],
     });
     await registrarEvento(this.tickets, this.ids, ticket.id, {
       tipo: 'correo',
-      resumen: `Correo con el folio de factura ${folio} enviado a ${correo}`,
+      resumen: `Correo con ${folio ? `el folio de factura ${folio}` : 'la nota de factura'}${folio && nota ? ' y la nota' : ''} enviado a ${correo}`,
       actor,
       at: ahora,
     });

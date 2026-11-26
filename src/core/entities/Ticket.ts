@@ -69,6 +69,8 @@ export interface FacturacionState {
   notificadaEn: Date | null;
   /** 🧾 Folio de la factura (p. ej. «SER 1445»), si ya se facturó. */
   folio?: string | null;
+  /** 📝 Nota para el cliente sobre la factura: sale al imprimir y en el correo del folio. */
+  nota?: string | null;
 }
 
 /** Props para construir un {@link Ticket}. */
@@ -267,6 +269,7 @@ export class Ticket {
       estado: sanearEstadoFacturacion(props.facturacion?.estado, props.facturacion?.facturado),
       notificadaEn: props.facturacion?.notificadaEn ?? null,
       folio: props.facturacion?.folio?.trim() || null,
+      nota: props.facturacion?.nota?.trim() || null,
     };
     this.agenda = sanearAgenda(props.agenda);
     this.archivado = props.archivado ?? false;
@@ -502,6 +505,12 @@ export class Ticket {
   /** 🧾 Guarda (o borra, con vacío) el folio de la factura. */
   fijarFolioFactura(folio: string | null | undefined, ahora: Date): void {
     this.facturacion.folio = (folio ?? '').trim().slice(0, 60) || null;
+    this.updatedAt = ahora;
+  }
+
+  /** 📝 Guarda (o borra, con vacío) la nota al cliente de la factura. */
+  fijarNotaFactura(nota: string | null | undefined, ahora: Date): void {
+    this.facturacion.nota = (nota ?? '').trim().slice(0, 1000) || null;
     this.updatedAt = ahora;
   }
 

@@ -1163,6 +1163,20 @@ describe('🧾 folio de factura', () => {
     await agent.post(`/app/tickets/${id}/nota`).type('form').send({ _csrf: csrf, cuerpo: 'Seguimos' });
     expect(t.emailSender.enviados[0]!.html).toContain('🧾 Factura: <strong>SER 1445</strong>');
     expect((await agent.get(`/app/tickets/${id}/imprimir`)).text).toContain('<strong>SER 1445</strong>');
+
+    // 📝 Nota al cliente: se guarda sin correo, sale al imprimir y va en el correo si se marca.
+    t.emailSender.enviados.length = 0;
+    await agent.post(`/app/tickets/${id}/facturar`).type('form')
+      .send({ _csrf: csrf, estado: 'facturado', folioFactura: 'SER 1445', notaFactura: 'Va junto con el ticket #1110' });
+    expect(t.ticketStore.tickets.get(id)!.facturacion.nota).toBe('Va junto con el ticket #1110');
+    expect(t.emailSender.enviados).toHaveLength(0);
+    expect((await agent.get(`/app/tickets/${id}/imprimir`)).text).toContain('Va junto con el ticket #1110');
+    expect((await agent.get(`/app/tickets/${id}`)).text).toContain('📝 Va junto con el ticket #1110');
+    await agent.post(`/app/tickets/${id}/facturar`).type('form')
+      .send({ _csrf: csrf, estado: 'facturado', folioFactura: 'SER 1445', notaFactura: 'Va junto con el ticket #1110', avisarFolio: 'on' });
+    expect(t.emailSender.enviados).toHaveLength(1);
+    expect(t.emailSender.enviados[0]!.html).toContain('SER 1445');
+    expect(t.emailSender.enviados[0]!.html).toContain('Va junto con el ticket #1110');
   });
 });
 

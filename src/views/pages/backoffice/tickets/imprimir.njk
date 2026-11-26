@@ -68,6 +68,7 @@
     {% endif %}
     <tr><th>Creado</th><td>{{ ticket.createdAt | fechahora }}</td><th>Tiempo trab.</th><td>{{ vm.tiempoTrabajado }}</td></tr>
     <tr><th>Facturación</th><td>{{ vm.facturacion.etiqueta }}</td><th>🧾 Factura</th><td><strong>{{ ticket.facturacion.folio or '—' }}</strong></td></tr>
+    {% if ticket.facturacion.nota %}<tr><th>📝 Nota factura</th><td colspan="3" style="white-space: pre-line">{{ ticket.facturacion.nota }}</td></tr>{% endif %}
   </table>
 
   <h2>📝 Descripción</h2>

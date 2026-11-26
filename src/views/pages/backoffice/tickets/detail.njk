@@ -165,6 +165,7 @@
             {% else %}
               <p class="muted factura-box__sin">Sin folio todavía.</p>
             {% endif %}
+            {% if ticket.facturacion.nota %}<p class="factura-box__nota" title="Nota al cliente">📝 {{ ticket.facturacion.nota }}</p>{% endif %}
             <form method="post" action="/app/tickets/{{ ticket.id }}/facturar" class="form factura-box__form"
                 {%- if not ticket.esCerrado and estadoCerrado %} data-facturar-cerrar="{{ estadoCerrado }}" data-facturar-original="{{ ticket.facturacion.estado }}"{{ ' data-puede-cerrar' if permisos.cambiarEstado }}{% endif %}>
                 <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
@@ -177,6 +178,9 @@
                 <label class="field"><span>🧾 Folio de factura</span>
                   <input type="text" name="folioFactura" value="{{ ticket.facturacion.folio or '' }}" maxlength="60" placeholder="Ej: SER 1445" autocomplete="off" />
                   <em class="field__hint">Se guarda sin mandar correo; sale en los correos del ticket y al imprimir.</em></label>
+                <label class="field"><span>📝 Nota al cliente</span>
+                  <textarea name="notaFactura" rows="2" maxlength="1000" placeholder="Ej: Se factura junto con el ticket #1110">{{ ticket.facturacion.nota or '' }}</textarea>
+                  <em class="field__hint">Sale al imprimir, y en el correo si marcas «Mandárselo al cliente».</em></label>
                 {% if ticket.contactoCorreo %}
                 <label class="field--check"><input type="checkbox" name="avisarFolio" />
                   <span>✉️ Mandárselo al cliente <span class="muted">({{ ticket.contactoCorreo }}, solo a él)</span></span></label>
