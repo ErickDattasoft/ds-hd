@@ -16,11 +16,11 @@ const uploadExcel = uploadSingleFile('archivo', 10 * 1024 * 1024);
  */
 const CONTADORES_TTL_MS = 120_000;
 /**
- * Contadores caros que casi no cambian, con vigencia más larga. «Versiones nuevas» lee TODA la
- * colección de versiones (~150 lecturas por vuelta, en cada instancia): solo cambia si CONTPAQi
- * publica o si alguien actualiza una versión, y al guardar una versión el contador se olvida.
+ * «Versiones nuevas» lee TODA la colección de versiones (~150 lecturas): se cuenta como mucho una
+ * vez al día. Cada 2 min solo se lee la revisión de CONTPAQi (1 lectura); si hubo revisión nueva se
+ * recuenta, y al guardar una versión se olvida todo el caché de contadores (se recuenta al momento).
  */
-const TTL_POR_CONTADOR: Partial<Record<string, number>> = { versionesNuevas: 30 * 60_000 };
+const VERSIONES_TTL_MS = 24 * 60 * 60_000;
 const cacheContadores = new WeakMap<object, Map<string, { valor: number; exp: number }>>();
 
 async function contadoresDelMenu(
@@ -52,7 +52,15 @@ async function contadoresDelMenu(
       (await container.resolve('ticketQueries').listar({ soloAbiertos: true, archivado: false, ...alcance })).filter((t) =>
         (t.tipo ?? '').toLowerCase().includes('correo'),
       ).length,
-    versionesNuevas: async () => (await container.resolve('versionesContpaqiService').novedades()).length,
+    versionesNuevas: async () => {
+      const estado = await container.resolve('configuracionRepo').obtenerVersionesContpaqi();
+      const clave = `versionesNuevas|dia|${estado.revisado ?? ''}|${estado.intentado ?? ''}`;
+      const guardado = cache.get(clave);
+      if (guardado && guardado.exp > ahora) return guardado.valor;
+      const valor = (await container.resolve('versionesContpaqiService').novedades(estado)).length;
+      cache.set(clave, { valor, exp: ahora + VERSIONES_TTL_MS });
+      return valor;
+    },
     // 📊 % de la cuota diaria de Firestore (1 lectura cada 2 min por instancia): aviso arriba ≥ 80 %.
     consumoFirestore: async () => (await container.resolve('consumoFirestoreService').hoy()).porcentaje,
     solicitudesAccesoPendientes: async () =>
@@ -70,7 +78,7 @@ async function contadoresDelMenu(
           return;
         }
         const valor = await calcular[k]!().catch(() => guardado?.valor ?? 0);
-        cache.set(clave, { valor, exp: ahora + (TTL_POR_CONTADOR[k] ?? CONTADORES_TTL_MS) });
+        cache.set(clave, { valor, exp: ahora + CONTADORES_TTL_MS });
         (contadores as Record<string, number>)[k] = valor;
       }),
   );

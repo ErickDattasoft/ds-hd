@@ -406,7 +406,7 @@ describe('base de conocimiento — acceso por persona, solo lectura e indexado',
 });
 
 describe('contador «Versiones nuevas» del menú', () => {
-  it('se guarda 30 minutos: navegar no relee toda la colección de versiones cada 2 minutos', async () => {
+  it('lee las versiones una vez al día, o cuando hay revisión nueva de CONTPAQi', async () => {
     const t = makeTestApp({ usuarios: [ADMIN] });
     t.configuracionRepo.versionesContpaqi = {
       ...t.configuracionRepo.versionesContpaqi,
@@ -415,20 +415,25 @@ describe('contador «Versiones nuevas» del menú', () => {
     let lecturas = 0;
     const original = t.versionRepo.list.bind(t.versionRepo);
     t.versionRepo.list = async () => { lecturas++; return original(); };
-    const { agent } = await login(t.app, ADMIN.email, ADMIN.password);
+    // Entra de nuevo tras cada salto de horas (la sesión vence por inactividad).
+    const verTickets = async () => (await login(t.app, ADMIN.email, ADMIN.password)).agent.get('/app/tickets');
 
     const inicio = Date.now();
     vi.useFakeTimers({ toFake: ['Date'], now: inicio });
     try {
-      await agent.get('/app/tickets');
-      const primera = lecturas;
-      expect(primera).toBeGreaterThan(0);
-      vi.setSystemTime(inicio + 10 * 60_000); // 10 min después: sigue guardado
-      await agent.get('/app/tickets');
-      expect(lecturas).toBe(primera);
-      vi.setSystemTime(inicio + 31 * 60_000); // 31 min después: se recalcula
-      await agent.get('/app/tickets');
-      expect(lecturas).toBe(primera + 1);
+      await verTickets();
+      expect(lecturas).toBe(1);
+      vi.setSystemTime(inicio + 3 * 60 * 60_000); // 3 h después: sigue guardado
+      await verTickets();
+      expect(lecturas).toBe(1);
+      // CONTPAQi se revisó otra vez: se recuenta sin esperar al día siguiente.
+      t.configuracionRepo.versionesContpaqi = { ...t.configuracionRepo.versionesContpaqi, revisado: new Date().toISOString() };
+      vi.setSystemTime(inicio + 3 * 60 * 60_000 + 3 * 60_000);
+      await verTickets();
+      expect(lecturas).toBe(2);
+      vi.setSystemTime(inicio + 28 * 60 * 60_000); // más de un día: se recuenta
+      await verTickets();
+      expect(lecturas).toBe(3);
     } finally {
       vi.useRealTimers();
     }
