@@ -168,3 +168,26 @@ describe('👥 avisos de compañeros', () => {
     expect((await n(yo)).n).toBe(0);
   });
 });
+
+describe('consultas automáticas sin menú', () => {
+  it('el sondeo del chat (JSON) y el Ctrl+K (htmx) no arman el menú ni sus contadores', async () => {
+    const t = makeTestApp({ usuarios: [SUP] });
+    const yo = await login(t.app, SUP.email, SUP.password);
+    const crear = await yo.agent.post('/app/tickets').type('form').send({
+      _csrf: yo.csrf, asunto: 'Sondeo', descripcion: 'descripción de prueba larga', tipo: 'General', prioridad: 'Media',
+    });
+    const id = String(crear.headers.location).split('/').pop()!;
+    const original = t.respuestaSinLeerRepo.listar.bind(t.respuestaSinLeerRepo);
+    let lecturas = 0;
+    t.respuestaSinLeerRepo.listar = async () => { lecturas++; return original(); };
+
+    const conteo = await yo.agent.get(`/app/tickets/${id}/notas/conteo`).set('accept', 'application/json');
+    expect(conteo.status).toBe(200);
+    await yo.agent.get('/app/buscar?q=son').set('HX-Request', 'true');
+    expect(lecturas).toBe(0);
+
+    // Una página normal sí lleva el menú con sus contadores.
+    await yo.agent.get('/app/tickets');
+    expect(lecturas).toBeGreaterThan(0);
+  });
+});

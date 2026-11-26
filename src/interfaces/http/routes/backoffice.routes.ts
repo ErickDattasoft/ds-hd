@@ -128,6 +128,24 @@ export function backofficeRoutes(container: Container): Router {
   }
   r.use(async (req, res, next) => {
     res.locals.area = 'backoffice';
+    // Las consultas automáticas (chat del ticket cada 20 s, campana 🔔) piden JSON y no muestran
+    // menú: armarlo ahí recalculaba sus contadores (~150 lecturas cada 2 min por pestaña abierta).
+    if (req.method === 'GET' && (req.get('accept') ?? '').startsWith('application/json')) {
+      res.locals.navSecciones = construirNavSecciones(req.user!);
+      return next();
+    }
+    // Lo mismo con los pedazos que pide htmx (Ctrl+K con cada letra, secciones de configuración):
+    // solo las navegaciones (hx-boost, precarga del menú) llevan el menú.
+    if (
+      req.method === 'GET' &&
+      req.get('HX-Request') === 'true' &&
+      req.get('HX-Boosted') !== 'true' &&
+      !req.get('HX-Preloaded') &&
+      !req.get('HX-History-Restore-Request')
+    ) {
+      res.locals.navSecciones = construirNavSecciones(req.user!);
+      return next();
+    }
     if (req.method === 'GET') {
       await prepararMenu(req, res);
       return next();
