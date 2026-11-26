@@ -2865,23 +2865,18 @@
     var nEquipo = d && typeof d.nEquipo === 'number' ? d.nEquipo : 0;
     document.querySelectorAll('.sidebar__badge--total[data-ir="/app/tickets/respuestas"]').forEach(function (b) {
       b.textContent = '💬' + nCliente;
-      b.classList.toggle('sidebar__badge--cliente', nCliente > 0); // verde solo si hay algo
       var candado = b.parentNode.querySelector('.sidebar__badge:not(.sidebar__badge--total)');
       if (!d) return;
-      if (nEquipo > 0) {
-        if (!candado) {
-          candado = document.createElement('span');
-          candado.className = 'badge sidebar__badge sidebar__badge--interna';
-          candado.setAttribute('data-ir', '/app/tickets/respuestas');
-          candado.setAttribute('role', 'link');
-          candado.style.cursor = 'pointer';
-          b.parentNode.insertBefore(candado, b.nextSibling);
-        }
-        candado.textContent = '🔒' + nEquipo;
-        candado.title = nEquipo + ' mensajes de compañeros (notas internas) en tus tickets que no has leído — clic para verlos';
-      } else if (candado) {
-        candado.remove();
+      if (!candado) {
+        candado = document.createElement('span');
+        candado.className = 'badge sidebar__badge sidebar__badge--interna';
+        candado.setAttribute('data-ir', '/app/tickets/respuestas');
+        candado.setAttribute('role', 'link');
+        candado.style.cursor = 'pointer';
+        b.parentNode.insertBefore(candado, b.nextSibling);
       }
+      candado.textContent = '🔒' + nEquipo;
+      candado.title = nEquipo + ' mensajes de compañeros (notas internas) en tus tickets que no has leído — clic para verlos';
     });
   }
   /** Pide el conteo al servidor; con `avisar`, una respuesta nueva da toast y aviso del navegador. */

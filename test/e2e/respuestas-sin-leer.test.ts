@@ -150,6 +150,9 @@ describe('👥 avisos de compañeros', () => {
     expect((await n(yo)).n).toBe(0);
     expect((await n(gaby)).n).toBe(0);
 
+    // Sin pendientes los dos globos se ven igual, con su color: 💬0 y 🔒0.
+    expect((await yo.agent.get('/app/tickets')).text).toMatch(/sidebar__badge--interna"[^>]*>🔒0</);
+
     // Gaby escribe en MI ticket: me llega a mí, a ella no.
     await gaby.agent.post(`/app/tickets/${id}/nota`).type('form').send({ _csrf: gaby.csrf, tipo: 'interna', cuerpo: 'Ya se facturó' });
     const mio = await n(yo);
