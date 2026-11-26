@@ -1119,6 +1119,19 @@ describe('lista de Excel y envío por WhatsApp uno por uno', () => {
     await admin.agent.post('/app/eventos/ev1/invitaciones/x1/enviar').type('form').send({ _csrf: admin.csrf });
     expect(t.emailSender.enviados.at(-1)?.responderA).toEqual({ email: 'eventos@dattasoft.mx' });
   });
+
+  it('📤 configuración de envío: 👤 nombre de contacto (firma) y a qué correo llegan las respuestas si va vacío', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    t.eventoRepo.items.set('ev1', evento());
+    const admin = await login(t.app, ADMIN.email, ADMIN.password);
+    await admin.agent.post('/app/eventos/ev1/envio').type('form')
+      .send({ _csrf: admin.csrf, envioWhatsapp: '999 200 4774', envioCorreo: '', contactoNombre: ' Gelmi López ' });
+    expect((await t.eventoRepo.findById('ev1'))!.contactoNombre).toBe('Gelmi López');
+    const page = await admin.agent.get('/app/eventos/ev1');
+    expect(page.text).toContain('👤 Contacto <strong class="sensible">Gelmi López</strong>');
+    // Sin correo de envío, las respuestas van al remitente del CRM (aquí, el del servidor de pruebas).
+    expect(page.text).toMatch(/✉️ Respuestas a <strong class="sensible">[^<]+@[^<]+<\/strong>/);
+  });
 });
 
 describe('link abierto — una sola pregunta de asistencia', () => {

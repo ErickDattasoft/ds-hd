@@ -1070,6 +1070,10 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
           c.config.isProduction,
           c.contactoRepo,
           c.usuarioRepo,
+          async () =>
+            (await c.configuracionRepo.obtenerCorreoEntrante().catch(() => null))?.remitenteEmail ||
+            c.config.brevo.senderEmail ||
+            null,
         ),
     ).singleton(),
     obtenerMetricasService: asFunction(

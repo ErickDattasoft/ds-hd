@@ -148,6 +148,8 @@ export class EventoService {
     private readonly contactos?: IContactoRepository,
     /** Para avisar de los registros a quien creó el evento cuando no hay otro correo anotado. */
     private readonly usuarios?: IUsuarioRepository,
+    /** De qué correo sale el CRM (remitente de Configuración → Correo entrante o el del servidor). */
+    private readonly remitente?: () => Promise<string | null>,
   ) {}
 
   // ── Consulta ─────────────────────────────────────────────────────────────
@@ -801,11 +803,16 @@ export class EventoService {
     return [columnas.map(limpio).join('\t'), ...renglones.map((r) => r.join('\t'))].join('\n');
   }
 
+  /** De qué correo salen los correos del CRM: ahí llegan las respuestas si el evento no pone otro. */
+  async correoRemitente(): Promise<string | null> {
+    return this.remitente ? this.remitente().catch(() => null) : null;
+  }
+
   /** «📤 Se envía desde»: WhatsApp y correo de quien manda las invitaciones de este evento. */
   async cambiarEnvio(
     actor: SessionUser,
     eventoId: string,
-    datos: { whatsapp: string; correo: string; avisar?: string },
+    datos: { whatsapp: string; correo: string; avisar?: string; contactoNombre?: string },
   ): Promise<void> {
     const evento = await this.paraGestion(actor, eventoId);
     evento.cambiarEnvio(datos);

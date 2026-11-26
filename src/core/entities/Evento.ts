@@ -571,7 +571,7 @@ export class Evento {
   }
 
   /** «📤 Se envía desde»: el WhatsApp y el correo de quien manda las invitaciones de este evento. */
-  cambiarEnvio(datos: { whatsapp: string; correo: string; avisar?: string }): void {
+  cambiarEnvio(datos: { whatsapp: string; correo: string; avisar?: string; contactoNombre?: string }): void {
     const correo = datos.correo.trim().toLowerCase();
     if (correo && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo)) {
       throw new ValidationError(`«${correo}» no parece un correo`, { envioCorreo: 'Correo no válido' });
@@ -589,6 +589,8 @@ export class Evento {
     this.envioWhatsapp = whatsapp || null;
     this.envioCorreo = correo || null;
     this.avisarRegistros = avisar;
+    // 👤 Firma de los correos del evento ([contacto_nombre]); sin mandar, no se toca.
+    if (datos.contactoNombre !== undefined) this.contactoNombre = datos.contactoNombre.trim().slice(0, 120) || null;
   }
 
   /** Da link a las invitaciones que aún no tienen (las de antes de esta función). */

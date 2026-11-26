@@ -235,6 +235,8 @@ export class EventoController {
     res.render('pages/backoffice/eventos/detail', {
       titulo: evento.titulo,
       evento,
+      // Si «Correo de envío» va vacío, de aquí salen los correos y aquí llegan las respuestas.
+      remitenteCorreo: await this.eventos.correoRemitente(),
       inscritos: inscritosVM,
       listaNegra,
       empresasCartera,
@@ -334,6 +336,7 @@ export class EventoController {
         whatsapp: str(req.body?.envioWhatsapp),
         correo: str(req.body?.envioCorreo),
         ...(req.body?.avisarRegistros !== undefined ? { avisar: str(req.body?.avisarRegistros) } : {}),
+        ...(req.body?.contactoNombre !== undefined ? { contactoNombre: str(req.body?.contactoNombre) } : {}),
       });
       const tab = str(req.body?.tab) === 'abierto' ? 'tab=abierto&' : '';
       res.redirect(`/app/eventos/${id}?${tab}aviso=${encodeURIComponent('📤 Guardado: así se mandarán las invitaciones')}#invitaciones`);
