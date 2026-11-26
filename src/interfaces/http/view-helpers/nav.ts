@@ -28,7 +28,9 @@ export type ContadorNavKey =
   /** % de la cuota diaria de Firestore gastado hoy (aviso arriba a partir del 80 %). */
   | 'consumoFirestore'
   /** Respuestas de clientes que ESTA persona no ha leído (la campana 🔔; no va en el caché compartido). */
-  | 'respuestasSinLeer';
+  | 'respuestasSinLeer'
+  /** Avisos 👥 de compañeros (notas internas o respuestas en tus tickets) que ESTA persona no ha leído. */
+  | 'companerosSinLeer';
 
 export interface NavItem {
   etiqueta: string;
@@ -42,6 +44,10 @@ export interface NavItem {
   contadorKey?: ContadorNavKey;
   /** Texto al pasar el mouse sobre el badge; `{n}` se sustituye por el número. */
   contadorTitulo?: string;
+  /** Emoji antes del número del badge principal. */
+  contadorIcono?: string;
+  /** Adónde lleva el clic en el badge principal (si no, el clic va al enlace del renglón). */
+  contadorHref?: string;
   /** Segundo badge opcional, que va antes del principal (p. ej. total junto a pendientes). */
   contadorTotalKey?: ContadorNavKey;
   contadorTotalTitulo?: string;
@@ -85,8 +91,10 @@ export const NAV_BACKOFFICE: readonly NavItem[] = [
   { etiqueta: 'Eventos', href: '/app/eventos', icono: '📅', permiso: 'eventos:leer', grupo: 'principal' },
 
   { etiqueta: 'Tickets', href: '/app/tickets', icono: '🎫', permiso: 'tickets:leer', grupo: 'soporte',
-    contadorKey: 'ticketsAbiertos', contadorTitulo: '{n} tickets sin cerrar (ni resueltos ni cerrados)',
-    // El total ya está en el recuadro «Total tickets» de la lista; aquí, cuántos tuvieron plática.
+    // Lo que tienes que leer: 💬 de clientes y 🔒 de compañeros. Los tickets sin cerrar ya están en
+    // las tarjetas de arriba de la lista.
+    contadorKey: 'companerosSinLeer', contadorIcono: '🔒', contadorHref: '/app/tickets/respuestas',
+    contadorTitulo: '{n} mensajes de compañeros (notas internas) en tus tickets que no has leído — clic para verlos',
     contadorTotalKey: 'respuestasSinLeer', contadorTotalIcono: '💬', contadorTotalHref: '/app/tickets/respuestas',
     contadorTotalTitulo: '{n} respuestas de clientes que no has leído — clic para verlas (cada quien lleva su cuenta)' },
   { etiqueta: 'Reportes', href: '/app/reportes', icono: '📈', permiso: 'tickets:leer_todos', grupo: 'soporte' },

@@ -157,6 +157,11 @@ describe('👥 avisos de compañeros', () => {
     expect(mio.ultima!.deEquipo).toBe(true);
     expect((await n(gaby)).n).toBe(0);
     expect((await yo.agent.get('/app/tickets/respuestas')).text).toContain('👥 de Gaby · 🔒 nota interna');
+    // En el menú, junto a Tickets: 💬 0 de clientes y 🔒 1 de compañeros (ya no los tickets sin cerrar).
+    expect(mio).toMatchObject({ nCliente: 0, nEquipo: 1 });
+    const menu = (await yo.agent.get('/app/tickets')).text;
+    expect(menu).toMatch(/sidebar__badge--total[^>]*>💬0</);
+    expect(menu).toMatch(/class="badge sidebar__badge"[^>]*>🔒1</);
 
     // Lo abro: se me quita.
     await yo.agent.post(`/app/tickets/${id}/leida`).set('x-csrf-token', yo.csrf);

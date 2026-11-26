@@ -105,14 +105,19 @@ export function backofficeRoutes(container: Container): Router {
     if (permisos.includes('tickets:crear')) claves.push('ticketsPublicosPendientes');
     claves.push('consumoFirestore');
     // El buzón 🔔 no pasa por el caché de contadores: al abrir un ticket tiene que bajar de inmediato.
-    const [contadores, respuestasSinLeer] = await Promise.all([
+    const [contadores, sinLeer] = await Promise.all([
       contadoresDelMenu(container, claves, req.user!),
       permisos.includes('tickets:leer')
-        ? container.resolve('respuestasSinLeerService').listarPara(req.user!).then((l) => l.length).catch(() => 0)
+        ? container.resolve('respuestasSinLeerService').listarPara(req.user!).catch(() => [])
         : Promise.resolve(null),
     ]);
-    // 💬 del menú = tus respuestas sin leer (las mismas de la campana; por persona, sin caché compartido).
-    if (respuestasSinLeer !== null) contadores.respuestasSinLeer = respuestasSinLeer;
+    // Menú: 💬 = respuestas de clientes y 🔒 = avisos de compañeros, sin leer por ti (por persona,
+    // sin caché compartido). La campana 🔔 suma las dos.
+    if (sinLeer !== null) {
+      contadores.respuestasSinLeer = sinLeer.filter((r) => !r.paraUid).length;
+      contadores.companerosSinLeer = sinLeer.filter((r) => r.paraUid).length;
+    }
+    const respuestasSinLeer = sinLeer === null ? null : sinLeer.length;
     res.locals.navSecciones = conContadores(secciones, contadores);
     res.locals.avisosGlobales = {
       buzonPendientes: contadores.ticketsPublicosPendientes ?? null,

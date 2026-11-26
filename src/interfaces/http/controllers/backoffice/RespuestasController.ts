@@ -28,6 +28,9 @@ export class RespuestasController {
     res.setHeader('Cache-Control', 'no-store');
     res.json({
       n: lista.length,
+      // Para los globos del menú: 💬 de clientes y 🔒 de compañeros.
+      nCliente: lista.filter((r) => !r.paraUid).length,
+      nEquipo: lista.filter((r) => r.paraUid).length,
       ultima: ultima
         ? {
             ticketId: ultima.ticketId,

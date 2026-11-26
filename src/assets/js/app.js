@@ -2853,15 +2853,35 @@
       credentials: 'same-origin',
     }).then(function () { revisarRespuestas(false); }).catch(function () { /* se reintenta al volver a abrir */ });
   }
-  function pintarCampana(n) {
+  function pintarCampana(n, d) {
     var a = document.querySelector('[data-campana-respuestas]');
     if (!a) return;
     var badge = a.querySelector('[data-campana-n]');
     badge.textContent = String(n);
     a.classList.toggle('campana--activa', n > 0);
     a.setAttribute('aria-label', 'Respuestas de clientes sin leer: ' + n);
-    // El 💬 del menú (junto a Tickets) es el mismo número.
-    document.querySelectorAll('.sidebar__badge--total[data-ir="/app/tickets/respuestas"]').forEach(function (b) { b.textContent = '💬' + n; });
+    // Junto a Tickets en el menú: 💬 = de clientes y 🔒 = de compañeros (la campana suma ambos).
+    var nCliente = d && typeof d.nCliente === 'number' ? d.nCliente : n;
+    var nEquipo = d && typeof d.nEquipo === 'number' ? d.nEquipo : 0;
+    document.querySelectorAll('.sidebar__badge--total[data-ir="/app/tickets/respuestas"]').forEach(function (b) {
+      b.textContent = '💬' + nCliente;
+      var candado = b.parentNode.querySelector('.sidebar__badge:not(.sidebar__badge--total)');
+      if (!d) return;
+      if (nEquipo > 0) {
+        if (!candado) {
+          candado = document.createElement('span');
+          candado.className = 'badge sidebar__badge';
+          candado.setAttribute('data-ir', '/app/tickets/respuestas');
+          candado.setAttribute('role', 'link');
+          candado.style.cursor = 'pointer';
+          b.parentNode.insertBefore(candado, b.nextSibling);
+        }
+        candado.textContent = '🔒' + nEquipo;
+        candado.title = nEquipo + ' mensajes de compañeros (notas internas) en tus tickets que no has leído — clic para verlos';
+      } else if (candado) {
+        candado.remove();
+      }
+    });
   }
   /** Pide el conteo al servidor; con `avisar`, una respuesta nueva da toast y aviso del navegador. */
   function revisarRespuestas(avisar) {
@@ -2871,7 +2891,7 @@
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (d) {
         if (!d) return;
-        pintarCampana(d.n);
+        pintarCampana(d.n, d);
         var previo = null;
         try { previo = localStorage.getItem('crm_respuestas_vistas'); } catch { /* sin almacenamiento */ }
         try { localStorage.setItem('crm_respuestas_vistas', String(d.n)); } catch { /* sin almacenamiento */ }
