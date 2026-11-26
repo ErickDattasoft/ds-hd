@@ -113,15 +113,20 @@ export const PLANTILLA_PRESENCIAL_DEFAULT =
   'Hola [nombre] 👋\n\n¡Gracias por confirmar! Te esperamos en [evento].\n📅 [fecha] [hora]\n📍 [lugar]\n[direccion]\n\n' +
   'Cualquier duda, escríbenos por WhatsApp: [contacto_whatsapp]\n\n— [contacto_nombre]';
 
+/** Comodines que, si el evento no tiene ese dato, se llevan su renglón entero (no dejar
+ *  «escríbenos por WhatsApp:» sin número, ni «📍» sin lugar). */
+const COMODINES_DE_RENGLON = ['contacto_whatsapp', 'link', 'lugar', 'direccion', 'mapa', 'sistema', 'contacto_nombre'];
+
 /**
  * Resuelve los comodines `[nombre] [evento] [fecha] [hora] [sistema] [link] [contacto_nombre]
  * [contacto_whatsapp]` de un texto cualquiera (plantilla de confirmación o mensaje de
- * seguimiento) contra los datos del evento y de un inscrito.
+ * seguimiento) contra los datos del evento y de un inscrito. El WhatsApp de contacto, si falta,
+ * es el de «📤 Se envía desde»; si tampoco hay, el renglón que lo pedía se quita.
  */
 export function resolverComodinesEvento(
   texto: string,
   evento: Pick<Evento, 'titulo' | 'fechaHora' | 'sistema' | 'urlWebinar' | 'contactoNombre' | 'contactoWhatsapp'> &
-    Partial<Pick<Evento, 'lugarNombre' | 'lugarDireccion' | 'lugarMapsUrl'>>,
+    Partial<Pick<Evento, 'lugarNombre' | 'lugarDireccion' | 'lugarMapsUrl' | 'envioWhatsapp'>>,
   inscrito: { nombre: string },
 ): string {
   const fechaFmt = evento.fechaHora.toLocaleDateString('es-MX', {
@@ -132,7 +137,25 @@ export function resolverComodinesEvento(
     timeZone: ZONA_MEXICO,
   });
   const horaFmt = evento.fechaHora.toLocaleTimeString('es-MX', { hour: 'numeric', minute: '2-digit', timeZone: ZONA_MEXICO });
-  return texto
+  const valores: Record<string, string> = {
+    contacto_whatsapp: evento.contactoWhatsapp || evento.envioWhatsapp || '',
+    link: evento.urlWebinar || '',
+    lugar: evento.lugarNombre || '',
+    direccion: evento.lugarDireccion || '',
+    mapa: evento.lugarMapsUrl || '',
+    sistema: evento.sistema || '',
+    contacto_nombre: evento.contactoNombre || '',
+  };
+  const vacios = COMODINES_DE_RENGLON.filter((c) => !valores[c]!.trim());
+  const sinRenglonesVacios = vacios.length
+    ? texto
+        .split('\n')
+        .filter((renglon) => !vacios.some((c) => renglon.includes(`[${c}]`)))
+        .join('\n')
+        .replace(/\n{3,}/g, '\n\n')
+        .trim()
+    : texto;
+  return sinRenglonesVacios
     .replace(/\[nombre\]/g, inscrito.nombre || '')
     .replace(/\[evento\]/g, evento.titulo || '')
     .replace(/\[fecha\]/g, fechaFmt)
@@ -140,7 +163,7 @@ export function resolverComodinesEvento(
     .replace(/\[sistema\]/g, evento.sistema || '')
     .replace(/\[link\]/g, evento.urlWebinar || '')
     .replace(/\[contacto_nombre\]/g, evento.contactoNombre || '')
-    .replace(/\[contacto_whatsapp\]/g, evento.contactoWhatsapp || '')
+    .replace(/\[contacto_whatsapp\]/g, valores.contacto_whatsapp!)
     .replace(/\[lugar\]/g, evento.lugarNombre || '')
     .replace(/\[direccion\]/g, evento.lugarDireccion || '')
     .replace(/\[mapa\]/g, evento.lugarMapsUrl || '');
@@ -151,7 +174,7 @@ export function resolverComodinesEvento(
  *  WhatsApp por inscrito. */
 export function resolverPlantillaEvento(
   evento: Pick<Evento, 'titulo' | 'fechaHora' | 'sistema' | 'urlWebinar' | 'contactoNombre' | 'contactoWhatsapp' | 'plantilla'> &
-    Partial<Pick<Evento, 'tipo' | 'lugarNombre' | 'lugarDireccion' | 'lugarMapsUrl'>>,
+    Partial<Pick<Evento, 'tipo' | 'lugarNombre' | 'lugarDireccion' | 'lugarMapsUrl' | 'envioWhatsapp'>>,
   inscrito: { nombre: string },
 ): string {
   const porDefecto = evento.tipo === 'presencial' ? PLANTILLA_PRESENCIAL_DEFAULT : PLANTILLA_EVENTO_DEFAULT;
