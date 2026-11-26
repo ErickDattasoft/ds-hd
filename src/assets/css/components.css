@@ -272,6 +272,9 @@
 .sidebar__badge { margin-left: auto; }
 .sidebar__badge--total { background: transparent; border: 1px solid var(--color-border); color: var(--color-text-muted); }
 .sidebar__badge--total + .sidebar__badge { margin-left: 0.25rem; }
+/* Tickets: 💬 verde = chat con el cliente, 🔒 amarillo = notas internas (como sus recuadros). */
+.badge.sidebar__badge--cliente { background: color-mix(in srgb, var(--success) 18%, transparent); border-color: var(--success); color: var(--success); font-weight: 700; }
+.badge.sidebar__badge--interna { background: color-mix(in srgb, var(--warning) 22%, transparent); border: 1px solid var(--warning); color: var(--warning); font-weight: 700; }
 
 .topbar {
   display: flex;

@@ -161,7 +161,7 @@ describe('👥 avisos de compañeros', () => {
     expect(mio).toMatchObject({ nCliente: 0, nEquipo: 1 });
     const menu = (await yo.agent.get('/app/tickets')).text;
     expect(menu).toMatch(/sidebar__badge--total[^>]*>💬0</);
-    expect(menu).toMatch(/class="badge sidebar__badge"[^>]*>🔒1</);
+    expect(menu).toMatch(/sidebar__badge--interna"[^>]*>🔒1</);
 
     // Lo abro: se me quita.
     await yo.agent.post(`/app/tickets/${id}/leida`).set('x-csrf-token', yo.csrf);

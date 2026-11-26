@@ -2865,12 +2865,13 @@
     var nEquipo = d && typeof d.nEquipo === 'number' ? d.nEquipo : 0;
     document.querySelectorAll('.sidebar__badge--total[data-ir="/app/tickets/respuestas"]').forEach(function (b) {
       b.textContent = '💬' + nCliente;
+      b.classList.toggle('sidebar__badge--cliente', nCliente > 0); // verde solo si hay algo
       var candado = b.parentNode.querySelector('.sidebar__badge:not(.sidebar__badge--total)');
       if (!d) return;
       if (nEquipo > 0) {
         if (!candado) {
           candado = document.createElement('span');
-          candado.className = 'badge sidebar__badge';
+          candado.className = 'badge sidebar__badge sidebar__badge--interna';
           candado.setAttribute('data-ir', '/app/tickets/respuestas');
           candado.setAttribute('role', 'link');
           candado.style.cursor = 'pointer';
@@ -2895,10 +2896,9 @@
         var previo = null;
         try { previo = localStorage.getItem('crm_respuestas_vistas'); } catch { /* sin almacenamiento */ }
         try { localStorage.setItem('crm_respuestas_vistas', String(d.n)); } catch { /* sin almacenamiento */ }
-        if (!avisar || previo === null || d.n <= Number(previo) || !d.ultima) return;
-        var titulo = d.ultima.deEquipo
-          ? '👥 ' + d.ultima.autorNombre + ' escribió en tu ticket #' + d.ultima.numero
-          : '💬 ' + d.ultima.autorNombre + ' respondió en el ticket #' + d.ultima.numero;
+        // Notas de compañeros: solo suben el 🔒 del menú, sin aviso emergente.
+        if (!avisar || previo === null || d.n <= Number(previo) || !d.ultima || d.ultima.deEquipo) return;
+        var titulo = '💬 ' + d.ultima.autorNombre + ' respondió en el ticket #' + d.ultima.numero;
         toast(titulo, 'ok');
         if (!('Notification' in window) || Notification.permission !== 'granted') return;
         var aviso = new Notification(titulo, { body: d.ultima.extracto, icon: '/logo', tag: 'respuesta-' + d.ultima.ticketId });

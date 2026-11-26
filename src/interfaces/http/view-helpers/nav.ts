@@ -48,6 +48,9 @@ export interface NavItem {
   contadorIcono?: string;
   /** Adónde lleva el clic en el badge principal (si no, el clic va al enlace del renglón). */
   contadorHref?: string;
+  /** Clase extra de color para el badge principal y el segundo badge. */
+  contadorClase?: string;
+  contadorTotalClase?: string;
   /** Segundo badge opcional, que va antes del principal (p. ej. total junto a pendientes). */
   contadorTotalKey?: ContadorNavKey;
   contadorTotalTitulo?: string;
@@ -94,6 +97,8 @@ export const NAV_BACKOFFICE: readonly NavItem[] = [
     // Lo que tienes que leer: 💬 de clientes y 🔒 de compañeros. Los tickets sin cerrar ya están en
     // las tarjetas de arriba de la lista.
     contadorKey: 'companerosSinLeer', contadorIcono: '🔒', contadorHref: '/app/tickets/respuestas',
+    // Mismos colores que los recuadros del ticket: verde = cliente, amarillo = notas internas.
+    contadorClase: 'sidebar__badge--interna', contadorTotalClase: 'sidebar__badge--cliente',
     contadorTitulo: '{n} mensajes de compañeros (notas internas) en tus tickets que no has leído — clic para verlos',
     contadorTotalKey: 'respuestasSinLeer', contadorTotalIcono: '💬', contadorTotalHref: '/app/tickets/respuestas',
     contadorTotalTitulo: '{n} respuestas de clientes que no has leído — clic para verlas (cada quien lleva su cuenta)' },
