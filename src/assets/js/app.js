@@ -2087,12 +2087,13 @@
     if (primero) primero.focus();
   }, true);
 
-  // ── 🧾 Una «Respuesta al cliente» que es solo un folio de factura («SER 4120») ──
-  // Mandarlo como respuesta llega por correo al cliente y al equipo; lo normal es guardarlo en el
-  // recuadro «🧾 Factura» (no manda correo). Se pregunta antes de enviar.
+  // ── 🧾 Una «Respuesta al cliente» o «Nota interna» que es solo un folio de factura («SER 4120») ──
+  // Como respuesta llega por correo al cliente y al equipo; como nota interna queda perdida en las
+  // notas y le avisa (🔒) al agente. Lo normal es guardarlo en el recuadro «🧾 Factura» (no manda
+  // correo, sale en los correos y al imprimir). Se pregunta antes de enviar.
   var FOLIO_SOLO = /^\s*(folio\s*(de\s*factura)?\s*[:#]?\s*|factura\s*[:#]?\s*)?[A-Za-z]{1,5}[\s-]?\d{1,7}(\s*([-,/]|y)\s*[A-Za-z]{1,5}[\s-]?\d{1,7}){0,3}\s*$/i;
   document.addEventListener('submit', function (e) {
-    var form = e.target.closest && e.target.closest('form.chat__escribir--cliente');
+    var form = e.target.closest && e.target.closest('form.chat__escribir--cliente, form.notas-internas__form');
     if (!form || form.dataset.folioDecidido) return;
     var ta = form.querySelector('textarea[name=cuerpo]');
     var texto = ta ? ta.value.trim() : '';
@@ -2100,16 +2101,21 @@
     if (!texto || !factura || !FOLIO_SOLO.test(texto)) return;
     e.preventDefault();
     e.stopPropagation();
+    var interna = form.classList.contains('notas-internas__form');
     var folio = texto.replace(/^\s*(folio\s*(de\s*factura)?\s*[:#]?\s*|factura\s*[:#]?\s*)/i, '').trim().toUpperCase();
     var dlg = document.createElement('dialog');
     dlg.className = 'card facturar-cerrar';
     dlg.innerHTML =
       '<h2>🧾 ¿Es el folio de la factura?</h2>' +
-      '<p>Escribiste <strong></strong> en «Respuesta al cliente»: eso le manda un correo al cliente (y copias al equipo).</p>' +
+      (interna
+        ? '<p>Escribiste <strong></strong> en «🔒 Notas internas»: ahí queda como nota del equipo y no como el folio de la factura.</p>'
+        : '<p>Escribiste <strong></strong> en «Respuesta al cliente»: eso le manda un correo al cliente (y copias al equipo).</p>') +
       '<p class="muted">Si es el folio, guárdalo en el recuadro «🧾 Factura»: queda a la vista en el ticket, sale en los correos y al imprimir, y no manda correo.</p>' +
       '<div class="facturar-cerrar__botones">' +
       '<button type="button" class="btn" data-fo="folio">🧾 Guardarlo como folio</button>' +
-      '<button type="button" class="btn btn--ghost" data-fo="enviar">✉️ Enviarlo al cliente de todos modos</button>' +
+      (interna
+        ? '<button type="button" class="btn btn--ghost" data-fo="enviar">🔒 Dejarlo como nota interna</button>'
+        : '<button type="button" class="btn btn--ghost" data-fo="enviar">✉️ Enviarlo al cliente de todos modos</button>') +
       '<button type="button" class="btn btn--ghost" data-fo="cancelar">Cancelar</button></div>';
     dlg.querySelector('strong').textContent = folio;
     document.body.appendChild(dlg);
