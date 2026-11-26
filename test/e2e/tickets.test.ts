@@ -370,6 +370,15 @@ describe('editor de descripción con imágenes inline', () => {
     expect(imp.text).toContain('data-theme="light"');
     expect(imp.text).not.toContain('image.png');
     expect(imp.text).toContain('otra.png');
+
+    // Sin imagen en la descripción, un «image.png» adjunto sí se imprime.
+    const sinImg = await agent.post('/app/tickets').type('form').send({
+      _csrf: csrf, asunto: 'Solo adjunto', descripcion: 'Descripción sin imágenes pegadas', tipo: 'General', prioridad: 'Media',
+    });
+    const id2 = String(sinImg.headers.location).split('/').pop()!;
+    await agent.post(`/app/tickets/${id2}/adjuntos`).set('x-csrf-token', csrf)
+      .send({ nombre: 'image.png', contentType: 'image/png', base64: PNG_1X1 });
+    expect((await agent.get(`/app/tickets/${id2}/imprimir`)).text).toContain('image.png');
   });
 
   it('un <script> inyectado en la descripción se elimina por completo (nunca llega al servidor guardado)', async () => {

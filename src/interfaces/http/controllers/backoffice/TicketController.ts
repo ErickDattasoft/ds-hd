@@ -872,13 +872,23 @@ export class TicketController {
     );
     const enNotas = new Set(d.notas.flatMap((n) => n.adjuntoIds ?? []));
     const esImagen = new Map(d.adjuntos.map((a) => [a.id, a.contentType.startsWith('image/')]));
-    // La misma imagen pegada en la descripción Y adjuntada aparte son dos adjuntos distintos con
-    // el mismo contenido: se reconocen por tipo + tamaño (±2 bytes: la pegada cuenta el relleno
-    // del base64 y la subida no).
-    const yaImpresas = d.adjuntos.filter((a) => enDescripcion.has(a.id) || enNotas.has(a.id));
-    const repetida = (a: (typeof d.adjuntos)[number]) =>
-      Boolean(esImagen.get(a.id)) &&
-      yaImpresas.some((b) => b.contentType === a.contentType && Math.abs(b.tamano - a.tamano) <= 2);
+    // Tickets de antes del arreglo: pegar una captura en la descripción la guardaba DOS veces (la
+    // comprimida dentro de la descripción y el original como adjunto «image.png», el nombre que
+    // Windows le pone a lo pegado, subido al crear el ticket). Esas copias no se vuelven a imprimir:
+    // como mucho tantas como imágenes trae la descripción.
+    const creado = d.ticket.createdAt.getTime();
+    const copiasDePegado = new Set(
+      d.adjuntos
+        .filter(
+          (a) =>
+            !enDescripcion.has(a.id) &&
+            /^image\.(png|jpe?g|gif|webp)$/i.test(a.nombre) &&
+            Math.abs(a.createdAt.getTime() - creado) <= 10 * 60_000,
+        )
+        .slice(0, enDescripcion.size)
+        .map((a) => a.id),
+    );
+    const repetida = (a: (typeof d.adjuntos)[number]) => copiasDePegado.has(a.id);
     const conImagenes = (n: (typeof d.notas)[number]) => ({
       ...n,
       imagenes: (n.adjuntoIds ?? []).filter((id) => esImagen.get(id)),

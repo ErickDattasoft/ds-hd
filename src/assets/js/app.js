@@ -1312,6 +1312,9 @@
     pintaPreview(st);
   });
   document.addEventListener('paste', function (e) {
+    // Pegar dentro de la descripción la inserta en el texto (ver rteImagenes): no se agrega
+    // además como adjunto, o la misma captura quedaba guardada dos veces.
+    if (e.target.closest && e.target.closest('[data-descripcion-editor]')) return;
     var cont = document.querySelector('[data-adjuntos] [data-adjunto-file]');
     if (!cont) return;
     cont = cont.closest('[data-adjuntos]');
