@@ -1086,6 +1086,7 @@ export function buildContainer(config: AppConfig, overrides: ContainerOverrides 
           c.ticketPublicoRepo,
           c.contactoRepo,
           c.avisarEmpresasService,
+          c.inscripcionRepo,
         ),
     ).singleton(),
     agendaService: asFunction(

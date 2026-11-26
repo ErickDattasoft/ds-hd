@@ -37,7 +37,7 @@
    dona porque las etiquetas de estado son largas y aquí se leen completas, y porque comparar
    longitudes es más fácil que comparar ángulos. El color va por posición (el servidor manda
    los segmentos ya ordenados) y el valor siempre va escrito, para no depender del tono. #}
-{% macro reparto(datos) %}
+{% macro reparto(datos, enlace) %}
   {% set total = datos | sum('valor') %}
   {% if total %}
     <div class="chart">
@@ -50,12 +50,13 @@
       </div>
       <div class="chart-legend">
         {% for d in datos %}
-          <span class="chart-legend__item">
+          {% set ir = (enlace + (d.etiqueta | urlencode)) if (enlace and d.etiqueta != 'Otros') else '' %}
+          <{{ 'a' if ir else 'span' }} class="chart-legend__item"{% if ir %} href="{{ ir }}" title="Ver la lista: {{ d.etiqueta }}"{% endif %}>
             <span class="chart-legend__dot serie-{{ loop.index if loop.index < 7 else 'otros' }}"></span>
             {{ d.etiqueta }}
             <span class="chart-legend__val">{{ d.valor }}</span>
             <span class="chart-legend__pct">({{ (d.valor / total * 100) | round }}%)</span>
-          </span>
+          </{{ 'a' if ir else 'span' }}>
         {% endfor %}
       </div>
     </div>
@@ -244,15 +245,15 @@
     {% endif %}
     <div class="card">
       <h2>Tickets abiertos por estado</h2>
-      {{ reparto(m.tickets.porEstado) }}
+      {{ reparto(m.tickets.porEstado, '/app/tickets?estado=') }}
     </div>
     <div class="card">
       <h2>Tickets abiertos por prioridad</h2>
-      {{ reparto(m.tickets.porPrioridad) }}
+      {{ reparto(m.tickets.porPrioridad, '/app/tickets?f=1&prioridad=') }}
     </div>
     <div class="card">
       <h2>Cotizaciones por estado</h2>
-      {{ reparto(m.cotizaciones.porEstado) }}
+      {{ reparto(m.cotizaciones.porEstado, '/app/cotizaciones?estado=') }}
     </div>
     {% if m.licencias %}
     <div class="card">
@@ -268,15 +269,17 @@
     </div>
     {% endif %}
     <div class="card">
-      <h2>⏰ Tickets abiertos más de 5 días</h2>
+      <h2>⏰ Tickets abiertos más de 5 días{% if m.tickets.viejosTotal %} <span class="badge badge--danger">{{ m.tickets.viejosTotal }}</span>{% endif %}</h2>
       <ul class="timeline">
         {% for t in m.tickets.viejos %}
           <li>
             <a href="/app/tickets/{{ t.id }}">#{{ t.numero }}</a> {{ t.asunto }}
             <span class="badge badge--danger">{{ t.dias }} d</span>
             <br><span class="muted">🏢 <span class="nombre-sensible">{{ t.empresa or '—' }}</span> · 🧑 {{ t.agente or 'Sin asignar' }}</span>
+            <span class="{{ t.estado | estadoClase }}">{{ t.estado }}</span>
           </li>
         {% else %}<li class="muted">No hay tickets abiertos con más de 5 días.</li>{% endfor %}
+        {% if m.tickets.viejosTotal > m.tickets.viejos | length %}<li><a href="/app/tickets?f=1">Ver los {{ m.tickets.viejosTotal }} →</a></li>{% endif %}
       </ul>
     </div>
     {% if can('seguimiento:leer') %}
@@ -308,6 +311,7 @@
       <ul class="timeline">
         {% for r in respuestas | batch(6) | first %}
           <li>
+            {% if r.paraUid %}<span class="badge sidebar__badge--interna" title="Nota de un compañero">🔒</span>{% else %}<span class="badge sidebar__badge--cliente" title="Respuesta del cliente">💬</span>{% endif %}
             <a href="/app/tickets/{{ r.ticketId }}">#{{ r.numero }}</a> {{ r.asunto }}
             <br><span class="muted">👤 <span class="nombre-sensible">{{ r.autorNombre }}</span> · {{ r.at | fechahora }}</span>
             {% if r.extracto %}<br><span class="muted sensible">«{{ r.extracto | truncate(90) }}»</span>{% endif %}
@@ -331,9 +335,30 @@
       </ul>
     </div>
     <div class="card">
-      <h2>Próximos eventos</h2>
-      <ul>
-        {% for e in m.proximosEventos %}<li><a href="/app/eventos/{{ e.id }}">{{ e.titulo }}</a> <span class="muted">{{ e.tipo }} · {{ e.fechaHora | fechahora }}</span>{% if e.borrador %} <span class="badge badge--warning" title="Aún en borrador: no sale en la lista pública">📝 en preparación</span>{% endif %}</li>
+      <h2>📅 Próximos eventos <a class="btn btn--ghost btn--sm" href="/app/eventos">Ver todos</a></h2>
+      <ul class="timeline dash-eventos">
+        {% for e in m.proximosEventos %}
+          <li>
+            <a href="/app/eventos/{{ e.id }}"><strong>{{ e.titulo }}</strong></a>
+            <span class="badge {{ 'badge--danger' if e.dias <= 3 else ('badge--warning' if e.dias <= 10 else '') }}">{{ '¡Hoy!' if e.dias == 0 else ('Mañana' if e.dias == 1 else 'en ' + e.dias + ' días') }}</span>
+            {% if e.borrador %}<span class="badge badge--warning" title="Aún en borrador: no sale en la lista pública">📝 en preparación</span>{% endif %}
+            <br><span class="muted">{{ e.tipo }} · {{ e.fechaHora | fechahora }}{% if e.lugar %} · 📍 {{ e.lugar }}{% endif %}</span>
+            {% if e.pideConfirmacion %}
+              <div class="dash-eventos__cifras">
+                <span class="dash-eventos__van" title="Personas que van: confirmadas con su invitación + las del link abierto que dijeron «Sí»">👥 <strong>{{ e.van }}</strong> van</span>
+                {% if e.invitados %}
+                  <span title="Invitaciones con nombre que ya confirmaron">✅ {{ e.asistiran }}</span>
+                  <span title="Invitaciones sin contestar todavía">⏳ {{ e.pendientes }}</span>
+                  {% if e.noAsistiran %}<span title="Dijeron que no van">❌ {{ e.noAsistiran }}</span>{% endif %}
+                  <span title="Invitaciones cuyo link ya se abrió">👁 {{ e.abiertas }}/{{ e.invitados }}</span>
+                {% endif %}
+                {% if e.registradosLink %}<span title="Registros por el link abierto">🌐 {{ e.registradosLink }} por link</span>{% endif %}
+                {% if not e.invitados and not e.registradosLink %}<span class="muted">Aún sin invitados</span>{% endif %}
+              </div>
+            {% elif e.invitados %}
+              <div class="dash-eventos__cifras"><span>✉️ {{ e.invitados }} invitados</span><span>👁 {{ e.abiertas }} la abrieron</span></div>
+            {% endif %}
+          </li>
         {% else %}<li class="muted">Ninguno en los próximos 30 días. <a href="/app/eventos">Ir a Eventos</a></li>{% endfor %}
       </ul>
     </div>

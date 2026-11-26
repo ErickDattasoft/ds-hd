@@ -148,3 +148,36 @@ describe('ObtenerMetricasService', () => {
     expect(m.licencias!.banner.map((b) => b.nombre)).toEqual(['ACME', 'GLOBEX']);
   });
 });
+
+describe('Dashboard — resumen de próximos eventos', () => {
+  it('trae lugar, días que faltan y cuántos van (invitaciones + «Sí» del link abierto)', async () => {
+    const { Evento } = await import('../../src/core/entities/Evento.js');
+    const { InMemoryInscripcionRepository } = await import('../fakes/eventos.js');
+    const eventos = new InMemoryEventoRepository();
+    const inscripciones = new InMemoryInscripcionRepository();
+    const ev = new Evento({
+      id: 'posada-dash', titulo: 'Posada', tipo: 'presencial', estado: 'borrador',
+      fechaHora: new Date('2026-09-15T21:00:00Z'), lugarNombre: 'Salón Los Arcos',
+    });
+    ev.agregarInvitadoExterno({ id: 'x1', nombre: 'Juan', token: 't1', pases: 3 });
+    ev.agregarInvitadoExterno({ id: 'x2', nombre: 'Ana', token: 't2', pases: 2 });
+    ev.responderInvitacion('t1', { asistira: true, personas: 3 }, HOY);
+    await eventos.save(ev);
+    const base = { eventoId: 'posada-dash', email: null, telefono: '9991234567', empresa: null, estado: 'confirmado', origen: 'publico', correoEstado: null, recordatoriosEnviados: [] };
+    await inscripciones.create({ ...base, id: 'i1', nombre: 'Luis', asistira: 'Sí', personas: 2 } as never);
+    await inscripciones.create({ ...base, id: 'i2', nombre: 'Rosa', asistira: 'No', personas: null } as never);
+
+    const service = new ObtenerMetricasService(
+      new InMemoryTicketQueries(new InMemoryTicketStore()), new InMemoryCotizacionRepository(), eventos,
+      new InMemoryTareaRepository(), new InMemoryBitacoraRepository(), new FixedClock(HOY),
+      new InMemoryEmpresaRepository(), new InMemoryVersionRepository(), new InMemoryTicketPublicoRepository(),
+      undefined, undefined, inscripciones,
+    );
+    const m = await service.ejecutar(actor(['tickets:leer', 'tickets:leer_todos']));
+    const e = m.proximosEventos.find((x) => x.id === 'posada-dash')!;
+    expect(e).toMatchObject({
+      borrador: true, dias: 8, lugar: 'Salón Los Arcos', pideConfirmacion: true,
+      invitados: 2, asistiran: 1, pendientes: 1, registradosLink: 2, van: 5,
+    });
+  });
+});

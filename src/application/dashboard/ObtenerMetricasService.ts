@@ -1,7 +1,8 @@
 import type { ITicketQueries } from '../../core/ports/repositories/ITicketQueries.js';
 import type { ICotizacionRepository } from '../../core/ports/repositories/ICotizacionRepository.js';
-import type { IEventoRepository } from '../../core/ports/repositories/IEventoRepository.js';
-import { TIPO_EVENTO_ETIQUETA } from '../../core/entities/Evento.js';
+import type { IEventoRepository, IInscripcionRepository } from '../../core/ports/repositories/IEventoRepository.js';
+import { TIPO_EVENTO_ETIQUETA, type Evento } from '../../core/entities/Evento.js';
+import { personasQueVanDelLink } from '../eventos/EventoService.js';
 import type { ITareaRepository } from '../../core/ports/repositories/ISeguimientoRepository.js';
 import type { IBitacoraRepository } from '../../core/ports/repositories/IBitacoraRepository.js';
 import type { IEmpresaRepository } from '../../core/ports/repositories/IEmpresaRepository.js';
@@ -56,6 +57,33 @@ export interface MetricasLicencias {
   }[];
 }
 
+/** Lo que la tarjeta «Próximos eventos» enseña de cada evento, para no tener que entrar a él. */
+export interface ResumenEventoDashboard {
+  id: string;
+  titulo: string;
+  fechaHora: Date;
+  borrador: boolean;
+  tipo: string;
+  /** Días completos que faltan (0 = hoy). */
+  dias: number;
+  lugar: string | null;
+  /** Felicitaciones y comunicados no piden confirmar: solo se enseña a cuántos se mandó. */
+  pideConfirmacion: boolean;
+  invitados: number;
+  asistiran: number;
+  noAsistiran: number;
+  pendientes: number;
+  abiertas: number;
+  /** Registrados por el link abierto (todos, digan que sí o no). */
+  registradosLink: number;
+  /** Personas que van: confirmados con nombre + los «Sí» del link, cada quien con sus acompañantes. */
+  van: number;
+}
+
+/** Los registros del link abierto cuestan una lectura cada uno: se guardan unos minutos. */
+const INSCRITOS_TTL_MS = 10 * 60_000;
+const cacheInscritos = new Map<string, { exp: number; registrados: number; van: number }>();
+
 /** Snapshot de métricas del dashboard, ya acotado al alcance de permisos del actor. */
 export interface Metricas {
   tickets: {
@@ -71,7 +99,9 @@ export interface Metricas {
     porEstadoTodos: { estado: string; valor: number }[];
     recientes: { id: string; numero: number; asunto: string; empresa: string | null; prioridad: string; estado: string; abiertoEn: Date }[];
     /** Abiertos desde hace 5 días o más, los más viejos primero (máx. 6). */
-    viejos: { id: string; numero: number; asunto: string; empresa: string | null; agente: string | null; dias: number }[];
+    viejos: { id: string; numero: number; asunto: string; empresa: string | null; agente: string | null; estado: string; dias: number }[];
+    /** Cuántos abiertos llevan 5 días o más (la lista solo enseña 6). */
+    viejosTotal: number;
     /** «👤 Mis tickets»: abiertos asignados a quien ve el tablero (sale de la misma lectura, sin costo extra). */
     mios: {
       total: number;
@@ -87,7 +117,7 @@ export interface Metricas {
   misTareasPendientes: number;
   /** Tickets del buzón público a la espera de aceptar/rechazar (`0` si el actor no ve el buzón). */
   ticketsPublicosPendientes: number;
-  proximosEventos: { id: string; titulo: string; fechaHora: Date; borrador: boolean; tipo: string }[];
+  proximosEventos: ResumenEventoDashboard[];
   actividadReciente: { at: Date; resumen: string; actorNombre: string | null; modulo: string }[];
   /** `null` si el actor no puede leer empresas. */
   licencias: MetricasLicencias | null;
@@ -153,6 +183,8 @@ export class ObtenerMetricasService {
     private readonly ticketsPublicos: ITicketPublicoRepository,
     private readonly contactos?: IContactoRepository,
     private readonly avisar?: AvisarEmpresasService,
+    /** Registros del link abierto de cada evento (sin él, la tarjeta solo cuenta invitaciones). */
+    private readonly inscripciones?: IInscripcionRepository,
   ) {}
 
   async ejecutar(actor: SessionUser, opciones: { mesesGrafica?: number } = {}): Promise<Metricas> {
@@ -242,8 +274,12 @@ export class ObtenerMetricasService {
             asunto: t.asunto,
             empresa: t.empresaNombre,
             agente: t.agenteAsignadoNombre,
+            estado: t.estado,
             dias,
           })),
+        viejosTotal: abiertos.filter(
+          (t) => !esEstadoFinal(t.estado) && ahora.getTime() - t.abiertoEn.getTime() >= 5 * dia,
+        ).length,
       },
       contactosTotal,
       tareasPendientes: pendientesEquipo
@@ -266,11 +302,13 @@ export class ObtenerMetricasService {
       misTareasPendientes: misTareas.filter((t) => !t.completada).length,
       ticketsPublicosPendientes: publicos.length,
       // Los ejemplos 🧪 y los comunicados (no tienen fecha de evento) no cuentan.
-      proximosEventos: proximos
-        .filter((e) => !e.esPrueba && !e.esComunicado)
-        .sort((a, b) => a.fechaHora.getTime() - b.fechaHora.getTime())
-        .slice(0, 5)
-        .map((e) => ({ id: e.id, titulo: e.titulo, fechaHora: e.fechaHora, borrador: e.estado === 'borrador', tipo: TIPO_EVENTO_ETIQUETA[e.tipo] })),
+      proximosEventos: await Promise.all(
+        proximos
+          .filter((e) => !e.esPrueba && !e.esComunicado)
+          .sort((a, b) => a.fechaHora.getTime() - b.fechaHora.getTime())
+          .slice(0, 5)
+          .map((e) => this.resumenEvento(e, ahora)),
+      ),
       actividadReciente: bita.map((e) => ({
         at: e.at,
         resumen: e.resumen,
@@ -278,6 +316,36 @@ export class ObtenerMetricasService {
         modulo: e.modulo,
       })),
       licencias,
+    };
+  }
+
+  /** Resumen de un evento: invitaciones (vienen en su documento) + registros del link abierto. */
+  private async resumenEvento(e: Evento, ahora: Date): Promise<ResumenEventoDashboard> {
+    const r = e.resumenInvitaciones;
+    let link = cacheInscritos.get(e.id);
+    if (this.inscripciones && e.pideConfirmacion && (!link || link.exp <= ahora.getTime())) {
+      const inscritos = await this.inscripciones.listPorEvento(e.id).catch(() => []);
+      link = { exp: ahora.getTime() + INSCRITOS_TTL_MS, registrados: inscritos.length, van: personasQueVanDelLink(inscritos) };
+      cacheInscritos.set(e.id, link);
+    }
+    const hoy0 = new Date(ahora.toLocaleDateString('en-CA', { timeZone: 'America/Mexico_City' }) + 'T00:00:00');
+    const dia0 = new Date(e.fechaHora.toLocaleDateString('en-CA', { timeZone: 'America/Mexico_City' }) + 'T00:00:00');
+    return {
+      id: e.id,
+      titulo: e.titulo,
+      fechaHora: e.fechaHora,
+      borrador: e.estado === 'borrador',
+      tipo: TIPO_EVENTO_ETIQUETA[e.tipo],
+      dias: Math.max(0, Math.round((dia0.getTime() - hoy0.getTime()) / 86_400_000)),
+      lugar: e.tipo === 'presencial' ? e.lugarNombre?.trim() || null : null,
+      pideConfirmacion: e.pideConfirmacion,
+      invitados: r.invitados,
+      asistiran: r.asistiran,
+      noAsistiran: r.noAsistiran,
+      pendientes: r.pendientes,
+      abiertas: r.abiertas,
+      registradosLink: e.pideConfirmacion ? (link?.registrados ?? 0) : 0,
+      van: r.personas + (e.pideConfirmacion ? (link?.van ?? 0) : 0),
     };
   }
 
