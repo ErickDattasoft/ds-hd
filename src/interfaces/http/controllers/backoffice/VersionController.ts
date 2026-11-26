@@ -260,6 +260,7 @@ export class VersionController {
   reporteImprimir = async (req: Request, res: Response): Promise<void> => {
     const empresaId = str(req.query.empresa);
     res.render('pages/backoffice/versiones/reporte-imprimir', {
+      theme: 'light',
       titulo: 'Reporte de desactualizadas',
       filas: await this.reporte.generar(empresaId ? { empresaId } : {}),
       auto: req.query.auto === '1',

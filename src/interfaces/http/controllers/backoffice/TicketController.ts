@@ -872,6 +872,13 @@ export class TicketController {
     );
     const enNotas = new Set(d.notas.flatMap((n) => n.adjuntoIds ?? []));
     const esImagen = new Map(d.adjuntos.map((a) => [a.id, a.contentType.startsWith('image/')]));
+    // La misma imagen pegada en la descripción Y adjuntada aparte son dos adjuntos distintos con
+    // el mismo contenido: se reconocen por tipo + tamaño (±2 bytes: la pegada cuenta el relleno
+    // del base64 y la subida no).
+    const yaImpresas = d.adjuntos.filter((a) => enDescripcion.has(a.id) || enNotas.has(a.id));
+    const repetida = (a: (typeof d.adjuntos)[number]) =>
+      Boolean(esImagen.get(a.id)) &&
+      yaImpresas.some((b) => b.contentType === a.contentType && Math.abs(b.tamano - a.tamano) <= 2);
     const conImagenes = (n: (typeof d.notas)[number]) => ({
       ...n,
       imagenes: (n.adjuntoIds ?? []).filter((id) => esImagen.get(id)),
@@ -885,7 +892,11 @@ export class TicketController {
       notasInternas: d.notas.filter((n) => n.tipo === 'interna').map(conImagenes),
       notasTotal: d.notasTotal,
       adjuntos: d.adjuntos,
-      adjuntosAparte: d.adjuntos.filter((a) => !enDescripcion.has(a.id) && !enNotas.has(a.id)),
+      adjuntosAparte: d.adjuntos.filter(
+        (a) => !enDescripcion.has(a.id) && !enNotas.has(a.id) && !repetida(a),
+      ),
+      // La hoja impresa siempre en claro, aunque la persona use el tema oscuro (no gastar tinta).
+      theme: 'light',
       conLogo: req.query.logo !== '0',
       auto: req.query.auto === '1',
       impresoEl: this.clock.now(),

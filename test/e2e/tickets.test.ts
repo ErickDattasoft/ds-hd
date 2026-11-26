@@ -351,6 +351,27 @@ describe('editor de descripción con imágenes inline', () => {
     expect(detalle.text).toContain(`src="data:image/png;base64,${PNG_1X1}"`);
   });
 
+  it('imprimir: sale en tema claro y la imagen pegada en la descripción no se repite en Adjuntos', async () => {
+    const t = makeTestApp({ usuarios: [SUP] });
+    const { agent, csrf } = await login(t.app, SUP.email, SUP.password);
+    const crear = await agent.post('/app/tickets').type('form').send({
+      _csrf: csrf, asunto: 'Imagen doble', descripcion: `<p>Mira el error del timbrado:</p><img src="data:image/png;base64,${PNG_1X1}">`,
+      tipo: 'General', prioridad: 'Media',
+    });
+    const id = String(crear.headers.location).split('/').pop()!;
+    // La misma captura adjuntada además como archivo, y otra imagen distinta.
+    await agent.post(`/app/tickets/${id}/adjuntos`).set('x-csrf-token', csrf)
+      .send({ nombre: 'image.png', contentType: 'image/png', base64: PNG_1X1 });
+    await agent.post(`/app/tickets/${id}/adjuntos`).set('x-csrf-token', csrf)
+      .send({ nombre: 'otra.png', contentType: 'image/png', base64: Buffer.alloc(300, 5).toString('base64') });
+
+    const imp = await agent.get(`/app/tickets/${id}/imprimir`);
+    expect(imp.status).toBe(200);
+    expect(imp.text).toContain('data-theme="light"');
+    expect(imp.text).not.toContain('image.png');
+    expect(imp.text).toContain('otra.png');
+  });
+
   it('un <script> inyectado en la descripción se elimina por completo (nunca llega al servidor guardado)', async () => {
     const t = makeTestApp({ usuarios: [SUP] });
     const { agent, csrf } = await login(t.app, SUP.email, SUP.password);

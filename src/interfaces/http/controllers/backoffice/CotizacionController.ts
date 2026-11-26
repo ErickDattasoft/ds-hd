@@ -210,6 +210,7 @@ export class CotizacionController {
   imprimir = async (req: Request, res: Response): Promise<void> => {
     const cotizacion = await this.cotizaciones.obtener(str(req.params.id));
     res.render('pages/backoffice/cotizaciones/imprimir', {
+      theme: 'light',
       titulo: cotizacion.folio,
       cotizacion,
       auto: req.query.auto === '1',
