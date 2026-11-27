@@ -208,10 +208,16 @@ export class EventoService {
         datos.limiteRegistrosPorIp !== undefined
           ? datos.limiteRegistrosPorIp
           : (previo?.limiteRegistrosPorIp ?? null),
-      // La edición del evento (título/fecha/…) no toca la invitación dirigida ni el flayer: se conservan.
+      // La edición del evento (título/fecha/…) no toca lo que se maneja desde su página: invitados,
+      // lista del link abierto, flayer y «⚙️ Configuración de envío» (WhatsApp, correo y 🔔 avisos).
+      esPrueba: previo?.esPrueba ?? false,
       invitaciones: previo?.invitaciones ?? [],
       invitadosExternos: previo?.invitadosExternos ?? [],
+      difusion: previo?.difusion ?? [],
       flayer: previo?.flayer ?? null,
+      envioWhatsapp: previo?.envioWhatsapp ?? null,
+      envioCorreo: previo?.envioCorreo ?? null,
+      avisarRegistros: previo?.avisarRegistros ?? [],
       sistema: datos.sistema ?? previo?.sistema ?? null,
       contactoNombre: datos.contactoNombre ?? previo?.contactoNombre ?? null,
       contactoWhatsapp: datos.contactoWhatsapp ?? previo?.contactoWhatsapp ?? null,

@@ -300,6 +300,26 @@ describe('eventos / webinars', () => {
     expect(ev!.invitadosExternos).toHaveLength(1);
   });
 
+  it('editar el evento no borra la configuración de envío (🔔 avisos, correo, WhatsApp) ni la lista del link abierto', async () => {
+    const t = makeTestApp({ usuarios: [ADMIN] });
+    t.eventoRepo.items.set('ev1', new Evento({
+      id: 'ev1', titulo: 'Posada', tipo: 'presencial', fechaHora: enUnaSemana(), estado: 'borrador',
+      envioWhatsapp: '9991234567', envioCorreo: 'eventos@dattasoft.mx', avisarRegistros: ['gelmi@dattasoft.mx'],
+      difusion: [{ id: 'd1', nombre: 'Ana', correo: 'ana@x.com' }],
+    }));
+    const { agent, csrf } = await login(t.app, ADMIN.email, ADMIN.password);
+    const res = await agent.post('/app/eventos/ev1').type('form')
+      .send({ _csrf: csrf, titulo: 'Posada 2026', tipo: 'presencial', fechaHora: '2026-12-15T19:00', estado: 'publicado' });
+    expect(res.status).toBe(302);
+
+    const ev = await t.eventoRepo.findById('ev1');
+    expect(ev!.titulo).toBe('Posada 2026');
+    expect(ev!.avisarRegistros).toEqual(['gelmi@dattasoft.mx']);
+    expect(ev!.envioCorreo).toBe('eventos@dattasoft.mx');
+    expect(ev!.envioWhatsapp).toBe('9991234567');
+    expect(ev!.difusion).toHaveLength(1);
+  });
+
   it('eliminar un evento lo borra junto con sus inscritos', async () => {
     const t = makeTestApp({ usuarios: [ADMIN] });
     t.eventoRepo.items.set('ev1', new Evento({ id: 'ev1', titulo: 'A borrar', fechaHora: enUnaSemana(), estado: 'publicado' }));
