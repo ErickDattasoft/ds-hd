@@ -26,7 +26,7 @@
 
 Todo el sistema vive detrás de una sola pantalla de inicio de sesión en `/login`.
 
-*(captura pendiente: login-y-acceso-login.png — corre `npm run docs:screenshots` contra la app corriendo y con datos de `npm run seed:demo`)*
+![Pantalla de login](../screenshots/login-y-acceso-login.png)
 
 ## Iniciar sesión
 
@@ -61,7 +61,7 @@ Usa el enlace **Salir** del menú superior en cualquier pantalla, o entra a `/lo
 Al entrar al back-office (`/app`) llegas al panel principal, con métricas acotadas a lo que
 tu rol puede ver (un agente solo ve lo suyo; admin/supervisor/lectura ven el global).
 
-*(captura pendiente: dashboard-panel.png — corre `npm run docs:screenshots` contra la app corriendo y con datos de `npm run seed:demo`)*
+![Panel principal](../screenshots/dashboard-panel.png)
 
 ## Qué muestra
 
@@ -110,7 +110,7 @@ consola de Firebase). El dato exacto está en Firebase → Firestore → Uso.
 
 El módulo de tickets (`/app/tickets`) es el corazón del sistema de soporte.
 
-*(captura pendiente: tickets-lista.png — corre `npm run docs:screenshots` contra la app corriendo y con datos de `npm run seed:demo`)*
+![Lista de tickets](../screenshots/tickets-lista.png)
 
 ## Vistas disponibles
 
@@ -122,7 +122,7 @@ El módulo de tickets (`/app/tickets`) es el corazón del sistema de soporte.
 | Carga de agentes | `/app/tickets/carga-agentes` | cuántos tickets abiertos tiene cada agente frente a su capacidad máxima (requiere permiso de asignar) |
 | Solicitudes de ticket | `/app/tickets/buzon` | solicitudes del formulario público o de un correo sin número de ticket, pendientes de convertir o descartar |
 
-*(captura pendiente: tickets-tablero.png — corre `npm run docs:screenshots` contra la app corriendo y con datos de `npm run seed:demo`)*
+![Tablero kanban](../screenshots/tickets-tablero.png)
 
 ## Ciclo de vida de un ticket
 
@@ -272,7 +272,7 @@ ningún correo**; si quieres avisarle al cliente, usa **✉️ Reenviar correo**
 Empresas (`/app/empresas`) y contactos (`/app/contactos`) son el directorio de clientes del
 CRM; casi todo lo demás (tickets, cotizaciones, seguimiento) se liga a una empresa.
 
-*(captura pendiente: empresas-contactos-empresas.png — corre `npm run docs:screenshots` contra la app corriendo y con datos de `npm run seed:demo`)*
+![Lista de empresas](../screenshots/empresas-contactos-empresas.png)
 
 ## Empresas
 
@@ -287,7 +287,7 @@ Una empresa guarda RFC, razón social, datos de contacto, los **sistemas contrat
 
 ## Contactos
 
-*(captura pendiente: empresas-contactos-contactos.png — corre `npm run docs:screenshots` contra la app corriendo y con datos de `npm run seed:demo`)*
+![Lista de contactos](../screenshots/empresas-contactos-contactos.png)
 
 Cada contacto pertenece a una empresa (`empresaId` obligatorio). Un contacto marcado como
 **de portal** (`esPortal`) es el que tiene o puede tener una cuenta de cliente vinculada —
@@ -311,7 +311,7 @@ los suyos.
 `/app/cotizaciones` administra cotizaciones formales para una empresa, con folio
 consecutivo `COT-{año}-{n}`.
 
-*(captura pendiente: cotizaciones-lista.png — corre `npm run docs:screenshots` contra la app corriendo y con datos de `npm run seed:demo`)*
+![Lista de cotizaciones](../screenshots/cotizaciones-lista.png)
 
 ## Crear una cotización
 
@@ -321,7 +321,7 @@ IVA. Cada cotización tiene una vigencia y un estado (borrador → enviada → a
 
 ## Calculadora Compac
 
-*(captura pendiente: cotizaciones-calculadora.png — corre `npm run docs:screenshots` contra la app corriendo y con datos de `npm run seed:demo`)*
+![Calculadora Compac](../screenshots/cotizaciones-calculadora.png)
 
 `/app/cotizaciones/calculadora` arma el licenciamiento CONTPAQi por **grupos de equipos
 iguales**: tipo de equipo (Servidor, Terminal…), cantidad, los sistemas que llevan y, en
@@ -347,7 +347,7 @@ cotización queda registrado en la [Bitácora](bitacora.md).
 (Contabilidad, Nóminas, Bancos, etc.): versión actual, fecha de liberación, notas de la
 versión y el link de descarga.
 
-*(captura pendiente: versiones-sistemas-lista.png — corre `npm run docs:screenshots` contra la app corriendo y con datos de `npm run seed:demo`)*
+![Catálogo de versiones](../screenshots/versiones-sistemas-lista.png)
 
 ## Para qué sirve
 
@@ -400,7 +400,7 @@ Los archivos de soporte del equipo, separados en dos carpetas igual que en Windo
 copian (📋 Copiar); nadie los edita en el CRM. El contenido solo cambia al **indexar** las
 carpetas.
 
-*(captura pendiente: base-conocimiento-staff.png — corre `npm run docs:screenshots` contra la app corriendo y con datos de `npm run seed:demo`)*
+![Base de conocimiento](../screenshots/base-conocimiento-staff.png)
 
 ## Quién la ve
 
@@ -448,7 +448,7 @@ puede abrir una ruta escrita a mano).
 enviar propuesta, dar seguimiento a una cotización) e **interacciones** (bitácora de
 contacto con una empresa: llamada, correo, visita).
 
-*(captura pendiente: seguimiento-comercial-tareas.png — corre `npm run docs:screenshots` contra la app corriendo y con datos de `npm run seed:demo`)*
+![Tareas](../screenshots/seguimiento-comercial-tareas.png)
 
 ## Tareas
 
@@ -469,7 +469,7 @@ independiente de los tickets de soporte.
 `/app/papelera` reúne las empresas y contactos que alguien archivó desde su pantalla de
 detalle (botón **Archivar**), en vez de borrarlos.
 
-*(captura pendiente: papelera-lista.png — corre `npm run docs:screenshots` contra la app corriendo y con datos de `npm run seed:demo`)*
+![Papelera](../screenshots/papelera-lista.png)
 
 ## Restaurar
 
@@ -487,7 +487,7 @@ No hay borrado permanente desde la UI — es una papelera, no una eliminación i
 (crear/editar/archivar una empresa, aprobar una cotización, cambiar el estado de un ticket,
 etc.) queda anotada aquí de forma automática — no se edita a mano.
 
-*(captura pendiente: bitacora-lista.png — corre `npm run docs:screenshots` contra la app corriendo y con datos de `npm run seed:demo`)*
+![Bitácora](../screenshots/bitacora-lista.png)
 
 ## Qué muestra cada entrada
 
@@ -655,7 +655,7 @@ Ambos se configuran en ⚙️ Opciones avanzadas.
 tiene el permiso `usuarios:gestionar` (admin, y supervisor salvo por defecto sobre
 `roles:gestionar`) ve este módulo.
 
-*(captura pendiente: usuarios-y-permisos-lista.png — corre `npm run docs:screenshots` contra la app corriendo y con datos de `npm run seed:demo`)*
+![Usuarios](../screenshots/usuarios-y-permisos-lista.png)
 
 ## Roles disponibles
 
@@ -774,7 +774,7 @@ versión, la fecha y las notas.
 `/app/configuracion` reúne los catálogos y parámetros del sistema, repartidos en subpáginas
 con botones arriba para saltar entre ellas.
 
-*(captura pendiente: configuracion-tickets.png — corre `npm run docs:screenshots` contra la app corriendo y con datos de `npm run seed:demo`)*
+![Configuración de tickets](../screenshots/configuracion-tickets.png)
 
 ## 🎫 Tickets
 
